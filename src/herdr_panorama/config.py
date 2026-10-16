@@ -11,7 +11,8 @@ changes. Keys:
 - ``machines``: herdr's saved SSH machines to show, "all" (default), "none" or a list of
   labels (machines.py).
 - ``cockpit`` / ``cockpit_width``: experimental, panorama docked left of the selected agent (cockpit.py);
-  ``dock_keep_focus`` (default true): Enter in the docked list keeps the keyboard on panorama.
+  ``dock_keep_focus`` (default true): Enter in the docked list keeps the keyboard on panorama;
+  ``dock_on_arrows`` (default true): ↑/↓ in the docked list switch the chats, Enter goes into one.
 - ``panel_colors`` ("fixed" default, or "herdr"), ``panel_bg`` / ``focus_bg`` (hex), ``focus_tint``
   (0..1, default 0.15): the docked panel's focused / unfocused background (theme.py).
 - ``highlight_unseen``: pulse what failed, asked or finished since the operator looked (unseen.py),

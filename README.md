@@ -206,10 +206,11 @@ dock_keep_focus = true # Enter in the docked list keeps the keyboard on panorama
 - **Enter** on an orchestrator (or **g**, or a click on the selected card) moves panorama's
   own pane into that agent's tab, on its left, and focuses the agent. The agent never
   moves: closing a tab closes that agent's tab, as always, and panorama with it.
-- **Browse the chats.** In the docked list, Enter (or a click) on another orchestrator
-  docks next to it and keeps the keyboard on panorama, so ↑/↓ and Enter go through the
-  chats one after another. **g**, or Enter on the entry already docked, goes into the
-  agent. `dock_keep_focus = false` makes Enter go into the agent every time.
+- **Browse the chats.** In the docked list, ↑/↓ switch the chats themselves: once the
+  arrows rest (0.2 s; holding one docks once), panorama docks next to the highlighted
+  orchestrator and keeps the keyboard. A click does the same at once. **Enter** (or **g**)
+  goes into the agent. `dock_on_arrows = false` brings back Enter-to-dock (keeping the
+  keyboard); `dock_keep_focus = false` makes Enter go into the agent every time.
 - **It follows you.** Switch tabs any other way (the tab bar, `prefix+1..9`, a
   notification, `herdr agent focus`), and when you land on a Claude orchestrator's tab the
   panel moves there too, beside the agent. You stay exactly where you clicked. It never
@@ -265,7 +266,8 @@ cockpit = false      # experimental: panorama docked left of the selected agent 
 cockpit_width = 46   # the list's width in the cockpit
 cockpit_follow = true # the cockpit follows you to the orchestrator tab you switch to
 cockpit_follow_tabs = "any" # or "single": follow only into one-pane orchestrator tabs
-dock_keep_focus = true # docked list: Enter on another orchestrator keeps the keyboard on panorama
+dock_keep_focus = true # docked list: switching chats keeps the keyboard on panorama
+dock_on_arrows = true  # docked list: ↑/↓ switch the chats; Enter goes into the agent
 panel_colors = "fixed" # docked panel background: "fixed" (#14161b focused, #101215 not) or "herdr" (herdr's theme)
 # panel_bg = "#101215"  # the unfocused background, in either mode
 # focus_bg = "#14161b"  # the focused background, in either mode

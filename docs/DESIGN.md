@@ -1291,6 +1291,14 @@ tile in its off phase.
     the operator's request for the side panel; the full 2a graph keeps select-first.
     - On the already-docked entry, the click (like Enter) docks "already there" and focuses
       its agent's pane.
+    - **Arrows switch the chats** (`dock_on_arrows`, default true; the operator's proposal
+      after #14). In the docked panel ↑/↓ dock next to the highlighted orchestrator once the
+      arrows rest for `ARROW_DOCK_SECONDS` (0.2 s, so holding an arrow docks once, at the
+      last entry), through the same keep-focus path as below; Enter (like `g`) goes into that
+      agent. Not for the docked entry, `+ New agent`, or an orchestrator on another machine
+      (Enter keeps its hint). An arrow dock that comes due while a dock runs is looked at
+      again when it ends. A click still switches at once. Off: Enter docks as below. It needs
+      `dock_keep_focus`: an arrow never moves the keyboard into an agent.
     - **Keep focus** (`dock_keep_focus`, default true; the operator's request: browsing the
       chats took the open key each time). On another entry, Enter and the click dock next to
       it and leave the keyboard on panorama, so ↑/↓ and Enter browse the chats one after

@@ -9,7 +9,7 @@ import os
 
 import pytest
 
-from herdr_panorama import cockpit, home
+from herdr_panorama import cockpit, home, render
 from herdr_panorama.cli import main as cli
 
 from .test_home import herdr  # noqa: F401 - the fixture
@@ -369,10 +369,11 @@ async def _settled(app, pilot):
             return
 
 
-@pytest.mark.parametrize("key,keep", [("enter", True), ("g", False)])
-async def test_docked_enter_browses_and_g_goes_into_the_agent(fake_herdr, monkeypatch, key, keep):
-    """The operator's request: in the docked panel, Enter on another orchestrator docks next to
-    it and the keyboard stays on panorama (↑/↓ + Enter browse the chats); g goes into it."""
+@pytest.mark.parametrize("key,keep,arrows", [("enter", False, True), ("g", False, True), ("enter", True, False)])
+async def test_docked_enter_browses_and_g_goes_into_the_agent(fake_herdr, monkeypatch, key, keep, arrows):
+    """In the docked panel, with ↑/↓ switching the chats (dock_on_arrows, the default), Enter goes
+    into the agent like g. With dock_on_arrows off, Enter docks and keeps the keyboard (#14)."""
+    monkeypatch.setattr(cockpit, "arrows_setting", lambda: arrows)
     docked = _record_docks(monkeypatch)
     app = await _docked_app(fake_herdr)
     async with app.run_test(size=(46, 45)) as pilot:
@@ -385,6 +386,85 @@ async def test_docked_enter_browses_and_g_goes_into_the_agent(fake_herdr, monkey
         assert docked == [(target, keep)]
         await pilot.press("q")
     assert fake_herdr.calls_of("agent", "focus") == ([] if keep else [["agent", "focus", target]])
+
+
+async def _arrow(app, pilot, *keys, wait=0.5):
+    await pilot.press(*keys)
+    for _ in range(int(wait / 0.05)):
+        await pilot.pause(0.05)
+    await _settled(app, pilot)
+
+
+async def test_arrows_switch_the_chats_once_they_settle(fake_herdr, monkeypatch):
+    """The operator's proposal: in the docked panel ↓ docks next to the highlighted orchestrator
+    after the arrows rest, the keyboard staying on panorama; a quick run of arrows docks once,
+    at the last one."""
+    docked = _record_docks(monkeypatch)
+    app = await _docked_app(fake_herdr)
+    async with app.run_test(size=(46, 45)) as pilot:
+        await _loaded(app, pilot)
+        await _arrow(app, pilot, "down")
+        first = app.view.orch
+        assert docked == [(first, True)]
+        await _arrow(app, pilot, "up", "up", "up", "down")  # held / quick: one dock, at the last
+        assert len(docked) == 2 and docked[-1] == (app.view.orch, True)
+        await pilot.press("q")
+    assert fake_herdr.calls_of("agent", "focus") == []  # the keyboard never left panorama
+
+
+async def test_arrows_do_not_dock_the_docked_one_new_agent_or_a_remote(fake_herdr, monkeypatch):
+    docked = _record_docks(monkeypatch)
+    app = await _docked_app(fake_herdr)
+    async with app.run_test(size=(46, 45)) as pilot:
+        await _loaded(app, pilot)
+        app._select(0, app.swarm.docked)
+        app.action_move(0)  # an arrow that stays on the docked entry
+        await _arrow(app, pilot)
+        assert docked == []
+        app._select(0, render.NEW_ROW)
+        app.action_move(0)
+        await _arrow(app, pilot)
+        assert docked == []
+        remote = next(o for o in app.swarm.orchestrators if o.pane_id != app.swarm.docked)
+        remote.machine = "build-box"  # an orchestrator on another machine: Enter's hint, never a dock
+        app._select(0, remote.pane_id)
+        app.action_move(0)
+        await _arrow(app, pilot)
+        assert docked == []
+        await pilot.press("q")
+
+
+async def test_arrows_off_or_the_2a_graph_never_dock_on_arrows(fake_herdr, monkeypatch):
+    docked = _record_docks(monkeypatch)
+    monkeypatch.setattr(cockpit, "arrows_setting", lambda: False)
+    app = await _docked_app(fake_herdr)
+    async with app.run_test(size=(46, 45)) as pilot:
+        await _loaded(app, pilot)
+        await _arrow(app, pilot, "down")
+        assert docked == []
+        await pilot.press("q")
+    monkeypatch.setattr(cockpit, "arrows_setting", lambda: True)
+    wide = await _docked_app(fake_herdr)
+    async with wide.run_test(size=(160, 45)) as pilot:
+        await _loaded(wide, pilot)
+        assert not wide.view.dock
+        await _arrow(wide, pilot, "down")
+        assert docked == []
+        await pilot.press("q")
+
+
+async def test_an_arrow_dock_due_during_a_dock_runs_after_it(fake_herdr, monkeypatch):
+    docked = _record_docks(monkeypatch)
+    app = await _docked_app(fake_herdr)
+    async with app.run_test(size=(46, 45)) as pilot:
+        await _loaded(app, pilot)
+        app.docking = True  # a dock is running
+        await _arrow(app, pilot, "down", wait=0.4)
+        assert docked == [] and app._arrow_again
+        app._docked(None)  # it finished: the settled arrow docks now
+        await _arrow(app, pilot, wait=0.4)
+        assert docked == [(app.view.orch, True)]
+        await pilot.press("q")
 
 
 async def test_docked_enter_with_keep_focus_off_focuses_the_agent(fake_herdr, monkeypatch):

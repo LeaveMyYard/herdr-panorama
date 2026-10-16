@@ -99,6 +99,7 @@ COLOUR_SECONDS = 0.05  # the colour tick (config animation_fps, default 20): pul
 ARM_SECONDS = 0.4
 QUIET_FOLLOW = cockpit.QUIET  # follow's normal "no"s: not logged
 FOLLOW_DEBOUNCE = 0.15  # cockpit follow: act on the last of a burst of focus events
+ARROW_DOCK_SECONDS = 0.2  # docked panel: dock once the arrows rest this long (holding one docks once)
 CLICK_ARM_SECONDS = 1.0  # a click target that appeared or moved in a refresh (herdr-inbox's row rule)
 SCROLL_ARM_SECONDS = 0.3  # a click target the wheel moved under the pointer (trackpad momentum)
 WHEEL_ROWS = 3
@@ -267,6 +268,8 @@ class SwarmApp(App):
         self.following = False  # one follow at a time
         self._follow_again = False  # a focus event arrived while following: re-evaluate after
         self._follow_timer = None
+        self._arrow_timer = None  # docked panel: the pending dock after the arrows settle
+        self._arrow_again = False  # an arrow dock came due while a dock ran: look again after it
         self._stopping = False
         self.focus_log: cockpit.FocusLog | None = None  # set while the event stream is up
         self.fit_total: int | None = None  # the shared split's width at the last fit
@@ -589,6 +592,33 @@ class SwarmApp(App):
         else:
             idx = 0  # parked: arrows resume from the top
         self._select(col, items[idx])
+        if col == 0 and self._arrows_mode():
+            self._arrow_dock_later()
+
+    def _arrows_mode(self) -> bool:
+        """The docked panel with ``dock_on_arrows``: ↑/↓ switch the chats, Enter goes into one."""
+        return self.view.dock and self.home_mode and self.cockpit_mode() and cockpit.arrows_setting()
+
+    def _arrow_dock_later(self) -> None:
+        if self._arrow_timer is not None:
+            self._arrow_timer.stop()
+        self._arrow_timer = self.set_timer(ARROW_DOCK_SECONDS, self._arrow_dock)
+
+    def _arrow_dock(self) -> None:
+        """The arrows rested on an orchestrator: dock next to it, the keyboard staying here. The
+        same path as Enter and a click (identity re-checked, keep-focus's own guards); not for
+        the docked one, + New agent, or one on another machine (its hint stays on Enter)."""
+        self._arrow_timer = None
+        if not self._arrows_mode() or self.view.focus != 0:
+            return
+        if self.docking:
+            self._arrow_again = True  # look again when this dock is done
+            return
+        o = render.find_orch(self.swarm, self.view.orch) if self.view.orch != render.NEW_ROW else None
+        if o is None or o.machine or o.pane_id == self.swarm.docked:
+            return
+        self._seen([a.id for a in o.agents()])  # docked next to it: all of it is in view
+        self._dock(o.pane_id, True)
 
     def _select(self, col: int, ident: str) -> None:
         v = self.view
@@ -665,7 +695,9 @@ class SwarmApp(App):
         if v.focus == 0 and v.orch == render.NEW_ROW:
             self.action_new_agent()
         elif v.focus == 0 and self.home_mode and v.orch:
-            self.action_goto(switch=True)  # home: Enter on an orchestrator goes to its pane
+            # home: Enter on an orchestrator goes to its pane; in the docked panel with arrows that
+            # switch the chats, Enter is the way into the agent (what g does)
+            self.action_goto(switch=not self._arrows_mode())
         elif v.focus == 1 and v.thread and v.thread.startswith(render.DONE_CARD):
             pane = v.thread[len(render.DONE_CARD):]
             v.done_open ^= {pane}
@@ -718,6 +750,9 @@ class SwarmApp(App):
         on; on the docked one, and with g, focus goes into the agent."""
         if not self.armed():
             return
+        if self._arrow_timer is not None:  # a key or click acts now: no settled-arrow dock after it
+            self._arrow_timer.stop()
+            self._arrow_timer = None
         o, _, _ = self._selection()
         if o is None:
             return
@@ -897,6 +932,9 @@ class SwarmApp(App):
         self.docking = False
         self.fit_total = None
         self._refocus()  # the dock may have given panorama a new pane id
+        if self._arrow_again:  # the arrows settled elsewhere during this dock
+            self._arrow_again = False
+            self._arrow_dock_later()
         if err:
             self.notify(herdr.clean(err, 300), title="cockpit", severity="warning", timeout=8)
 
