@@ -13,8 +13,9 @@ FIX = Path(__file__).resolve().parent / "fixtures"
 PH = {"d": "done", "n": "now", "x": "next", "f": "failed"}
 
 
-def design_swarm() -> Swarm:
-    data = json.loads((FIX / "design_data.json").read_text())
+def design_swarm(data: list | None = None) -> Swarm:
+    """The dataset as a Swarm; ``data`` another capture of it (design 9 adds an orchestrator)."""
+    data = data if data is not None else json.loads((FIX / "design_data.json").read_text())
     sw = Swarm(herdr_ok=True, inbox_ok=True)
     qid = 0
     for o in data:

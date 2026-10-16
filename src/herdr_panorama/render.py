@@ -1459,7 +1459,7 @@ def _narrow(s: Screen, swarm: Swarm, view: View) -> None:
     s.columns.append((0, w, top, top + height, 0))
 
 
-# -- the docked cockpit panel (design turn 3, variant 3a "Compact list") -----------------
+# -- the docked cockpit panel (design turn 3, variant 3a "Compact list", with 9e's tiles) --
 # A port of swarm-dock.js vA (docs/design/swarm-dock.js) onto the real model: same
 # characters, colours and coordinates in a 46-column pane. The design shows no separate
 # "selected" state; the keyboard cursor uses its hover look (background and a dim ›).
@@ -1554,30 +1554,44 @@ def _rp(s: Screen, xr: int, y: int, segs) -> None:
     s.P(xr - _seglen(segs), y, segs)
 
 
-def _thread_segs(d: DockState, frame: int) -> list:
-    """swarm-dock.js thSegs: one glyph per active thread (its state colour, bold when it needs
-    you), then one ✓ per done thread, a space between glyphs."""
+# Design 9e (swarm-tiles.js, the operator's pick): 2a's coloured tiles in the docked panel. A tile
+# is 2a's pod, " g " in the state's colours; a needs-you tile blinks like the bare glyphs do, to
+# TILE_OFF in its off phase.
+TILE_OFF = ("#2a2e35", "#4d535c")  # swarm-tiles.js OFF: (background, glyph)
+
+
+def dock_tile(st: str, g: str, view: View, m: tuple[str, bool] | None = None) -> tuple:
+    """swarm-tiles.js tile (and pulseTile): `` g `` bold in the state's tile colours. Unseen (``m``):
+    its background pulses toward the event colour, never fully off (the operator, Q115)."""
+    b, f = TILE_OFF if _att(st) and not _blink_on(view) else PB.get(st, PB[Q])
+    return (f" {g} ", f, True, pulse_col(m, b, view.frame) if m else b)
+
+
+def _thread_segs(d: DockState, view: View) -> list:
+    """swarm-tiles.js line 2 (rowTiles): one tile per active thread, its most urgent agent's
+    state; the done threads fold into one ✓n tile; a space between tiles."""
     segs = []
     for t in d.active:
-        g, st = _thread_glyph(t, frame)
-        segs.append((g, ST.get(st, FG), _att(st)))
-    segs += [("✓", ST[DONE])] * len(d.done)
+        g, st = _thread_glyph(t, view.frame)
+        segs.append(dock_tile(st, g, view))
+    if d.done:
+        segs.append(dock_tile(DONE, "✓" + (str(len(d.done)) if len(d.done) > 1 else ""), view))
     return _spaced(segs)
 
 
 def _fit_thread_segs(segs: list, counts: str, room: int) -> list:
-    """An entry's second line in ``room`` cells: the thread glyphs, then the counts. When they do
-    not all fit (many threads, and a space between glyphs), the first ones then ``+n`` for the
-    rest, so the counts always stay whole."""
-    glyphs = segs[::2]  # _spaced: glyphs at the even places
+    """An entry's second line in ``room`` cells: the thread tiles, then the counts. When they do
+    not all fit (many threads), the first ones then ``+n`` for the rest, so the counts always
+    stay whole."""
+    tiles = segs[::2]  # _spaced: tiles at the even places
     budget = room - len(counts)
     if _seglen(segs) <= budget:
         return segs + [(counts, FAINT)]
-    k = len(glyphs)
-    while k > 0 and (2 * k - 1) + len(f" +{len(glyphs) - k}") > budget:
+    k = len(tiles)
+    while k > 0 and _seglen(_spaced(tiles[:k])) + len(f" +{len(tiles) - k}") > budget:
         k -= 1
-    more = [(f"{' ' if k else ''}+{len(glyphs) - k}", FAINT)]
-    line = _spaced(glyphs[:k]) + more + [(counts, FAINT)]
+    more = [(f"{' ' if k else ''}+{len(tiles) - k}", FAINT)]
+    line = _spaced(tiles[:k]) + more + [(counts, FAINT)]
     return line if _seglen(line) <= room else [(trunc(counts.strip(), room), FAINT)]
 
 
@@ -1632,8 +1646,9 @@ def _spawn_rows(t: Thread) -> list[tuple[str, bool, Agent]]:
 
 
 def dock_row(cv: Screen, y: int, o: Orchestrator, view: View, docked: bool, cursor: bool, w: int = 46) -> int:
-    """One orchestrator at row ``y`` (swarm-dock.js vA): tab number, state glyph, name, ?N and
-    state; its threads' glyphs and counts; the docked one with its thread list. Its height."""
+    """One orchestrator at row ``y`` (swarm-dock.js vA with swarm-tiles.js 9e's tiles): tab number,
+    state tile, name, ?N and state; its threads' tiles and counts, or for the docked one only the
+    counts and then its thread list, a tile per thread. Its height."""
     d = dock_state(o, view.frame)
     threads = (d.active + ([None] if d.done else [])) if docked else []
     items: list = []  # (thread or None for the done row, None) or (thread, (prefix, last, agent)) tree rows
@@ -1656,16 +1671,20 @@ def dock_row(cv: Screen, y: int, o: Orchestrator, view: View, docked: bool, curs
         cv.put(0, y, "›", DIM)
     right = [("?" + str(d.q), ST[WAIT], True) if d.q else None, " " if d.q else None, (d.label, _dock_stcol(d))]
     tab = str(o.tab_no or "?")
-    x_name = 2 + len(tab) + 1 + len(d.glyph) + 1
+    state = dock_tile(d.st, d.glyph, view)
+    x_name = 2 + len(tab) + 1 + len(state[0]) + 1
     room = max(1, min(22, xr - _seglen(right) - 1 - x_name))  # a narrow pane cuts the name, never the state
-    cv.P(2, y, [(tab, FAINT), " ", (d.glyph, _gcol(d.st, view), True), " ",
-                (trunc(clean(o.tab_label), room), HI if docked or hov else FG, docked)])
+    cv.P(2, y, [(tab, FAINT), " ", state, " ",
+                (trunc(clean(o.tab_label), room), HI if docked or hov else DIM if d.st == DONE else FG, docked)])
     _rp(cv, xr, y, right)
     if d.q:
         xq = xr - _seglen(right)
         cv.target(xq, xq + 1 + len(str(d.q)), y, "answer-orch", (o.pane_id,))
-    cv.P(6, y + 1, _fit_thread_segs(_thread_segs(d, view.frame), f"  {len(d.active)} active · {len(d.live)} agents",
-                                     w - 6))
+    counts = f"{len(d.active)} active · {len(d.live)} agents"
+    if items:  # 9e: the docked entry's list shows the thread tiles, so its line 2 keeps only the counts
+        cv.P(x_name, y + 1, [(trunc(counts, w - x_name), FAINT)])
+    else:
+        cv.P(x_name, y + 1, _fit_thread_segs(_thread_segs(d, view), "  " + counts, w - x_name))
     last_thread = max((i for i, (_, r) in enumerate(items) if r is None), default=-1)
     for i, (t, row) in enumerate(items):
         yy = y + 2 + i
@@ -1684,16 +1703,14 @@ def dock_row(cv: Screen, y: int, o: Orchestrator, view: View, docked: bool, curs
             continue
         cv.put(3, yy, "└" if i == last_thread else "├", LINE)
         if t is None:
-            fm = mark_of([a for x in d.done for a in x.agents], view.unseen, True)
-            cv.P(5, yy, [("✓", pulse_col(fm, ST[DONE], view.frame) if fm else ST[DONE]), " ",
-                         (f"{len(d.done)} done", FAINT)])
+            fm = mark_of([a for x in d.done for a in x.agents], view.unseen, True)  # unseen: the tile pulses
+            cv.P(5, yy, [dock_tile(DONE, "✓", view, fm), " ", (f"{len(d.done)} done", FAINT)])
             continue
         g, st = _thread_glyph(t, view.frame)
-        tm = mark_of(t.agents, view.unseen, True)  # unseen: the thread glyph pulses
+        tile = dock_tile(st, g, view, mark_of(t.agents, view.unseen, True))  # unseen: its background pulses
         ags = _agent_segs(tree_kids(t).get(None, []), view.frame, 4)
-        room = max(1, min(24, xr - _seglen(ags) - 1 - (5 + len(g) + 1)))
-        cv.P(5, yy, [(g, pulse_col(tm, FAINT, view.frame) if tm else _gcol(st, view), _att(st) or bool(tm)), " ",
-                     (trunc(clean(t.name), room), FG)])
+        room = max(1, min(22, xr - _seglen(ags) - 1 - (5 + len(tile[0]) + 1)))
+        cv.P(5, yy, [tile, " ", (trunc(clean(t.name), room), FG)])
         _rp(cv, xr, yy, ags)
     return h
 

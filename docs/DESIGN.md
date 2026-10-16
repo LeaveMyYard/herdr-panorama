@@ -1075,35 +1075,44 @@ wait for the UI thread. It is a message posted thread-safely (`post_message`), n
 A stuck panorama therefore cannot hang the key, the startup hook or itself. Workers hand
 their results to the view only after releasing the lock.
 
-### The docked panel (design 3a)
+### The docked panel (designs 3a and 9e)
 
 When panorama is docked next to an agent (it shares a tab with an orchestrator) and is
 narrower than the 2a wide layout, it draws the operator's pick from design turn 3:
-**3a "Compact list"**. It is a port of `vA` in `docs/design/swarm-dock.js`, which is
-rendered for reference by `docs/design/render-3a.mjs`. It replaces 3b "Cards with a pod
-row", which the operator tried live first.
+**3a "Compact list"** (a port of `vA` in `docs/design/swarm-dock.js`; it replaced 3b "Cards
+with a pod row", which the operator tried live first), with the coloured tiles of turn 9's
+**9e "tiles, list replaces row"** (`docs/design/swarm-tiles.js`, rendered by
+`docs/design/render-9.mjs`; the operator's pick of 9a–9e). A tile is 2a's pod: ` g ` in
+the state's tile colours, bold; a needs-you tile blinks like the bare glyphs do, to a grey
+tile in its off phase.
 
 - **Header.** `SWARM  N orchestrators`, with `?N !N ✗N` on the right.
 - **One entry per orchestrator, two lines.**
-  - The first line: tab number, state glyph (blinking when it needs you), name, then `?N`
+  - The first line: tab number, the state in a tile, name (dim when all done), then `?N`
     and the state label (`failed`, `blocked`, `working`, `waiting`, `idle` or `done`).
-  - The second line: one glyph per active thread, one `✓` per done thread, then
-    `N active · N agents`.
+  - The second line: one tile per active thread (its most urgent agent's state), a cell
+    apart; the done threads fold into one `✓n` tile; then `N active · N agents`. When the
+    tiles do not all fit, the first ones then `+n`, so the counts stay whole.
 - **The docked entry** is the orchestrator in panorama's own tab. It has a gold `▌` bar on
-  the left and the selected background, and it lists its threads underneath as a tree: glyph,
-  name, and on the right the thread's live agents (most urgent first, up to 4, then
-  ` +N✓`). Done threads fold into `✓ N done`.
+  the left and the selected background, and it lists its threads underneath as a tree: a
+  tile, the name (up to 22 cells), and on the right the thread's live agents as bare glyphs
+  (most urgent first, up to 4, then ` +N✓`). Done threads fold into a `✓` tile and `N done`.
+  Its second line keeps only the counts, since the list shows the same tiles.
+- **Unseen** (turn 6). The entry's two lines pulse as a tint, as in turn 6. In the docked
+  list an unseen thread's tile, and the done fold's tile, pulses its background toward the
+  event colour (red, amber, green), every 3 s and never fully off (the operator, Q115: "tile
+  background pulses").
 - **Below the entries:** the `+ New agent` row. **Footer:** `↑↓ move  ret open  a answer
   n new  pfx+spc back`.
 - **State.** Computed like the design's `oState`, with the same extensions as 2a: herdr
   reporting the main session working counts as working, blocked counts as blocked, and the
   session's open inbox questions are its `?N`. The main session's own thread and agent are
   the entry itself, so they are not listed as a thread or an agent.
-- **Fidelity.** On the design's own dataset (`tests/fixtures/design_data.json`, captured from
-  `swarm-tui.js`), the panel matches the design's render (`tests/fixtures/design_3a.json`)
-  cell for cell: characters, colours and bold, in six animation frames
-  (`tests/test_dock_panel.py`). Blank cells are compared by background only.
-  `docs/screenshots/dock-3a-compare.png` shows the two side by side.
+- **Fidelity.** On the design's own dataset (captured from `swarm-tui.js` plus 9's finished
+  Docs Site), the panel matches 9e's render (`tests/fixtures/design_9.json`) cell for cell:
+  characters, colours and bold, in eight animation frames, plain and with turn 6's unseen
+  marks (`tests/test_tiles.py`). Blank cells are compared by background only.
+  `docs/screenshots/dock-9e-app.png` and `dock-9e-design.png` show the two.
 - **Interaction.**
   - The panel is one column: ↑/↓ move between the entries and `+ New agent`; → does nothing.
   - Enter on an entry docks panorama next to that orchestrator. **One click** on an entry

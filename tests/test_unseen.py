@@ -1,6 +1,7 @@
 """Unseen (design turn 6): a new failure, question or finished agent pulses until the operator
 looks at it. Golden tests against docs/design/swarm-unseen.js rendered by render-6.mjs
-(tests/fixtures/design_6.json); the tracker's rules and persistence; the seen triggers."""
+(tests/fixtures/design_6.json), for the 2a graph (the docked panel's pulse is 9e's now:
+tests/test_tiles.py); the tracker's rules and persistence; the seen triggers."""
 
 import copy
 import json
@@ -33,17 +34,6 @@ def cells(scr, w):
 def graph(frame, marks):
     v = render.View(orch="w1:p1", thread="t595", agent="a2", focus=2, frame=frame, unseen=dict(marks))
     return cells(render.render(design_swarm(), v, 160, 45), 160)
-
-
-@pytest.mark.parametrize("frame", sorted(FRAMES, key=int))
-def test_3a_panel_pulses_exactly_like_the_design(frame):
-    """The whole 46-column panel, cell for cell: the entries' tinted lines and the thread glyphs."""
-    v = render.View(orch="w1:p3", dock=True, frame=int(frame), unseen=dict(MARKS))
-    v.hover = ("orch", ("w1:p4",))  # the design's hover
-    got = cells(render.render(design_swarm(), v, 46, 45), 46)
-    want = grid(FRAMES[frame]["P"])
-    diffs = [(x, y, want[y][x], got[y][x]) for y in range(45) for x in range(46) if want[y][x] != got[y][x]]
-    assert not diffs, f"{len(diffs)} cells differ, first: {diffs[:5]}"
 
 
 @pytest.mark.parametrize("frame", sorted(FRAMES, key=int))
