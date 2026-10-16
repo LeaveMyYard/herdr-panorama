@@ -61,6 +61,7 @@ REOPEN_MARGIN = 5.0  # an agent's final line can land a moment after its own not
 TAIL_BYTES = 65536
 TOOL_USE = b'"type":"tool_use"'
 ASSISTANT = b'"type":"assistant"'
+USER = b'"type":"user"'
 TAIL_MAX = 8 * 1024 * 1024  # the tail window grows up to this when the last records are huge
 BG_MARK = b'"backgroundTaskId"'  # a Bash moved to the background (the result record)
 BG_CAP = 24 * 3600.0  # an open background task nobody can check (remote, no /proc) counts this long
@@ -169,6 +170,7 @@ class Session:
         self.prompts: set[tuple[float, str]] = set()
         self.titles: dict[str, str] = {}
         self.continued_in: str | None = None  # the session this one continued in (its last word)
+        self.continued_at: float | None = None  # that record's time (a later conversation line: resumed)
         self.qids: dict[str, set[int]] = {}
         self.bad_records = 0
         self._pending_ask: dict[str, str] = {}
@@ -267,6 +269,7 @@ class Session:
             return True
         if f.owner != MAIN:  # the agent's own calls: tool_use blocks in assistant records
             f.tool_calls += sum(raw.count(TOOL_USE) for raw in lines if ASSISTANT in raw)
+        last_continued = -1
         for i in wire.wanted_lines(lines):
             rec = wire.parse_line(lines[i])
             if rec is None:
@@ -278,10 +281,30 @@ class Session:
                 self.apply(f.owner, rec, when)
             except Exception:  # noqa: BLE001 - one odd record never costs the rest of the batch
                 self.bad_records += 1
+            if rec.get("type") == "continued-in" and f.owner == MAIN:
+                last_continued = i
+        if f.owner == MAIN and self.continued_in:
+            self._resumed(lines[last_continued + 1:])
         if f.tail.size != f.info_size and f.tail.size > 0:
             f.info = summarize_tail(f.path, self.cwd)
             f.info_size = f.tail.size
         return False
+
+    def _resumed(self, lines: list[bytes]) -> None:
+        """A conversation line (user or assistant) after the continued-in record, and later than
+        it: the old session was resumed (``claude --resume``), so it is live again and the
+        continuation no longer counts. Bookkeeping records after it (``last-prompt``,
+        ``cost-state``) are not conversation."""
+        for raw in lines:
+            if USER not in raw and ASSISTANT not in raw:
+                continue
+            rec = wire.parse_line(raw)
+            if not rec or rec.get("type") not in ("user", "assistant"):
+                continue
+            when = wire.ts(rec.get("timestamp"))
+            if self.continued_at is None or (when is not None and when > self.continued_at):
+                self.continued_in = self.continued_at = None
+                return
 
     def _read_hooks(self) -> None:
         self._alive = {}  # process liveness is re-checked every update
@@ -365,8 +388,8 @@ class Session:
             return
         if kind == "continued-in":
             nxt = rec.get("continuedInSessionId")
-            if owner == MAIN and isinstance(nxt, str) and nxt and nxt != self.session_id:
-                self.continued_in = nxt
+            if owner == MAIN and discovery.is_uuid(nxt) and nxt != self.session_id:  # never a path
+                self.continued_in, self.continued_at = nxt, when
             return
         if kind == "custom-title" and isinstance(rec.get("customTitle"), str):
             self.titles["custom"] = rec["customTitle"]

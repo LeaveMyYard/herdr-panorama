@@ -38,6 +38,7 @@ from .model import Swarm
 log = logging.getLogger("herdr_panorama.machines")
 
 REMOTE_SECONDS = 5.0  # a machine's refresh cadence (its own thread)
+CONTINUE_ROUNDS = 3  # continuation hops mirrored within one refresh (the rest: the next one)
 SNAPSHOT_TIMEOUT = 8.0
 SYNC_TIMEOUT = 30.0
 STALE_SECONDS = 30.0  # a result older than this is shown as stale
@@ -306,10 +307,22 @@ class Watcher:
         if snap is None:
             self.result = Result(self.result.swarm, self.result.at, err or "unreachable", True)
             return
-        serr = sync(self.machine, session_ids(snap))
+        named = session_ids(snap)
+        sessions = named + self.collector.continuations(named)
+        serr = sync(self.machine, sessions)
+        swarm = self.collector.collect(snap, None)
+        for _ in range(CONTINUE_ROUNDS):
+            # herdr names a conversation's first session; its mirrored transcript may say it
+            # continued in another one (#39): mirror that too, now, and look again
+            more = [s for s in self.collector.continuations(named) if s not in sessions]
+            if serr or not more:
+                break
+            sessions += more
+            serr = sync(self.machine, sessions)
+            swarm = self.collector.collect(snap, None)
         if serr:
             log.warning("%s: transcripts: %s", self.machine.label, serr)
-        swarm = namespace(self.collector.collect(snap, None), self.machine)
+        swarm = namespace(swarm, self.machine)
         if serr:
             swarm.errors.append(f"{self.machine.label}: transcripts not synced: {serr}"[:200])
         self.result = Result(swarm, time.monotonic(), None, True)

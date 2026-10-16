@@ -30,11 +30,16 @@ def sanitize_cwd(cwd: str) -> str:
 
 
 def is_uuid(stem: str) -> bool:
-    return bool(_UUID.match(stem))
+    return isinstance(stem, str) and bool(_UUID.fullmatch(stem))
 
 
 def find_root(session_id: str, cwd: str | None, root: str | None = None) -> str | None:
-    """The ``<session>.jsonl`` for a session id: the cwd's project dir first, then every project dir."""
+    """The ``<session>.jsonl`` for a session id: the cwd's project dir first, then every project
+    dir. Only a UUID is looked up: an id comes from herdr or from a transcript (a remote
+    machine's, too), and anything else (``..``, a separator, a glob) could name a file outside
+    the transcripts folder."""
+    if not is_uuid(session_id):
+        return None
     root = root or projects_root()
     name = f"{session_id}.jsonl"
     if cwd:

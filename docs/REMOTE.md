@@ -55,6 +55,15 @@ orchestrators running on those machines next to the local ones, in the same view
        Pruning checks this twice: `seen.json` keeps only UUID keys, and a file name must be
        a UUID before anything is removed. It skips symlinks, and deletes a session dir only
        if it resolves to a real directory directly inside its project dir.
+     - **Continued sessions** (#39):
+       - herdr names the session a conversation started in. When the conversation moved on
+         to a new session, its mirrored transcript ends with `continued-in` (see DESIGN,
+         "Orchestrators").
+       - After a collect, the watcher mirrors the sessions those records name as well, and
+         collects again. That happens up to 3 hops in one refresh; further hops wait for the
+         next refresh.
+       - The continuation ids are named on every sync, so pruning keeps them for as long as
+         the old session is named.
      - **One sync per machine at a time:** a lock per machine around mirror + prune, so
        two refreshes can never append into one mirror at once.
   3. Run the same collector as for local sessions, with that mirror as its projects root.
