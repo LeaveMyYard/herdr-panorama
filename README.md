@@ -1,25 +1,37 @@
-<div align="center">
+<p align="center"><img src="https://img.shields.io/badge/herdr%20panorama-every%20agent%2C%20one%20live%20screen-5865a3?style=flat-square&labelColor=24292f" alt="herdr panorama | every agent, one live screen"></p>
 
-# herdr panorama
+<h3 align="center">Run a swarm of Claude Code agents in herdr and see, at a glance, which one needs you</h3>
 
-### Every agent you are running, on one live screen.
+<p align="center">herdr panorama draws every Claude Code orchestrator in your <a href="https://herdr.dev">herdr</a> session, the threads of work it drives and the subagents it spawned, like an Argo resource graph with small coloured status tiles. It reads what Claude Code already writes, types into a pane only when you start a new agent from it, and puts what failed, blocked or asked a question in front.</p>
 
-A swarm view for [herdr](https://herdr.dev): each Claude Code orchestrator, the threads of work it
-drives and the subagents it spawned, drawn like an Argo resource graph with small coloured status
-squares.
+<p align="center"><a href="docs/media/herdr-demo.mp4"><img src="docs/screenshots/hero.gif" width="88%" alt="The swarm view on demo data: orchestrator cards with spinners and blinking attention edges, a PR thread with its steps, and its agents"></a></p>
 
+```sh
+herdr plugin install LeaveMyYard/herdr-panorama
+```
+
+<p align="center"><sub>✓&nbsp;Free,&nbsp;MIT&nbsp;licensed &nbsp; ✓&nbsp;Reads&nbsp;local&nbsp;transcripts,&nbsp;no&nbsp;hosted&nbsp;service &nbsp; ✓&nbsp;macOS&nbsp;and&nbsp;Linux,&nbsp;herdr&nbsp;0.9+</sub></p>
+
+<p align="center">
 <a href="https://herdr.dev"><img alt="herdr" src="https://img.shields.io/badge/herdr-%E2%89%A5%200.9-5865a3?style=flat"></a>
 <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude_Code-plugin-d97757?style=flat&logo=claude&logoColor=white">
 <img alt="MCP server" src="https://img.shields.io/badge/MCP-server-1f2937?style=flat&logo=modelcontextprotocol&logoColor=white">
 <img alt="Python" src="https://img.shields.io/badge/python-%E2%89%A5%203.11-3776ab?style=flat&logo=python&logoColor=white">
 <img alt="Linux and macOS" src="https://img.shields.io/badge/Linux%20%C2%B7%20macOS-supported-2ea44f?style=flat&logo=linux&logoColor=white">
 <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-blue?style=flat"></a>
+</p>
 
-<br><br>
+Then give it a key. `prefix+space` is the suggested default; any herdr key works, including one
+without the prefix such as `ctrl+alt+p`. Add this to `~/.config/herdr/config.toml` and run
+`herdr server reload-config`:
 
-<img src="docs/screenshots/hero.gif" alt="The swarm view on demo data: orchestrator cards with working bars and blinking attention edges, a PR thread with its steps, and its agents" width="920">
-
-</div>
+```toml
+[[keys.command]]
+key = "prefix+space"          # change to taste, e.g. "ctrl+alt+p"
+type = "plugin_action"
+command = "leavemyyard.herdr-panorama.open"
+description = "swarm view"
+```
 
 **Status: proof of concept.** It implements design 2a "Graph · squares are subagents"
 (reference copy and render in [docs/design/](docs/design/)). The design, the data sources and the
@@ -28,6 +40,71 @@ open questions are in [docs/DESIGN.md](docs/DESIGN.md).
 | Full screen (160 columns) | Side split (70 columns) |
 |---|---|
 | ![](docs/screenshots/wide-160x45.png) | ![](docs/screenshots/narrow-70x45.png) |
+
+## Pick your setup
+
+### 🗺️ Graph only: panorama in its own tab
+
+The default. Panorama opens as the first tab, `◆ panorama`, and your key jumps back to it from
+anywhere. Enter on an orchestrator goes to its pane; the full graph stays one key away. Details
+in [Use it as your home tab](#use-it-as-your-home-tab).
+
+```toml
+# plugin config.toml (herdr plugin config-dir leavemyyard.herdr-panorama)
+home_tab = true    # the default
+cockpit = false    # the default
+```
+
+### 🧭 Cockpit: a slim list beside the agent you are working with
+
+Panorama docks as a narrow panel on the left of the selected agent's tab, with that agent's chat on
+the right, and follows you as you switch to another orchestrator's tab. With herdr's own sidebar
+hidden, it becomes the agent list. Still experimental; details in
+[Cockpit](#cockpit-experimental).
+
+<img src="docs/screenshots/dock-9e-app.png" alt="The docked cockpit panel on demo data" width="300">
+
+```toml
+# plugin config.toml
+home_tab = true
+cockpit = true
+cockpit_width = 46            # panorama's columns on the left
+cockpit_follow = true         # move with you to the orchestrator tab you switch to
+cockpit_follow_tabs = "any"   # "single": only into tabs where the agent is the only pane
+dock_keep_focus = true        # Enter in the docked list keeps the keyboard on panorama
+```
+
+```toml
+# ~/.config/herdr/config.toml
+[ui]
+sidebar_start_collapsed = true     # takes effect at herdr's next launch
+sidebar_collapsed_mode = "hidden"  # no rail: panorama is the agent list
+pane_outer_borders = false
+pane_gaps = false
+
+[[keys.command]]
+key = "ctrl+alt+p"                 # a key without the prefix, one press from anywhere
+type = "plugin_action"
+command = "leavemyyard.herdr-panorama.open"
+description = "swarm view"
+```
+
+## Works great with herdr-inbox
+
+Many agents means many questions. [herdr-inbox](https://github.com/LeaveMyYard/herdr-inbox) lets
+them ask without stopping: each question is filed once, the agent keeps working, and you answer
+every agent's questions from one popup. Panorama shows each open question as `?N` on its card;
+`a` opens the inbox right on it, and the answer lands back in the agent's conversation.
+
+<div align="center">
+<a href="docs/media/herdr-demo.mp4"><img src="docs/media/herdr-demo.gif" alt="Four demo agents in panorama; the Release notes agent asks a question, its card and tab get a mark, the operator presses a, answers in the inbox popup, and the agent's pane shows the answer and the agent continuing" width="920"></a>
+</div>
+
+```sh
+claude plugin marketplace add LeaveMyYard/herdr-inbox
+claude plugin install herdr-inbox@herdr-inbox
+herdr plugin install LeaveMyYard/herdr-inbox
+```
 
 ## What it shows
 
@@ -51,7 +128,11 @@ herdr-inbox popup (`a`, `i`) when that plugin is installed.
 
 ## Requirements
 
-herdr ≥ 0.9.0 (Linux or macOS), Claude Code, [`uv`](https://docs.astral.sh/uv/) on `PATH`.
+- **herdr ≥ 0.9.0** on Linux or macOS ([herdr.dev](https://herdr.dev)).
+- **Claude Code**, any version that writes transcripts under `~/.claude/projects`
+  (`CLAUDE_CONFIG_DIR` is honoured). The optional Claude Code plugin below needs plugin support.
+- **[uv](https://docs.astral.sh/uv/)** on herdr's `PATH`; it brings its own Python 3.11+. The
+  optional plugin's hooks use the system `python3`.
 
 ## Install (herdr plugin)
 
@@ -218,6 +299,30 @@ uv run panorama snapshot --json     # the full model
 uv run panorama snapshot --counts   # numbers only
 uv run panorama tui
 ```
+
+## FAQ and troubleshooting
+
+**The key does nothing.** Bind it first (top of this page), then `herdr server reload-config`.
+`herdr plugin list` should show `leavemyyard.herdr-panorama` enabled, and `herdr plugin log`
+shows its action and startup logs, including a missing `uv`.
+
+**An agent is missing.** Panorama lists the panes where herdr detects Claude Code
+(`herdr agent list`) and reads their transcripts from `~/.claude/projects`. A pane whose agent
+herdr does not see does not get a card.
+
+**Agents show `done?` or `lost`.** Without the optional Claude Code plugin, an agent's end is
+inferred from silence. Install it (above) for exact start and stop times.
+
+**Does it change my agents or send anything anywhere?** It reads herdr's state and the local
+transcripts, focuses panes and opens the inbox when you ask. It types into a pane only when you
+submit the New agent form. Other machines are read over your own SSH; nothing goes to a hosted
+service.
+
+**I don't want the `◆ panorama` tab.** Set `home_tab = false`; the key then opens a popup.
+
+**The cockpit panel sits next to herdr's sidebar.** Hide herdr's sidebar with the `[ui]` settings
+in [Pick your setup](#-cockpit-a-slim-list-beside-the-agent-you-are-working-with), then restart
+herdr.
 
 ## Development
 
