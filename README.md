@@ -79,8 +79,9 @@ dock_keep_focus = true        # Enter in the docked list keeps the keyboard on p
 [ui]
 sidebar_start_collapsed = true     # takes effect at herdr's next launch
 sidebar_collapsed_mode = "hidden"  # no rail: panorama is the agent list
-pane_outer_borders = false
-pane_gaps = false
+pane_outer_borders = false         # no frame around the pane area
+pane_gaps = false                  # panorama and the agent share one divider
+# pane_borders = "off"             # optional, see below
 
 [[keys.command]]
 key = "ctrl+alt+p"                 # a key without the prefix, one press from anywhere
@@ -88,6 +89,16 @@ type = "plugin_action"
 command = "leavemyyard.herdr-panorama.open"
 description = "swarm view"
 ```
+
+**Recommended: turn herdr's pane borders down.** The cockpit is a split, so by default herdr
+frames the pane area and gives panorama and the agent a border each with a gap between them.
+Every one of those lines is a column taken from the 46-column panel (and from the agent's
+chat), and the frame makes the panel look boxed in rather than part of the screen.
+`pane_outer_borders = false` drops the outer frame and `pane_gaps = false` leaves a single
+shared divider between panorama and the agent. `pane_borders = "off"` removes that divider
+too, for the cleanest look; the trade-off is that panorama and the agent are then separated
+only by their backgrounds, and every other split pane in herdr loses its border as well (and
+with it the agent labels `show_agent_labels_on_pane_borders` draws there).
 
 ## Works great with herdr-inbox
 
