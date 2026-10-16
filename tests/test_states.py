@@ -79,35 +79,35 @@ ORCH_X = range(2, 30)  # the orchestrator cards
 # only their state lines are compared.
 ORCH_Y = [5, 10, 15, 20, *range(23, 43)]
 
-@pytest.mark.parametrize("frame", sorted(FRAMES, key=int))
+@pytest.mark.parametrize("frame", sorted(FRAMES, key=float))
 def test_3a_panel_is_the_design_cell_for_cell(frame):
-    v = render.View(orch="w1:p5", dock=True, frame=int(frame), now=NOW)
+    v = render.View(orch="w1:p5", dock=True, frame=float(frame), now=NOW)
     v.hover = ("orch", ("w1:p7",))  # the design's hover
     got = cells(render.render(states_swarm(), v, 46, H), 46)
     d = diff(grid(FRAMES[frame]["P"]), got, range(46), range(H))
     assert not d, f"{len(d)} cells differ, first: {d[:5]}"
 
 
-@pytest.mark.parametrize("frame", sorted(FRAMES, key=int))
+@pytest.mark.parametrize("frame", sorted(FRAMES, key=float))
 def test_2a_orchestrators_and_background_card_are_the_design(frame):
     want = grid(FRAMES[frame]["A"])
-    got = graph(int(frame), orch="w1:p5", thread=render.BG_CARD + "w1:p5")
+    got = graph(float(frame), orch="w1:p5", thread=render.BG_CARD + "w1:p5")
     d = diff(want, got, ORCH_X, ORCH_Y) + diff(want, got, range(36, 86), range(3, 8))
     assert not d, f"{len(d)} cells differ, first: {d[:5]}"
 
 
-@pytest.mark.parametrize("frame", sorted(FRAMES, key=int))
+@pytest.mark.parametrize("frame", sorted(FRAMES, key=float))
 def test_2a_waiting_agent_card_is_the_design(frame):
     want = grid(FRAMES[frame]["B"])
-    got = graph(int(frame), orch="w1:p4", thread="p214", agent="n1")
+    got = graph(float(frame), orch="w1:p4", thread="p214", agent="n1")
     d = diff(want, got, ORCH_X, ORCH_Y) + diff(want, got, range(93, 137), range(3, 13))
     assert not d, f"{len(d)} cells differ, first: {d[:5]}"
 
 
-@pytest.mark.parametrize("frame", sorted(FRAMES, key=int))
+@pytest.mark.parametrize("frame", sorted(FRAMES, key=float))
 def test_running_filter_keeps_waiting_and_drops_stale_like_the_design(frame):
     want = grid(FRAMES[frame]["R"])
-    got = graph(int(frame), orch="w1:p4", thread="p214", agent="n1", filter="running")
+    got = graph(float(frame), orch="w1:p4", thread="p214", agent="n1", filter="running")
     d = diff(want, got, ORCH_X, [5, 10, 15, 20, *range(23, 33)])  # 6 cards: stale ones are gone
     assert not d, f"{len(d)} cells differ, first: {d[:5]}"
 

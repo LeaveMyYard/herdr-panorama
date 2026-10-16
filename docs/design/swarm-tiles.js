@@ -21,7 +21,6 @@ const DOCK = 'herdr core', HOVER = 'Billing Migrations';
 const PB = { done: ['#2c6b4c', '#e3f2e9'], run: ['#1f625c', '#d8f2ee'], rev: ['#2e4f86', '#dfe8f8'], q: ['#2a2e35', '#9aa0aa'], wait: ['#f2a93b', '#1b1203'], blk: ['#f2a93b', '#1b1203'], fail: ['#d8363e', '#ffffff'], cxl: ['#24272c', '#6b717a'] };
 const OFF = ['#2a2e35', '#4d535c']; // a needs-you tile in its blink-off phase
 const ATT = st => st === 'wait' || st === 'blk' || st === 'fail';
-const on = () => Math.floor(F / 2) % 2 === 0;
 // smooth pulse: PULSE = 0..1 brightness (null = the 2-state blink)
 let PULSE = null;
 const hx = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));

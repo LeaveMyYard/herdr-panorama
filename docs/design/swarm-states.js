@@ -12,6 +12,7 @@
 //     and tiles in the docked entry's list (the 9e panel, swarm-tiles.js, since turn 9). A waiting agent lists its own in its expanded card.
 // Agent cards are 44 columns wide and do not stretch, as the shipped 2a does since turn 5.
 import { TH, DATA as BASE, H } from './swarm-tui.js';
+import { blinkK, blinkCol, mix } from './swarm-smooth.js'; // smooth animation: F may be fractional
 let F = 0;
 const { setFrame, Scr, LIVE: LIVE0, isDone, curIdx, roleL, glyph: glyph0, lastPh, fit, trunc, wrap, tm, dur, NOW, FL, LBL: LBL0, mark, len, GL: GL0, nq } = H;
 
@@ -146,9 +147,9 @@ function actions(s, x, y, a) {
 }
 function edge(s, x, y, w, h, os, seed = 0) {
   if (!os || QUIET(os.st)) return;
-  const c = th.st[os.st].t, att = os.st === 'wait' || os.st === 'blk' || os.st === 'fail', on = !att || Math.floor(F / 2) % 2 === 0;
-  for (let j = 1; j < h - 1; j++) s.put(x, y + j, '┃', on ? c : th.faint);
-  if (os.working) { const n = w - 2, p = (F + seed * 7) % (n + 6) - 3; for (let i = 0; i < 4; i++) { const xx = p + i; if (xx >= 0 && xx < n) s.put(x + 1 + xx, y + h - 1, '━', th.st.run.t); } }
+  const c = th.st[os.st].t, att = os.st === 'wait' || os.st === 'blk' || os.st === 'fail', col = att ? blinkCol(th, c, F) : c;
+  for (let j = 1; j < h - 1; j++) s.put(x, y + j, '┃', col);
+  if (os.working) { const n = w - 2, p = (Math.floor(F) + seed * 7) % (n + 6) - 3; for (let i = 0; i < 4; i++) { const xx = p + i; if (xx >= 0 && xx < n) s.put(x + 1 + xx, y + h - 1, '━', th.st.run.t); } }
 }
 
 // filters: running = active threads, herdr working, or waiting (background work in flight); stale and
@@ -252,7 +253,7 @@ function renderGraphS(w, h, o) {
 const PW = 46, HOV = '#171a1f';
 const ATT = st => st === 'wait' || st === 'blk' || st === 'fail';
 const on = () => Math.floor(F / 2) % 2 === 0;
-const gcol = st => ATT(st) && !on() ? th.faint : th.st[st].t;
+const gcol = st => ATT(st) ? blinkCol(th, th.st[st].t, F) : th.st[st].t; // eased (swarm-smooth.js)
 const sl = segs => segs.reduce((a, g) => a + (g == null ? 0 : len(typeof g === 'string' ? g : g[0])), 0);
 const RP = (s, xr, y, segs) => s.P(xr - sl(segs), y, segs);
 const bar = (s, y, h) => { for (let j = 0; j < h; j++) s.put(0, y + j, '▌', th.key); };
@@ -278,7 +279,7 @@ const spaced = gs => gs.flatMap((g, i) => (i ? [' ', g] : [g]));
 // 9e (swarm-tiles.js, the shipped docked panel): 2a's pods as tiles for the state, line 2 and the
 // docked list; needs-you tiles blink to OFF; the agents of a listed thread stay bare glyphs
 const OFF = ['#2a2e35', '#4d535c'];
-const tile = (st, g) => { const [b, f] = ATT(st) && !on() ? OFF : PB[st]; return [' ' + g + ' ', f, 1, b]; };
+const tile = (st, g) => { if (!ATT(st)) return [' ' + g + ' ', PB[st][1], 1, PB[st][0]]; const k = blinkK(F); return [' ' + g + ' ', mix(OFF[1], PB[st][1], k), 1, mix(OFF[0], PB[st][0], k)]; };
 const bare = (st, g) => [g, th.st[st].t, ATT(st)];
 const agSegs = (ags, max = 4) => { const live = ags.filter(LIVE).sort(byUrg), fin = ags.length - live.length; const o = spaced(live.slice(0, max).map(a => bare(a.st, glyph(a)))); if (fin) o.push([' +' + fin + '✓', th.faint]); return o; };
 const thSegs = o => { const ts = o.act.map(t => { const x = tState(t); return tile(x.st, x.g); }); if (o.done.length) ts.push(tile('done', '✓' + (o.done.length > 1 ? o.done.length : ''))); return spaced(ts); };
@@ -335,7 +336,7 @@ function panelS(H_, DOCK, HOVER) {
 }
 
 export function renderStates(f = 0) {
-  F = f; setFrame(f);
+  F = f; setFrame(Math.floor(f)); // f may be fractional: colours glide, spinners and the clock step
   const GH = 56;
   return {
     A: renderGraphS(160, GH, { orch: 'Deploy Watch', selT: 'bg:' }).rows(),

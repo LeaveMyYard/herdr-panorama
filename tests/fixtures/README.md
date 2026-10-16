@@ -37,5 +37,5 @@ Design references (not wire formats), both captured from the design's own code i
   plain and with turn 6's unseen marks) and its dataset, as runs of `[text, fg, bg, bold]` per
   row; the golden for `tests/test_tiles.py`.
 - `design_8.json`: turn 8 (waiting and stale, `swarm-states.js` via `render-8.mjs`): its added data
-  and frames 0, 4, 7, 12 of the 2a graphs and the 3a panel; the golden for `tests/test_states.py`.
+  and frames 0, 4, 7, 12 and the fractional 1.5 and 3.4 (the eased blink) of the 2a graphs and the 9e panel; the golden for `tests/test_states.py`.
 Regenerate with `uv run python tests/fixtures/capture_design.py` (needs node).
