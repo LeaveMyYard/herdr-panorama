@@ -241,3 +241,49 @@ def test_the_hover_row_is_a_step_lighter_than_either_background():
     for focused in (True, False):
         bg, _, hover = theme.panel_look(None, focused, render.FG, render.DIM, render.FAINT, FB, {})
         assert hover == theme.hover_bg(bg) and hover != bg and hover != render.DOCK_HOV
+
+
+async def test_a_panorama_started_without_the_keyboard_looks_unfocused(fake_herdr, monkeypatch):
+    """Review of #25: the startup hook opens panorama without focus and terminals report focus
+    only on change. When the focus stream connects, herdr's snapshot decides."""
+    from herdr_panorama import herdr
+    from herdr_panorama.tui import SwarmApp
+    app = SwarmApp(source=lambda: design_swarm(NINE["data"]), live_refresh=False, clock=lambda: 0.0,
+                   focus_pane="w1:p3", home_mode=True, cockpit_mode=True)
+    app.my_pane = "w1:p9"
+    seen = []
+    monkeypatch.setattr(app, "call_from_thread", lambda fn, *a: (seen.append(a), fn(*a)))
+    monkeypatch.setattr(app, "focus_event", lambda: None)
+    monkeypatch.setattr(app, "repaint", lambda: None)
+    monkeypatch.setattr(herdr, "snapshot", lambda: {"focused_pane_id": "w1:p3"})  # the agent has it
+    monkeypatch.setattr(herdr, "events", lambda kinds, stop: iter([{"type": "_connected"}]))
+    assert app.pane_focused  # the initial guess
+    app._watch_focus()
+    assert seen == [("w1:p3",)] and not app.pane_focused
+
+
+async def test_a_new_pane_id_after_a_dock_is_judged_again(fake_herdr):
+    """Review of #25: a dock across workspaces gives panorama a new pane id; herdr's focus event
+    for it arrives before the app knows the id. When the id changes, the last event counts."""
+    from herdr_panorama.tui import SwarmApp
+    app = SwarmApp(source=lambda: design_swarm(NINE["data"]), live_refresh=False, clock=lambda: 0.0,
+                   focus_pane="w1:p3", home_mode=True, cockpit_mode=True)
+    focused, unfocused = theme.FIXED
+    async with app.run_test(size=(46, 45)) as pilot:
+        for _ in range(50):
+            await pilot.pause(0.02)
+            if app.loaded:
+                break
+        bg = lambda: app.grid.screen_data.c[30][20].bg  # noqa: E731
+        app.my_pane = "w5:p1"
+        app.herdr_focus("w7:p2")  # the new id, before the dock worker returned it
+        await pilot.pause()
+        assert not app.pane_focused and bg() == unfocused
+        app.my_pane = "w7:p2"  # the dock worker's result
+        app._docked(None)
+        await pilot.pause()
+        assert app.pane_focused and bg() == focused
+        app.my_pane = "w8:p3"
+        app._followed("w8:p3", "docked")  # a follow that changed the id: judged again too
+        await pilot.pause()
+        assert not app.pane_focused

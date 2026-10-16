@@ -261,6 +261,7 @@ class SwarmApp(App):
         self.collector.self_pane = self.my_pane
         self.docking = False  # one dock at a time
         self.pane_focused = True  # panorama's pane has the keyboard (the terminal's focus in/out)
+        self.herdr_focused_pane: str | None = None  # the pane herdr last reported focused
         self.dock_hold_until = 0.0  # keep the docked panel until herdr has settled the split
         self.docked_hint: tuple[str, float] | None = None  # (agent pane, when) set by a dock
         self.following = False  # one follow at a time
@@ -468,12 +469,20 @@ class SwarmApp(App):
         """herdr says ``pane_id`` got the focus: panorama's panel is focused exactly when that is
         its own pane. The terminal's focus reports (``on_app_focus``) did not always arrive, e.g.
         for the open key's pane.focus (the operator's report), so herdr's own event counts too."""
-        if not self.my_pane:
+        self.herdr_focused_pane = pane_id  # kept: panorama's own id can change after this (a dock)
+        if not self.my_pane or not pane_id:
             return
         focused = pane_id == self.my_pane
         if focused != self.pane_focused:
             self.pane_focused = focused
             self.repaint()
+
+    def _refocus(self) -> None:
+        """Panorama's pane id just changed (a dock or follow across workspaces gives it a new
+        one): herdr's focus events for the new id may have arrived while the old id was still
+        current, and none follows. Judge the last one again against the new id."""
+        if self.herdr_focused_pane:
+            self.herdr_focus(self.herdr_focused_pane)
 
     def on_app_focus(self, event) -> None:
         """The terminal reports focus in (herdr passes it to the focused pane): the panel's
@@ -751,6 +760,15 @@ class SwarmApp(App):
         for ev in herdr.events(["tab.focused", "pane.focused"], stop=lambda: self._stopping):
             if ev.get("type") in ("_connected", "_disconnected"):
                 self.focus_log.live = ev["type"] == "_connected"
+                if self.focus_log.live:
+                    # where the keyboard is now: terminals report focus only on change, so a
+                    # panorama started without it (the startup hook) would otherwise look focused
+                    focused = (herdr.snapshot() or {}).get("focused_pane_id")
+                    if focused:
+                        try:
+                            self.call_from_thread(self.herdr_focus, focused)
+                        except Exception:  # noqa: BLE001 - the app is closing
+                            return
                 continue
             if ev.get("type") in ("tab_focused", "pane_focused"):
                 self.focus_log.record(ev)
@@ -796,6 +814,7 @@ class SwarmApp(App):
             self.my_pane = mine
             self.collector.self_pane = mine
             self.fit_total = None
+            self._refocus()
             if self.live_refresh:
                 self.refresh_model()
         elif why not in QUIET_FOLLOW:
@@ -877,6 +896,7 @@ class SwarmApp(App):
     def _docked(self, err: str | None) -> None:
         self.docking = False
         self.fit_total = None
+        self._refocus()  # the dock may have given panorama a new pane id
         if err:
             self.notify(herdr.clean(err, 300), title="cockpit", severity="warning", timeout=8)
 

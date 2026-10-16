@@ -1253,7 +1253,10 @@ tile in its off phase.
   panorama's pane has the keyboard. Two sources, the latest wins: Textual's app focus / blur
   (the terminal's focus reports, which herdr passes to the focused pane), and herdr's own
   `pane_focused` events (panorama's pane focused, or another one). The terminal report did
-  not always arrive, e.g. for the open key's `pane.focus` (the operator's report). Purely
+  not always arrive, e.g. for the open key's `pane.focus` (the operator's report). When the
+  event stream connects, herdr's snapshot sets the start state (a panorama the startup hook
+  opened without the keyboard looks unfocused), and when a dock or follow gives panorama a new
+  pane id, the last reported focus is judged again against it. Purely
   visual: nothing else depends on it.
   - **`panel_colors = "fixed"`** (the default; the operator tuned these live): `#14161b`
     focused, `#101215` (panorama's original background) not; panorama's own text colours.
