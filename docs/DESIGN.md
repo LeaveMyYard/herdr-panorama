@@ -869,6 +869,8 @@ an inbox question; otherwise `g`), `i` inbox, `f` cycle filter, `?` help,
 - pane `panorama`: `placement = "popup"`, `width = "100%"`, `height = "100%"`
   (the design's full-screen overlay; popups are session-modal and leave the
   layout untouched);
+- pane `new-agent`: `placement = "popup"`, 84×26 cells, the `+ New agent` form
+  alone for panes too narrow for it;
 - action `open` (popup) and action `open-split` (`herdr plugin pane open
   --placement split --direction right`, the design's 70-column side split);
 - `[[build]]` `uv sync --frozen --no-dev`.
@@ -942,6 +944,15 @@ label, and the form uses the same palette. `◆ panorama` is the herdr tab label
   - a working directory (default: the selected orchestrator's cwd, read once
     when the form opens; it must exist);
   - an optional first prompt.
+
+  The form is 76 columns wide. In a pane narrower than 80 columns (the docked
+  panel's 46) it opens as its own herdr popup over everything instead, the
+  plugin's `new-agent` entrypoint (`panorama new-agent`, 84×26 cells), with the
+  directory passed in `PANORAMA_NEW_AGENT_CWD`. It is the same form, with the
+  same arming, validation and agent creation, and the popup closes with it.
+  This fixes the operator's report that the form was cut in the side panel. If
+  the popup can't open, the form opens in the pane as before. The full view
+  keeps the form in place, where it fits.
 
   While the form is open, the view's own keys are inert behind it. Submit is
   armed 0.4 s after the form appears, and Enter on the last field or ctrl+s

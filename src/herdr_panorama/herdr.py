@@ -178,6 +178,22 @@ def _socket_call(method: str, params: dict, timeout: float = TIMEOUT) -> tuple[d
     return reply.get("result") or {}, None
 
 
+NEW_AGENT_POPUP = (84, 26)  # the popup's outer size in cells (the form is 76 wide)
+
+
+def open_new_agent(cwd: str) -> str | None:
+    """The + New agent form in its own herdr popup (the plugin's ``new-agent`` entrypoint), with
+    ``cwd`` as its default directory. An error or None."""
+    plugin_id = os.environ.get("HERDR_PLUGIN_ID", PLUGIN_ID)
+    params = {"plugin_id": plugin_id, "entrypoint": "new-agent", "placement": "popup", "focus": True,
+              "width": NEW_AGENT_POPUP[0], "height": NEW_AGENT_POPUP[1],
+              "env": {"PANORAMA_NEW_AGENT_CWD": cwd}}
+    root = os.environ.get("HERDR_PLUGIN_ROOT")
+    if root:
+        params["cwd"] = root
+    return socket_call("plugin.pane.open", params)[1]
+
+
 def open_tab_pane(focus: bool) -> tuple[dict | None, str | None]:
     """Open the plugin's ``panorama`` entrypoint as its own tab; returns the PaneInfo."""
     plugin_id = os.environ.get("HERDR_PLUGIN_ID", PLUGIN_ID)

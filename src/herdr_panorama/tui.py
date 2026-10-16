@@ -1156,7 +1156,16 @@ class SwarmApp(App):
         once when the form opens; nothing a refresh does changes the open form."""
         o = render.find_orch(self.swarm, self.view.orch)
         cwd = (o.cwd if o and o.cwd else None) or next((x.cwd for x in self.swarm.orchestrators if x.cwd), None)
-        self.push_screen(NewAgentForm(cwd or os.path.expanduser("~")), self._new_agent_done)
+        cwd = cwd or os.path.expanduser("~")
+        width = self.grid.size.width if hasattr(self, "grid") else 0
+        if self.home_mode and 0 < width < NEW_AGENT_MIN_WIDTH:
+            # too narrow for the form (the docked panel's 46 columns): its own herdr popup,
+            # over everything; the in-pane form where it fits
+            err = herdr.open_new_agent(cwd)
+            if not err:
+                return
+            self.log.warning(f"new agent popup: {err}")  # fall back to the form in this pane
+        self.push_screen(NewAgentForm(cwd), self._new_agent_done)
 
     def _new_agent_done(self, name: str | None) -> None:
         if not name:
@@ -1185,6 +1194,24 @@ class SwarmApp(App):
 
 def live_count(swarm: Swarm) -> int:
     return sum(1 for o in swarm.orchestrators for a in o.agents() if live(a.status))
+
+
+NEW_AGENT_MIN_WIDTH = 80  # the form is 76 columns wide (plus its margin): narrower panes use a popup
+
+
+class NewAgentApp(App):
+    """``panorama new-agent``: the + New agent form alone, in its own herdr popup (opened from
+    a pane too narrow for it). The same form, arming, validation and agent creation; the popup
+    closes when the form is done or cancelled."""
+
+    CSS = "Screen { background: #101215; }"
+
+    def __init__(self, cwd: str | None = None):
+        super().__init__()
+        self.cwd = cwd or os.environ.get("PANORAMA_NEW_AGENT_CWD") or os.path.expanduser("~")
+
+    def on_mount(self) -> None:
+        self.push_screen(NewAgentForm(self.cwd), lambda name: self.exit())
 
 
 class NewAgentForm(ModalScreen):

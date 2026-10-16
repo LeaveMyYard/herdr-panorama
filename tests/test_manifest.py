@@ -18,6 +18,9 @@ def test_plugin_manifest():
     assert m["startup"][0]["command"][-2:] == ["home", "--startup"]
     assert actions["open-split"]["command"][-2:] == ["open", "--split"]
     assert m["build"][0]["command"] == ["uv", "sync", "--frozen", "--no-dev"]
+    form = next(p for p in m["panes"] if p["id"] == "new-agent")  # + New agent as its own popup
+    assert form["placement"] == "popup" and "panorama new-agent" in " ".join(form["command"])
+    assert isinstance(form["width"], int) and form["width"] >= 80 and form["height"] >= 24
 
 
 def test_cli_entry_point():
