@@ -195,7 +195,7 @@ def test_the_crop_patch_falls_back_to_textual_on_anything_unexpected():
     from rich.console import Console
 
     class Odd:  # a changed internal layout: no chops/chop_ends
-        spans = [(0, 1, 2)]
+        spans = ((0, 1, 2),)
 
     calls = []
     orig = tui._textual_render_segments
