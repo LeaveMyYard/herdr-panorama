@@ -2,6 +2,7 @@
 batch and its focus restore, the operator's tab only afterwards, ownership, closed stays
 closed, duplicates, orphans, the open key, the viewers' switching and + New agent."""
 
+import time
 from types import SimpleNamespace
 
 import pytest
@@ -171,6 +172,9 @@ def test_a_panel_the_operator_closed_stays_closed_until_the_open_key(world, tmp_
     sw = orch("w1:p2")
     m.reconcile(world.snapshot(), sw, start=True)
     panel = world.order("w1:t2")[0]
+    m.verified = lambda: {panel}
+    m.reconcile(world.snapshot(), sw)  # its viewer connected
+    m.verified = lambda: set()
     world.tabs["w1:t2"] = [agent("w1:p2")]  # the operator closed it
     world.focus = ("w1:t2", "w1:p2")
     world.calls.clear()
@@ -346,3 +350,132 @@ def test_new_agent_builds_its_tab_with_the_panel_on_the_left(monkeypatch):
     assert first["command"] == herdr.PANEL_COMMAND and first["env"]["HERDR_PLUGIN_ROOT"] == "/plugins/panorama"
     assert second == {"type": "pane"}
     assert calls[1:] == [("fit", "w1:p90"), ("start", "w1:p91"), ("tab", "w1:t9"), ("pane", "w1:p91")]
+
+
+# -- the review of #34 ------------------------------------------------------------------------
+
+def test_a_viewer_exits_on_the_cores_shutdown(paths):
+    """Medium: on quit or per-tab off the core tells its viewers to go; a viewer that exits
+    closes its pane in herdr (plugin pane or layout.apply pane alike, checked on herdr 0.9.3)."""
+    from herdr_panorama.panel import PanelClient
+    sock, lock = paths
+    c = core.Core.start(sock, lock)
+    gone = []
+    cl = PanelClient(sock, "w1:p9", "w1:t3", lambda st: None, lambda on: None, on_shutdown=lambda: gone.append(1)).start()
+    for _ in range(100):
+        if c.connected():
+            break
+        time.sleep(0.03)
+    c.shutdown()
+    for _ in range(100):
+        if gone:
+            break
+        time.sleep(0.03)
+    assert gone == [1]
+    cl.stop()
+    c.stop()
+
+
+async def test_a_viewer_without_a_core_for_long_exits(paths, monkeypatch):
+    """Medium: no core for NO_CORE_SECONDS (the design's 10 minutes): the viewer closes itself,
+    so a crashed core never leaves panels behind for good."""
+    from herdr_panorama import panel
+    monkeypatch.setattr(panel, "NO_CORE_SECONDS", 0.3)
+    monkeypatch.setattr(panel, "NO_CORE_CHECK", 0.05)
+    app = panel.PanelApp(sock_path=paths[0], pane_id="w1:p9", tab_id="w1:t3", start_client=False)
+    async with app.run_test(size=(46, 45)) as pilot:
+        for _ in range(40):
+            await pilot.pause(0.05)
+            if not app.is_running:
+                break
+        assert not app.is_running
+
+
+async def test_a_connected_viewer_does_not_time_out(paths, monkeypatch):
+    from herdr_panorama import panel
+    monkeypatch.setattr(panel, "NO_CORE_SECONDS", 0.3)
+    monkeypatch.setattr(panel, "NO_CORE_CHECK", 0.05)
+    app = panel.PanelApp(sock_path=paths[0], pane_id="w1:p9", tab_id="w1:t3", start_client=False)
+    async with app.run_test(size=(46, 45)) as pilot:
+        app._status(True)
+        await pilot.pause(0.6)
+        assert app.is_running
+
+
+def test_viewers_start_from_the_venv_not_uv_run():
+    """Low: a panel's process is the venv's own entry point (uv run adds a ~31 MB parent per
+    panel); uv run only when there is no venv."""
+    cmd = herdr.PANEL_COMMAND[-1]
+    assert cmd.index('.venv/bin/panorama" panel') < cmd.index("uv run")
+    assert cmd.startswith('R="${HERDR_PLUGIN_ROOT:-.}"; [ -x "$R/.venv/bin/panorama" ] && exec ')
+
+
+def test_a_panel_that_dies_before_its_viewer_connected_is_a_crash_not_a_close(world, tmp_path):
+    """Low: a viewer that never said a verified hello (a broken environment) is not the
+    operator closing it: no closed mark; it is made again, at most CRASH_LIMIT times."""
+    m = manager(world, tmp_path)
+    sw = orch("w1:p2")
+    m.reconcile(world.snapshot(), sw, start=True)
+    world.focus = ("w1:t2", "w1:p2")
+    for _ in range(panels.CRASH_LIMIT + 2):
+        panel = world.order("w1:t2")[0]
+        if world.argv.get(panel) != "panel":
+            break
+        world.tabs["w1:t2"] = [agent("w1:p2")]  # it died
+        m.reconcile(world.snapshot(), sw)
+    assert m.closed == set()
+    opens = [c for c in world.calls if c == ("open", "w1:p2")]
+    assert len(opens) == panels.CRASH_LIMIT  # the first one and the re-makes, then it gives up
+    assert "w1:t2" in m.broken
+
+
+def test_a_panel_whose_viewer_connected_then_vanished_was_closed_by_the_operator(world, tmp_path):
+    m = manager(world, tmp_path)
+    sw = orch("w1:p2")
+    m.reconcile(world.snapshot(), sw, start=True)
+    panel = world.order("w1:t2")[0]
+    m.verified = lambda: {panel}
+    m.reconcile(world.snapshot(), sw)  # its viewer is connected
+    world.tabs["w1:t2"] = [agent("w1:p2")]
+    m.reconcile(world.snapshot(), sw)
+    assert m.closed == {"w1:t2"}
+
+
+def test_a_crash_marker_wins_over_a_connected_viewer(world, tmp_path, monkeypatch):
+    monkeypatch.setenv("HERDR_PLUGIN_STATE_DIR", str(tmp_path / "state"))
+    from herdr_panorama import panel as viewer
+    m = manager(world, tmp_path)
+    sw = orch("w1:p2")
+    m.reconcile(world.snapshot(), sw, start=True)
+    p = world.order("w1:t2")[0]
+    m.verified = lambda: {p}
+    m.reconcile(world.snapshot(), sw)
+    viewer.mark_crash(p)  # the viewer died of an exception after connecting
+    world.tabs["w1:t2"] = [agent("w1:p2")]
+    m.reconcile(world.snapshot(), sw)
+    assert m.closed == set() and not viewer.crash_marker(p).exists()
+
+
+def test_the_restore_skips_only_the_batchs_own_events_in_order(world, tmp_path):
+    """Low: the operator going to a tab the batch also touched is still their own move: after
+    the batch they are left there, not pulled back."""
+    def operator_moves(w):
+        if len([c for c in w.calls if c[0] == "swap"]) == 2:  # after t3's swap: back to t2, by hand
+            w.log.record({"type": "tab_focused", "tab_id": "w1:t2"})
+            w.log.record({"type": "pane_focused", "pane_id": "w1:p2"})
+    world.on_swap = operator_moves
+    m = manager(world, tmp_path)
+    m.reconcile(world.snapshot(), orch("w1:p2", "w1:p3", "w1:p4"), start=True)
+    assert not any(c[0] in ("focus_tab", "focus_pane") for c in world.calls)
+
+
+def test_a_known_panel_is_not_asked_about_on_every_pass(world, tmp_path, monkeypatch):
+    """Low: a positive process-info answer is cached too (PANEL_SECONDS)."""
+    world.tabs["w1:t2"].insert(0, {"pane_id": "w1:p50"})
+    world.argv["w1:p50"] = "panel"
+    asked = []
+    monkeypatch.setattr(herdr, "runs_panorama", lambda pane, cmd="tui", pid=None: asked.append(pane) or world.argv.get(pane) == cmd)
+    m = manager(world, tmp_path)
+    for _ in range(3):
+        m.reconcile(world.snapshot(), orch("w1:p2"), start=not m.started)
+    assert asked.count("w1:p50") == 1

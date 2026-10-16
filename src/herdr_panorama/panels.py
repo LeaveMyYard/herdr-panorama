@@ -44,6 +44,8 @@ log = logging.getLogger("herdr_panorama.panels")
 REMOVE_AFTER = 30.0  # a tab without an orchestrator this long loses its panel
 CREATING_SECONDS = 15.0  # a create in flight: herdr's snapshot may not show the pane yet
 NOT_PANEL_SECONDS = 30.0  # how long a "not a panel" answer for a pane is believed
+PANEL_SECONDS = 30.0  # how long a "runs our viewer" answer is believed (a pane never becomes another)
+CRASH_LIMIT = 3  # panels of one tab that died on their own before the manager stops making them
 LOCK_SECONDS = 2.0
 
 
@@ -57,6 +59,35 @@ class Survey:
     focused_tab: str | None = None
     focused_pane: str | None = None
     home_tab: str | None = None
+
+
+def _operator_moved(events: list[dict], expected: list[tuple[str, str]]) -> str | None:
+    """The first focus event that is not the batch's own: the batch's swaps cause ``expected``
+    in order (herdr may leave one out, e.g. no tab event when that tab is already shown); an
+    event that is not the next of them, or a later one, is the operator's."""
+    i = 0
+    for ev in events:
+        key = (ev.get("type"), ev.get("pane_id") if ev.get("type") == "pane_focused" else ev.get("tab_id"))
+        if key[0] not in ("tab_focused", "pane_focused") or not key[1]:
+            continue
+        j = next((k for k in range(i, len(expected)) if expected[k] == key), None)
+        if j is None:
+            return key[1]
+        i = j + 1
+    return None
+
+
+def _crashed(pane_id: str) -> bool:
+    """The viewer left a crash marker (panel.mark_crash); it is used up here."""
+    from .panel import crash_marker
+    path = crash_marker(pane_id)
+    try:
+        path.unlink()
+        return True
+    except FileNotFoundError:
+        return False
+    except OSError:
+        return True
 
 
 class Manager:
@@ -76,6 +107,10 @@ class Manager:
         self.orphaned: dict[str, float] = {}  # tab -> since when it has no orchestrator
         self.closed: set[str] = self._load_closed()
         self._not_panel: dict[str, float] = {}  # pane -> until when "not a panel" is believed
+        self._panel: dict[str, float] = {}  # pane -> until when "a panel" is believed
+        self.connected_once: set[str] = set()  # our panels whose viewer said a verified hello
+        self.crashes: dict[str, int] = {}  # tab -> panels that died on their own
+        self.broken: set[str] = set()  # tabs given up on (CRASH_LIMIT), for this core's life
         self._mu = threading.Lock()
         self.started = False  # the start batch ran
         # around the start batch: a no-op now; the slot for something that holds the keyboard
@@ -110,9 +145,13 @@ class Manager:
             return True
         if self._not_panel.get(pane_id, 0.0) > self.clock():
             return False
+        if self._panel.get(pane_id, 0.0) > self.clock():
+            return True
         runs = herdr.runs_panorama(pane_id, "panel")
         if runs is False:
             self._not_panel[pane_id] = self.clock() + NOT_PANEL_SECONDS
+        elif runs:
+            self._panel[pane_id] = self.clock() + PANEL_SECONDS
         return runs
 
     def survey(self, snap: dict, swarm) -> Survey:
@@ -200,23 +239,23 @@ class Manager:
         a focus event that is not one of the batch's own shows they went elsewhere."""
         t0 = time.monotonic()
         where = (sv.focused_tab, sv.focused_pane)
-        own: set[str] = set()
+        expected: list[tuple[str, str]] = []  # the focus events the batch's own swaps cause, in order
         made = []
         with self.guard():
             for tab, agent in missing:
                 panel = self.place(tab, agent, lazy=False)
-                own |= {tab, agent["pane_id"]}
                 if panel:
-                    own.add(panel)
                     made.append(panel)
+                    expected += [("tab_focused", tab), ("pane_focused", agent["pane_id"])]
         if not made or not where[0]:
             return made
         if self.focus_log is not None and self.focus_log.live:
-            for ev in self.focus_log.since(t0):
-                ident = ev.get("pane_id") if ev.get("type") == "pane_focused" else ev.get("tab_id")
-                if ident and ident not in own and ident not in where:
-                    log.info("panel batch: the operator went to %s; left there", ident)
-                    return made
+            last = expected[-1]
+            self.focus_log.wait_for(t0, lambda d: (d.get("type"), d.get("pane_id")) == last, cockpit.SYNC_SECONDS)
+            moved = _operator_moved(self.focus_log.since(t0), expected)
+            if moved:
+                log.info("panel batch: the operator went to %s; left there", moved)
+                return made
         err = herdr.focus_tab(where[0])
         if not err and where[1]:
             err = herdr.focus_pane(where[1])
@@ -244,20 +283,36 @@ class Manager:
         now = self.clock()
         sv = self.survey(snap, swarm)
         present = {p.get("pane_id") for p in snap.get("panes") or [] if isinstance(p, dict)}
+        live = self.verified()
+        for tab, ps in sv.panels.items():  # adopted: a verified viewer's panel (after a core restart)
+            for p in ps:
+                if p in live:
+                    self.created.setdefault(p, tab)
+        self.connected_once |= live & set(self.created)
         for panel, tab in list(self.created.items()):
             if panel in present:
                 continue
             del self.created[panel]
-            if tab in sv.targets:  # gone while its orchestrator is still there: the operator closed it
-                self.closed.add(tab)
-                self._save_closed()
+            self.creating.pop(tab, None)  # that create is over
+            if tab not in sv.targets:
+                continue
+            # gone while its orchestrator is still there: the operator closed it, unless its viewer
+            # died on its own (never connected, e.g. a broken environment, or left a crash marker)
+            if panel not in self.connected_once or _crashed(panel):
+                n = self.crashes[tab] = self.crashes.get(tab, 0) + 1
+                log.warning("the panel in %s died on its own (%d of %d)%s", tab, n, CRASH_LIMIT,
+                            "; no more panels there" if n >= CRASH_LIMIT else "")
+                if n >= CRASH_LIMIT:
+                    self.broken.add(tab)
+                continue
+            self.closed.add(tab)
+            self._save_closed()
         if self.closed - sv.tabs:  # tabs that no longer exist
             self.closed &= sv.tabs
             self._save_closed()
         self.creating = {t: until for t, until in self.creating.items() if until > now and t not in sv.panels}
         self.right &= set(sv.panels)
         # duplicates: keep one (a connected one first), close the provable rest
-        live = self.verified()
         for tab, ps in sv.panels.items():
             if len(ps) > 1:
                 keep = next((p for p in ps if p in live), ps[0])
@@ -284,7 +339,7 @@ class Manager:
         # placing
         missing = [(tab, agent) for tab, agent in sv.targets.items()
                    if tab not in sv.panels and tab not in sv.unknown and tab not in self.closed
-                   and tab not in self.creating]
+                   and tab not in self.creating and tab not in self.broken]
         if start:
             self.started = True
             for panel in self.batch(missing, sv):

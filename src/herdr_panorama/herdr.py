@@ -224,7 +224,10 @@ def open_tab_pane(focus: bool) -> tuple[dict | None, str | None]:
 
 # The per-tab panel's command, as in the manifest's ``panel`` pane (a test keeps them equal):
 # ``layout.apply`` panes are not plugin panes, so a + New agent tab's panel is started with it.
-PANEL_COMMAND = ["sh", "-c", 'exec uv run --quiet --frozen --no-dev --project "${HERDR_PLUGIN_ROOT:-.}" panorama panel']
+# The venv's own entry point (the plugin's build ran `uv sync`): `uv run` would keep a ~31 MB
+# uv parent alive beside every panel. `uv run` only when there is no venv.
+PANEL_COMMAND = ["sh", "-c", 'R="${HERDR_PLUGIN_ROOT:-.}"; [ -x "$R/.venv/bin/panorama" ] && exec "$R/.venv/bin/panorama" panel; '
+                 'exec uv run --quiet --frozen --no-dev --project "$R" panorama panel']
 PLUGIN_ENV = ("HERDR_PLUGIN_ID", "HERDR_PLUGIN_ROOT", "HERDR_PLUGIN_STATE_DIR", "HERDR_PLUGIN_CONFIG_DIR")
 
 

@@ -400,6 +400,8 @@ class SwarmApp(App):
             m = self.panels
             if not cockpit.per_tab():  # switched off while running: the panels go, once
                 if m.started:
+                    if self.core is not None:
+                        self.core.shutdown()  # the viewers exit; their panes close with them
                     m.remove_all()
                     m.started = False
                     self._to_ui(self._panels_now, {})
@@ -1061,6 +1063,8 @@ class SwarmApp(App):
         in ``home.ensure``)."""
         if self.panels is not None:
             try:  # quitting panorama: its per-tab panels go with it (they come back with it)
+                if self.core is not None:
+                    self.core.shutdown()  # every viewer exits, layout.apply-built ones too
                 self.panels.remove_all()
             except Exception as exc:  # noqa: BLE001 - quitting must always work
                 self.log.warning(f"could not close the panels: {exc}")

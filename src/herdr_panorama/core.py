@@ -80,6 +80,7 @@ class Viewer:
         self.tab_id: str | None = None
         self.hello = False
         self.role = "panel"  # "key": the open key's one request, no state
+        self.told_to_go = False  # shutdown queued: nothing after it may push it out of the outbox
         self.closed = threading.Event()
 
     def send(self, line: bytes) -> None:
@@ -222,9 +223,24 @@ class Core:
         if "state" in msg:
             self._last = line
         with self._mu:
-            viewers = [v for v in self.viewers if v.hello and v.role == "panel" and not v.closed.is_set()]
+            viewers = [v for v in self.viewers if v.hello and v.role == "panel" and not v.told_to_go
+                       and not v.closed.is_set()]
         for v in viewers:
             v.send(line)
+
+    def shutdown(self, wait: float = 1.0) -> None:
+        """The panels go (quit, per-tab off): every viewer is told and exits. Queued like any
+        message (one writer per socket, so lines never interleave); waits up to ``wait``
+        seconds for the writers to take it, so it is said before the core stops."""
+        line = protocol.encode({"shutdown": {}})
+        viewers = [v for v in self.connected() if v.role == "panel"]
+        for v in viewers:
+            v.told_to_go = True
+            v.send(line)
+        end = time.monotonic() + wait
+        while time.monotonic() < end and any(not v.outbox.empty() and not v.closed.is_set() for v in viewers):
+            time.sleep(0.01)
+        time.sleep(0.05)  # the last sendall
 
     def connected(self) -> list[Viewer]:
         with self._mu:

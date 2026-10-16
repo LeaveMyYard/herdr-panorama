@@ -1566,7 +1566,7 @@ It is the natural first Rust component: small, render-only, its own input handli
 - **The core goes away.** A viewer keeps its last picture, dimmed, with the one-line notice
   `panorama is restarting…` (the operator, Q139). It disables everything that depends on state (switch,
   answer, New agent) and reconnects with backoff.
-- **No core for a long time** (proposed: 10 minutes). The viewer closes its own pane, which is
+- **No core for a long time** (10 minutes, built: `panel.NO_CORE_SECONDS`). The viewer closes its own pane, which is
   a plugin pane and so may close itself, so no orphans are left if the core never returns.
 - **A core restarts.** It adopts the existing panels (found and verified as above) and never
   makes a second one in a tab.
@@ -1610,8 +1610,10 @@ has proven itself (the operator, Q140).
   another tab, any key they type (even Enter) goes to that tab's agent. herdr 0.9.3 has no way
   to hold or route input: `pane.input.set` only sets right-click behaviour. So:
   - the batch runs only when the core starts;
-  - the restore guard skips the batch's own focus events (the tabs, agents and panels it
-    touched). Any other focus event means the operator moved, and they are left there;
+  - the restore guard skips the batch's own focus events: for each swap, its tab's
+    `tab_focused` and then its agent's `pane_focused`, matched in order. herdr may leave one
+    out, and the guard waits up to 0.3 s for the last one. Any other event, including a move
+    to a tab the batch also touched, means the operator moved, and they are left there;
   - `Manager.guard` wraps the batch and is a no-op today. It is the slot for something that
     holds the keyboard during the batch (Q153).
 - **Later tabs.** A tab that becomes an orchestrator tab after the start gets its panel only
@@ -1625,10 +1627,27 @@ has proven itself (the operator, Q140).
     foreground. Such a pane is never doubled.
   - The manager closes only panels it opened itself, or whose viewer said a verified hello
     (its pid, from the socket, running `panorama panel` in the claimed pane).
+  - A `process-info` answer is cached for 30 s either way, so a pass doesn't ask about every
+    panel again.
   - A tab with a pane herdr could not check gets no panel that pass.
 - **Closed stays closed.** A panel of ours that disappears while its tab still has its
-  orchestrator was closed by the operator. Its tab is recorded in
-  `panels-<session>.json` in the state dir, so a restarted core remembers it.
+  orchestrator, after its viewer had connected, was closed by the operator. Its tab is
+  recorded in `panels-<session>.json` in the state dir, so a restarted core remembers it.
+- **A crash is not a close.** A panel that disappears before its viewer ever connected (for
+  example a broken environment) died on its own, and so did a viewer that left a crash marker
+  (`panel-crash-<pane>` in the state dir, written when the viewer exits with an error). Either
+  is logged as a warning and made again. After 3 such deaths in one tab, the manager stops
+  making panels there for the rest of the core's life and says so in the log.
+- **No panel is left behind.**
+  - **Quitting or switching off:** on quit, and when per-tab is turned off, the core sends
+    `shutdown`. Every viewer exits, and herdr closes a pane whose command exits. That was
+    checked for plugin panes and for `layout.apply` panes alike: the `+ New agent` panels
+    are not plugin panes, and `plugin pane close` refuses them.
+  - **Crashed core:** a viewer that has had no core for 10 minutes exits too.
+- **Viewers start from the venv.** The plugin build ran `uv sync`, so a panel runs
+  `.venv/bin/panorama panel` and falls back to `uv run` only when there is no venv. Measured
+  on the isolated herdr: one process of about 41 MB RSS per panel, with no ~31 MB `uv`
+  parent.
 - **Open key.** In per-tab mode the open key asks the core over its socket (`role: "key"`,
   `{"open": {}}`, answered with `{"opened": {"result": …}}`):
   - a panel in the operator's tab: it is focused;
@@ -1651,7 +1670,9 @@ has proven itself (the operator, Q140).
     one;
   - an arrow in a panel switched to the next tab's panel;
   - a killed core left the panels showing `panorama is restarting…`. The restarted core
-    adopted them with no duplicates, and its quit closed all of them, adopted ones included.
+    adopted them with no duplicates, and its quit closed all of them, adopted ones included;
+  - after the review: quitting closed a `layout.apply`-built panel too, through `shutdown`,
+    and turning per-tab off closed every panel.
 - **The blink measurement.** Switching between two tabs that both have panels
   (`tab.focus` + `pane.focus`) took 6 of 6 switches straight to the target in one frame,
   7.5–10 ms after the call. There was no in-between frame, and the split stayed at the same

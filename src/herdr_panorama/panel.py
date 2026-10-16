@@ -24,16 +24,38 @@ log = logging.getLogger("herdr_panorama.panel")
 NOTICE = "panorama is restarting…"  # the operator's wording (Q139)
 DIM = 0.5  # how far a disconnected panel's colours go toward the background
 BACKOFF = (0.25, 0.5, 1.0, 2.0, 5.0)  # reconnect waits, the last one repeats
+NO_CORE_SECONDS = 600.0  # no core this long: the viewer exits, and herdr closes its pane
+NO_CORE_CHECK = 10.0  # how often that is looked at
+
+
+def crash_marker(pane_id: str):
+    """Left by a viewer that died of an error, so the core does not take its vanished pane for
+    the operator closing it."""
+    from . import home
+    return home.state_dir() / f"panel-crash-{pane_id}"
+
+
+def mark_crash(pane_id: str | None) -> None:
+    if not pane_id:
+        return
+    try:
+        crash_marker(pane_id).parent.mkdir(parents=True, exist_ok=True)
+        crash_marker(pane_id).write_text(str(time.time()))
+    except OSError:
+        pass
 
 
 class PanelClient:
-    """The viewer's side of the socket, on a thread. ``on_state(state)`` and
-    ``on_status(connected: bool)`` are called from that thread."""
+    """The viewer's side of the socket, on a thread. ``on_state(state)``, ``on_status(connected:
+    bool)`` and ``on_shutdown()`` (the core says panels go: quit, per-tab off) are called from
+    that thread."""
 
-    def __init__(self, sock_path, pane_id: str | None, tab_id: str | None, on_state, on_status):
+    def __init__(self, sock_path, pane_id: str | None, tab_id: str | None, on_state, on_status,
+                 on_shutdown=None):
         self.sock_path = str(sock_path)
         self.pane_id, self.tab_id = pane_id, tab_id
         self.on_state, self.on_status = on_state, on_status
+        self.on_shutdown = on_shutdown or (lambda: None)
         self.connected = False
         self._sock: socket.socket | None = None
         self._pending_seen: list[str] = []
@@ -124,6 +146,10 @@ class PanelClient:
                         self.refused = str(err.get("message") or "refused")
                     elif "state" in msg and welcomed and isinstance(msg["state"], dict):
                         self.on_state(msg["state"])
+                    elif "shutdown" in msg and welcomed:
+                        self._stop.set()
+                        self.on_shutdown()
+                        return welcomed
         except (OSError, protocol.TooLong) as exc:
             log.info("core connection ended: %s", exc)
         finally:
@@ -153,13 +179,25 @@ class PanelApp(SwarmApp):
         self.visible = True
         self.client = PanelClient(sock_path or protocol.socket_path(), self.my_pane, self.my_tab,
                                   on_state=lambda st: self._to_ui(self._got_state, st),
-                                  on_status=lambda on: self._to_ui(self._status, on))
+                                  on_status=lambda on: self._to_ui(self._status, on),
+                                  on_shutdown=lambda: self._to_ui(self.exit))
+        self.no_core_since: float | None = None
         self._start_client = start_client
 
     def on_mount(self) -> None:  # no collect, no follow: the core does those
         self.set_interval(self.colour_seconds(), self.animate)
+        if not self.connected:
+            self.no_core_since = time.monotonic()
+        self.set_interval(NO_CORE_CHECK, self._no_core_check)
         if self._start_client:
             self.client.start()
+
+    def _no_core_check(self) -> None:
+        """No core for NO_CORE_SECONDS (it crashed, or per-tab went off while it was down): go,
+        so no panel is left behind for good; the next core makes them again."""
+        if self.no_core_since is not None and time.monotonic() - self.no_core_since >= NO_CORE_SECONDS:
+            log.info("no core for %ss: closing", NO_CORE_SECONDS)
+            self.exit()
 
     def on_unmount(self) -> None:
         self._stopping = True
@@ -190,6 +228,7 @@ class PanelApp(SwarmApp):
 
     def _status(self, connected: bool) -> None:
         self.connected = connected
+        self.no_core_since = None if connected else (self.no_core_since or time.monotonic())
         self.repaint()
 
     # -- what the panel does ----------------------------------------------------------
@@ -314,5 +353,11 @@ def request_open(sock_path=None, timeout: float = 8.0) -> str | None:
 
 def run() -> int:
     app = PanelApp()
-    app.run()
-    return 0
+    try:
+        app.run()
+    except Exception:
+        mark_crash(app.my_pane)
+        raise
+    if app.return_code:  # Textual caught an error: a crash, not the operator closing the panel
+        mark_crash(app.my_pane)
+    return app.return_code or 0

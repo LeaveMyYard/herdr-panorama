@@ -58,6 +58,9 @@ Any message before `hello` closes the connection.
   (~1.5 s), on focus and tab changes, and right after `welcome`.
 - `{"ping": n}`: every 5 s.
 - `{"opened": {"result": "panel" | "home" | "failed" | "busy"}}` (1.1): the answer to `open`.
+- `{"shutdown": {}}` (1.1): the panels go (the home panorama quits, or per-tab is turned off).
+  The viewer exits, and herdr closes its pane with it. A viewer that has had no core for
+  10 minutes exits as well.
 
 ### `state`
 
