@@ -225,9 +225,10 @@ dock_keep_focus = true # Enter in the docked list keeps the keyboard on panorama
 - Docked, panorama shows the compact list from design 3a with design 9e's coloured tiles:
   per orchestrator its tab number, a state tile, `?N` and one tile per thread; the docked one
   lists its threads (a tile each) with their agents instead.
-- The panel takes its background from herdr's theme (`[theme]` and `[theme.custom]` in
-  herdr's `config.toml`): the theme's `active_row_bg` while panorama has the keyboard, its
-  `panel_bg` (with dimmer secondary text) when it does not.
+- The panel's background shows whether panorama has the keyboard: `#14161b` while it does,
+  `#101215` when not. `panel_bg` / `focus_bg` in panorama's config change them;
+  `panel_colors = "herdr"` takes them from herdr's theme instead (`[theme]` and
+  `[theme.custom]` in herdr's `config.toml`, with `focus_tint`).
 
   <img src="docs/screenshots/dock-app.png" alt="The docked cockpit panel" width="300">
 - `cockpit = false` stops docking at the next Enter, and brings panorama back to its own
@@ -265,6 +266,10 @@ cockpit_width = 46   # the list's width in the cockpit
 cockpit_follow = true # the cockpit follows you to the orchestrator tab you switch to
 cockpit_follow_tabs = "any" # or "single": follow only into one-pane orchestrator tabs
 dock_keep_focus = true # docked list: Enter on another orchestrator keeps the keyboard on panorama
+panel_colors = "fixed" # docked panel background: "fixed" (#14161b focused, #101215 not) or "herdr" (herdr's theme)
+# panel_bg = "#101215"  # the unfocused background, in either mode
+# focus_bg = "#14161b"  # the focused background, in either mode
+focus_tint = 0.15      # "herdr" mode: how far focus moves panel_bg toward the theme's active_row_bg
 machines = "all"     # herdr's saved SSH machines to show: "all", "none" or ["label", ...]
 highlight_unseen = true # pulse what failed, asked or finished since you last looked
 animation_fps = 20   # how smoothly pulses and blinks fade (2..30): lower it on a slow terminal or remote link

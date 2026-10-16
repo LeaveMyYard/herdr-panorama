@@ -1249,13 +1249,23 @@ tile in its off phase.
   Docs Site), the panel matches 9e's render (`tests/fixtures/design_9.json`) cell for cell:
   characters, colours and bold, in eight animation frames, plain and with turn 6's unseen
   marks (`tests/test_tiles.py`). Blank cells are compared by background only.
-- **Focused or not, in herdr's theme** (design turn 10, `docs/design/swarm-focus.js`; the
-  operator approved it as drawn). The panel shows whether panorama's pane has the keyboard,
-  from Textual's app focus / blur (the terminal's focus reports, which herdr passes to the
-  focused pane). Purely visual: nothing else depends on it.
-  - Focused: the theme's `active_row_bg`; text the theme's `text`, dim `subtext0`, faint
-    `overlay1`. Not focused: its `panel_bg`; dim `overlay1`, faint `overlay0` (one step
-    dimmer). The panel's own background changes; the docked entry's and the hover's row
+- **Focused or not** (design turn 10, `docs/design/swarm-focus.js`). The panel shows whether
+  panorama's pane has the keyboard. Two sources, the latest wins: Textual's app focus / blur
+  (the terminal's focus reports, which herdr passes to the focused pane), and herdr's own
+  `pane_focused` events (panorama's pane focused, or another one). The terminal report did
+  not always arrive, e.g. for the open key's `pane.focus` (the operator's report). When the
+  event stream connects, herdr's snapshot sets the start state (a panorama the startup hook
+  opened without the keyboard looks unfocused), and when a dock or follow gives panorama a new
+  pane id, the last reported focus is judged again against it. Purely
+  visual: nothing else depends on it.
+  - **`panel_colors = "fixed"`** (the default; the operator tuned these live): `#14161b`
+    focused, `#101215` (panorama's original background) not; panorama's own text colours.
+  - **`panel_colors = "herdr"`**: herdr's theme. Focused: the unfocused background moved
+    `focus_tint` (default 0.15; the full `active_row_bg` was far too light) of the way toward
+    the theme's `active_row_bg`; text the theme's `text`, dim `subtext0`, faint `overlay1`.
+    Not focused: its `panel_bg`; dim `overlay1`, faint `overlay0` (one step dimmer).
+  - In both, panorama's own `panel_bg` / `focus_bg` (hex, in its config) replace the two
+    backgrounds. The panel's own background changes; the docked entry's and the hover's row
     backgrounds stay, their text follows. Tiles, status colours, pulses and anything
     animated stay as in 9e. The 2a graph is unchanged.
   - The theme is read from herdr's `config.toml` (herdr's API has no theme colours), layered

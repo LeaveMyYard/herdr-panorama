@@ -26,10 +26,14 @@ def grid(runs):
     return [[norm(ch, r[1], r[2], r[3]) for r in row for ch in r[0]] for row in runs]
 
 
-def panel(frame, tokens, focused):
+FB = (render.DOCK_HOV, render.BG)
+HERDR = {"panel_colors": "herdr"}
+
+
+def panel(frame, tokens, focused, cfg):
     v = render.View(orch="w1:p3", dock=True, frame=frame)
     v.hover = ("orch", ("w1:p4",))  # the design's hover
-    v.panel = theme.panel_colors(tokens, focused, render.FG, render.DIM, render.FAINT, (render.DOCK_HOV, render.BG))
+    v.panel = theme.panel_look(tokens, focused, render.FG, render.DIM, render.FAINT, FB, cfg)
     scr = render.render(design_swarm(NINE["data"]), v, 46, 45)
     return [[norm(c.ch, c.fg, c.bg, c.bold) for c in scr.c[y][:46]] for y in range(45)]
 
@@ -40,14 +44,17 @@ CASES = [(f, key, mode) for f in sorted(TEN["frames"], key=int) for key in ("you
 @pytest.mark.parametrize("frame,key,mode", CASES)
 def test_turn_10_matches_the_design_cell_for_cell(frame, key, mode):
     want = grid(TEN["frames"][frame][key + mode])
-    got = panel(int(frame), TEN["themes"][key], mode == "A")
+    # "yours": the fixed default (no config); "tokyo": panel_colors = "herdr" with tokyo-night
+    got = panel(int(frame), theme.THEMES["tokyo-night"] if key == "tokyo" else None, mode == "A",
+                HERDR if key == "tokyo" else {})
     d = [(x, y, want[y][x], got[y][x]) for y in range(45) for x in range(46) if want[y][x] != got[y][x]]
     assert not d, f"{len(d)} cells differ, first: {d[:5]}"
 
 
 def test_the_design_uses_our_theme_table():
     assert TEN["themes"]["tokyo"] == theme.THEMES["tokyo-night"]
-    assert TEN["themes"]["yours"] == {**theme.THEMES["catppuccin"], "active_row_bg": "#414868"}
+    assert TEN["themes"]["yours"] == {"fixed": True, "focus_bg": theme.FIXED[0], "panel_bg": theme.FIXED[1]}
+    assert theme.FIXED == ("#14161b", "#101215")  # the operator's colours
 
 
 def write(tmp_path, monkeypatch, text):
@@ -60,9 +67,32 @@ def write(tmp_path, monkeypatch, text):
     return p
 
 
-def test_the_operators_config_gives_the_designs_colours(tmp_path, monkeypatch):
+def test_herdrs_custom_layer_overrides_the_built_in_theme(tmp_path, monkeypatch):
     write(tmp_path, monkeypatch, '[theme.custom]\nactive_row_bg = "#414868"\n')  # no name: catppuccin
-    assert theme.current() == TEN["themes"]["yours"]
+    assert theme.current() == {**theme.THEMES["catppuccin"], "active_row_bg": "#414868"}
+
+
+def test_fixed_is_the_default_and_panoramas_own_colours_replace_either():
+    assert theme.mode({}) == "fixed" and theme.mode(HERDR) == "herdr"
+    cat = theme.THEMES["catppuccin"]
+    assert theme.panel_colors(cat, True, render.FG, render.DIM, render.FAINT, FB, {}) == ("#14161b", {})
+    assert theme.panel_colors(cat, False, render.FG, render.DIM, render.FAINT, FB, {}) == ("#101215", {})
+    own = {"panel_bg": "#000001", "focus_bg": "#000002"}
+    assert theme.panel_colors(cat, True, render.FG, render.DIM, render.FAINT, FB, own)[0] == "#000002"
+    assert theme.panel_colors(cat, False, render.FG, render.DIM, render.FAINT, FB, own)[0] == "#000001"
+    herdr_own = {**HERDR, **own}  # in the herdr mode too, with the theme's text colours
+    bg, fgs = theme.panel_colors(cat, True, render.FG, render.DIM, render.FAINT, FB, herdr_own)
+    assert bg == "#000002" and fgs[render.FG] == cat["text"]
+    assert theme.own_colors({"panel_bg": "nope"}) == (None, None)  # not a colour: ignored
+
+
+def test_the_herdr_mode_tints_toward_active_row_bg():
+    cat = {**theme.THEMES["catppuccin"], "panel_bg": "#181825", "active_row_bg": "#414868"}
+    focused = lambda cfg: theme.panel_colors(cat, True, render.FG, render.DIM, render.FAINT, FB, cfg)[0]  # noqa: E731
+    assert focused(HERDR) == "#1e1f2f"  # the default 0.15
+    assert focused({**HERDR, "focus_tint": 0.3}) == "#242639"
+    assert focused({**HERDR, "focus_tint": 0}) == "#181825" and focused({**HERDR, "focus_tint": 1}) == "#414868"
+    assert focused({**HERDR, "focus_tint": "x"}) == "#1e1f2f" and focused({**HERDR, "focus_tint": 5}) == "#414868"
 
 
 def test_layers_name_custom_then_dark_with_auto_switch(tmp_path, monkeypatch):
@@ -78,16 +108,16 @@ def test_reset_and_unknown_values(tmp_path, monkeypatch):
     write(tmp_path, monkeypatch, '[theme]\nname = "nope"\n[theme.custom]\npanel_bg = "reset"\ntext = "chartreuse-ish"\n')
     t = theme.current()
     assert t["panel_bg"] is None and t["text"] == theme.THEMES["catppuccin"]["text"]  # unknown: herdr's fallback
-    bg, _ = theme.panel_colors(t, False, render.FG, render.DIM, render.FAINT, (render.DOCK_HOV, render.BG))
+    bg, _ = theme.panel_colors(t, False, render.FG, render.DIM, render.FAINT, FB, HERDR)
     assert bg == render.BG  # reset: panorama's own background
 
 
 def test_the_terminal_theme_keeps_panoramas_colours_with_a_focus_cue(tmp_path, monkeypatch):
     write(tmp_path, monkeypatch, '[theme]\nname = "terminal"\n')
     assert theme.current() is None
-    fb = (render.DOCK_HOV, render.BG)
-    assert theme.panel_colors(None, True, render.FG, render.DIM, render.FAINT, fb) == (render.DOCK_HOV, {})
-    assert theme.panel_colors(None, False, render.FG, render.DIM, render.FAINT, fb) == (render.BG, {})
+    assert theme.panel_colors(None, True, render.FG, render.DIM, render.FAINT, FB, HERDR) == (
+        theme._mix(render.BG, render.DOCK_HOV, theme.DEFAULT_TINT), {})
+    assert theme.panel_colors(None, False, render.FG, render.DIM, render.FAINT, FB, HERDR) == (render.BG, {})
 
 
 def test_a_changed_file_is_read_again(tmp_path, monkeypatch):
@@ -113,20 +143,20 @@ async def test_the_view_follows_the_terminals_focus_in_and_out(fake_herdr):
     from herdr_panorama.tui import SwarmApp
     app = SwarmApp(source=lambda: design_swarm(NINE["data"]), live_refresh=False, clock=lambda: 0.0,
                    focus_pane="w1:p3", home_mode=True, cockpit_mode=True)
-    cat = theme.THEMES["catppuccin"]  # no herdr config: herdr's default theme
+    focused, unfocused = theme.FIXED  # no config: the fixed default
     async with app.run_test(size=(46, 45)) as pilot:
         for _ in range(50):
             await pilot.pause(0.02)
             if app.loaded:
                 break
         bg = lambda: app.grid.screen_data.c[30][20].bg  # noqa: E731 - an empty row of the panel
-        assert app.view.dock and bg() == cat["active_row_bg"]
+        assert app.view.dock and bg() == focused
         app.post_message(events.AppBlur())
         await pilot.pause()
-        assert bg() == cat["panel_bg"]
+        assert bg() == unfocused
         app.post_message(events.AppFocus())
         await pilot.pause()
-        assert bg() == cat["active_row_bg"]
+        assert bg() == focused
     wide = SwarmApp(source=lambda: design_swarm(NINE["data"]), live_refresh=False, clock=lambda: 0.0,
                     focus_pane="w1:p3", home_mode=True, cockpit_mode=True)
     async with wide.run_test(size=(160, 45)) as pilot:
@@ -163,3 +193,97 @@ def test_the_table_is_herdrs_measured_values():
     got = {name: {k: theme.THEMES[name][k] for k in toks} for name, toks in measured.items()}
     assert got == measured
     assert theme.UNVERIFIED == set()  # every token measured
+
+
+async def test_herdrs_focus_events_switch_the_look_too(fake_herdr):
+    """The operator's report: the open key (tab.focus + pane.focus on panorama) focused the panel
+    but it kept the unfocused look; the terminal's focus report did not arrive. herdr's own
+    pane_focused events now count: panorama's pane focused -> focused, another pane -> not."""
+    from herdr_panorama.tui import SwarmApp
+    app = SwarmApp(source=lambda: design_swarm(NINE["data"]), live_refresh=False, clock=lambda: 0.0,
+                   focus_pane="w1:p3", home_mode=True, cockpit_mode=True)
+    focused, unfocused = theme.FIXED
+    async with app.run_test(size=(46, 45)) as pilot:
+        for _ in range(50):
+            await pilot.pause(0.02)
+            if app.loaded:
+                break
+        app.my_pane = "w1:p9"  # panorama's own pane
+        bg = lambda: app.grid.screen_data.c[30][20].bg  # noqa: E731
+        app.herdr_focus("w1:p3")  # the agent got the keyboard
+        await pilot.pause()
+        assert not app.pane_focused and bg() == unfocused
+        app.herdr_focus("w1:p9")  # the open key: herdr focuses panorama's pane
+        await pilot.pause()
+        assert app.pane_focused and bg() == focused
+
+
+async def test_the_focus_watcher_forwards_herdrs_pane_focus(fake_herdr, monkeypatch):
+    """The event stream itself: a pane_focused for panorama's pane reaches herdr_focus."""
+    from herdr_panorama import herdr
+    from herdr_panorama.tui import SwarmApp
+    app = SwarmApp(source=lambda: design_swarm(NINE["data"]), live_refresh=False, clock=lambda: 0.0,
+                   focus_pane="w1:p3", home_mode=True, cockpit_mode=True)
+    seen = []
+    monkeypatch.setattr(app, "herdr_focus", lambda pane: seen.append(pane))
+    monkeypatch.setattr(app, "call_from_thread", lambda fn, *a: fn(*a))
+    monkeypatch.setattr(app, "focus_event", lambda: None)
+    monkeypatch.setattr(herdr, "events", lambda kinds, stop: iter([
+        {"type": "_connected"}, {"type": "tab_focused", "tab_id": "w1:t3"},
+        {"type": "pane_focused", "pane_id": "w1:p9"}]))
+    app._watch_focus()
+    assert seen == ["w1:p9"]
+
+
+def test_the_hover_row_is_a_step_lighter_than_either_background():
+    """#25: the fixed hover #171a1f vanished into the focused #14161b. It now follows the panel."""
+    assert theme.hover_bg("#14161b") == "#1d1f24" and theme.hover_bg("#101215") == "#1a1b1e"
+    for focused in (True, False):
+        bg, _, hover = theme.panel_look(None, focused, render.FG, render.DIM, render.FAINT, FB, {})
+        assert hover == theme.hover_bg(bg) and hover != bg and hover != render.DOCK_HOV
+
+
+async def test_a_panorama_started_without_the_keyboard_looks_unfocused(fake_herdr, monkeypatch):
+    """Review of #25: the startup hook opens panorama without focus and terminals report focus
+    only on change. When the focus stream connects, herdr's snapshot decides."""
+    from herdr_panorama import herdr
+    from herdr_panorama.tui import SwarmApp
+    app = SwarmApp(source=lambda: design_swarm(NINE["data"]), live_refresh=False, clock=lambda: 0.0,
+                   focus_pane="w1:p3", home_mode=True, cockpit_mode=True)
+    app.my_pane = "w1:p9"
+    seen = []
+    monkeypatch.setattr(app, "call_from_thread", lambda fn, *a: (seen.append(a), fn(*a)))
+    monkeypatch.setattr(app, "focus_event", lambda: None)
+    monkeypatch.setattr(app, "repaint", lambda: None)
+    monkeypatch.setattr(herdr, "snapshot", lambda: {"focused_pane_id": "w1:p3"})  # the agent has it
+    monkeypatch.setattr(herdr, "events", lambda kinds, stop: iter([{"type": "_connected"}]))
+    assert app.pane_focused  # the initial guess
+    app._watch_focus()
+    assert seen == [("w1:p3",)] and not app.pane_focused
+
+
+async def test_a_new_pane_id_after_a_dock_is_judged_again(fake_herdr):
+    """Review of #25: a dock across workspaces gives panorama a new pane id; herdr's focus event
+    for it arrives before the app knows the id. When the id changes, the last event counts."""
+    from herdr_panorama.tui import SwarmApp
+    app = SwarmApp(source=lambda: design_swarm(NINE["data"]), live_refresh=False, clock=lambda: 0.0,
+                   focus_pane="w1:p3", home_mode=True, cockpit_mode=True)
+    focused, unfocused = theme.FIXED
+    async with app.run_test(size=(46, 45)) as pilot:
+        for _ in range(50):
+            await pilot.pause(0.02)
+            if app.loaded:
+                break
+        bg = lambda: app.grid.screen_data.c[30][20].bg  # noqa: E731
+        app.my_pane = "w5:p1"
+        app.herdr_focus("w7:p2")  # the new id, before the dock worker returned it
+        await pilot.pause()
+        assert not app.pane_focused and bg() == unfocused
+        app.my_pane = "w7:p2"  # the dock worker's result
+        app._docked(None)
+        await pilot.pause()
+        assert app.pane_focused and bg() == focused
+        app.my_pane = "w8:p3"
+        app._followed("w8:p3", "docked")  # a follow that changed the id: judged again too
+        await pilot.pause()
+        assert not app.pane_focused

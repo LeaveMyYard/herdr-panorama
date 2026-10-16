@@ -73,20 +73,15 @@ async def test_new_agent_shot(fake_herdr):
         shot(app, "new-agent", 2000)
 
 
-async def test_dock_panel_shots(fake_herdr, tmp_path, monkeypatch):
-    """The cockpit's docked panel (9e in herdr's theme, turn 10) focused and not, next to the
-    design's own render of the same dataset, theme and frame: docs/screenshots/dock-app.png,
-    dock-app-unfocused.png, dock-design.png and dock-design-unfocused.png. The theme is the
-    operator's: catppuccin with active_row_bg = "#414868"."""
+async def test_dock_panel_shots(fake_herdr):
+    """The cockpit's docked panel (9e, turn 10's default fixed colours) focused and not, next to
+    the design's own render of the same dataset and frame: docs/screenshots/dock-app.png,
+    dock-app-unfocused.png, dock-design.png and dock-design-unfocused.png."""
     import json
 
     from textual import events
 
     from .design_dock import FIX, design_swarm
-    cfg = tmp_path / "xdg" / "herdr" / "config.toml"
-    cfg.parent.mkdir(parents=True)
-    cfg.write_text('[theme.custom]\nactive_row_bg = "#414868"\n')
-    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
     data = json.loads((FIX / "design_9.json").read_text())["data"]
     app = SwarmApp(source=lambda: design_swarm(data), live_refresh=False, clock=lambda: NOW, focus_pane="w1:p3",
                    home_mode=True, cockpit_mode=True)

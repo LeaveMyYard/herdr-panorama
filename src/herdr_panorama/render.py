@@ -2080,10 +2080,11 @@ def dock_panel(swarm: Swarm, view: View, w: int, h: int, stale: str | None = Non
     return s
 
 
-def theme_panel(s: Screen, bg: str, fgs: dict[str, str]) -> None:
+def theme_panel(s: Screen, bg: str, fgs: dict[str, str], hover: str | None = None) -> None:
     """Design turn 10 (swarm-focus.js): the panel's own background becomes ``bg``, and on the
     panel's rows (its background, the docked entry's, the hover's) panorama's text colours
-    become the theme's. Tiles, status colours and anything animated stay as drawn."""
+    become the theme's; the hover row takes ``hover``. Tiles, status colours and anything
+    animated stay as drawn."""
     rows = (BG, SEL, DOCK_HOV)
     for row in s.c:
         for c in row:
@@ -2094,3 +2095,5 @@ def theme_panel(s: Screen, bg: str, fgs: dict[str, str]) -> None:
                 c.fg = fgs[c.fg]
             if cb == BG:
                 c.bg = bg
+            elif cb == DOCK_HOV and hover:
+                c.bg = hover  # the hover / cursor row: a step lighter than the panel (theme.hover_bg)
