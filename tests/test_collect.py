@@ -1,5 +1,9 @@
 """End to end over the demo scenario: snapshot + transcripts + workflow + explicit channel + inbox."""
 
+import json
+
+import pytest
+
 from herdr_panorama.collect import Collector
 from herdr_panorama.inbox import open_questions
 from herdr_panorama.model import CXL, DONE, FAIL, INF, REV, WAIT
@@ -146,3 +150,27 @@ def test_a_resumed_old_session_is_no_longer_followed(tmp_path, monkeypatch):
         fh.write(f'{{"parentUuid":null,"isSidechain":false,"type":"user","message":{{"role":"user","content":[{{"type":"text","text":"go on"}}]}},'
                  f'"uuid":"u1","timestamp":"2026-10-16T19:00:00.000Z","sessionId":"{S1}"}}\n')
     assert billing(c.collect(d["snapshot"], None)).session_id == S1
+
+
+@pytest.mark.parametrize("bad", ["../../outside", "../x", "*", "/etc/passwd", "/tmp/elsewhere/x"])
+def test_a_continuation_that_is_not_a_session_id_is_ignored(tmp_path, monkeypatch, bad):
+    """#40 review: continuedInSessionId comes from a transcript (a remote machine's, too): only
+    a UUID is ever followed, so no record can make the collector read a file outside the
+    transcripts folder; find_root refuses anything else as well."""
+    import os
+    from herdr_panorama.scan import discovery
+    from .scenario import S1
+    d = build_demo(tmp_path / "t")
+    monkeypatch.setenv("PANORAMA_EVENTS_DIR", str(d["events"]))
+    outside = tmp_path / "outside.jsonl"  # what "../../outside" from a project dir would name
+    outside.write_text('{"type":"ai-title","aiTitle":"not a session","sessionId":"x"}\n')
+    root = discovery.find_root(S1, None, str(d["projects"]))
+    with open(root, "a") as fh:
+        fh.write('{"type":"continued-in","sessionId":"%s","continuedInSessionId":%s}\n' % (S1, json.dumps(bad)))
+    c = Collector(root=str(d["projects"]), now=lambda: NOW, done_window=6 * 3600)
+    sw = c.collect(d["snapshot"], None)
+    billing = next(o for o in sw.orchestrators if o.pane_id == "w1:p1")
+    assert billing.session_id == S1 and c.sessions[S1].continued_in is None
+    assert discovery.find_root(bad, None, str(d["projects"])) is None
+    assert discovery.find_root(str(outside)[:-len(".jsonl")], None, str(d["projects"])) is None
+    assert os.path.isfile(outside)

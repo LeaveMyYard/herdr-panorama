@@ -388,7 +388,7 @@ class Session:
             return
         if kind == "continued-in":
             nxt = rec.get("continuedInSessionId")
-            if owner == MAIN and isinstance(nxt, str) and nxt and nxt != self.session_id:
+            if owner == MAIN and discovery.is_uuid(nxt) and nxt != self.session_id:  # never a path
                 self.continued_in, self.continued_at = nxt, when
             return
         if kind == "custom-title" and isinstance(rec.get("customTitle"), str):
