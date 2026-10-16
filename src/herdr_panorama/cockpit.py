@@ -71,6 +71,13 @@ def keep_focus_setting() -> bool:
     return value is not False and str(value).lower() not in ("false", "0", "no", "off")
 
 
+def panels_mode() -> str:
+    """``cockpit_panels``: "per-tab" (each orchestrator tab its own panel, fed by the core:
+    docs/DESIGN.md "Per-tab panels") or "moving" (one panel moved between tabs). "moving" until
+    the per-tab panel manager is built."""
+    return "per-tab" if str(config.load().get("cockpit_panels", "moving")).lower() == "per-tab" else "moving"
+
+
 def arrows_setting() -> bool:
     """``dock_on_arrows`` (default true, the operator's proposal): in the docked panel ↑/↓ switch
     the chats themselves, docking next to the highlighted orchestrator once the arrows settle,

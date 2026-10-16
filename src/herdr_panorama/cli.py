@@ -63,6 +63,11 @@ def cmd_tui(args) -> int:
     return 0
 
 
+def cmd_panel(args) -> int:
+    from .panel import run
+    return run()
+
+
 def cmd_new_agent(args) -> int:
     from .tui import NewAgentApp
     NewAgentApp().run()
@@ -162,6 +167,8 @@ def main(argv: list[str] | None = None) -> int:
     s.set_defaults(fn=cmd_snapshot)
     s = sub.add_parser("tui", help="run the view")
     s.set_defaults(fn=cmd_tui)
+    s = sub.add_parser("panel", help="a per-tab panel: render this tab's docked panel from the core")
+    s.set_defaults(fn=cmd_panel)
     s = sub.add_parser("new-agent", help="the + New agent form, alone (a herdr popup)")
     s.set_defaults(fn=cmd_new_agent)
     s = sub.add_parser("open", help="open the herdr plugin pane")

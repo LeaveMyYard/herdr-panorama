@@ -1501,7 +1501,9 @@ It is the natural first Rust component: small, render-only, its own input handli
   - it is a plugin pane opened by this plugin, by herdr's own record if the snapshot exposes
     one (if it doesn't, the build PR says so and uses the next two checks alone);
   - it runs our viewer's argv;
-  - when one is connected, its viewer's verified `hello`.
+  - when one is connected, its viewer's verified `hello`: herdr's `pane process-info` for the
+    claimed pane lists the connecting process itself (its pid, from the socket's peer
+    credentials) running `panorama panel` (part 1).
 
   A pane that matches only some of these is logged and left alone.
 
@@ -1553,6 +1555,9 @@ It is the natural first Rust component: small, render-only, its own input handli
   - **visibility**. The core already holds the one herdr event stream, so it computes which
     tabs are shown and broadcasts it in `state`, rather than N viewers each subscribing. With
     several clients attached, several tabs can be visible. A viewer treats "unknown" as visible.
+    herdr 0.9.3 reports neither the attached clients nor which tab each one shows, so part 1
+    sends the one focused tab: with two clients, the second client's panel pauses its
+    animation until its tab gets focus.
 - **Per viewer:** the cursor, hover, arming, focus look and animation. Animation stops in a
   tab that isn't visible.
 
