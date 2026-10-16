@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#e6e4df;color:#1d1f22;font-family:'IBM Plex Sans',sans-serif}a{color:#1d1f22}a:hover{color:#5a4a1c}</style>
+</helmet>
+<main style="padding:48px 56px 80px;display:flex;flex-direction:column;gap:28px">
+  <header style="display:flex;flex-direction:column;gap:10px;max-width:980px">
+    <div style="font:500 12px/1 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#6b6e73">herdr plugin · swarm view · 2a</div>
+    <h1 style="margin:0;font-size:36px;line-height:1.1;font-weight:600;letter-spacing:-.01em">Graph · squares are subagents</h1>
+    <p style="margin:0;font-size:15px;line-height:1.55;color:#3d4045;text-wrap:pretty">Live prototype. Click the terminal, then use ↑↓ to move, → to open the next column, ← to go back. Orchestrator cards show their state on the left edge: a moving bar along the bottom while agents are working, a blinking edge when something needs you.</p>
+  </header>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font:12px/1 'JetBrains Mono',monospace;color:#5b5e63">
+    <span>{{ sizeLabel }}</span><span>·</span><span>focus: {{ focusLabel }}</span><span>·</span><span>{{ path }}</span>
+  </div>
+  <div tabIndex="0" ref="{{ termRef }}" onKeyDown="{{ onKey }}" onClick="{{ focusTerm }}" style="align-self:flex-start;outline:none;background:#101215;padding:14px 16px;border-radius:6px;font-family:'JetBrains Mono','DejaVu Sans Mono',Menlo,Consolas,monospace;font-size:12px;line-height:16px;width:{{ termW }};min-height:720px;box-shadow:0 0 0 2px {{ ring }}" style-focus="box-shadow:0 0 0 2px #e2cf9c">
+    <sc-for list="{{ rows }}" as="row" hint-placeholder-count="45"><div style="display:flex;height:16px;white-space:pre"><sc-for list="{{ row.r }}" as="c" hint-placeholder-count="1"><span style="{{ c.st }}">{{ c.t }}</span></sc-for></div></sc-for>
+  </div>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;width&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;160 · full screen&quot;,&quot;70 · side split&quot;],&quot;default&quot;:&quot;160 · full screen&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { rows: [], col: 1, orch: 'Payments UI', selT: 't595', selA: 'a2', f: 0, ok: false };
+  termRef = React.createRef();
+  componentDidMount() {
+    const u = p => import(new URL(p, document.baseURI).href);
+    Promise.all([u('./swarm-tui.js'), u('./swarm-min.js')]).then(([t, m]) => {
+      this.H = t.H; this.D = t.DATA; this.m = m; this.setState({ ok: true });
+      this.iv = setInterval(() => this.setState(s => ({ f: s.f + 1 })), 250);
+    }).catch(e => console.error('swarm', e && e.stack || String(e)));
+  }
+  componentWillUnmount() { clearInterval(this.iv); }
+  threads(o) { const { H } = this; return this.D.find(d => d.name === o).threads.filter(t => !H.isDone(t)); }
+  agents(tid) { const { H } = this; return H.TIDX[tid].agents.slice().sort(H.byUrg).filter(H.LIVE); }
+  pickOrch(name) { const ts = this.threads(name), t = ts[0], as = t ? this.agents(t.id) : []; return { orch: name, selT: t ? t.id : null, selA: as[0] ? as[0].id : (t ? t.agents[0].id : null) }; }
+  pickThread(id) { const as = this.agents(id); return { selT: id, selA: as[0] ? as[0].id : this.H.TIDX[id].agents[0].id }; }
+  move(d) {
+    const s = this.state, step = (list, cur) => list[(Math.max(0, list.indexOf(cur)) + d + list.length) % list.length];
+    if (s.col === 0) this.setState(this.pickOrch(step(this.D.map(o => o.name), s.orch)));
+    else if (s.col === 1) { const ids = this.threads(s.orch).map(t => t.id); if (ids.length) this.setState(this.pickThread(step(ids, s.selT))); }
+    else { const ids = this.agents(s.selT).map(a => a.id); if (ids.length) this.setState({ selA: step(ids, s.selA) }); }
+  }
+  renderVals() {
+    const s = this.state, w = this.props.width === '70 · side split' ? 70 : 160;
+    let rows = [];
+    if (s.ok && s.selT) { try { rows = this.m.renderGraphAt(w, 45, { orch: s.orch, selT: s.selT, selA: s.selA }, s.f); } catch (e) { console.error(e); } }
+    const t = s.ok && s.selT ? this.H.TIDX[s.selT] : null;
+    return {
+      rows, termW: w + 'ch', ring: 'transparent', termRef: this.termRef,
+      sizeLabel: w === 160 ? '160×45 · full-screen overlay' : '70×45 · side split',
+      focusLabel: ['orchestrators', 'threads', 'agents'][s.col],
+      path: [s.orch, t && t.name, s.selA].filter(Boolean).join(' › '),
+      focusTerm: () => this.termRef.current && this.termRef.current.focus(),
+      onKey: e => {
+        const k = e.key;
+        if (k === 'ArrowUp' || k === 'k') { e.preventDefault(); this.move(-1); }
+        else if (k === 'ArrowDown' || k === 'j') { e.preventDefault(); this.move(1); }
+        else if (k === 'ArrowRight' || k === 'l' || k === 'Enter') { e.preventDefault(); this.setState(x => ({ col: Math.min(2, x.col + 1) })); }
+        else if (k === 'ArrowLeft' || k === 'h') { e.preventDefault(); this.setState(x => ({ col: Math.max(0, x.col - 1) })); }
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

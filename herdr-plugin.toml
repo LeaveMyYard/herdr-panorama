@@ -1,0 +1,46 @@
+id = "leavemyyard.herdr-panorama"
+name = "herdr panorama"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Read-only swarm view: Claude Code orchestrators, the threads they drive and the subagents they spawned."
+platforms = ["linux", "macos"]
+
+# `herdr plugin install` runs this once in the install directory.
+[[build]]
+command = ["uv", "sync", "--frozen", "--no-dev"]
+
+# The view. Full-screen popup (design 2a, 160x45 layout); session-modal, the
+# tiled layout is left alone. The project is resolved from HERDR_PLUGIN_ROOT
+# because a pane's cwd is not documented to be the plugin dir.
+[[panes]]
+id = "panorama"
+title = "Panorama"
+placement = "popup"
+width = "100%"
+height = "100%"
+command = ["sh", "-c", "exec uv run --quiet --frozen --no-dev --project \"${HERDR_PLUGIN_ROOT:-.}\" panorama tui"]
+
+# Bind a key to this (suggested: prefix+space). With the home tab on (default), it focuses
+# the "◆ panorama" tab, opening it if missing; with home_tab = false it opens the popup.
+[[actions]]
+id = "open"
+title = "Panorama: open"
+description = "Focus the panorama home tab (or open the popup when the home tab is off)."
+command = ["uv", "run", "--quiet", "--frozen", "--no-dev", "--project", ".", "panorama", "open"]
+
+[[actions]]
+id = "open-popup"
+title = "Panorama: open as a popup"
+description = "Open the swarm view as a full-screen popup."
+command = ["uv", "run", "--quiet", "--frozen", "--no-dev", "--project", ".", "panorama", "open", "--popup"]
+
+# The design's side split (about 70 columns).
+[[actions]]
+id = "open-split"
+title = "Panorama: open in a side split"
+description = "Open the swarm view in a split to the right of the focused pane."
+command = ["uv", "run", "--quiet", "--frozen", "--no-dev", "--project", ".", "panorama", "open", "--split"]
+
+# Open the home tab once when herdr starts (never a second one; home_tab = false turns it off).
+[[startup]]
+command = ["uv", "run", "--quiet", "--frozen", "--no-dev", "--project", ".", "panorama", "home", "--startup"]

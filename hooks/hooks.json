@@ -1,0 +1,56 @@
+{
+  "description": "herdr-panorama: record subagent start/stop for the swarm view; SessionStart: one line about report_thread (inside herdr, once per session). Runs stdlib Python directly and always exits 0.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact|fork",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": [
+              "-c",
+              "python3 -I \"$0\" session-start 2>/dev/null; exit 0",
+              "${CLAUDE_PLUGIN_ROOT}/src/herdr_panorama/hooks.py"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": ".+",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": [
+              "-c",
+              "python3 -I \"$0\" subagent-start >/dev/null 2>&1; exit 0",
+              "${CLAUDE_PLUGIN_ROOT}/src/herdr_panorama/hooks.py"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": ".+",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": [
+              "-c",
+              "python3 -I \"$0\" subagent-stop >/dev/null 2>&1; exit 0",
+              "${CLAUDE_PLUGIN_ROOT}/src/herdr_panorama/hooks.py"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

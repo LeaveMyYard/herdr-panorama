@@ -1,0 +1,35 @@
+{
+  "name": "herdr-panorama",
+  "displayName": "herdr panorama",
+  "version": "0.1.0",
+  "description": "Opt-in companion for the herdr-panorama swarm view: records subagent start/stop and gives orchestrators a report_thread MCP tool",
+  "author": {
+    "name": "LeaveMyYard"
+  },
+  "repository": "https://github.com/LeaveMyYard/herdr-panorama",
+  "license": "MIT",
+  "keywords": [
+    "herdr",
+    "swarm",
+    "subagents",
+    "mcp"
+  ],
+  "mcpServers": {
+    "herdr-panorama": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--quiet",
+        "--frozen",
+        "--no-dev",
+        "--project",
+        "${CLAUDE_PLUGIN_ROOT}",
+        "panorama",
+        "mcp"
+      ],
+      "env": {
+        "UV_PROJECT_ENVIRONMENT": "${CLAUDE_PLUGIN_DATA}/venv-0.1.0"
+      }
+    }
+  }
+}
