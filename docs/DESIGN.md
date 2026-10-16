@@ -1330,8 +1330,8 @@ tile in its off phase.
       herdr renders the first change at once, then about 20 ms later; it has no batch call
       (`layout.apply` makes new panes, it cannot move one), and panorama's pane must leave a
       tab before it appears in another, so one frame stays. Focusing the agent's tab first
-      (explicit docks only; a follow is already there) makes it the target chat, shown about
-      20 ms sooner. Panorama itself never drew a wrong-width or blank panel in between (the
+      (explicit docks only, and only if at lock time the operator is still on panorama or in
+      its tab; a follow is already there) makes it the target chat, shown about 20 ms sooner. Panorama itself never drew a wrong-width or blank panel in between (the
       client shows its pane only at the final width), so holding its repaint would change
       nothing; the socket and ratio-first orders changed no frame, so they were left out.
     - The click is armed like Enter: right after a refresh changed the selected entry, it

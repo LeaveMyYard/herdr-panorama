@@ -191,6 +191,29 @@ def test_an_explicit_dock_shows_the_agents_tab_first(herdr, monkeypatch):
     assert order == []
 
 
+def test_an_operator_who_moved_on_before_the_dock_is_not_shown_the_agents_tab(herdr, monkeypatch):
+    """Review of #27: Enter or an arrow on b, then the operator went to c while the dock waited
+    (the home lock): at lock time they are neither on panorama nor in its tab, so no early tab
+    focus, and the after-swap check leaves them there too."""
+    h, _, (b, tb), (c, tc) = _docked_next_to_a(herdr)
+    st = state(herdr)
+    st["focus"] = c  # prefix+N to c's tab before the dock took the lock
+    put(herdr, st)
+    n_tab, n_pane = len(herdr.calls("tab", "focus")), len(sockets(herdr, "pane.focus"))
+    assert cockpit.dock(b, focus_me=True) == (h.pane_id, None)
+    assert in_tab(herdr, tb) == [h.pane_id, b]  # the dock itself happened
+    assert herdr.calls("tab", "focus")[n_tab:] == [] and len(sockets(herdr, "pane.focus")) == n_pane
+    assert state(herdr)["focus"] == c
+
+
+def test_the_fake_tab_focus_moves_focus(herdr):
+    """The stateful fake herdr's tab focus moves the client there (review of #27), so the
+    tests here see a tab focus pull focus, as herdr does."""
+    h, _, (b, tb), (c, tc) = _docked_next_to_a(herdr)
+    cockpit.herdr.focus_tab(tc)
+    assert state(herdr)["focus"] == c
+
+
 def test_dock_keep_focus_falls_back_to_the_agent_if_its_tab_cannot_be_focused(herdr, monkeypatch):
     h, _, (b, tb), _ = _docked_next_to_a(herdr)
     monkeypatch.setattr(cockpit.herdr, "focus_tab", lambda tab: "tab_not_found")
