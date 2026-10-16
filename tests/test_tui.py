@@ -524,3 +524,66 @@ async def test_r5_l1_arrows_in_the_form_do_not_move_the_cursor(fake_herdr):
         await pilot.pause()
         await pilot.press("down", "down", "up", "right")
         assert sel(app) == before
+
+
+# -- + New agent from a narrow pane: its own popup (the operator's report) ------------------------
+
+async def test_a_narrow_pane_opens_new_agent_as_its_own_popup(fake_herdr, monkeypatch):
+    """The docked panel (46 columns) cut the 76-column form: there it opens as a herdr popup over
+    everything, with the selected orchestrator's directory; nothing is pushed in the pane."""
+    from herdr_panorama import herdr
+    from herdr_panorama.tui import NewAgentForm
+    calls = []
+    monkeypatch.setattr(herdr, "socket_call", lambda m, p, timeout=None: (calls.append((m, p)), ({}, None))[1])
+    app = make_home_app(home_mode=True)
+    async with app.run_test(size=(46, 45)) as pilot:
+        await loaded(app, pilot)
+        app.action_new_agent()
+        await pilot.pause()
+        assert not isinstance(app.screen, NewAgentForm)
+    (method, params), = calls
+    assert method == "plugin.pane.open" and params["entrypoint"] == "new-agent"
+    assert params["placement"] == "popup" and params["focus"] is True
+    assert (params["width"], params["height"]) == herdr.NEW_AGENT_POPUP
+    assert params["env"]["PANORAMA_NEW_AGENT_CWD"]
+
+
+async def test_a_wide_pane_keeps_the_form_in_place_and_a_failed_popup_falls_back(fake_herdr, monkeypatch):
+    from herdr_panorama import herdr
+    from herdr_panorama.tui import NewAgentForm
+    calls = []
+    monkeypatch.setattr(herdr, "socket_call", lambda m, p, timeout=None: (calls.append(m), (None, "boom"))[1])
+    app = make_home_app(home_mode=True)
+    async with app.run_test(size=(160, 45)) as pilot:  # the full view: the form fits
+        await loaded(app, pilot)
+        app.action_new_agent()
+        await pilot.pause()
+        assert isinstance(app.screen, NewAgentForm) and calls == []
+    narrow = make_home_app(home_mode=True)
+    async with narrow.run_test(size=(46, 45)) as pilot:  # the popup failed: the form in the pane
+        await loaded(narrow, pilot)
+        narrow.action_new_agent()
+        await pilot.pause()
+        assert isinstance(narrow.screen, NewAgentForm) and calls == ["plugin.pane.open"]
+
+
+async def test_the_popup_shows_the_same_form_and_closes_with_it(fake_herdr, monkeypatch):
+    """``panorama new-agent``: the identical form (same widgets and texts as in the full view),
+    its directory from the environment; cancelling it ends the popup's process."""
+    from herdr_panorama.tui import NewAgentApp, NewAgentForm
+    monkeypatch.setenv("PANORAMA_NEW_AGENT_CWD", "/srv/work")
+    popup = NewAgentApp()
+    async with popup.run_test(size=(84, 26)) as pilot:
+        await pilot.pause()
+        assert isinstance(popup.screen, NewAgentForm)
+        assert popup.screen.query_one("#cwd").value == "/srv/work"
+        texts = [str(w.render()) for w in popup.screen.query("Static, Label")]
+        await pilot.press("escape")
+        await pilot.pause()
+    assert not popup.is_running
+    app = make_home_app(home_mode=True)
+    async with app.run_test(size=(160, 45)) as pilot:
+        await loaded(app, pilot)
+        app.action_new_agent()
+        await pilot.pause()
+        assert [str(w.render()) for w in app.screen.query("Static, Label")] == texts

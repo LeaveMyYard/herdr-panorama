@@ -68,6 +68,12 @@ def cmd_panel(args) -> int:
     return run()
 
 
+def cmd_new_agent(args) -> int:
+    from .tui import NewAgentApp
+    NewAgentApp().run()
+    return 0
+
+
 def cmd_open(args) -> int:
     from . import herdr, home
     if not args.split and not args.popup and home.enabled():
@@ -163,6 +169,8 @@ def main(argv: list[str] | None = None) -> int:
     s.set_defaults(fn=cmd_tui)
     s = sub.add_parser("panel", help="a per-tab panel: render this tab's docked panel from the core")
     s.set_defaults(fn=cmd_panel)
+    s = sub.add_parser("new-agent", help="the + New agent form, alone (a herdr popup)")
+    s.set_defaults(fn=cmd_new_agent)
     s = sub.add_parser("open", help="open the herdr plugin pane")
     s.add_argument("--split", action="store_true", help="side split instead of the popup")
     s.add_argument("--popup", action="store_true", help="the popup even when the home tab is on")
