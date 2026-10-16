@@ -14,6 +14,7 @@ No state of its own: where panorama is, is read from herdr every time.
 from __future__ import annotations
 
 import logging
+import os
 import threading
 import time
 from collections import deque
@@ -181,14 +182,11 @@ def _move_next_to(snap: dict, me: home.Home, t: dict, keep_focus_on: str | None,
         if now.get("focused_pane_id") != keep_focus_on:
             fit(mine, t["tab_id"])
             return mine, None
-    # dock_keep_focus: panorama is the swap's source, so focus lands on panorama, in the new tab
     serr = herdr.swap_panes(mine, target) if focus_me else herdr.swap_panes(target, mine)
     if serr:
         log.warning("panorama stays right of %s: %s", target, serr)
-        if focus_me:
-            ferr = herdr.focus_pane(mine)  # no swap, no focus change: put the operator on panorama
-            if ferr:
-                log.warning("could not focus panorama after docking: %s", ferr)
+    if focus_me:
+        _keep_focus(me, t, mine)
     if keep_focus_on is not None and not serr:
         # Close the check-to-swap window. If the operator switched away just before the swap,
         # the swap pulled them back onto the agent, and herdr reports that as the agent's
@@ -206,6 +204,46 @@ def _move_next_to(snap: dict, me: home.Home, t: dict, keep_focus_on: str | None,
                 _send_back(later)
     fit(mine, t["tab_id"])
     return mine, None
+
+
+def _trace_focus(step: str, **extra) -> None:
+    """``PANORAMA_TRACE``: where herdr's focus is at each step of a keep-focus dock (the
+    operator's revert to the old tab is not reproduced elsewhere: this is what to look at)."""
+    if not os.environ.get("PANORAMA_TRACE"):
+        return
+    t0 = time.perf_counter()
+    snap = herdr.snapshot() or {}
+    herdr.trace("keep-focus " + step, t0, focused_tab=snap.get("focused_tab_id"),
+                focused_pane=snap.get("focused_pane_id"), **extra)
+
+
+def _keep_focus(me: home.Home, t: dict, mine: str) -> None:
+    """dock_keep_focus: the client to the agent's tab, the keyboard on panorama there. The swap's
+    focus of its source looked like enough, but the operator saw the client stay on the tab
+    panorama left, with focus back there on their next input (0.9.3: Enter seemed to close the
+    panel; the open key then finished the switch; not reproduced with an isolated client). The
+    open key's own sequence, a tab focus then a pane focus, is what that client followed.
+    Like follow, it first looks again: if the operator went somewhere else in the meantime
+    (not the tab panorama left, not the agent's, not panorama), they are left there."""
+    _trace_focus("after swap", panorama=mine, left_tab=me.tab_id, tab=t["tab_id"])
+    now = herdr.snapshot() or {}
+    where = now.get("focused_tab_id")  # unknown (no snapshot, nothing focused): do as the open key does
+    if where and now.get("focused_pane_id") != mine and where not in (me.tab_id, t["tab_id"]):
+        log.info("keep focus: the operator moved on to %s", now.get("focused_tab_id"))
+        _trace_focus("skipped: the operator moved on")
+        return
+    terr = herdr.focus_tab(t["tab_id"])
+    _trace_focus("after tab focus", err=terr)
+    if terr:
+        # not even the tab: at least the agent, as without keep focus (it never moved)
+        aerr = herdr.focus_agent(t["pane_id"])
+        log.warning("keep focus: could not focus %s (%s); focused the agent instead%s", t["tab_id"], terr,
+                    f", which failed too: {aerr}" if aerr else "")
+        return
+    perr = herdr.focus_pane(mine)
+    _trace_focus("after pane focus", err=perr)
+    if perr:
+        log.warning("could not focus panorama after docking: %s", perr)
 
 
 def dock(target: str, me_id: str | None = None, on_docked=None,

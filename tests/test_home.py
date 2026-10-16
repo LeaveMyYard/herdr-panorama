@@ -100,7 +100,12 @@ elif cmd == "pane swap":
     else:
         i, j = st["panes"].index(pa), st["panes"].index(pb)
         st["panes"][i], st["panes"][j] = pb, pa
-        st["focus"] = a  # herdr 0.9.3: a swap focuses its source pane (it has no --no-focus)
+        # a swap focuses its source pane (it has no --no-focus), here only inside the tab the
+        # client shows. This models the operator's observed client revert (the client stayed on
+        # the old tab), not herdr 0.9.3's server state right after the swap, which reports the
+        # source focused in its tab (the review of #20, with an isolated attached client)
+        if next((p["tab_id"] for p in st["panes"] if p["pane_id"] == st.get("focus")), None) == pa["tab_id"]:
+            st["focus"] = a
         result = {{"type": "pane_swap", "swap": {{"changed": True, "focused_pane_id": a}}}}
 elif cmd == "pane move":
     # herdr 0.9.3: within a workspace the pane keeps its id; a tab left empty is closed
@@ -128,6 +133,12 @@ elif cmd == "pane move":
         st["panes"].remove(pane)
         st["panes"].append(pane)  # split right: after the panes already there
     closed = None
+    if st.get("focus") == args[2] and "--no-focus" in args:
+        # herdr 0.9.3: moving the focused pane with --no-focus leaves the client on its old tab,
+        # on the pane left there (when the tab survives)
+        rest = [p["pane_id"] for p in st["panes"] if p["tab_id"] == old]
+        if rest:
+            st["focus"] = rest[0]
     if not any(p["tab_id"] == old for p in st["panes"]):
         st["tabs"] = [t for t in st["tabs"] if t["tab_id"] != old]
         closed = old
