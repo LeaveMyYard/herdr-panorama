@@ -141,6 +141,58 @@ def test_dock_keep_focus_moves_the_client_to_the_new_tab(herdr):
     assert cockpit.follow(h.pane_id) == (None, "the operator is in panorama")
 
 
+def _docked_next_to_a(herdr):
+    h, _ = home.ensure(focus=False)
+    a, ta = add_agent(herdr, "billing")
+    b, tb = add_agent(herdr, "search")
+    c, tc = add_agent(herdr, "docs")
+    assert cockpit.dock(a)[1] is None
+    st = state(herdr)
+    st["focus"] = h.pane_id  # the operator is in the docked panel, in a's tab
+    put(herdr, st)
+    return h, (a, ta), (b, tb), (c, tc)
+
+
+def test_dock_keep_focus_leaves_an_operator_who_moved_on(herdr, monkeypatch):
+    """Review of #20: Enter on b, then the operator switches to c while the dock runs: the
+    keep-focus calls must not pull them back to b."""
+    h, _, (b, tb), (c, tc) = _docked_next_to_a(herdr)
+    real = cockpit.herdr.swap_panes
+
+    def swap(source, target):
+        err = real(source, target)
+        st = state(herdr)
+        st["focus"] = c  # prefix+N to c's tab, mid-dock
+        put(herdr, st)
+        return err
+    monkeypatch.setattr(cockpit.herdr, "swap_panes", swap)
+    n_tab, n_pane = len(herdr.calls("tab", "focus")), len(sockets(herdr, "pane.focus"))
+    assert cockpit.dock(b, focus_me=True) == (h.pane_id, None)
+    assert in_tab(herdr, tb) == [h.pane_id, b]  # the dock itself happened
+    assert len(herdr.calls("tab", "focus")) == n_tab and len(sockets(herdr, "pane.focus")) == n_pane
+    assert state(herdr)["focus"] == c
+
+
+def test_dock_keep_focus_falls_back_to_the_agent_if_its_tab_cannot_be_focused(herdr, monkeypatch):
+    h, _, (b, tb), _ = _docked_next_to_a(herdr)
+    monkeypatch.setattr(cockpit.herdr, "focus_tab", lambda tab: "tab_not_found")
+    n_pane = len(sockets(herdr, "pane.focus"))
+    assert cockpit.dock(b, focus_me=True) == (h.pane_id, None)
+    assert herdr.calls("agent", "focus")[-1] == ["agent", "focus", b]  # at least the agent, as without keep
+    assert len(sockets(herdr, "pane.focus")) == n_pane
+
+
+def test_dock_keep_focus_traces_each_focus_step(herdr, monkeypatch, tmp_path):
+    trace = tmp_path / "trace.jsonl"
+    monkeypatch.setenv("PANORAMA_TRACE", str(trace))
+    h, _, (b, tb), _ = _docked_next_to_a(herdr)
+    cockpit.dock(b, focus_me=True)
+    steps = [json.loads(x) for x in trace.read_text().splitlines() if '"keep-focus' in x]
+    assert [s["op"] for s in steps] == ["keep-focus after swap", "keep-focus after tab focus",
+                                        "keep-focus after pane focus"]
+    assert steps[-1]["focused_tab"] == tb and steps[-1]["focused_pane"] == h.pane_id
+
+
 def test_dock_keep_focus_without_a_swap_still_focuses_panorama(herdr, monkeypatch):
     h, _ = home.ensure(focus=False)
     a, _ = add_agent(herdr, "billing")

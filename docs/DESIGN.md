@@ -1265,7 +1265,10 @@ tile in its off phase.
       focus is not enough: herdr 0.9.3 logs the new tab as focused, but an attached client
       keeps showing the tab panorama left and moves focus back on its next input (the
       operator's report: Enter seemed to close the panel, and the open key then finished the
-      switch). If panorama could not move, the
+      switch; not reproduced with an isolated attached client). Like follow, it looks again
+      first: if the operator went to another tab meanwhile, they are left there. If the tab
+      cannot be focused, the agent is (as without keep focus). With `PANORAMA_TRACE` set,
+      each step records where herdr's focus is, to catch the revert next time. If panorama could not move, the
       agent is focused as before. `g`, and Enter on the docked entry, go into the agent.
       Follow sees the operator in panorama and does nothing, so the two never loop. The full
       2a graph is unchanged: Enter there goes into the agent.

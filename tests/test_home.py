@@ -100,8 +100,10 @@ elif cmd == "pane swap":
     else:
         i, j = st["panes"].index(pa), st["panes"].index(pb)
         st["panes"][i], st["panes"][j] = pb, pa
-        # herdr 0.9.3: a swap focuses its source pane (it has no --no-focus), but only inside its
-        # tab: the attached client's view switches only if that tab is the one it shows
+        # a swap focuses its source pane (it has no --no-focus), here only inside the tab the
+        # client shows. This models the operator's observed client revert (the client stayed on
+        # the old tab), not herdr 0.9.3's server state right after the swap, which reports the
+        # source focused in its tab (the review of #20, with an isolated attached client)
         if next((p["tab_id"] for p in st["panes"] if p["pane_id"] == st.get("focus")), None) == pa["tab_id"]:
             st["focus"] = a
         result = {{"type": "pane_swap", "swap": {{"changed": True, "focused_pane_id": a}}}}
