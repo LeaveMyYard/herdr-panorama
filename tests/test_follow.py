@@ -242,7 +242,10 @@ async def test_a_follow_updates_the_views_own_pane(fake_herdr, monkeypatch):
     app = await app_with(fake_herdr, monkeypatch, lambda me, fl=None, on_docked=None: ("w2:p5", "docked"))
     async with app.run_test(size=(46, 45)) as pilot:
         app.focus_event()
-        await settle(pilot)
+        for _ in range(100):  # until the follow worker's result is back on the UI thread (#32)
+            await pilot.pause(0.05)
+            if app.my_pane == "w2:p5":
+                break
         assert app.my_pane == "w2:p5" and app.collector.self_pane == "w2:p5"
 
 
@@ -318,6 +321,9 @@ def test_r12_m1_a_switch_in_the_swap_window_gets_focus_sent_back(herdr, monkeypa
         fl.record({"type": "pane_focused", "pane_id": source, "workspace_id": "w1"})
         return err
     monkeypatch.setattr(cockpit.herdr, "swap_panes", swap)
+    # the wait ends as soon as that event arrives: a long bound only takes the runner's speed
+    # out of it (#18); without the wait the event is never seen
+    monkeypatch.setattr(cockpit, "SYNC_SECONDS", 10.0)
     cockpit.follow(h.pane_id, fl)
     assert sockets(herdr, "pane.focus") == [{"pane_id": b}]
     assert focus_of(herdr) == b  # where they went, not back on billing

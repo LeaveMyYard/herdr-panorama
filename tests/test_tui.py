@@ -94,7 +94,11 @@ async def test_a_vanished_target_parks_the_cursor(fake_herdr):
         assert app.view.orch == "w1:p2"
 
 
-async def test_action_keys_are_ignored_right_after_a_background_change(fake_herdr):
+async def test_action_keys_are_ignored_right_after_a_background_change(fake_herdr, monkeypatch):
+    # a long arming window, so a slow runner can't let the first paint's arming run out
+    # before the first g arrives (#35); the window's real length is checked at the end
+    from herdr_panorama import tui
+    monkeypatch.setattr(tui, "ARM_SECONDS", 30.0)
     app, _ = make_app()
     async with app.run_test(size=(160, 45)) as pilot:
         await loaded(app, pilot)
