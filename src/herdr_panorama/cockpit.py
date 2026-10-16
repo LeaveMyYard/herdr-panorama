@@ -71,6 +71,17 @@ def keep_focus_setting() -> bool:
     return value is not False and str(value).lower() not in ("false", "0", "no", "off")
 
 
+def arrows_setting() -> bool:
+    """``dock_on_arrows`` (default true, the operator's proposal): in the docked panel ↑/↓ switch
+    the chats themselves, docking next to the highlighted orchestrator once the arrows settle,
+    the keyboard staying on panorama; Enter goes into that agent. False: Enter docks (and keeps
+    the keyboard with ``dock_keep_focus``), as before. Needs ``dock_keep_focus``: an arrow never
+    moves the keyboard into an agent."""
+    value = config.load().get("dock_on_arrows", True)
+    on = value is not False and str(value).lower() not in ("false", "0", "no", "off")
+    return on and keep_focus_setting()
+
+
 def follow_tabs() -> str:
     """``cockpit_follow_tabs``: "any" (the default, the operator's choice) also follows into
     tabs the operator split (panorama then takes ~46 columns of that layout); "single" only
