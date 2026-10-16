@@ -1,6 +1,6 @@
-"""Capture the design references: the sample dataset, turn 5's
-direction 5d (subagents to any depth: its dataset and its frames), turn 6 (unseen), turn 9's 9e
-(tiles in the docked panel) and the smooth animation (turn 6 between whole frames).
+"""Capture the design references: the sample dataset, turn 5's direction 5d (subagents to any
+depth: its dataset and its frames), turn 6 (unseen), turn 7 (wider cards), turn 9's 9e (tiles in
+the docked panel) and the smooth animation (turn 6 between whole frames).
 
     uv run python tests/fixtures/capture_design.py   (needs node)
 """
@@ -23,6 +23,13 @@ console.log(JSON.stringify(DATA.map(o => ({ name: o.name, tab: o.tab, fl: o.fl, 
 DEEP_JS = """
 import { TREE, THREAD } from './swarm-deep.js';
 const flat = (a) => ({ id: a.id, role: a.role, st: a.st, act: a.act, model: a.model, age: a.age, tools: a.tools,
+  n: a._n, q: a.q || 0, qs: a.qs || [], err: a.err || null, kids: a.kids.map(flat) });
+console.log(JSON.stringify({ thread: { name: THREAD.name, ph: THREAD.ph.map(p => [p[0], p[1]]) }, tree: TREE.map(flat) }));
+"""
+
+WIDE_JS = """
+import { TREE, THREAD } from './swarm-wide.js';
+const flat = (a) => ({ id: a.hex, role: a.role, st: a.st, act: a.act, model: a.model, age: a.age, tools: a.tools,
   n: a._n, q: a.q || 0, qs: a.qs || [], err: a.err || null, kids: a.kids.map(flat) });
 console.log(JSON.stringify({ thread: { name: THREAD.name, ph: THREAD.ph.map(p => [p[0], p[1]]) }, tree: TREE.map(flat) }));
 """
@@ -68,6 +75,12 @@ def main() -> None:
         {"source": "docs/design/swarm-unseen.js with swarm-smooth.js (smooth animation) rendered by "
                    "docs/design/render-smooth.mjs between whole frames: G and N as in design_6.json, E and U (swarm-tiles.js 9e) as in design_9.json",
          "frames": smooth}, ensure_ascii=False, separators=(",", ":")))
+    wide = json.loads(node("--input-type=module", "-", stdin=WIDE_JS))
+    wide["frames"] = {f: {k: [run_length(r) for r in v] for k, v in json.loads(node("render-7.mjs", str(f))).items()
+                          if k != "frame"} for f in (4, 9)}
+    wide["source"] = ("docs/design/swarm-wide.js (turn 7, wider cards) rendered by docs/design/render-7.mjs: W160/W240/"
+                      "W320 focus on the thread, R160/R320 on depth 2, S the sweep strip; rows as runs of [text, fg, bg, bold]")
+    (HERE / "design_7.json").write_text(json.dumps(wide, ensure_ascii=False, separators=(",", ":")))
 
 
 if __name__ == "__main__":

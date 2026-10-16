@@ -208,11 +208,12 @@ def test_r4_sweeps_are_all_running_colour_and_offset_per_card():
         if cells:
             assert all(scr.c[y][x].fg == ST[RUN] for x in cells)  # M1: no state-colour head
             bars[y] = cells
-    # the design's offsets at frame 5: p = (frame + seed * 7) % (n + 6) - 3
+    # the design's offsets at frame 5: p = (frame + seed * 7) % lap * (n + 6) // lap - 3, lap = min(n + 6, 48)
     orch = sorted(c[0] for y, c in bars.items() if c[0] < 30)
     assert set(orch) == {2 + 1 + (5 % 32 - 3)}  # orchestrators: seed 0, all in step (as the design)
     thread = [c for y, c in bars.items() if any(36 <= x < 86 for x in c)]
-    assert [x for x in thread[0] if 36 <= x < 86][0] == 36 + 1 + ((5 + 7) % 54 - 3)  # first thread: seed 1
+    # first thread: seed 1; a 50-column card laps in at most 48 frames (design turn 7: 12 s whatever the width)
+    assert [x for x in thread[0] if 36 <= x < 86][0] == 36 + 1 + ((5 + 7) % 48 * 54 // 48 - 3)
     agent_starts = {min(x for x in c if x >= 93) for y, c in bars.items() if any(x >= 93 for x in c)}
     assert len(agent_starts) == 2  # the two running agents: their own seeds, not in step
 

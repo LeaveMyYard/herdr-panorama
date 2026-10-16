@@ -634,6 +634,22 @@ orders them by urgency), so a status change never reorders cards under the
 cursor. The pods in a thread card keep the design's urgency order; they are
 not navigable.
 
+### Wider cards on big screens (design turn 7, approved by the operator)
+
+Reference: `docs/design/swarm-wide.js`, rendered by `render-7.mjs`; `tests/test_wide.py` compares
+cell for cell at 160, 240 and 320 columns.
+
+- **Width tiers** (orchestrators / threads / agents): below 220 columns 28 / 50 / 44 (the
+  threads shrink to 36 below 160), as before; 220–299 columns 32 / 56 / 56; from 300 columns
+  36 / 64 / 60, the cap. Columns still keep their width and align left. The space left over
+  shows more depth columns: at 320 columns all five depth levels of the test thread fit.
+- **The working sweep** along a card's bottom border takes at most 12 s per lap (48 frames),
+  whatever the card's width. Up to a 44-column card it moves one cell a frame, as before; a
+  wider card moves further each frame. The connector lines are not animated.
+- **The model keeps its version:** `claude-opus-4-5-…` shows as `opus 4.5`. From 240 columns
+  a card's type, id and model fit whole (`general-purpose 0c53fda · opus 4.5`); narrower cards
+  cut the title with `…` before the state.
+
 ### Unseen (design turn 6, approved by the operator)
 
 Reference: `docs/design/swarm-unseen.js`, rendered by `render-6.mjs`; `tests/test_unseen.py`
