@@ -90,3 +90,21 @@ def test_the_full_title_fits_from_240_columns():
                                        ("some-other-model", "some-other-model")])
 def test_the_model_keeps_its_version(raw, short):
     assert short_model(raw) == short
+
+
+@pytest.mark.parametrize("w", [44, 60, 64])
+def test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render(w):
+    """The smooth-animation path (render.restyle of a screen drawn once) keeps the 12 s lap on
+    wide cards: restyled to frame k it equals a render at k, cell for cell."""
+    working = render.OrchState(render.RUN, "⠋", "working", True)
+
+    def drawn(frame):
+        scr = render.Screen(w + 2, 3)
+        render.rbox(scr, 1, 0, w, 3, render.LINE)
+        render.edge(scr, 1, 0, w, 3, working, frame, 3)
+        return scr
+    once = drawn(0)
+    for k in range(1, 60):
+        render.restyle(once, k)
+        want = drawn(k)
+        assert [(str(c.ch), str(c.fg)) for c in once.c[2]] == [(str(c.ch), str(c.fg)) for c in want.c[2]], k
