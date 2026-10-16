@@ -1164,7 +1164,10 @@ class SwarmApp(App):
             err = herdr.open_new_agent(cwd)
             if not err:
                 return
-            self.log.warning(f"new agent popup: {err}")  # fall back to the form in this pane
+            if isinstance(err, herdr.NoReply):  # it may be open: a form here would be a second one
+                self.log.warning(f"new agent popup: no reply from herdr ({err}); no form here")
+                return
+            self.log.warning(f"new agent popup: {err}")  # refused: the form in this pane
         self.push_screen(NewAgentForm(cwd), self._new_agent_done)
 
     def _new_agent_done(self, name: str | None) -> None:

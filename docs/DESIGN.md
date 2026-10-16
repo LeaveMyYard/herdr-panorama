@@ -951,7 +951,9 @@ label, and the form uses the same palette. `◆ panorama` is the herdr tab label
   directory passed in `PANORAMA_NEW_AGENT_CWD`. It is the same form, with the
   same arming, validation and agent creation, and the popup closes with it.
   This fixes the operator's report that the form was cut in the side panel. If
-  the popup can't open, the form opens in the pane as before. The full view
+  herdr refuses the popup, the form opens in the pane as before. If the request
+  went out but herdr never answered (a timeout), herdr may have opened it anyway,
+  so no form opens in the pane: two forms could start two agents. The full view
   keeps the form in place, where it fits.
 
   While the form is open, the view's own keys are inert behind it. Submit is
