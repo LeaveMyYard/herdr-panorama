@@ -37,7 +37,7 @@ from textual.message import Message
 from textual.strip import Strip
 from textual.widget import Widget
 
-from . import cockpit, config, herdr, home, inbox, inbox_link, machines, render, theme, unseen
+from . import cockpit, config, core, herdr, home, inbox, inbox_link, machines, protocol, render, theme, unseen
 from .collect import Collector
 from .model import BLK, Swarm, live
 
@@ -271,6 +271,8 @@ class SwarmApp(App):
         self._arrow_timer = None  # docked panel: the pending dock after the arrows settle
         self._arrow_again = False  # an arrow dock came due while a dock ran: look again after it
         self._stopping = False
+        self.core: core.Core | None = None  # per-tab panels: this panorama publishes its state
+        self.visible_tab: str | None = None  # the tab herdr last reported focused (per-tab panels)
         self.focus_log: cockpit.FocusLog | None = None  # set while the event stream is up
         self.fit_total: int | None = None  # the shared split's width at the last fit
         self._next_frame = 0.0  # animate(): when the next whole frame is due (anim_clock)
@@ -281,6 +283,10 @@ class SwarmApp(App):
         yield self.grid
 
     def on_mount(self) -> None:
+        if self.live_refresh and self.home_mode and cockpit.panels_mode() == "per-tab":
+            self.core = core.Core.start(protocol.socket_path(), protocol.lock_path(),
+                                        on_seen=lambda ids: self._to_ui(self._seen, ids),
+                                        verify_pane=self._known_pane)
         self.refresh_model()
         if self.live_refresh:
             self.set_interval(REFRESH_SECONDS, self.refresh_model)
@@ -290,6 +296,8 @@ class SwarmApp(App):
 
     def on_unmount(self) -> None:
         self._stopping = True
+        if self.core is not None:
+            self.core.stop()
         if self.remotes is not None:
             self.remotes.stop()
 
@@ -346,6 +354,7 @@ class SwarmApp(App):
             if self.selected_card() != before:
                 self.armed_at = time.monotonic() + ARM_SECONDS
         self.repaint()
+        self.publish()
         # Per-cell click arming: a cell whose target changed in this refresh (something appeared,
         # moved there, or another identity now sits where one was) ignores clicks for
         # CLICK_ARM_SECONDS: a click aimed before the refresh must not land on something else.
@@ -357,6 +366,30 @@ class SwarmApp(App):
         for cell, hit in new_cells.items():
             if old_cells.get(cell) != hit:
                 self.arrived[cell] = now
+
+    def publish(self) -> None:
+        """Per-tab panels: the current model, unseen marks, focus and the visible tab to the
+        panel viewers (a full snapshot each time, protocol v1)."""
+        if self.core is None:
+            return
+        try:
+            self.core.publish(protocol.state_message(
+                self.swarm, self.view.unseen, self.herdr_focused_pane,
+                [self.visible_tab] if self.visible_tab else None))
+        except protocol.TooLong as exc:
+            self.log.warning(f"state not published: {exc}")
+
+    def _tab_shown(self, tab_id: str) -> None:
+        """herdr shows ``tab_id`` now: the per-tab panels animate only where they are seen."""
+        if tab_id != self.visible_tab:
+            self.visible_tab = tab_id
+            self.publish()
+
+    @staticmethod
+    def _known_pane(pane_id: str) -> bool:
+        """A viewer's hello names its pane: trusted only if herdr knows that pane."""
+        snap = herdr.snapshot() or {}
+        return any(p.get("pane_id") == pane_id for p in snap.get("panes") or [] if isinstance(p, dict))
 
     def _cells(self) -> dict[tuple, tuple]:
         scr = self.grid.screen_data if hasattr(self, "grid") else None
@@ -461,18 +494,26 @@ class SwarmApp(App):
             return
         self.view.now = self.clock()
         self._update_dock()
-        self.view.zoom_hint = self.home_mode and bool(self.swarm.docked)
+        self.view.zoom_hint = self.home_mode and bool(self.swarm.docked) and self.can_zoom
         # design turn 10: the docked panel in herdr's theme, focused or not (purely visual)
         self.view.panel = theme.panel_look(theme.current(), self.pane_focused, render.FG, render.DIM,
                                            render.FAINT, (render.DOCK_HOV, render.BG)) if self.view.dock else None
-        grid.show(render.render(self.swarm, self.view, size.width, size.height,
-                                stale=self.error or (self.swarm.errors[0] if self.swarm.errors else None)))
+        grid.show(self.decorate(render.render(self.swarm, self.view, size.width, size.height,
+                                              stale=self.error or (self.swarm.errors[0] if self.swarm.errors else None))))
+
+    can_zoom = True  # z zooms this pane to the full graph (not a per-tab panel)
+
+    def decorate(self, scr):
+        """A last touch on the rendered screen (a per-tab panel dims it without a core)."""
+        return scr
 
     def herdr_focus(self, pane_id: str) -> None:
         """herdr says ``pane_id`` got the focus: panorama's panel is focused exactly when that is
         its own pane. The terminal's focus reports (``on_app_focus``) did not always arrive, e.g.
         for the open key's pane.focus (the operator's report), so herdr's own event counts too."""
         self.herdr_focused_pane = pane_id  # kept: panorama's own id can change after this (a dock)
+        if self.core is not None:
+            self.publish()  # the panels' focus looks follow at once
         if not self.my_pane or not pane_id:
             return
         focused = pane_id == self.my_pane
@@ -807,7 +848,13 @@ class SwarmApp(App):
                 if self.focus_log.live:
                     # where the keyboard is now: terminals report focus only on change, so a
                     # panorama started without it (the startup hook) would otherwise look focused
-                    focused = (herdr.snapshot() or {}).get("focused_pane_id")
+                    snap = herdr.snapshot() or {}
+                    focused = snap.get("focused_pane_id")
+                    if snap.get("focused_tab_id"):
+                        try:
+                            self.call_from_thread(self._tab_shown, snap["focused_tab_id"])
+                        except Exception:  # noqa: BLE001 - the app is closing
+                            return
                     if focused:
                         try:
                             self.call_from_thread(self.herdr_focus, focused)
@@ -817,6 +864,8 @@ class SwarmApp(App):
             if ev.get("type") in ("tab_focused", "pane_focused"):
                 self.focus_log.record(ev)
                 try:
+                    if ev.get("type") == "tab_focused" and ev.get("tab_id"):
+                        self.call_from_thread(self._tab_shown, ev["tab_id"])
                     if ev.get("type") == "pane_focused" and ev.get("pane_id"):
                         self.call_from_thread(self.herdr_focus, ev["pane_id"])
                     self.call_from_thread(self.focus_event)
