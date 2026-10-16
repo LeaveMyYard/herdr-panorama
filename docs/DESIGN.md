@@ -1273,6 +1273,14 @@ tile in its off phase.
   background pulses").
 - **Below the entries:** the `+ New agent` row. **Footer:** `↑↓ move  ret open  a answer
   n new  pfx+spc back`.
+  - `pfx+spc` is the design's text for the open key. The footer shows the key as actually
+    bound in herdr's config.toml: the `[[keys.command]]` whose `command` is
+    `leavemyyard.herdr-panorama.open` (issue #13, `openkey.py`). It is re-read when that file
+    changes.
+  - The key is shown whole when every hint still fits. Otherwise it gets a short form:
+    `prefix+` becomes `pfx+`, and modifiers become letters joined with `-` (`ctrl+alt+p` →
+    `c-a-p`; the style is pending the operator, Q157).
+  - With no binding read, the footer shows `pfx+spc`.
 - **State.** Computed like the design's `oState`, with the same extensions as 2a: herdr
   reporting the main session working counts as working, blocked counts as blocked, and the
   session's open inbox questions are its `?N`. The main session's own thread and agent are

@@ -37,7 +37,8 @@ from textual.message import Message
 from textual.strip import Strip
 from textual.widget import Widget
 
-from . import cockpit, config, core, herdr, home, inbox, inbox_link, machines, panels, protocol, render, theme, unseen
+from . import (cockpit, config, core, herdr, home, inbox, inbox_link, machines, openkey, panels, protocol, render,
+               theme, unseen)
 from .collect import Collector
 from .model import BLK, Swarm, live
 
@@ -553,6 +554,7 @@ class SwarmApp(App):
         self.view.now = self.clock()
         self._update_dock()
         self.view.zoom_hint = self.home_mode and bool(self.swarm.docked) and self.can_zoom
+        self.view.open_key = openkey.current()  # herdr's binding for the open key (#13)
         # design turn 10: the docked panel in herdr's theme, focused or not (purely visual)
         self.view.panel = theme.panel_look(theme.current(), self.pane_focused, render.FG, render.DIM,
                                            render.FAINT, (render.DOCK_HOV, render.BG)) if self.view.dock else None
