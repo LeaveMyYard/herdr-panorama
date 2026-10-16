@@ -178,11 +178,13 @@ def _socket_call(method: str, params: dict, timeout: float = TIMEOUT) -> tuple[d
                 if not chunk:
                     break
                 buf += chunk
-        reply = json.loads(buf.split(b"\n", 1)[0] or b"{}")
+        if not buf.strip():
+            return None, NoReply("closed without a reply")  # not a success: nobody said it was done
+        reply = json.loads(buf.split(b"\n", 1)[0])
     except OSError as exc:
         return None, NoReply(str(exc) or "timed out") if sent else str(exc)
     except ValueError as exc:
-        return None, str(exc)
+        return None, NoReply(f"garbled reply: {exc}")  # only a sent request gets this far
     if not isinstance(reply, dict) or "error" in reply:
         return None, str((reply or {}).get("error") if isinstance(reply, dict) else reply)
     return reply.get("result") or {}, None

@@ -43,7 +43,17 @@ MAX_VIEWERS = 64  # open connections at once (a viewer per tab); more are refuse
 
 def private_dir(d: Path, uid: int) -> str | None:
     """Why ``d`` is not a safe home for the socket, or None: it must be a real directory (not a
-    symlink), owned by ``uid``, with no group or world access."""
+    symlink), owned by ``uid``, with no group or world access, in a parent that no other user
+    can rename it out of: one owned by ``uid`` or root, either not writable by others or
+    sticky (``/tmp``, the macOS fallback's parent)."""
+    try:
+        up = os.stat(Path(d).parent)
+    except OSError as exc:
+        return f"its parent: {exc}"
+    if up.st_uid not in (uid, 0):
+        return f"in a directory of uid {up.st_uid}"
+    if up.st_mode & 0o022 and not up.st_mode & stat.S_ISVTX:
+        return f"in a directory others can write in (mode {stat.S_IMODE(up.st_mode):o}, not sticky)"
     try:
         st = os.lstat(d)
     except OSError as exc:

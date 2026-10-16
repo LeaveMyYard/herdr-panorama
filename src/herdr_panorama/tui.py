@@ -1210,14 +1210,27 @@ class SwarmApp(App):
         if self.home_mode and 0 < width < NEW_AGENT_MIN_WIDTH:
             # too narrow for the form (the docked panel's 46 columns): its own herdr popup,
             # over everything; the in-pane form where it fits
+            t0 = time.time()
             err = herdr.open_new_agent(cwd)
             if not err:
                 return
             if isinstance(err, herdr.NoReply):  # it may be open: a form here would be a second one
                 self.log.warning(f"new agent popup: no reply from herdr ({err}); no form here")
+                self.run_worker(lambda: self._popup_started(t0), thread=True, group="new-agent-popup")
                 return
             self.log.warning(f"new agent popup: {err}")  # refused: the form in this pane
         self.push_screen(NewAgentForm(cwd), self._new_agent_done)
+
+    def _popup_started(self, t0: float) -> None:
+        """After a NoReply: wait for the popup's process to say it started; if it never does,
+        tell the operator (nothing appeared, so n can be pressed again)."""
+        end = time.monotonic() + POPUP_START_SECONDS
+        while time.monotonic() < end:
+            if NewAgentApp.started_since(t0):
+                return
+            time.sleep(0.05)
+        if not NewAgentApp.started_since(t0):
+            self._to_ui(lambda: self.notify(POPUP_DID_NOT_OPEN, title="new agent", severity="warning", timeout=6))
 
     def _new_agent_done(self, name: str | None) -> None:
         if not name:
@@ -1249,6 +1262,8 @@ def live_count(swarm: Swarm) -> int:
 
 
 NEW_AGENT_MIN_WIDTH = 80  # the form is 76 columns wide (plus its margin): narrower panes use a popup
+POPUP_START_SECONDS = 3.0  # after an unanswered popup request: how long its process may take to start
+POPUP_DID_NOT_OPEN = "herdr did not open the New agent popup; press n again"  # PENDING the operator (Q154)
 
 
 class NewAgentApp(App):
@@ -1263,7 +1278,28 @@ class NewAgentApp(App):
         self.cwd = cwd or os.environ.get("PANORAMA_NEW_AGENT_CWD") or os.path.expanduser("~")
 
     def on_mount(self) -> None:
+        self.mark_started()
         self.push_screen(NewAgentForm(self.cwd), lambda name: self.exit())
+
+    @staticmethod
+    def _marker():
+        return home.state_dir() / f"new-agent-{home.session_key()}.started"
+
+    @classmethod
+    def mark_started(cls) -> None:
+        """The popup's process is up: the opener (after an unanswered request) looks for this."""
+        try:
+            cls._marker().parent.mkdir(parents=True, exist_ok=True)
+            cls._marker().write_text(str(time.time()))
+        except OSError:
+            pass
+
+    @classmethod
+    def started_since(cls, t0: float) -> bool:
+        try:
+            return float(cls._marker().read_text() or 0) >= t0
+        except (OSError, ValueError):
+            return False
 
 
 class NewAgentForm(ModalScreen):
