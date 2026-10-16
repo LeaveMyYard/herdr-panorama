@@ -670,8 +670,10 @@ compares cell for cell (the whole 3a panel; every pulsed cell of 2a).
 
 The operator's report: colour animations moved in visible steps and looked laggy, because every
 colour changed only on the 250 ms frame. Reference: `docs/design/swarm-smooth.js` (used by
-`swarm-min.js`, `swarm-dock.js`, `swarm-unseen.js`, `swarm-deep.js`), rendered between whole frames
-by `render-smooth.mjs`; `tests/test_smooth.py` compares those frames cell for cell.
+`swarm-min.js`, `swarm-dock.js`, `swarm-unseen.js`, `swarm-deep.js`, `swarm-tiles.js`), rendered between
+whole frames by `render-smooth.mjs` (2a with unseen marks, the 9e panel with and without);
+`tests/test_smooth.py` compares those frames cell for cell. 9e's needs-you tiles ease between their
+colours and `TILE_OFF` the same way, and an unseen tile's pulse runs over that blink.
 
 - **Time, not steps.** `View.frame` is the animation time in 250 ms frames and may be
   fractional. Whole frames move spinners and sweeps, one step a frame, as before. Colours follow

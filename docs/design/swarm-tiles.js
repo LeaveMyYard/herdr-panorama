@@ -13,6 +13,7 @@
 //        list an unseen thread's tile (and the done fold's tile) pulses its BACKGROUND in the event colour, the same
 //        3 s rhythm and never fully off (operator, Q115: "tile background pulses")
 import { TH, DATA, H } from './swarm-tui.js';
+import { blinkK } from './swarm-smooth.js';
 const { setFrame, Scr, LIVE, byUrg, isDone, nq, trunc, len, GL } = H;
 const th = TH.dark, PW = 46, HH = 45, HOV = '#171a1f';
 let F = 0;
@@ -25,7 +26,8 @@ const on = () => Math.floor(F / 2) % 2 === 0;
 let PULSE = null;
 const hx = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
 const mix = (a, b, p) => { const A = hx(a), B = hx(b); return '#' + A.map((v, i) => Math.round(B[i] + (v - B[i]) * p).toString(16).padStart(2, '0')).join(''); };
-const gcol = st => !ATT(st) ? th.st[st].t : PULSE != null ? mix(th.st[st].t, th.faint, PULSE) : on() ? th.st[st].t : th.faint;
+// smooth animation (swarm-smooth.js): the blink eases with F (whole frames: on, on, off, off)
+const gcol = st => !ATT(st) ? th.st[st].t : mix(th.st[st].t, th.faint, PULSE != null ? PULSE : blinkK(F));
 const sl = segs => segs.reduce((a, g) => a + (g == null ? 0 : len(typeof g === 'string' ? g : g[0])), 0);
 const RP = (s, xr, y, segs) => s.P(xr - sl(segs), y, segs);
 const bar = (s, y, h) => { for (let j = 0; j < h; j++) s.put(0, y + j, '▌', th.key); };
@@ -58,7 +60,7 @@ const right = o => [o.q ? ['?' + o.q, th.st.wait.t, 1] : null, o.q ? ' ' : null,
 const tItems = or => { const act = or.threads.filter(t => !isDone(t)), d = or.threads.length - act.length; return d ? [...act, { fold: d }] : act; };
 
 // tiles: 2a's pod (' g ', 3 cells) and a 1-cell one; needs-you tiles blink like the bare glyphs do
-const tileC = st => !ATT(st) ? PB[st] : PULSE != null ? [mix(PB[st][0], OFF[0], PULSE), mix(PB[st][1], OFF[1], PULSE)] : on() ? PB[st] : OFF;
+const tileC = st => { if (!ATT(st)) return PB[st]; const k = PULSE != null ? PULSE : blinkK(F); return [mix(PB[st][0], OFF[0], k), mix(PB[st][1], OFF[1], k)]; };
 const tile = (st, g) => { const [b, f] = tileC(st); return [' ' + g + ' ', f, 1, b]; };
 const mini = (st, g) => { const [b, f] = tileC(st); return [g, f, 1, b]; };
 const spaced = gs => gs.flatMap((g, i) => (i ? [' ', g] : [g]));
@@ -131,7 +133,7 @@ function panel(V) {
 }
 
 export function renderTiles(f = 0) {
-  F = f; setFrame(f);
+  F = f; setFrame(Math.floor(f)); // f may be fractional: colours glide, spinners step
   return {
     P0: panel({}).rows(),
     PA: panel({ stTile: 1 }).rows(),

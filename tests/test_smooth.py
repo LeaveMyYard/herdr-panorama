@@ -18,6 +18,7 @@ from .design_dock import FIX, design_swarm
 from .test_tui import loaded, make_app
 from .test_unseen import MARKS, cells, grid
 
+NINE = json.loads((FIX / "design_9.json").read_text())
 FRACTIONS = [0.3, 1.5, 2.7, 3.95, 5.25, 9.9, 11.6]
 
 
@@ -33,8 +34,9 @@ def layouts():
     """(name, swarm factory, view kwargs, width): every layout that animates colours."""
     return [
         ("2a unseen", design_swarm, {"orch": "w1:p1", "thread": "t595", "agent": "a2", "focus": 2, "unseen": dict(MARKS)}, 160),
-        ("3a unseen", design_swarm, {"orch": "w1:p3", "dock": True, "unseen": dict(MARKS)}, 46),
-        ("3a", design_swarm, {"orch": "w1:p3", "dock": True}, 46),
+        ("9e unseen", design_swarm, {"orch": "w1:p3", "dock": True, "unseen": dict(MARKS)}, 46),
+        ("9e", design_swarm, {"orch": "w1:p3", "dock": True}, 46),
+        ("9e docs site", lambda: design_swarm(NINE["data"]), {"orch": "w1:p3", "dock": True, "unseen": dict(MARKS)}, 46),
         ("narrow", design_swarm, {"orch": "w1:p1", "thread": "t595", "focus": 1}, 70),
         ("5d", deep_swarm, {"orch": "w1:p1", "focus": 2, "unseen": {"b1": "fail"}}, 160),
         ("demo 2a", demo_swarm, {"orch": "w1:p2", "thread": "wf:wf_search", "agent": "j1a2b3c", "focus": 2}, 160),
@@ -254,16 +256,23 @@ async def test_a_low_animation_fps_keeps_spinners_at_their_speed(fake_herdr, tmp
 SMOOTH = json.loads((FIX / "design_smooth.json").read_text())["frames"]
 
 
+def nine_panel(frame: float, marks=None):
+    v = render.View(orch="w1:p3", dock=True, frame=frame, unseen=dict(marks or {}))
+    v.hover = ("orch", ("w1:p4",))  # the design's hover
+    return cells(render.render(design_swarm(NINE["data"]), v, 46, 45), 46)
+
+
 @pytest.mark.parametrize("frame", sorted(SMOOTH, key=float))
-def test_3a_glides_exactly_like_the_design_between_frames(frame):
-    """The whole 46-column panel at a fractional frame, cell for cell: tints, pulsing and
-    blinking glyphs mid-way."""
-    v = render.View(orch="w1:p3", dock=True, frame=float(frame), unseen=dict(MARKS))
-    v.hover = ("orch", ("w1:p4",))
-    got = cells(render.render(design_swarm(), v, 46, 45), 46)
-    want = grid(SMOOTH[frame]["P"])
+@pytest.mark.parametrize("key,marks", [("E", None), ("U", MARKS)], ids=["9e", "9e unseen"])
+def test_9e_glides_exactly_like_the_design_between_frames(frame, key, marks):
+    """The whole 46-column docked panel at a fractional frame, cell for cell: blinking tiles and
+    glyphs mid-fade, unseen tiles and tints mid-pulse, spinners on their whole frame."""
+    got, want = nine_panel(float(frame), marks), grid(SMOOTH[frame][key])
     diffs = [(x, y, want[y][x], got[y][x]) for y in range(45) for x in range(46) if want[y][x] != got[y][x]]
     assert not diffs, f"{len(diffs)} cells differ, first: {diffs[:5]}"
+    if 1 < float(frame) % 4 < 2 or 3 < float(frame) % 4:  # mid-fade: some tile is between on and off
+        offs = {render.TILE_OFF[0]} | {b for b, _ in render.PB.values()}
+        assert any(c[2] not in offs for row in got for c in row if c[0] in "!?✗")
 
 
 @pytest.mark.parametrize("frame", sorted(SMOOTH, key=float))

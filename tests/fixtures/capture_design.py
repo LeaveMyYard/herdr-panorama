@@ -66,7 +66,7 @@ def main() -> None:
               for f, fr in json.loads(node("render-smooth.mjs", "json")).items()}
     (HERE / "design_smooth.json").write_text(json.dumps(
         {"source": "docs/design/swarm-unseen.js with swarm-smooth.js (smooth animation) rendered by "
-                   "docs/design/render-smooth.mjs between whole frames: G, N and P as in design_6.json",
+                   "docs/design/render-smooth.mjs between whole frames: G and N as in design_6.json, E and U (swarm-tiles.js 9e) as in design_9.json",
          "frames": smooth}, ensure_ascii=False, separators=(",", ":")))
 
 

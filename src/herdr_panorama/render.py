@@ -155,7 +155,7 @@ class Screen:
         return not isinstance(self.c, _Rows) or list.__getitem__(self.c, y) is not None
 
     def put(self, x: int, y: int, s: str, fg: str | None = None, bg: str | None = None, bold: bool = False) -> int:
-        for ch in ((s,) if type(s) is Anim else str(s)):  # an Anim is one glyph (a spinner)
+        for ch in (s.chars() if type(s) is Anim else str(s)):  # an Anim keeps moving, cell by cell
             if 0 <= y < self.h and 0 <= x < self.w:
                 cell = self.c[y][x]
                 cell.ch, cell.fg, cell.bold = ch, fg or FG, bool(bold)
@@ -678,13 +678,23 @@ class Anim(str):
 
     def __new__(cls, fn, args: tuple, frame: float, step: bool = False):
         a = str.__new__(cls, fn(frame, *args))
-        a.fn, a.args, a.step, a.k = fn, args, step, int(frame)
+        a.fn, a.args, a.step, a.k, a.f = fn, args, step, int(frame), frame
         return a
+
+    def chars(self) -> list:
+        """One Anim per character (``put`` gives each cell its own)."""
+        if len(self) == 1:
+            return [self]
+        return [Anim(_nth, (self.fn, self.args, i), self.f, self.step) for i in range(len(self))]
 
     def at(self, frame: float) -> Anim:
         if self.step and int(frame) == self.k:
             return self
         return Anim(self.fn, self.args, frame, self.step)
+
+
+def _nth(frame: float, fn, args: tuple, i: int) -> str:
+    return fn(frame, *args)[i]
 
 
 BLINK_PERIOD = 4  # frames: one second, as the design's floor(F / 2) % 2
@@ -1692,11 +1702,34 @@ def _rp(s: Screen, xr: int, y: int, segs) -> None:
 TILE_OFF = ("#2a2e35", "#4d535c")  # swarm-tiles.js OFF: (background, glyph)
 
 
+def _tile_bg(frame: float, on: str, off: str, ev: str | None, quiet: bool) -> str:
+    """A needs-you tile's background: blinking between ``on`` and ``off`` (``blink``), then the
+    unseen pulse over it (as swarm-tiles.js: pulseTile over tileC)."""
+    base = _blink_between(frame, on, off)
+    return base if ev is None else _pulse(frame, ev, quiet, base)
+
+
+def _blink_between(frame: float, on: str, off: str) -> str:
+    k = blink(frame)
+    return on if k >= 1 else off if k <= 0 else mix(off, on, k)
+
+
+def _padded(frame: float, fn, args: tuple) -> str:
+    return " " + fn(frame, *args) + " "
+
+
 def dock_tile(st: str, g: str, view: View, m: tuple[str, bool] | None = None) -> tuple:
-    """swarm-tiles.js tile (and pulseTile): `` g `` bold in the state's tile colours. Unseen (``m``):
-    its background pulses toward the event colour, never fully off (the operator, Q115)."""
-    b, f = TILE_OFF if _att(st) and not _blink_on(view) else PB.get(st, PB[Q])
-    return (f" {g} ", f, True, pulse_col(m, b, view.frame) if m else b)
+    """swarm-tiles.js tile (and pulseTile): `` g `` bold in the state's tile colours. A needs-you
+    tile blinks to TILE_OFF (easing, see ``blink``). Unseen (``m``): its background pulses toward the
+    event colour, never fully off (the operator, Q115)."""
+    b, f = PB.get(st, PB[Q])
+    if _att(st):
+        bg = Anim(_tile_bg, (b, TILE_OFF[0], m[0] if m else None, m[1] if m else False), view.frame)
+        f = Anim(_blink_between, (f, TILE_OFF[1]), view.frame)
+    else:
+        bg = pulse_col(m, b, view.frame) if m else b
+    text = Anim(_padded, (g.fn, g.args), view.frame, True) if type(g) is Anim else f" {g} "
+    return (text, f, True, bg)
 
 
 def _thread_segs(d: DockState, view: View) -> list:
