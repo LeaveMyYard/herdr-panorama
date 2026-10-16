@@ -30,6 +30,7 @@ MARKERS = (
     b"async_launched", b'"totalToolUseCount"', b"resumedAgentId", b"runId", b"task-notification",
     b"ask_operator", b"Recorded as Q", b"already with the operator",
     b'"type":"custom-title"', b'"type":"agent-name"', b'"type":"ai-title"',
+    b'"type":"continued-in"',  # the conversation moved on to a new session id (collect follows it)
     # background work (design turn 8): Bash in the background, Monitor watches, TaskStop / KillShell
     b'"run_in_background":true', b'"backgroundTaskId"', b'"name":"Monitor"', b'"timeoutMs"',
     b'"name":"TaskStop"', b'"name":"KillShell"', b'"task_type"', b'"shell_id"',

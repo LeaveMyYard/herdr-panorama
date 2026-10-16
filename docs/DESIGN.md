@@ -94,11 +94,24 @@ each agent with `agent == "claude"` and `agent_session.kind == "id"`:
 |---|---|
 | `pane_id`, `tab_id`, `workspace_id`, `focused` | agent entry |
 | `herdr_status` | `agent_status` (`idle` / `working` / `blocked` / `done` / `unknown`) |
-| `session_id` | `agent_session.value` |
+| `session_id` | `agent_session.value`, then followed through `continued-in` records (below) |
 | `tab_label` | the tab's `label`; without one, the session's `custom-title`, `agent-name` or `ai-title` record, then the terminal title |
 
 Orchestrators follow herdr's tab order; several Claude panes in one tab are
 labelled `tab · pane`.
+
+**A conversation can move to a new session id.** The same Claude process can carry on under a
+new id; the operator's report was a pane showing 0 agents while it ran several. The old
+transcript then ends with
+`{"type":"continued-in","sessionId":"<old>","continuedInSessionId":"<new>"}` (captured from
+Claude Code 2.1.301), and the new transcript is in the same project dir. herdr 0.9.3 keeps
+reporting the old id. The collector follows `continued-in` records:
+- it follows at most 8 of them, and stops at the first id it has already seen;
+- it reads the last session it finds;
+- it matches inbox questions asked under any id along the way.
+
+Claude's open files don't help here: the claude process keeps no transcript open between
+writes, so `/proc/<pid>/fd` can't name the live transcript.
 
 ### Discovery (zoetrope `discovery.rs`)
 

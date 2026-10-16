@@ -18,6 +18,7 @@ from .model import (BG, BLK, CXL, DONE, FAIL, INF, LOST, REV, RUN, WAIT, Agent, 
 from .scan import discovery
 from .scan.session import MAIN, BgLaunch, Session
 
+CONTINUE_HOPS = 8  # session continuations followed at most (live_session)
 NO_PID_RETRY = 30.0  # seconds before asking herdr again for a pane's Claude process
 QUIET_AFTER = 30 * 60  # a running agent silent this long reads "quiet 42m"
 INBOX_MARK = re.compile(r"^(?:❓\d+\s+)+")  # herdr-inbox's tab-label prefix; the card shows ?N itself
@@ -91,6 +92,23 @@ class Collector:
         sess.update(since=self.now() - self.window - 600)
         return sess
 
+    def live_session(self, session_id: str, cwd: str | None) -> tuple[list[str], Session | None]:
+        """The session a conversation lives in now. herdr reports the id the pane's Claude
+        started with; when Claude Code moves the conversation to a new session id in the same
+        process, the old transcript ends with a ``continued-in`` record naming it, and herdr
+        keeps the old id. Followed up to CONTINUE_HOPS (a loop stops at the first repeat).
+        Every id on the way (oldest first), and the last session found."""
+        ids, sess = [session_id], self.session(session_id, cwd)
+        while sess is not None and sess.continued_in and len(ids) <= CONTINUE_HOPS:
+            if sess.continued_in in ids:
+                break
+            nxt = self.session(sess.continued_in, cwd)
+            if nxt is None:
+                break  # not written yet (or another machine's): the last one found
+            ids.append(sess.continued_in)
+            sess = nxt
+        return ids, sess
+
     # -- the model ------------------------------------------------------------------
 
     def collect(self, snapshot: dict | None, open_qs: list | None) -> Swarm:
@@ -135,9 +153,11 @@ class Collector:
                             session_id=sid, herdr_status=a.get("agent_status") or "unknown",
                             workspace_id=a.get("workspace_id"), focused=bool(a.get("focused")),
                             cwd=a.get("cwd") if isinstance(a.get("cwd"), str) else None)
-        mine = [q for q in open_qs if (sid and q.session_id == sid) or (not q.session_id and q.pane_id == orch.pane_id)]
+        ids, sess = self.live_session(sid, a.get("cwd")) if sid else ([], None)
+        if sess is not None:
+            orch.session_id = sess.session_id
+        mine = [q for q in open_qs if (q.session_id and q.session_id in ids) or (not q.session_id and q.pane_id == orch.pane_id)]
         orch.inbox, orch.inbox_texts = [q.id for q in mine], [q.question for q in mine]
-        sess = self.session(sid, a.get("cwd")) if sid else None
         titles = sess.titles if sess else {}
         label = (INBOX_MARK.sub("", tab.get("label") or "") or titles.get("custom") or titles.get("agent") or titles.get("ai")
                  or a.get("terminal_title_stripped") or orch.pane_id or "?")

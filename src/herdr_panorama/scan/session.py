@@ -168,6 +168,7 @@ class Session:
         self.wf_summary: dict[str, dict] = {}
         self.prompts: set[tuple[float, str]] = set()
         self.titles: dict[str, str] = {}
+        self.continued_in: str | None = None  # the session this one continued in (its last word)
         self.qids: dict[str, set[int]] = {}
         self.bad_records = 0
         self._pending_ask: dict[str, str] = {}
@@ -361,6 +362,11 @@ class Session:
             for note in notes:
                 if note["status"] and when is not None:
                     self.notices.setdefault(note["task"], set()).add((when, note["status"], note["tool_uses"]))
+            return
+        if kind == "continued-in":
+            nxt = rec.get("continuedInSessionId")
+            if owner == MAIN and isinstance(nxt, str) and nxt and nxt != self.session_id:
+                self.continued_in = nxt
             return
         if kind == "custom-title" and isinstance(rec.get("customTitle"), str):
             self.titles["custom"] = rec["customTitle"]
