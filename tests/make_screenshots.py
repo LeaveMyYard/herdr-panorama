@@ -73,6 +73,21 @@ async def test_new_agent_shot(fake_herdr):
         shot(app, "new-agent", 2000)
 
 
+async def test_new_agent_popup_shot(fake_herdr, monkeypatch):
+    """The same form as its own herdr popup (opened from a narrow docked panel), typed in like
+    new-agent.png: docs/screenshots/new-agent-popup.png."""
+    from herdr_panorama.tui import NewAgentApp
+    monkeypatch.setenv("PANORAMA_NEW_AGENT_CWD", "/home/user/work/billing")
+    app = NewAgentApp()
+    async with app.run_test(size=(84, 26)) as pilot:
+        await pilot.pause()
+        await pilot.press(*"Billing export")
+        await pilot.press("tab", "tab")
+        await pilot.press(*"Add CSV export to the invoices page")
+        await pilot.pause()
+        shot(app, "new-agent-popup", 1100)
+
+
 async def test_dock_panel_shots(fake_herdr):
     """The cockpit's docked panel (9e, turn 10's default fixed colours) focused and not, next to
     the design's own render of the same dataset and frame: docs/screenshots/dock-app.png,

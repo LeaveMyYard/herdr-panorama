@@ -20,6 +20,17 @@ width = "100%"
 height = "100%"
 command = ["sh", "-c", "exec uv run --quiet --frozen --no-dev --project \"${HERDR_PLUGIN_ROOT:-.}\" panorama tui"]
 
+# The + New agent form as its own popup, over everything: a docked panel (46 columns) is too
+# narrow for it. Sized for the form (76 columns plus its frame). PANORAMA_NEW_AGENT_CWD is the
+# form's default working directory.
+[[panes]]
+id = "new-agent"
+title = "New agent"
+placement = "popup"
+width = 84
+height = 26
+command = ["sh", "-c", "exec uv run --quiet --frozen --no-dev --project \"${HERDR_PLUGIN_ROOT:-.}\" panorama new-agent"]
+
 # Bind a key to this (suggested: prefix+space). With the home tab on (default), it focuses
 # the "◆ panorama" tab, opening it if missing; with home_tab = false it opens the popup.
 [[actions]]
