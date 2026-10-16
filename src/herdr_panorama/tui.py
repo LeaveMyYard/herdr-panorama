@@ -611,15 +611,17 @@ class SwarmApp(App):
         self._arrow_timer = None
         if not self._arrows_mode() or self.view.focus != 0:
             return
+        if self.docking:
+            # first: during a dock (one across workspaces changes panorama's pane id, so the focus
+            # checks below can be briefly wrong) the arrow is looked at again when it ends
+            self._arrow_again = True
+            return
         # the keyboard must still be on panorama: an arrow typed here, then the operator went into
         # a pane (the terminal's blur, or herdr reporting another pane focused) or a follow is
         # moving panorama: no dock
         if self.following or not self.pane_focused:
             return
         if self.herdr_focused_pane and self.my_pane and self.herdr_focused_pane != self.my_pane:
-            return
-        if self.docking:
-            self._arrow_again = True  # look again when this dock is done
             return
         o = render.find_orch(self.swarm, self.view.orch) if self.view.orch != render.NEW_ROW else None
         if o is None or o.machine or o.pane_id == self.swarm.docked:

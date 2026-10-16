@@ -145,6 +145,12 @@ elif cmd == "pane move":
     result = {{"type": "pane_move", "move_result": {{"pane": {{"pane_id": pane["pane_id"], "tab_id": pane["tab_id"]}},
               "previous_pane_id": args[2], "previous_tab_id": old, "closed_tab_id": closed, "created_tab": created,
               "target_layout": {{"area": {{"width": int(os.environ.get("FAKE_HERDR_AREA", "200"))}}}}}}}}
+elif cmd == "tab focus":
+    # the client shows that tab, on its focused pane (here: the one already focused there, else its first)
+    tab = args[2]
+    in_tab = [p["pane_id"] for p in st["panes"] if p["tab_id"] == tab]
+    if in_tab and st.get("focus") not in in_tab:
+        st["focus"] = in_tab[0]
 elif cmd == "tab close":
     st["tabs"] = [t for t in st["tabs"] if t["tab_id"] != args[2]]
     st["panes"] = [p for p in st["panes"] if p["tab_id"] != args[2]]
