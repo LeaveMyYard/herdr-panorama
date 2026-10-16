@@ -242,7 +242,10 @@ async def test_a_follow_updates_the_views_own_pane(fake_herdr, monkeypatch):
     app = await app_with(fake_herdr, monkeypatch, lambda me, fl=None, on_docked=None: ("w2:p5", "docked"))
     async with app.run_test(size=(46, 45)) as pilot:
         app.focus_event()
-        await settle(pilot)
+        for _ in range(100):  # until the follow worker's result is back on the UI thread (#32)
+            await pilot.pause(0.05)
+            if app.my_pane == "w2:p5":
+                break
         assert app.my_pane == "w2:p5" and app.collector.self_pane == "w2:p5"
 
 
@@ -507,6 +510,10 @@ def test_r12f_l2_a_switch_reported_late_still_gets_focus_sent_back(herdr, monkey
         threading.Timer(0.2, fl.record, args=({"type": "pane_focused", "pane_id": b},)).start()
         return err
     monkeypatch.setattr(cockpit.herdr, "swap_panes", swap)
+    # the event comes 0.2 s after the swap, and nothing ends the wait early here (no swap event:
+    # the normal case), so it runs to its bound: 1.5 s instead of 0.3 s leaves a slow runner
+    # 1.3 s rather than 0.1 s (#18, #9); with the wait a no-op the event is never seen
+    monkeypatch.setattr(cockpit, "SYNC_SECONDS", 1.5)
     cockpit.follow(h.pane_id, fl)
     assert sockets(herdr, "pane.focus") == [{"pane_id": b}]
 
