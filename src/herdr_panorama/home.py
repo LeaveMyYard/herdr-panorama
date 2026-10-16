@@ -268,7 +268,7 @@ def ensure(focus: bool) -> tuple[Home | None, str | None]:
         err = herdr.focus_tab(home.tab_id)
         if err:
             return home, err
-        if cockpit.enabled():
+        if cockpit.moving():
             herdr.focus_pane(home.pane_id)  # the list side of the tab, not the agent
     return home, None
 
@@ -300,8 +300,10 @@ def _ensure_locked(focus: bool, cockpit):
         return home, None, True
     if herdr.pane_label(snapshot, home.pane_id) != HOME_LABEL:
         herdr.rename_pane(home.pane_id, HOME_LABEL)  # an older home pane: label it once
-    if not cockpit.enabled() and not is_home_label(_tab_label(snapshot, home.tab_id)):
-        moved = cockpit.undock(home)  # cockpit off and docked by an agent: back to its own tab
+    if not cockpit.moving() and not is_home_label(_tab_label(snapshot, home.tab_id)):
+        # cockpit off, or per-tab panels (the home panorama stays home): a pane docked by an
+        # agent goes back to its own tab
+        moved = cockpit.undock(home)
         if moved is not None:
             home = moved
     return home, None, False
@@ -328,13 +330,28 @@ def new_agent(name: str, cwd: str | None, prompt: str | None) -> tuple[str | Non
         return None, f"no such directory: {cwd}"
     if herdr.agent_exists(slug):
         return None, f"an agent named {slug} already exists"
-    tab, err = herdr.create_tab(slug, cwd or None, focus=False)
-    if tab is None or not tab.get("tab_id"):
-        return None, f"tab create failed: {err}"
-    pane = herdr.tab_root_pane(tab["tab_id"])
+    from . import cockpit
+    panel = None
+    if cockpit.per_tab():
+        # per-tab panels: the tab is built with its panel on the left from the first frame
+        # (layout.apply), so no panel ever has to be swapped in there
+        lay, err = herdr.apply_panel_layout(slug, cwd or None, 0.3)
+        if lay is None:
+            return None, f"tab create failed: {err}"
+        tab = {"tab_id": lay["tab_id"]}
+        root = lay.get("root") or {}
+        panel = (root.get("first") or {}).get("pane_id")
+        pane = (root.get("second") or {}).get("pane_id")
+    else:
+        tab, err = herdr.create_tab(slug, cwd or None, focus=False)
+        if tab is None or not tab.get("tab_id"):
+            return None, f"tab create failed: {err}"
+        pane = herdr.tab_root_pane(tab["tab_id"])
     if pane is None:
         herdr.close_tab(tab["tab_id"])
         return None, "the new tab has no pane"
+    if panel:
+        cockpit.fit(panel, tab["tab_id"])
     err = herdr.start_agent(slug, pane)
     if err:
         herdr.close_tab(tab["tab_id"])  # no orphan tab left behind
@@ -342,6 +359,8 @@ def new_agent(name: str, cwd: str | None, prompt: str | None) -> tuple[str | Non
     text = herdr.clean(prompt or "").strip()
     perr = herdr.prompt_agent(pane, text) if text else None  # the pane we just created, by id
     herdr.focus_tab(tab["tab_id"])
+    if panel:
+        herdr.focus_pane(pane)  # the agent, not the panel layout.apply left focused
     if perr:
         return slug, f"started, but the first prompt failed: {perr}"
     return slug, None

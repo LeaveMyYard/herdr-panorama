@@ -278,6 +278,7 @@ cockpit = false      # experimental: panorama docked left of the selected agent 
 cockpit_width = 46   # the list's width in the cockpit
 cockpit_follow = true # the cockpit follows you to the orchestrator tab you switch to
 cockpit_follow_tabs = "any" # or "single": follow only into one-pane orchestrator tabs
+cockpit_panels = "moving"  # or "per-tab" (experimental): every orchestrator tab its own panel
 dock_keep_focus = true # docked list: switching chats keeps the keyboard on panorama
 dock_on_arrows = true  # docked list: ↑/↓ switch the chats; Enter goes into the agent
 panel_colors = "fixed" # docked panel background: "fixed" (#14161b focused, #101215 not) or "herdr" (herdr's theme)

@@ -222,6 +222,52 @@ def open_tab_pane(focus: bool) -> tuple[dict | None, str | None]:
     return (pane, None) if pane.get("pane_id") else (None, "no pane in the reply")
 
 
+# The per-tab panel's command, as in the manifest's ``panel`` pane (a test keeps them equal):
+# ``layout.apply`` panes are not plugin panes, so a + New agent tab's panel is started with it.
+PANEL_COMMAND = ["sh", "-c", 'exec uv run --quiet --frozen --no-dev --project "${HERDR_PLUGIN_ROOT:-.}" panorama panel']
+PLUGIN_ENV = ("HERDR_PLUGIN_ID", "HERDR_PLUGIN_ROOT", "HERDR_PLUGIN_STATE_DIR", "HERDR_PLUGIN_CONFIG_DIR")
+
+
+def open_panel(target_pane: str) -> tuple[dict | None, str | None]:
+    """A per-tab panel (the plugin's ``panel`` entrypoint) split right of ``target_pane``,
+    without focus: the operator stays where they are. Returns the PaneInfo."""
+    plugin_id = os.environ.get("HERDR_PLUGIN_ID", PLUGIN_ID)
+    args = ["plugin", "pane", "open", "--plugin", plugin_id, "--entrypoint", "panel", "--placement", "split",
+            "--direction", "right", "--target-pane", target_pane, "--no-focus"]
+    root = os.environ.get("HERDR_PLUGIN_ROOT")
+    if root:
+        args += ["--cwd", root]
+    res, err = call(*args)
+    if res is None:
+        return None, err
+    pane = (res.get("plugin_pane") or {}).get("pane") or {}
+    return (pane, None) if pane.get("pane_id") else (None, "no pane in the reply")
+
+
+def close_plugin_pane(pane_id: str) -> str | None:
+    return call("plugin", "pane", "close", pane_id)[1]
+
+
+def apply_panel_layout(label: str, cwd: str | None, ratio: float) -> tuple[dict | None, str | None]:
+    """A new, unfocused tab with a per-tab panel on the left and a plain pane on the right (for
+    + New agent: no panel ever has to be swapped in there). Returns the layout: its ``tab_id``
+    and ``root.first`` / ``root.second`` pane ids."""
+    root = os.environ.get("HERDR_PLUGIN_ROOT")
+    env = {k: os.environ[k] for k in PLUGIN_ENV if os.environ.get(k)}
+    first = {"type": "pane", "command": PANEL_COMMAND, "env": env, "label": "Panorama panel"}
+    if root:
+        first["cwd"] = root
+    second = {"type": "pane"}
+    if cwd:
+        second["cwd"] = cwd
+    res, err = socket_call("layout.apply", {"tab_label": clean(label, 200), "focus": False, "root": {
+        "type": "split", "direction": "right", "ratio": ratio, "first": first, "second": second}})
+    if res is None:
+        return None, err
+    lay = res.get("layout") or {}
+    return (lay, None) if lay.get("tab_id") else (None, "no tab in the reply")
+
+
 def rename_tab(tab_id: str, label: str) -> str | None:
     return call("tab", "rename", tab_id, label)[1]
 

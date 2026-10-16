@@ -37,7 +37,7 @@ from textual.message import Message
 from textual.strip import Strip
 from textual.widget import Widget
 
-from . import cockpit, config, core, herdr, home, inbox, inbox_link, machines, protocol, render, theme, unseen
+from . import cockpit, config, core, herdr, home, inbox, inbox_link, machines, panels, protocol, render, theme, unseen
 from .collect import Collector
 from .model import BLK, Swarm, live
 
@@ -273,6 +273,8 @@ class SwarmApp(App):
         self._stopping = False
         self.core: core.Core | None = None  # per-tab panels: this panorama publishes its state
         self.visible_tab: str | None = None  # the tab herdr last reported focused (per-tab panels)
+        self.panels: panels.Manager | None = None  # per-tab panels: the panel manager (with the core)
+        self.panel_panes: dict[str, str] = {}  # tab -> its panel, published to the viewers
         self.focus_log: cockpit.FocusLog | None = None  # set while the event stream is up
         self.fit_total: int | None = None  # the shared split's width at the last fit
         self._next_frame = 0.0  # animate(): when the next whole frame is due (anim_clock)
@@ -283,10 +285,14 @@ class SwarmApp(App):
         yield self.grid
 
     def on_mount(self) -> None:
-        if self.live_refresh and self.home_mode and cockpit.panels_mode() == "per-tab":
+        if self.live_refresh and self.home_mode and cockpit.per_tab():
             self.core = core.Core.start(protocol.socket_path(), protocol.lock_path(),
                                         on_seen=lambda ids: self._to_ui(self._seen, ids),
-                                        verify_pane=self._owned_pane)
+                                        verify_pane=self._owned_pane, on_open=self._open_key)
+            if self.core is not None:
+                self.panels = panels.Manager(
+                    verified=self.core.verified_panes,
+                    state_path=home.state_dir() / f"panels-{home.session_key()}.json")
         self.refresh_model()
         if self.live_refresh:
             self.set_interval(REFRESH_SECONDS, self.refresh_model)
@@ -355,6 +361,7 @@ class SwarmApp(App):
                 self.armed_at = time.monotonic() + ARM_SECONDS
         self.repaint()
         self.publish()
+        self.panels_pass()
         # Per-cell click arming: a cell whose target changed in this refresh (something appeared,
         # moved there, or another identity now sits where one was) ignores clicks for
         # CLICK_ARM_SECONDS: a click aimed before the refresh must not land on something else.
@@ -375,9 +382,58 @@ class SwarmApp(App):
         try:
             self.core.publish(protocol.state_message(
                 self.swarm, self.view.unseen, self.herdr_focused_pane,
-                [self.visible_tab] if self.visible_tab else None))
+                [self.visible_tab] if self.visible_tab else None, self.panel_panes))
         except protocol.TooLong as exc:
             self.log.warning(f"state not published: {exc}")
+
+    # -- per-tab panels: the panel manager (panels.py) ------------------------------------
+
+    def panels_pass(self) -> None:
+        """After a refresh or a focus change: one manager pass in a worker (the manager skips it
+        when one is running). The first pass is the start batch."""
+        if self.panels is None or not self.loaded or self._stopping:
+            return
+        self.run_worker(self._panels_worker, thread=True, group="panels")
+
+    def _panels_worker(self) -> None:
+        try:
+            m = self.panels
+            if not cockpit.per_tab():  # switched off while running: the panels go, once
+                if m.started:
+                    m.remove_all()
+                    m.started = False
+                    self._to_ui(self._panels_now, {})
+                return
+            snap = herdr.snapshot()
+            if snap is None:
+                return
+            sv = m.reconcile(snap, self.swarm, start=not m.started)
+            if sv is not None:
+                self._to_ui(self._panels_now, m.panels_map(sv))
+        except Exception as exc:  # noqa: BLE001 - never kill the view; the next pass tries again
+            msg = f"panels: {type(exc).__name__}: {exc}"
+            self._to_ui(lambda: self.log.warning(msg))
+
+    def _panels_now(self, mapping: dict) -> None:
+        if mapping != self.panel_panes:
+            self.panel_panes = mapping
+            self.publish()
+
+    def _open_key(self, req: dict) -> str:
+        """The open key, from the core's socket (its reader thread): the manager decides, and
+        "home" shows this home panorama."""
+        if self.panels is None or not cockpit.per_tab():
+            did = "home"
+        else:
+            snap = herdr.snapshot() or {}
+            did = self.panels.open_key(snap, self.swarm)
+        if did == "home" and self.my_pane:
+            me = home.find(herdr.snapshot() or {}, prefer=self.my_pane)
+            if me is not None:
+                err = herdr.focus_tab(me.tab_id) or herdr.focus_pane(me.pane_id)
+                return "failed" if err else "home"
+            return "failed"
+        return did
 
     def _tab_shown(self, tab_id: str) -> None:
         """herdr shows ``tab_id`` now: the per-tab panels animate only where they are seen."""
@@ -559,7 +615,7 @@ class SwarmApp(App):
     def cockpit_mode(self) -> bool:
         if self._cockpit_override is not None:
             return self._cockpit_override
-        return self.home_mode and cockpit.enabled()
+        return self.home_mode and cockpit.moving()  # per-tab: the panels do the docking
 
     def on_resize(self, event) -> None:
         self.call_after_refresh(self.repaint)
@@ -842,6 +898,8 @@ class SwarmApp(App):
 
     def _watch_focus(self) -> None:
         self.focus_log = cockpit.FocusLog()
+        if self.panels is not None:
+            self.panels.focus_log = self.focus_log  # the start batch's restore guard reads it
         for ev in herdr.events(["tab.focused", "pane.focused"], stop=lambda: self._stopping):
             if ev.get("type") in ("_connected", "_disconnected"):
                 self.focus_log.live = ev["type"] == "_connected"
@@ -882,6 +940,7 @@ class SwarmApp(App):
 
     def _follow_now(self) -> None:
         self._follow_timer = None
+        self.panels_pass()  # per-tab: the operator may have entered a tab that has no panel yet
         if not (self.home_mode and self.cockpit_mode() and cockpit.follow_setting()):
             return
         if self.docking or isinstance(self.screen, NewAgentForm):
@@ -1000,6 +1059,11 @@ class SwarmApp(App):
         """Quitting the home pane: a home tab the operator split loses the ◆ panorama label
         first, so nothing is left behind under it (issue #9; a crash is covered by the sweep
         in ``home.ensure``)."""
+        if self.panels is not None:
+            try:  # quitting panorama: its per-tab panels go with it (they come back with it)
+                self.panels.remove_all()
+            except Exception as exc:  # noqa: BLE001 - quitting must always work
+                self.log.warning(f"could not close the panels: {exc}")
         if self.home_mode:
             try:
                 err = home.leave(self.my_pane)

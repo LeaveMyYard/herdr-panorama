@@ -145,7 +145,8 @@ class PanelApp(SwarmApp):
                  clock=time.time, start_client: bool = True):
         self._latest = None
         super().__init__(source=lambda: self._latest, clock=clock, live_refresh=False, home_mode=True,
-                         cockpit_mode=False)
+                         cockpit_mode=True)  # Enter, a click and the arrows switch chats (_dock below)
+        self.panes_of: dict[str, str] = {}  # tab -> its panel, from the core's state
         self.my_pane = pane_id if pane_id is not None else os.environ.get("HERDR_PANE_ID")
         self.my_tab = tab_id if tab_id is not None else os.environ.get("HERDR_TAB_ID")
         self.connected = False
@@ -176,6 +177,9 @@ class PanelApp(SwarmApp):
         vis = state.get("visible_tabs")
         self.visible = True if not isinstance(vis, list) or not self.my_tab else self.my_tab in vis
         unseen = state.get("unseen") if isinstance(state.get("unseen"), dict) else {}
+        got = state.get("panels")
+        self.panes_of = {t: p for t, p in got.items() if isinstance(t, str) and isinstance(p, str)} \
+            if isinstance(got, dict) else {}
         self._latest = swarm
         if not self.loaded:
             self.focus_pane = mine
@@ -218,6 +222,38 @@ class PanelApp(SwarmApp):
             return
         super().action_goto(switch)
 
+    # -- switching chats: a tab switch, the panel already there --------------------------
+
+    def _fit(self) -> None:  # the core sizes the panels when it places them
+        return
+
+    def _dock(self, pane_id: str, keep_focus: bool = False) -> None:
+        """Instead of moving a pane: show the target's tab, the keyboard on its panel
+        (``keep_focus``) or on the agent. Re-checked against a fresh herdr snapshot."""
+        if self.docking or not self.connected:
+            return
+        self.docking = True
+        self.run_worker(lambda: self._switch_worker(pane_id, keep_focus), thread=True, group="dock")
+
+    def _switch_worker(self, pane_id: str, keep_focus: bool) -> None:
+        err = None
+        try:
+            snap = herdr.snapshot() or {}
+            agent = next((p for p in snap.get("panes") or [] if isinstance(p, dict) and p.get("pane_id") == pane_id), None)
+            if agent is None or not agent.get("tab_id"):
+                err = f"{pane_id} is gone"
+            else:
+                tab = agent["tab_id"]
+                panel = self.panes_of.get(tab)
+                here = {p.get("pane_id") for p in snap.get("panes") or [] if isinstance(p, dict) and p.get("tab_id") == tab}
+                if keep_focus and panel in here:
+                    err = herdr.focus_tab(tab) or herdr.focus_pane(panel)
+                else:  # into the agent; a tab without a panel yet gets one there (the core)
+                    err = herdr.focus_agent(pane_id)
+        except Exception as exc:  # noqa: BLE001 - never kill the view
+            err = f"{type(exc).__name__}: {exc}"
+        self._to_ui(self._docked, err)
+
     def action_answer(self) -> None:
         if self._usable():
             super().action_answer()
@@ -243,6 +279,37 @@ class PanelApp(SwarmApp):
         scr.put(0, 0, " " * scr.w, render.FG, render.BG)
         scr.put(1, 0, NOTICE, render.FG)
         return scr
+
+
+def request_open(sock_path=None, timeout: float = 8.0) -> str | None:
+    """The open key in per-tab mode: ask the core (it decides: this tab's panel, a new one, or
+    the home tab). What it did, or None when there is no core of ours to ask."""
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    try:
+        s.settimeout(timeout)
+        s.connect(str(sock_path or protocol.socket_path()))
+        if protocol.peer_cred(s)[1] != os.getuid():
+            return None
+        s.sendall(protocol.encode({"hello": {"protocol": protocol.PROTOCOL, "role": "key"}})
+                  + protocol.encode({"open": {}}))
+        reader = protocol.LineReader()
+        while True:
+            data = s.recv(65536)
+            if not data:
+                return None
+            for msg in reader.feed(data):
+                if "opened" in msg and isinstance(msg["opened"], dict):
+                    return str(msg["opened"].get("result") or "failed")
+                if "error" in msg:
+                    return None
+    except (OSError, protocol.TooLong):
+        return None
+    finally:
+        try:
+            s.sendall(protocol.encode({"bye": {}}))
+        except OSError:
+            pass
+        s.close()
 
 
 def run() -> int:

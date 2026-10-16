@@ -79,6 +79,7 @@ class Viewer:
         self.pane_id: str | None = None  # verified hello.pane_id, else None
         self.tab_id: str | None = None
         self.hello = False
+        self.role = "panel"  # "key": the open key's one request, no state
         self.closed = threading.Event()
 
     def send(self, line: bytes) -> None:
@@ -108,11 +109,12 @@ class Core:
     socket cannot be made). ``publish(msg)`` sends a message to every viewer."""
 
     def __init__(self, sock_path: Path, lock_path: Path, on_seen=None, verify_pane=None,
-                 uid: int | None = None):
+                 uid: int | None = None, on_open=None):
         self.sock_path = Path(sock_path)
         self.lock_path = Path(lock_path)
         self.on_seen = on_seen or (lambda ids: None)
         self.verify_pane = verify_pane or (lambda pane_id, pid: False)
+        self.on_open = on_open or (lambda req: "home")  # the open key (role "key"): what it did
         self.uid = os.getuid() if uid is None else uid
         self.viewers: list[Viewer] = []
         self._lock_fd: int | None = None
@@ -220,13 +222,17 @@ class Core:
         if "state" in msg:
             self._last = line
         with self._mu:
-            viewers = [v for v in self.viewers if v.hello and not v.closed.is_set()]
+            viewers = [v for v in self.viewers if v.hello and v.role == "panel" and not v.closed.is_set()]
         for v in viewers:
             v.send(line)
 
     def connected(self) -> list[Viewer]:
         with self._mu:
             return [v for v in self.viewers if v.hello and not v.closed.is_set()]
+
+    def verified_panes(self) -> set[str]:
+        """The panes whose connected viewers said a verified hello."""
+        return {v.pane_id for v in self.connected() if v.pane_id}
 
     # -- connections ------------------------------------------------------------------
 
@@ -323,9 +329,10 @@ class Core:
             pane = hello.get("pane_id")
             v.pane_id = pane if isinstance(pane, str) and v.pid and self.verify_pane(pane, v.pid) else None
             v.tab_id = hello.get("tab_id") if isinstance(hello.get("tab_id"), str) else None
+            v.role = "key" if hello.get("role") == "key" else "panel"
             v.hello = True
             v.send(protocol.encode({"welcome": {"protocol": protocol.PROTOCOL}}))
-            if self._last is not None:
+            if self._last is not None and v.role == "panel":
                 v.send(self._last)
             return True
         if not v.hello:
@@ -333,6 +340,15 @@ class Core:
         if "seen" in msg:
             ids = [i for i in msg["seen"] if isinstance(i, str)] if isinstance(msg["seen"], list) else []
             seen += ids
+            return True
+        if "open" in msg:  # the open key: answered on this connection, which then closes
+            req = msg["open"] if isinstance(msg["open"], dict) else {}
+            try:
+                did = self.on_open(req)
+            except Exception as exc:  # noqa: BLE001 - a broken request never takes the core down
+                log.warning("open request failed: %s", exc)
+                did = "failed"
+            v.send(protocol.encode({"opened": {"result": did}}))
             return True
         if "bye" in msg:
             return False

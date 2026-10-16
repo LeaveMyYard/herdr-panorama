@@ -18,7 +18,7 @@ from pathlib import Path
 
 from .model import Agent, BgTask, Orchestrator, Phase, Swarm, Thread
 
-PROTOCOL = "1.0"
+PROTOCOL = "1.1"  # 1.1: state.panels, the open request
 MAX_LINE = 4 * 1024 * 1024  # a longer line is refused and the connection closed
 
 
@@ -130,11 +130,13 @@ def swarm_from_wire(d: dict) -> Swarm:
 
 
 def state_message(swarm: Swarm, unseen: dict[str, str], focused_pane: str | None,
-                  visible_tabs: list[str] | None) -> dict:
+                  visible_tabs: list[str] | None, panels: dict[str, str] | None = None) -> dict:
     """The core's full snapshot for the panels (v1 is always a full snapshot, never a delta).
-    ``visible_tabs`` None: unknown (a viewer then counts itself visible)."""
+    ``visible_tabs`` None: unknown (a viewer then counts itself visible). ``panels``: tab ->
+    its panel's pane (1.1), where a switch to that tab puts the keyboard."""
     return {"state": {"protocol": PROTOCOL, "swarm": swarm_to_wire(swarm), "unseen": dict(unseen),
-                      "focused_pane": focused_pane, "visible_tabs": visible_tabs}}
+                      "focused_pane": focused_pane, "visible_tabs": visible_tabs,
+                      "panels": dict(panels or {})}}
 
 
 # -- where the socket lives ----------------------------------------------------------------

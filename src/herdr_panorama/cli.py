@@ -75,7 +75,14 @@ def cmd_new_agent(args) -> int:
 
 
 def cmd_open(args) -> int:
-    from . import herdr, home
+    from . import cockpit, herdr, home
+    if not args.split and not args.popup and home.enabled() and cockpit.per_tab():
+        from .panel import request_open
+        did = request_open()  # the core: this tab's panel (made if missing), or the home tab
+        if did in ("panel", "home"):
+            return 0
+        if did is not None:
+            print(f"panorama: open: {did}; showing the home tab", file=sys.stderr)
     if not args.split and not args.popup and home.enabled():
         _, err = home.ensure(focus=True)  # focus the home tab (open it if missing)
         if err:
