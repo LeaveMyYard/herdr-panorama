@@ -9,9 +9,8 @@ the file changes (``herdr server reload-config`` follows an edit to it).
 
 The built-in themes' tokens below are herdr 0.9.3's own, measured (review of #19): an isolated
 herdr per theme with a client attached, rendered plain and once per token with that token
-overridden by a sentinel colour; the colour that disappears is herdr's value. Three that could
-not be separated are our guesses from the public palettes (``UNVERIFIED``). Only the six the panel
-reads. ``panel_colors`` is the one place that turns them into the panel's colours.
+overridden by a sentinel colour; the colour that disappears is herdr's value (the last few, that
+share a colour with another token, at cell level). Only the six the panel reads. ``panel_colors`` is the one place that turns them into the panel's colours.
 """
 
 from __future__ import annotations
@@ -34,29 +33,28 @@ def _t(panel_bg, active_row_bg, text, subtext0, overlay1, overlay0) -> dict:
 HERDR_VERSION = "0.9.3"  # the herdr the table was checked against
 # name -> (panel_bg, active_row_bg, text, subtext0, overlay1, overlay0)
 THEMES: dict[str, dict] = {
-    "catppuccin": _t("#181825", "#313244", "#cdd6f4", "#a6adc8", "#7f849c", "#6c7086"),
-    "catppuccin-latte": _t("#eff1f5", "#ccd0da", "#4c4f69", "#6c6f85", "#8c8fa1", "#9ca0b0"),
+    "catppuccin": _t("#181825", "#1e1e2e", "#cdd6f4", "#a6adc8", "#7f849c", "#6c7086"),
+    "catppuccin-latte": _t("#eff1f5", "#e6e9ef", "#4c4f69", "#6c6f85", "#8c8fa1", "#9ca0b0"),
     "tokyo-night": _t("#1a1b26", "#232636", "#c0caf5", "#a9b1d6", "#697196", "#565f89"),
-    "tokyo-night-day": _t("#e1e2e7", "#c4c8da", "#3760bf", "#6172b0", "#68709a", "#8990b3"),
+    "tokyo-night-day": _t("#e1e2e7", "#d2d3da", "#3760bf", "#6172b0", "#68709a", "#8990b3"),
     "dracula": _t("#282a36", "#373c52", "#f8f8f2", "#d2d2dc", "#828cb4", "#6272a4"),
     "nord": _t("#2e3440", "#434c5e", "#eceff4", "#d8dee9", "#646e82", "#4c566a"),
     "gruvbox": _t("#282828", "#323130", "#ebdbb2", "#d5c4a1", "#a89984", "#928374"),
-    "gruvbox-light": _t("#fbf1c7", "#ebdbb2", "#3c3836", "#504945", "#7c6f64", "#928374"),
+    "gruvbox-light": _t("#fbf1c7", "#f2e5bc", "#3c3836", "#504945", "#7c6f64", "#928374"),
     "one-dark": _t("#282c34", "#313640", "#abb2bf", "#969ca8", "#737a87", "#5c6370"),
-    "one-light": _t("#fafafa", "#d8dbe2", "#383a42", "#4f525e", "#686b77", "#a0a1a7"),  # subtext0 unverified
+    "one-light": _t("#fafafa", "#d8dbe2", "#383a42", "#686b77", "#686b77", "#a0a1a7"),
     "solarized": _t("#002b36", "#164b57", "#93a1a1", "#839496", "#657b83", "#586e75"),
     "solarized-light": _t("#fdf6e3", "#eee8d5", "#657b83", "#839496", "#586e75", "#93a1a1"),
     "kanagawa": _t("#1f1f28", "#363646", "#dcd7ba", "#c8c3aa", "#87867d", "#727169"),
-    "kanagawa-lotus": _t("#f2ecbc", "#e4d794", "#545464", "#43436c", "#8a8980", "#a09cac"),  # active_row_bg unverified
-    "rose-pine": _t("#191724", "#26233a", "#e0def4", "#c8c5dc", "#908caa", "#6e6a86"),  # active_row_bg unverified
-    "rose-pine-dawn": _t("#faf4ed", "#e3d9cf", "#464261", "#797593", "#9893a5", "#9893a5"),
-    "vesper": _t("#1a1a1a", "#232323", "#ffffff", "#a0a0a0", "#7e7e7e", "#5c5c5c"),
+    "kanagawa-lotus": _t("#f2ecbc", "#d5cea3", "#545464", "#43436c", "#8a8980", "#a09cac"),
+    "rose-pine": _t("#191724", "#26233a", "#e0def4", "#c8c5dc", "#908caa", "#6e6a86"),
+    "rose-pine-dawn": _t("#faf4ed", "#e3d9cf", "#464261", "#797593", "#797593", "#9893a5"),
+    "vesper": _t("#1a1a1a", "#101010", "#ffffff", "#a0a0a0", "#7e7e7e", "#5c5c5c"),
     # "terminal" follows the host terminal's ANSI palette, which panorama cannot read: none
 }
-# Unverified (used by herdr, but not separable in the measurement): one-light subtext0, kanagawa-lotus
-# and rose-pine active_row_bg; these are our best guesses from the public palettes. catppuccin's
-# panel_bg is herdr's #181825 (mantle), not the palette's base (the operator's choice: follow herdr).
-UNVERIFIED = {("one-light", "subtext0"), ("kanagawa-lotus", "active_row_bg"), ("rose-pine", "active_row_bg")}
+# Every token is measured (the review of #19, the last nine at cell level). catppuccin's panel_bg
+# is herdr's #181825 (mantle), not the palette's base (the operator's choice: follow herdr).
+UNVERIFIED: set[tuple[str, str]] = set()
 DEFAULT = "catppuccin"
 RESET = frozenset({"reset", "default", "none", "transparent"})
 NAMED = {"black": "#000000", "white": "#ffffff", "red": "#ff0000", "green": "#00ff00", "blue": "#0000ff",
