@@ -1382,7 +1382,8 @@ Hence the creation rule:
 
 1. **Tabs panorama creates (`+ New agent`):** build the tab with `layout.apply`, the panel on
    the left of the new agent from the first frame. No flash, ever.
-2. **Every other orchestrator tab:** create its panel **when the operator is in that tab**,
+2. **Every other orchestrator tab:** (superseded by the operator's answer below: eagerly, in a
+   batch, accepting the tab switches) create its panel **when the operator is in that tab**,
    i.e. on the first visit or the first switch there. The steps:
    - split right, with `focus: false`;
    - right before the swap, re-check that the operator is still in that tab;
@@ -1565,9 +1566,17 @@ has proven itself (the operator, Q140).
 
 ### The operator's answers
 
-1. **Creation (Q138): eagerly.** Which side is still being confirmed: eager on the right, the
-   left on first visit, or eager on the left accepting being pulled to the tab. Placement sits
-   behind one function, so the answer slots in without touching the rest.
+1. **Creation (Q138, Q142): eagerly, on the left, accepting being pulled** during placement.
+   To keep the disruption small:
+   - Placement runs in one batch: when the core starts, and when a new orchestrator tab
+     appears.
+   - Before the batch, the operator's focused tab and pane are remembered. Afterwards they are
+     restored, with the usual guard: if the operator actively moved during the batch, they are
+     left where they went.
+   - The batch is fast: socket calls, no waits between tabs.
+   - A batch is put off while herdr shows the operator typing in a pane, if that can be
+     detected cheaply. Otherwise this check is skipped.
+   - Placement sits behind one function.
 2. **Notice (Q139):** `panorama is restarting…`
 3. **Fallback (Q140): drop it later.** `cockpit_panels = "moving"` stays for now, and its
    removal is planned once per-tab has proven itself.
