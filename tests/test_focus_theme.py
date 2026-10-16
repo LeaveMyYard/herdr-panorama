@@ -145,7 +145,7 @@ def test_the_table_is_herdrs_measured_values():
     the entries the palettes had wrong; the three unseparable ones are marked unverified."""
     assert theme.HERDR_VERSION == "0.9.3"
     measured = {
-        "tokyo-night": {"active_row_bg": "#232636"}, "tokyo-night-day": {"overlay0": "#8990b3"},
+        "catppuccin": {"panel_bg": "#181825"}, "tokyo-night": {"active_row_bg": "#232636"}, "tokyo-night-day": {"overlay0": "#8990b3"},
         "dracula": {"active_row_bg": "#373c52", "subtext0": "#d2d2dc", "overlay1": "#828cb4", "overlay0": "#6272a4"},
         "nord": {"active_row_bg": "#434c5e", "overlay1": "#646e82"},
         "gruvbox": {"active_row_bg": "#323130", "overlay1": "#a89984", "overlay0": "#928374"},

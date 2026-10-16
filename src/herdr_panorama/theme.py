@@ -34,7 +34,7 @@ def _t(panel_bg, active_row_bg, text, subtext0, overlay1, overlay0) -> dict:
 HERDR_VERSION = "0.9.3"  # the herdr the table was checked against
 # name -> (panel_bg, active_row_bg, text, subtext0, overlay1, overlay0)
 THEMES: dict[str, dict] = {
-    "catppuccin": _t("#1e1e2e", "#313244", "#cdd6f4", "#a6adc8", "#7f849c", "#6c7086"),  # panel_bg: see below
+    "catppuccin": _t("#181825", "#313244", "#cdd6f4", "#a6adc8", "#7f849c", "#6c7086"),
     "catppuccin-latte": _t("#eff1f5", "#ccd0da", "#4c4f69", "#6c6f85", "#8c8fa1", "#9ca0b0"),
     "tokyo-night": _t("#1a1b26", "#232636", "#c0caf5", "#a9b1d6", "#697196", "#565f89"),
     "tokyo-night-day": _t("#e1e2e7", "#c4c8da", "#3760bf", "#6172b0", "#68709a", "#8990b3"),
@@ -55,7 +55,7 @@ THEMES: dict[str, dict] = {
 }
 # Unverified (used by herdr, but not separable in the measurement): one-light subtext0, kanagawa-lotus
 # and rose-pine active_row_bg; these are our best guesses from the public palettes. catppuccin's
-# panel_bg is the turn-10 design's #1e1e2e (base); herdr draws #181825 (mantle): the operator decides.
+# panel_bg is herdr's #181825 (mantle), not the palette's base (the operator's choice: follow herdr).
 UNVERIFIED = {("one-light", "subtext0"), ("kanagawa-lotus", "active_row_bg"), ("rose-pine", "active_row_bg")}
 DEFAULT = "catppuccin"
 RESET = frozenset({"reset", "default", "none", "transparent"})

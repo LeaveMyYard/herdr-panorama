@@ -1265,8 +1265,8 @@ tile in its off phase.
     built-in themes' six tokens are panorama's own table (`theme.py`) of herdr 0.9.3's own
     values, measured per token (an isolated herdr per theme with a client attached, each
     token overridden by a sentinel colour in turn); three that could not be separated are
-    guesses from the public palettes (`theme.UNVERIFIED`), and catppuccin's `panel_bg` is the
-    design's `#1e1e2e` where herdr draws `#181825` (the operator's call, pending).
+    guesses from the public palettes (`theme.UNVERIFIED`). catppuccin's `panel_bg` is herdr's
+    `#181825`, not the palette's base (the operator: follow herdr).
     `theme.panel_colors` is the one place that turns them into the panel's colours. The `terminal` theme (the host's ANSI palette, which panorama cannot read) and
     a `reset` background fall back to panorama's own colours, `#171a1f` focused.
   - Panorama's status colours stay its own; theming them is a possible follow-up.

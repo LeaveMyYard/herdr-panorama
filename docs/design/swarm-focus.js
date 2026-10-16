@@ -13,7 +13,7 @@ import { TH } from './swarm-tui.js';
 const th = TH.dark, ROWS = new Set([th.sel, '#171a1f']); // 9e's docked-entry and hover row backgrounds
 // built-in themes: herdr 0.9.3's own values (measured), the tokens this panel reads
 export const THEMES = {
-  catppuccin: { panel_bg: '#1e1e2e', active_row_bg: '#313244', text: '#cdd6f4', subtext0: '#a6adc8', overlay1: '#7f849c', overlay0: '#6c7086' },
+  catppuccin: { panel_bg: '#181825', active_row_bg: '#313244', text: '#cdd6f4', subtext0: '#a6adc8', overlay1: '#7f849c', overlay0: '#6c7086' },
   'tokyo-night': { panel_bg: '#1a1b26', active_row_bg: '#232636', text: '#c0caf5', subtext0: '#a9b1d6', overlay1: '#697196', overlay0: '#565f89' },
 };
 // the operator's herdr: no theme name (catppuccin) and [theme.custom] active_row_bg = "#414868"
