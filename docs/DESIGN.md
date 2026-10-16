@@ -1260,9 +1260,12 @@ tile in its off phase.
     - **Keep focus** (`dock_keep_focus`, default true; the operator's request: browsing the
       chats took the open key each time). On another entry, Enter and the click dock next to
       it and leave the keyboard on panorama, so ↑/↓ and Enter browse the chats one after
-      another. The dock's swap takes panorama as its source (herdr's swap focuses its
-      source), so focus lands on panorama in the agent's tab with no second focus change; if
-      the swap fails, panorama's pane is focused explicitly. If panorama could not move, the
+      another. The dock's swap takes panorama as its source, then panorama focuses the
+      agent's tab and its own pane there, the same sequence as the open key. The swap's own
+      focus is not enough: herdr 0.9.3 logs the new tab as focused, but an attached client
+      keeps showing the tab panorama left and moves focus back on its next input (the
+      operator's report: Enter seemed to close the panel, and the open key then finished the
+      switch). If panorama could not move, the
       agent is focused as before. `g`, and Enter on the docked entry, go into the agent.
       Follow sees the operator in panorama and does nothing, so the two never loop. The full
       2a graph is unchanged: Enter there goes into the agent.

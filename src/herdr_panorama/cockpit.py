@@ -181,14 +181,18 @@ def _move_next_to(snap: dict, me: home.Home, t: dict, keep_focus_on: str | None,
         if now.get("focused_pane_id") != keep_focus_on:
             fit(mine, t["tab_id"])
             return mine, None
-    # dock_keep_focus: panorama is the swap's source, so focus lands on panorama, in the new tab
     serr = herdr.swap_panes(mine, target) if focus_me else herdr.swap_panes(target, mine)
     if serr:
         log.warning("panorama stays right of %s: %s", target, serr)
-        if focus_me:
-            ferr = herdr.focus_pane(mine)  # no swap, no focus change: put the operator on panorama
-            if ferr:
-                log.warning("could not focus panorama after docking: %s", ferr)
+    if focus_me:
+        # dock_keep_focus: the client to the agent's tab, the keyboard on panorama there. The
+        # swap's focus of its source is not enough: herdr logs that tab as focused, but an attached
+        # client keeps showing the tab panorama left and puts focus back there on its next input
+        # (the operator's report, 0.9.3: Enter seemed to close the panel; the open key then
+        # "fixed" it). The open key's own sequence, a tab focus then a pane focus, moves it.
+        ferr = herdr.focus_tab(t["tab_id"]) or herdr.focus_pane(mine)
+        if ferr:
+            log.warning("could not focus panorama after docking: %s", ferr)
     if keep_focus_on is not None and not serr:
         # Close the check-to-swap window. If the operator switched away just before the swap,
         # the swap pulled them back onto the agent, and herdr reports that as the agent's

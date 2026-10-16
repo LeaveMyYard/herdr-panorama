@@ -115,9 +115,30 @@ def test_dock_keep_focus_puts_the_operator_on_panorama_and_follow_leaves_it(herd
     assert herdr.calls("pane", "swap") == [["pane", "swap", "--source-pane", h.pane_id, "--target-pane", a]]
     assert in_tab(herdr, ta) == [h.pane_id, a]  # the same layout as without it: panorama on the left
     assert state(herdr)["focus"] == h.pane_id
-    assert sockets(herdr, "pane.focus") == []  # the swap did it: no second focus change
+    assert sockets(herdr, "pane.focus") == [{"pane_id": h.pane_id}]  # the client follows panorama there
     assert cockpit.follow(h.pane_id) == (None, "the operator is in panorama")
     only_panorama_moved(herdr, h.pane_id)
+
+
+def test_dock_keep_focus_moves_the_client_to_the_new_tab(herdr):
+    """The operator's report (docked next to one agent, Enter on another): panorama left the
+    tab, but the client stayed on it, so the panel seemed to close. herdr's swap focuses its
+    source only inside its own tab; panorama is focused explicitly, which moves the client."""
+    h, _ = home.ensure(focus=False)
+    a, ta = add_agent(herdr, "billing")
+    b, tb = add_agent(herdr, "search")
+    assert cockpit.dock(a)[1] is None
+    st = state(herdr)
+    st["focus"] = h.pane_id  # the operator is in the docked panel, in a's tab
+    put(herdr, st)
+    assert cockpit.dock(b, focus_me=True) == (h.pane_id, None)
+    assert in_tab(herdr, tb) == [h.pane_id, b] and in_tab(herdr, ta) == [a]
+    snap = cockpit.herdr.snapshot()
+    assert snap["focused_pane_id"] == h.pane_id and snap["focused_tab_id"] == tb  # on panorama, in b's tab
+    # what the open key does, which the attached client follows: the tab, then panorama's pane
+    assert herdr.calls("tab", "focus")[-1] == ["tab", "focus", tb]
+    assert sockets(herdr, "pane.focus")[-1] == {"pane_id": h.pane_id}
+    assert cockpit.follow(h.pane_id) == (None, "the operator is in panorama")
 
 
 def test_dock_keep_focus_without_a_swap_still_focuses_panorama(herdr, monkeypatch):
