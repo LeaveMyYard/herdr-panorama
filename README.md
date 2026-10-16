@@ -57,12 +57,16 @@ cockpit = false    # the default
 
 ### 🧭 Cockpit: a slim list beside the agent you are working with
 
-Panorama docks as a narrow panel on the left of the selected agent's tab, with that agent's chat on
-the right, and follows you as you switch to another orchestrator's tab. With herdr's own sidebar
-hidden, it becomes the agent list. Still experimental; details in
-[Cockpit](#cockpit-experimental).
+Panorama docks as a narrow panel on the left of an agent's tab, with that agent's chat on the
+right. ↑/↓ in the panel switch the chat beside it while the keyboard stays in the panel; Enter
+goes into the agent, and your open key brings you back. It also follows you when you switch to
+another orchestrator's tab some other way. With herdr's own sidebar hidden, it becomes the agent
+list. The panel's background shows where the keyboard is: `#14161b` while panorama has it,
+`#101215` when the agent does. Still experimental; details in [Cockpit](#cockpit-experimental).
 
-<img src="docs/screenshots/dock-9e-app.png" alt="The docked cockpit panel on demo data" width="300">
+<div align="center">
+<a href="docs/media/cockpit.mp4"><img src="docs/media/cockpit.gif" alt="The cockpit on demo data: ↓ through Billing API, Search refactor, Docs site and Release notes in the docked panel, the chat on the right changing each time; Enter goes into the Release notes agent, the open key returns to the panel, ↑ back to Billing API with its ?2 questions" width="920"></a>
+</div>
 
 ```toml
 # plugin config.toml
@@ -71,7 +75,11 @@ cockpit = true
 cockpit_width = 46            # panorama's columns on the left
 cockpit_follow = true         # move with you to the orchestrator tab you switch to
 cockpit_follow_tabs = "any"   # "single": only into tabs where the agent is the only pane
-dock_keep_focus = true        # Enter in the docked list keeps the keyboard on panorama
+dock_keep_focus = true        # switching chats keeps the keyboard on panorama
+dock_on_arrows = true         # ↑/↓ switch the chats (after 0.2 s); Enter goes into the agent
+panel_colors = "fixed"        # or "herdr": take the panel colours from herdr's theme
+# panel_bg = "#101215"        # the panel while the agent has the keyboard
+# focus_bg = "#14161b"        # the panel while panorama has it
 ```
 
 ```toml
