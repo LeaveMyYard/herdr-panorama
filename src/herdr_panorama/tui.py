@@ -464,6 +464,17 @@ class SwarmApp(App):
         grid.show(render.render(self.swarm, self.view, size.width, size.height,
                                 stale=self.error or (self.swarm.errors[0] if self.swarm.errors else None)))
 
+    def herdr_focus(self, pane_id: str) -> None:
+        """herdr says ``pane_id`` got the focus: panorama's panel is focused exactly when that is
+        its own pane. The terminal's focus reports (``on_app_focus``) did not always arrive, e.g.
+        for the open key's pane.focus (the operator's report), so herdr's own event counts too."""
+        if not self.my_pane:
+            return
+        focused = pane_id == self.my_pane
+        if focused != self.pane_focused:
+            self.pane_focused = focused
+            self.repaint()
+
     def on_app_focus(self, event) -> None:
         """The terminal reports focus in (herdr passes it to the focused pane): the panel's
         focused look. Visual only: nothing else depends on it."""
@@ -744,6 +755,8 @@ class SwarmApp(App):
             if ev.get("type") in ("tab_focused", "pane_focused"):
                 self.focus_log.record(ev)
                 try:
+                    if ev.get("type") == "pane_focused" and ev.get("pane_id"):
+                        self.call_from_thread(self.herdr_focus, ev["pane_id"])
                     self.call_from_thread(self.focus_event)
                 except Exception:  # noqa: BLE001 - the app is closing
                     return

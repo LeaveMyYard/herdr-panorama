@@ -124,19 +124,85 @@ def current() -> dict | None:
     return _cache["tokens"]
 
 
+DEFAULT_TINT = 0.15  # the operator's preference
+
+
+def _settings() -> dict:
+    from . import config
+    return config.load()
+
+
+def focus_tint(cfg: dict | None = None) -> float:
+    """``focus_tint`` in panorama's config.toml (0..1, default 0.15): how far the focused panel's
+    background goes from its unfocused one toward the theme's active_row_bg (0: no change,
+    1: the full active_row_bg, which the operator found far too light)."""
+    cfg = _settings() if cfg is None else cfg
+    try:
+        v = float(cfg.get("focus_tint", DEFAULT_TINT))
+    except (TypeError, ValueError):
+        v = DEFAULT_TINT
+    return max(0.0, min(1.0, v))
+
+
+def own_colors(cfg: dict | None = None) -> tuple[str | None, str | None]:
+    """Panorama's own overrides in its config.toml, ``panel_bg`` (the unfocused background) and
+    ``focus_bg`` (the focused one), hex; unset (or not a colour): follow herdr's theme."""
+    cfg = _settings() if cfg is None else cfg
+    out = []
+    for key in ("panel_bg", "focus_bg"):
+        c = color(cfg.get(key)) if key in cfg else None
+        out.append(c or None)
+    return out[0], out[1]
+
+
+def _mix(a: str, b: str, k: float) -> str:
+    """``a`` moved ``k`` of the way to ``b`` (hex colours, rounded half up like JS Math.round)."""
+    pa = [int(a[i:i + 2], 16) for i in (1, 3, 5)]
+    pb = [int(b[i:i + 2], 16) for i in (1, 3, 5)]
+    return "#" + "".join(f"{int(x + (y - x) * k + 0.5):02x}" for x, y in zip(pa, pb, strict=True))
+
+
+FIXED = ("#14161b", "#101215")  # (focused, not focused): the operator's default, tuned live
+
+
+def mode(cfg: dict | None = None) -> str:
+    """``panel_colors``: "fixed" (default: FIXED, panorama's own text colours) or "herdr" (follow
+    herdr's theme, design turn 10, with ``focus_tint``)."""
+    cfg = _settings() if cfg is None else cfg
+    return "herdr" if str(cfg.get("panel_colors", "fixed")).lower() == "herdr" else "fixed"
+
+
 def panel_colors(tokens: dict | None, focused: bool, fg: str, dim: str, faint: str,
-                 fallback: tuple[str, str]) -> tuple[str, dict[str, str]]:
-    """The docked panel's background and its text colours (panorama's FG, DIM, FAINT mapped)
-    for herdr's theme, focused or not (design turn 10):
+                 fallback: tuple[str, str], cfg: dict | None = None) -> tuple[str, dict[str, str]]:
+    """The docked panel's background and its text colours (panorama's FG, DIM, FAINT mapped),
+    focused or not. The one place these colours are chosen.
 
-    - focused: the theme's active_row_bg; text, dim -> subtext0, faint -> overlay1
-    - not focused: its panel_bg; text, dim -> overlay1, faint -> overlay0 (one step dimmer)
+    ``panel_colors = "fixed"`` (the default, the operator's choice): FIXED, #14161b focused and
+    #101215 not; panorama's own text colours.
 
-    A token that is unset or "reset" falls back to panorama's own colour; ``fallback`` is
-    (focused, not focused) background for the "terminal" theme and a reset background."""
+    ``panel_colors = "herdr"`` (design turn 10): herdr's theme.
+    - not focused: the theme's panel_bg; text, dim -> overlay1, faint -> overlay0 (one step dimmer)
+    - focused: the unfocused background moved ``focus_tint`` (default 0.15) of the way toward
+      the theme's active_row_bg; text, dim -> subtext0, faint -> overlay1
+
+    In both, panorama's own ``panel_bg`` / ``focus_bg`` (hex) replace the two backgrounds.
+    ``cfg``: panorama's config (default: read it). In the herdr mode a token that is unset or
+    "reset" falls back to panorama's own colour; ``fallback`` is (active, not focused)
+    background for the "terminal" theme and a reset background."""
+    cfg = _settings() if cfg is None else cfg
+    own_panel, own_focus = own_colors(cfg)
+    if mode(cfg) == "fixed":
+        return (own_focus or FIXED[0]) if focused else (own_panel or FIXED[1]), {}
+    k = focus_tint(cfg)
+    base = own_panel or (tokens or {}).get("panel_bg") or fallback[1]
+    if not focused:
+        bg = base
+    elif own_focus:
+        bg = own_focus
+    else:
+        bg = _mix(base, (tokens or {}).get("active_row_bg") or fallback[0], k)
     if tokens is None:
-        return fallback[0] if focused else fallback[1], {}
-    bg = tokens["active_row_bg"] if focused else tokens["panel_bg"]
+        return bg, {}
     pairs = {fg: tokens["text"], dim: tokens["subtext0"] if focused else tokens["overlay1"],
              faint: tokens["overlay1"] if focused else tokens["overlay0"]}
-    return (bg or (fallback[0] if focused else fallback[1])), {k: v for k, v in pairs.items() if v}
+    return bg, {k_: v for k_, v in pairs.items() if v}
