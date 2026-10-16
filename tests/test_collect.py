@@ -70,3 +70,52 @@ def test_inbox_tab_prefix_is_stripped(tmp_path, monkeypatch):
     monkeypatch.setenv("PANORAMA_EVENTS_DIR", str(d["events"]))
     sw = Collector(root=str(d["projects"]), now=lambda: NOW, done_window=6 * 3600).collect(d["snapshot"], None)
     assert sw.orchestrators[0].tab_label == "Billing API"
+
+
+def test_a_session_continued_in_a_new_transcript_is_followed(tmp_path, monkeypatch):
+    """The operator's report: Claude Code moved the conversation to a new session id (the pane's
+    claude process kept running) while herdr still reported the old one; panorama read the old,
+    finished transcript and showed 0 agents. The old transcript's last record names the new
+    session (shape captured from Claude Code 2.1.301), and the collector follows it."""
+    import os
+    from herdr_panorama.scan import discovery
+    from .scenario import S1
+    _, _, base = collect(tmp_path / "base", monkeypatch)
+    want = next(o for o in base.orchestrators if o.tab_label == "Billing API")
+
+    d = build_demo(tmp_path / "moved")
+    monkeypatch.setenv("PANORAMA_EVENTS_DIR", str(d["events"]))
+    new = "55555555-5555-4555-8555-555555555555"
+    old_root = discovery.find_root(S1, None, str(d["projects"]))
+    new_root = os.path.join(os.path.dirname(old_root), f"{new}.jsonl")
+    os.rename(old_root, new_root)
+    if os.path.isdir(old_root[:-len(".jsonl")]):
+        os.rename(old_root[:-len(".jsonl")], new_root[:-len(".jsonl")])
+    with open(old_root, "w") as fh:  # what is left of the old session: its end, pointing on
+        fh.write(f'{{"type":"ai-title","aiTitle":"Billing API","sessionId":"{S1}"}}\n')
+        fh.write(f'{{"type":"continued-in","timestamp":"2026-10-16T18:41:47.545Z","sessionId":"{S1}",'
+                 f'"continuedInSessionId":"{new}"}}\n')  # byte for byte as Claude Code writes it
+    c = Collector(root=str(d["projects"]), now=lambda: NOW, done_window=6 * 3600)
+    sw = c.collect(d["snapshot"], open_questions(d["inbox"]))  # herdr still says S1
+    got = next(o for o in sw.orchestrators if o.tab_label == "Billing API")
+    assert got.session_id == new and got.transcript == new_root
+    assert [t.name for t in got.threads] == [t.name for t in want.threads]
+    assert len(list(got.agents())) == len(list(want.agents())) > 1
+    assert got.inbox == [1, 2]  # questions asked under the old id still belong to it
+
+
+def test_a_continuation_loop_is_not_followed_forever(tmp_path, monkeypatch):
+    import os
+    from herdr_panorama.scan import discovery
+    from .scenario import S1
+    d = build_demo(tmp_path)
+    monkeypatch.setenv("PANORAMA_EVENTS_DIR", str(d["events"]))
+    root = discovery.find_root(S1, None, str(d["projects"]))
+    other = "66666666-6666-4666-8666-666666666666"
+    with open(root, "a") as fh:
+        fh.write(f'{{"type":"continued-in","sessionId":"{S1}","continuedInSessionId":"{other}"}}\n')
+    with open(os.path.join(os.path.dirname(root), f"{other}.jsonl"), "w") as fh:
+        fh.write(f'{{"type":"continued-in","sessionId":"{other}","continuedInSessionId":"{S1}"}}\n')
+    c = Collector(root=str(d["projects"]), now=lambda: NOW, done_window=6 * 3600)
+    sw = c.collect(d["snapshot"], None)
+    assert any(o.tab_label == "Billing API" for o in sw.orchestrators)
