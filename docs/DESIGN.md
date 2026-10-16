@@ -1383,9 +1383,15 @@ Hence the creation rule:
 1. **Tabs panorama creates (`+ New agent`):** build the tab with `layout.apply`, the panel on
    the left of the new agent from the first frame. No flash, ever.
 2. **Every other orchestrator tab:** create its panel **when the operator is in that tab**,
-   i.e. on the first visit or the first switch there: split right and swap left. The operator
-   is already on that tab, so no tab switch is stolen. That first visit shows the existing
-   one-frame flash once; later visits have none.
+   i.e. on the first visit or the first switch there. The steps:
+   - split right, with `focus: false`;
+   - right before the swap, re-check that the operator is still in that tab;
+   - swap with **the agent as the swap's source**, so herdr's "focus the source" keeps the
+     operator on the agent they are in.
+
+   If they left meanwhile, the panel stays on the right until their next visit, as follow does
+   today with `keep_focus_on`. That first visit shows the existing one-frame flash once; later
+   visits have none.
 3. Not chosen, but possible on request: create panels eagerly on the **right** (no swap, so no
    focus steal). That means no flash, but the panel sits on a different side from today.
 
@@ -1464,8 +1470,10 @@ It is the natural first Rust component: small, render-only, its own input handli
 
 ### The panel manager (in the core)
 
-- **One core per session.** The core holds an exclusive lock (`core.lock`, flock, next to the
-  socket) for its whole life; a second would-be core finds it held and exits. A socket file is
+- **One core per session.** The core holds a dedicated exclusive lock (`core.lock`, flock,
+  next to the socket) for its whole life; a second would-be core finds it held and exits.
+  `home._lock` stays what it is: a short lock for pane operations (dock, leave, ensure, the
+  `"moving"` fallback). It is never held for the core's life. A socket file is
   unlinked only after a connect to it failed, with the lock held.
 - **Which tabs.** Tabs holding a local Claude orchestrator pane in panorama's workspace. With
   `cockpit_follow_tabs = "single"`, only tabs where it is the only pane. Never a remote
@@ -1482,11 +1490,22 @@ It is the natural first Rust component: small, render-only, its own input handli
   - when one is connected, its viewer's verified `hello`.
 
   A pane that matches only some of these is logged and left alone.
+
+  Panels built by `layout.apply` (`+ New agent` tabs) are not opened through
+  `plugin.pane.open`. Unless the build finds that herdr also records them as this plugin's
+  panes, their ownership rests on the other checks: our viewer's argv, a verified `hello`, and
+  the core's own record of the pane id it created. A restarted core, which has lost that
+  record, adopts such a panel only once its viewer reconnects with a verified `hello`.
 - **Agent panes.** They are never closed and never leave their tab. They are moved within it
   (the swap) and resized (`fit`) when their panel is made, as today.
 - **The operator closes a panel.** It stays closed for that tab, recorded in the core's state,
-  until the operator asks for it again there: the open key, or Enter on that tab's orchestrator
-  in another panel.
+  until the operator asks for it again there with the open key (below).
+- **The open key in per-tab mode.**
+  - In an orchestrator tab that has a panel: focus that panel.
+  - In an orchestrator tab without one (closed by hand, or not made yet): clear the "closed"
+    mark and create the panel there by the creation rule (the operator is in that tab), then
+    focus it.
+  - Anywhere else: the home tab, as today.
 - **Removal, with hysteresis.** A tab's panel is removed only after the tab has had no
   orchestrator for a while (proposed: 30 s), so Claude exiting and re-launching keeps its
   panel. On cockpit off, or with `cockpit_panels = "moving"`, the core removes the per-tab
@@ -1532,6 +1551,11 @@ It is the natural first Rust component: small, render-only, its own input handli
   a plugin pane and so may close itself, so no orphans are left if the core never returns.
 - **A core restarts.** It adopts the existing panels (found and verified as above) and never
   makes a second one in a tab.
+- **The operator quits the home panorama, which is the core.** Quitting panorama means not
+  wanting it now, so the core first closes the per-tab panels it can prove are ours, then
+  exits. They come back with panorama: the next start or the open key. Leaving the panels
+  running behind a headless core instead is possible, but would hide that panorama was quit.
+  This is the proposal; it is the operator's call if they want otherwise.
 
 ### Migration and the fallback
 
