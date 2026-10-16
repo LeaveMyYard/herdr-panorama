@@ -113,6 +113,12 @@ reporting the old id. The collector follows `continued-in` records:
 Claude's open files don't help here: the claude process keeps no transcript open between
 writes, so `/proc/<pid>/fd` can't name the live transcript.
 
+**A resumed session is live again.** If the old session was later resumed
+(`claude --resume <old>`), conversation lines get written after its `continued-in` record. A
+`user` or `assistant` record later than that record clears the continuation, so the old
+session is read again. Bookkeeping records that follow it (`last-prompt`, `cost-state`) don't
+count. Remote machines mirror the continued sessions too (docs/REMOTE.md).
+
 ### Discovery (zoetrope `discovery.rs`)
 
 - Project dir: the cwd with every non-alphanumeric character replaced by `-`

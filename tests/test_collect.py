@@ -119,3 +119,30 @@ def test_a_continuation_loop_is_not_followed_forever(tmp_path, monkeypatch):
     c = Collector(root=str(d["projects"]), now=lambda: NOW, done_window=6 * 3600)
     sw = c.collect(d["snapshot"], None)
     assert any(o.tab_label == "Billing API" for o in sw.orchestrators)
+
+
+def test_a_resumed_old_session_is_no_longer_followed(tmp_path, monkeypatch):
+    """#38's Low: the old session was resumed later (conversation lines after its continued-in
+    record): it is live again, the continuation no longer counts. Bookkeeping records after
+    the continued-in (last-prompt, cost-state, as captured) do not count as a resume."""
+    import os
+    from herdr_panorama.scan import discovery
+    from .scenario import S1
+    d = build_demo(tmp_path)
+    monkeypatch.setenv("PANORAMA_EVENTS_DIR", str(d["events"]))
+    root = discovery.find_root(S1, None, str(d["projects"]))
+    other = "66666666-6666-4666-8666-666666666666"
+    with open(os.path.join(os.path.dirname(root), f"{other}.jsonl"), "w") as fh:
+        fh.write(f'{{"type":"ai-title","aiTitle":"elsewhere","sessionId":"{other}"}}\n')
+    with open(root, "a") as fh:
+        fh.write(f'{{"type":"continued-in","timestamp":"2026-10-16T18:41:47.545Z","sessionId":"{S1}",'
+                 f'"continuedInSessionId":"{other}"}}\n'
+                 f'{{"type":"last-prompt","lastPrompt":"x","sessionId":"{S1}"}}\n'
+                 f'{{"type":"cost-state","sessionId":"{S1}","totalCostUSD":1.0}}\n')
+    c = Collector(root=str(d["projects"]), now=lambda: NOW, done_window=6 * 3600)
+    billing = lambda sw: next(o for o in sw.orchestrators if o.pane_id == "w1:p1")  # noqa: E731
+    assert billing(c.collect(d["snapshot"], None)).session_id == other
+    with open(root, "a") as fh:  # `claude --resume <old>`: the conversation goes on in the old file
+        fh.write(f'{{"parentUuid":null,"isSidechain":false,"type":"user","message":{{"role":"user","content":[{{"type":"text","text":"go on"}}]}},'
+                 f'"uuid":"u1","timestamp":"2026-10-16T19:00:00.000Z","sessionId":"{S1}"}}\n')
+    assert billing(c.collect(d["snapshot"], None)).session_id == S1
