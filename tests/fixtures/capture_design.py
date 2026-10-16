@@ -1,6 +1,7 @@
 """Capture the design references: the sample dataset, turn 5's direction 5d (subagents to any
-depth: its dataset and its frames), turn 6 (unseen), turn 7 (wider cards), turn 8 (waiting and stale), turn 9's 9e (tiles in
-the docked panel) and the smooth animation (turn 6 between whole frames).
+depth: its dataset and its frames), turn 6 (unseen), turn 7 (wider cards), turn 8 (waiting and stale),
+turn 9's 9e (tiles in the docked panel), turn 10 (the panel focused or not, in herdr's theme) and the
+smooth animation (turn 6 between whole frames).
 
     uv run python tests/fixtures/capture_design.py   (needs node)
 """
@@ -80,6 +81,11 @@ def main() -> None:
                       "E the docked panel, U the same with turn 6's unseen sample marks; data the dataset (swarm-tui.js "
                       "plus the finished Docs Site); rows as runs of [text, fg, bg, bold]")
     (HERE / "design_9.json").write_text(json.dumps(nine, ensure_ascii=False, separators=(",", ":")))
+    ten = json.loads(node("render-10.mjs", "json"))
+    ten["frames"] = {f: {k: [run_length(r) for r in v] for k, v in fr.items()} for f, fr in ten["frames"].items()}
+    ten["source"] = ("docs/design/swarm-focus.js (turn 10) rendered by docs/design/render-10.mjs: the 9e panel focused "
+                     "(A) and not (I) in two herdr themes (themes: the tokens used); rows as runs of [text, fg, bg, bold]")
+    (HERE / "design_10.json").write_text(json.dumps(ten, ensure_ascii=False, separators=(",", ":")))
     smooth = {f: {k: [run_length(r) for r in v] for k, v in fr.items()}
               for f, fr in json.loads(node("render-smooth.mjs", "json")).items()}
     (HERE / "design_smooth.json").write_text(json.dumps(

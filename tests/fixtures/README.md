@@ -38,4 +38,6 @@ Design references (not wire formats), both captured from the design's own code i
   row; the golden for `tests/test_tiles.py`.
 - `design_8.json`: turn 8 (waiting and stale, `swarm-states.js` via `render-8.mjs`): its added data
   and frames 0, 4, 7, 12 and the fractional 1.5 and 3.4 (the eased blink) of the 2a graphs and the 9e panel; the golden for `tests/test_states.py`.
+- `design_10.json`: turn 10, the 9e panel focused and not in two herdr themes (`render-10.mjs`,
+  four frames) and the theme tokens used; the golden for `tests/test_focus_theme.py`.
 Regenerate with `uv run python tests/fixtures/capture_design.py` (needs node).

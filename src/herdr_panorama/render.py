@@ -249,6 +249,9 @@ class View:
     hover: tuple | None = None  # the (kind, identity) under the mouse
     dock: bool = False  # cockpit: panorama is docked next to an agent -> the 3a panel
     zoom_hint: bool = False  # docked next to an agent: z zooms between the panel and the graph
+    # the docked panel's look from herdr's theme, focused or not (theme.panel_colors): its
+    # background and panorama's text colours mapped; None: panorama's own colours (design 9e)
+    panel: tuple[str, dict] | None = None
     now: float = 0.0
     # Animation time in design frames of 250 ms. Whole steps move spinners and sweeps; the colour
     # tick sets the fraction in between, which only colours follow (pulses, blinks: Anim).
@@ -2072,4 +2075,22 @@ def dock_panel(swarm: Swarm, view: View, w: int, h: int, stale: str | None = Non
     off = scroll(view, 0, col, height, y)
     s.blit(cv, off, 0, top, height)
     s.columns.append((0, w, top, top + height, 0))
+    if view.panel is not None:
+        theme_panel(s, *view.panel)
     return s
+
+
+def theme_panel(s: Screen, bg: str, fgs: dict[str, str]) -> None:
+    """Design turn 10 (swarm-focus.js): the panel's own background becomes ``bg``, and on the
+    panel's rows (its background, the docked entry's, the hover's) panorama's text colours
+    become the theme's. Tiles, status colours and anything animated stay as drawn."""
+    rows = (BG, SEL, DOCK_HOV)
+    for row in s.c:
+        for c in row:
+            cb = c.bg if c.bg is not None else BG
+            if type(cb) is not str or cb not in rows:
+                continue
+            if type(c.fg) is str and c.fg in fgs:
+                c.fg = fgs[c.fg]
+            if cb == BG:
+                c.bg = bg

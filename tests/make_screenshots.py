@@ -73,12 +73,20 @@ async def test_new_agent_shot(fake_herdr):
         shot(app, "new-agent", 2000)
 
 
-async def test_dock_panel_shots(fake_herdr):
-    """The cockpit's docked panel (9e) next to the design's own render of the same dataset and
-    frame: docs/screenshots/dock-9e-app.png and dock-9e-design.png."""
+async def test_dock_panel_shots(fake_herdr, tmp_path, monkeypatch):
+    """The cockpit's docked panel (9e in herdr's theme, turn 10) focused and not, next to the
+    design's own render of the same dataset, theme and frame: docs/screenshots/dock-app.png,
+    dock-app-unfocused.png, dock-design.png and dock-design-unfocused.png. The theme is the
+    operator's: catppuccin with active_row_bg = "#414868"."""
     import json
 
+    from textual import events
+
     from .design_dock import FIX, design_swarm
+    cfg = tmp_path / "xdg" / "herdr" / "config.toml"
+    cfg.parent.mkdir(parents=True)
+    cfg.write_text('[theme.custom]\nactive_row_bg = "#414868"\n')
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
     data = json.loads((FIX / "design_9.json").read_text())["data"]
     app = SwarmApp(source=lambda: design_swarm(data), live_refresh=False, clock=lambda: NOW, focus_pane="w1:p3",
                    home_mode=True, cockpit_mode=True)
@@ -90,15 +98,19 @@ async def test_dock_panel_shots(fake_herdr):
         app.view.frame, app.view.hover = 4, ("orch", ("w1:p4",))  # the design's frame and hover
         app.repaint()
         await pilot.pause()
-        shot(app, "dock-9e-app", 600)
-    html = OUT / "dock-9e-design.html"
+        shot(app, "dock-app", 600)
+        app.post_message(events.AppBlur())
+        await pilot.pause()
+        shot(app, "dock-app-unfocused", 600)
     design = Path(__file__).resolve().parent.parent / "docs" / "design"
-    html.write_text(subprocess.run(["node", "render-9.mjs", "html", "4"], cwd=design, capture_output=True,
-                                   text=True, check=True).stdout)
-    subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--no-sandbox", "--hide-scrollbars",
-                    "--window-size=384,752", f"--screenshot={OUT / 'dock-9e-design.png'}", html.as_uri()],
-                   check=True, capture_output=True, timeout=60)
-    html.unlink()
+    for key, name in (("yoursA", "dock-design"), ("yoursI", "dock-design-unfocused")):
+        html = OUT / f"{name}.html"
+        html.write_text(subprocess.run(["node", "render-10.mjs", "html", key, "4"], cwd=design, capture_output=True,
+                                       text=True, check=True).stdout)
+        subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--no-sandbox", "--hide-scrollbars",
+                        "--window-size=384,752", f"--screenshot={OUT / (name + '.png')}", html.as_uri()],
+                       check=True, capture_output=True, timeout=60)
+        html.unlink()
 
 
 async def test_remote_group_shots(fake_herdr):

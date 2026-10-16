@@ -235,9 +235,11 @@ async def test_r11_a_refresh_that_docks_the_view_rearms_the_keys(fake_herdr):
         await pilot.press("right")
         assert not app.view.dock and app.view.focus == 1  # on a thread
         app.armed_at = 0.0
+        t0 = _time.monotonic()
         app.apply(design_swarm())  # the refresh reports panorama docked next to tab 3
         assert app.view.dock and app.view.focus == 0
-        assert not app.armed() and app.armed_at > _time.monotonic() + ARM_SECONDS / 2
+        # re-armed by this apply: measured from before it, so a slow (loaded) run cannot fail it
+        assert app.armed_at >= t0 + ARM_SECONDS
 
 
 # -- the width herdr actually gives the pane (review: clipped "workin", "pfx+spc bac") ----
