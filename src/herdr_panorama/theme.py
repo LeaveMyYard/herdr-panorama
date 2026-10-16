@@ -7,8 +7,11 @@ with ``auto_switch``, its ``dark_name``, since panorama's own colours are dark),
 ``[theme.custom]`` overrides (and ``[theme.custom.dark]`` with ``auto_switch``). Re-read when
 the file changes (``herdr server reload-config`` follows an edit to it).
 
-The built-in themes' tokens below are ours, from each theme's public palette: only the six the
-panel reads. ``panel_colors`` is the one place that turns them into the panel's colours.
+The built-in themes' tokens below are ours: only the six the panel reads, from each theme's
+public palette, then checked against what herdr 0.9.3 itself draws (an isolated herdr per theme,
+a client attached, its truecolor output: the review of #19). Where herdr draws a near but
+different colour, herdr's is used (tokyo-night, nord, one-dark, one-light, dracula, kanagawa,
+rose-pine-dawn, vesper). ``panel_colors`` is the one place that turns them into the panel's colours.
 """
 
 from __future__ import annotations
@@ -28,25 +31,26 @@ def _t(panel_bg, active_row_bg, text, subtext0, overlay1, overlay0) -> dict:
     return dict(zip(TOKENS, (panel_bg, active_row_bg, text, subtext0, overlay1, overlay0), strict=True))
 
 
-# name -> (panel_bg, active_row_bg, text, subtext0, overlay1, overlay0), from the public palettes
+HERDR_VERSION = "0.9.3"  # the herdr the table was checked against
+# name -> (panel_bg, active_row_bg, text, subtext0, overlay1, overlay0)
 THEMES: dict[str, dict] = {
     "catppuccin": _t("#1e1e2e", "#313244", "#cdd6f4", "#a6adc8", "#7f849c", "#6c7086"),  # mocha
     "catppuccin-latte": _t("#eff1f5", "#ccd0da", "#4c4f69", "#6c6f85", "#8c8fa1", "#9ca0b0"),
-    "tokyo-night": _t("#1a1b26", "#292e42", "#c0caf5", "#a9b1d6", "#737aa2", "#565f89"),
+    "tokyo-night": _t("#1a1b26", "#292e42", "#c0caf5", "#a9b1d6", "#697196", "#565f89"),
     "tokyo-night-day": _t("#e1e2e7", "#c4c8da", "#3760bf", "#6172b0", "#68709a", "#848cb5"),
-    "dracula": _t("#282a36", "#44475a", "#f8f8f2", "#bfbfbf", "#6272a4", "#525a7d"),
-    "nord": _t("#2e3440", "#3b4252", "#eceff4", "#d8dee9", "#616e88", "#4c566a"),
+    "dracula": _t("#282a36", "#44475a", "#f8f8f2", "#d2d2dc", "#6272a4", "#828cb4"),
+    "nord": _t("#2e3440", "#3b4252", "#eceff4", "#d8dee9", "#646e82", "#4c566a"),
     "gruvbox": _t("#282828", "#3c3836", "#ebdbb2", "#d5c4a1", "#928374", "#7c6f64"),
     "gruvbox-light": _t("#fbf1c7", "#ebdbb2", "#3c3836", "#504945", "#928374", "#a89984"),
-    "one-dark": _t("#282c34", "#3e4451", "#abb2bf", "#9da5b4", "#7f848e", "#5c6370"),
-    "one-light": _t("#fafafa", "#e5e5e6", "#383a42", "#4f525e", "#696c77", "#a0a1a7"),
+    "one-dark": _t("#282c34", "#3e4451", "#abb2bf", "#969ca8", "#737a87", "#5c6370"),
+    "one-light": _t("#fafafa", "#e5e5e6", "#383a42", "#4f525e", "#686b77", "#a0a1a7"),
     "solarized": _t("#002b36", "#073642", "#93a1a1", "#839496", "#657b83", "#586e75"),
     "solarized-light": _t("#fdf6e3", "#eee8d5", "#586e75", "#657b83", "#839496", "#93a1a1"),
-    "kanagawa": _t("#1f1f28", "#363646", "#dcd7ba", "#c8c093", "#727169", "#54546d"),
+    "kanagawa": _t("#1f1f28", "#363646", "#dcd7ba", "#c8c3aa", "#727169", "#87867d"),
     "kanagawa-lotus": _t("#f2ecbc", "#e4d794", "#545464", "#716e61", "#8a8980", "#a09cac"),
     "rose-pine": _t("#191724", "#403d52", "#e0def4", "#908caa", "#6e6a86", "#524f67"),
-    "rose-pine-dawn": _t("#faf4ed", "#dfdad9", "#575279", "#797593", "#9893a5", "#cecacd"),
-    "vesper": _t("#101010", "#232323", "#ffffff", "#a0a0a0", "#8b8b8b", "#505050"),
+    "rose-pine-dawn": _t("#faf4ed", "#dfdad9", "#464261", "#797593", "#9893a5", "#cecacd"),
+    "vesper": _t("#101010", "#232323", "#ffffff", "#a0a0a0", "#7e7e7e", "#5c5c5c"),
     # "terminal" follows the host terminal's ANSI palette, which panorama cannot read: none
 }
 DEFAULT = "catppuccin"

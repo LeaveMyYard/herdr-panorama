@@ -138,3 +138,16 @@ async def test_the_view_follows_the_terminals_focus_in_and_out(fake_herdr):
         wide.post_message(events.AppBlur())
         await pilot.pause()
         assert wide.view.panel is None and wide.grid.screen_data.c[44][100].bg in (None, render.BG)
+
+
+def test_the_table_uses_what_herdr_draws_where_it_differs_from_the_palettes():
+    """Review of #19: checked against herdr 0.9.3's own output (an isolated herdr per theme, a
+    client attached). These are herdr's colours, not the public palettes' near ones."""
+    assert theme.HERDR_VERSION == "0.9.3"
+    measured = {("tokyo-night", "overlay1"): "#697196", ("nord", "overlay1"): "#646e82",
+                ("one-dark", "subtext0"): "#969ca8", ("one-dark", "overlay1"): "#737a87",
+                ("one-light", "overlay1"): "#686b77", ("dracula", "subtext0"): "#d2d2dc",
+                ("dracula", "overlay0"): "#828cb4", ("kanagawa", "subtext0"): "#c8c3aa",
+                ("kanagawa", "overlay0"): "#87867d", ("rose-pine-dawn", "text"): "#464261",
+                ("vesper", "overlay1"): "#7e7e7e", ("vesper", "overlay0"): "#5c5c5c"}
+    assert {k: theme.THEMES[k[0]][k[1]] for k in measured} == measured

@@ -6,15 +6,15 @@
 //   unfocused  background = the theme's panel_bg ("reset" or unset: the terminal's own, nothing painted);
 //              text = its text; dim = overlay1, faint = overlay0 (secondary text one step dimmer)
 // The docked entry's and the hover's row backgrounds stay 9e's (their text follows the same rule); tiles keep their
-// own colours. Theme tokens are from the themes' public palettes.
+// own colours. Theme tokens are from the themes' public palettes, checked against herdr 0.9.3's own output.
 import { renderTiles } from './swarm-tiles.js';
 import { TH } from './swarm-tui.js';
 
 const th = TH.dark, ROWS = new Set([th.sel, '#171a1f']); // 9e's docked-entry and hover row backgrounds
-// built-in themes (public palettes), the tokens this panel reads
+// built-in themes (public palettes, checked against what herdr 0.9.3 draws), the tokens this panel reads
 export const THEMES = {
   catppuccin: { panel_bg: '#1e1e2e', active_row_bg: '#313244', text: '#cdd6f4', subtext0: '#a6adc8', overlay1: '#7f849c', overlay0: '#6c7086' },
-  'tokyo-night': { panel_bg: '#1a1b26', active_row_bg: '#292e42', text: '#c0caf5', subtext0: '#a9b1d6', overlay1: '#737aa2', overlay0: '#565f89' },
+  'tokyo-night': { panel_bg: '#1a1b26', active_row_bg: '#292e42', text: '#c0caf5', subtext0: '#a9b1d6', overlay1: '#697196', overlay0: '#565f89' },
 };
 // the operator's herdr: no theme name (catppuccin) and [theme.custom] active_row_bg = "#414868"
 export const SHOWN = [
