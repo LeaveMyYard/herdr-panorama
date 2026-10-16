@@ -109,6 +109,7 @@ class Core:
         self._server: socket.socket | None = None
         self._stop = threading.Event()
         self._mu = threading.Lock()
+        self._refusing = False  # at MAX_VIEWERS, already logged
         self._last: bytes | None = None  # the last state, for viewers that connect later
 
     # -- lifecycle --------------------------------------------------------------------
@@ -240,9 +241,12 @@ class Core:
                 if v is not None:
                     self.viewers.append(v)
             if v is None:
-                log.warning("refused a connection: %d open already", MAX_VIEWERS)
+                if not self._refusing:  # once per full spell, not once per connection
+                    log.warning("refusing connections: %d open already", MAX_VIEWERS)
+                self._refusing = True
                 conn.close()
                 continue
+            self._refusing = False
             # the writer starts at hello: until then a connection holds one thread, for at
             # most HELLO_SECONDS
             threading.Thread(target=self._read, args=(v,), daemon=True, name="core-read").start()
