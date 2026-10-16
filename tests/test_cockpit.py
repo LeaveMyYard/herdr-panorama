@@ -169,8 +169,26 @@ def test_dock_keep_focus_leaves_an_operator_who_moved_on(herdr, monkeypatch):
     n_tab, n_pane = len(herdr.calls("tab", "focus")), len(sockets(herdr, "pane.focus"))
     assert cockpit.dock(b, focus_me=True) == (h.pane_id, None)
     assert in_tab(herdr, tb) == [h.pane_id, b]  # the dock itself happened
-    assert len(herdr.calls("tab", "focus")) == n_tab and len(sockets(herdr, "pane.focus")) == n_pane
+    # only the tab-first focus of b's tab, before the move: nothing after the swap pulls them back
+    assert herdr.calls("tab", "focus")[n_tab:] == [["tab", "focus", tb]] and len(sockets(herdr, "pane.focus")) == n_pane
     assert state(herdr)["focus"] == c
+
+
+def test_an_explicit_dock_shows_the_agents_tab_first(herdr, monkeypatch):
+    """Blink measurements (attached client): herdr draws one in-between frame whatever the order;
+    focusing the agent's tab before the move makes it the chat asked for, ~20 ms sooner. A
+    follow (the operator already there) does not."""
+    order = []
+    for name in ("focus_tab", "move_pane_to_tab", "swap_panes"):
+        real = getattr(cockpit.herdr, name)
+        monkeypatch.setattr(cockpit.herdr, name, (lambda r, n: lambda *a, **k: (order.append(n), r(*a, **k))[1])(real, name))
+    h, _, (b, tb), _ = _docked_next_to_a(herdr)
+    order.clear()
+    cockpit.dock(b, focus_me=True)
+    assert order[:3] == ["focus_tab", "move_pane_to_tab", "swap_panes"]
+    order.clear()
+    cockpit.dock(b)  # already next to it: nothing moves, nothing focused
+    assert order == []
 
 
 def test_dock_keep_focus_falls_back_to_the_agent_if_its_tab_cannot_be_focused(herdr, monkeypatch):
@@ -471,6 +489,24 @@ async def test_an_arrow_dock_is_skipped_when_the_keyboard_left_or_a_follow_runs(
             app.herdr_focused_pane = "w1:p1"  # herdr's last report: the operator is in another pane
         await _arrow(app, pilot, wait=0.4)
         assert docked == []
+        await pilot.press("q")
+
+
+async def test_an_arrow_settling_during_a_dock_runs_after_it_even_if_focus_looks_elsewhere(fake_herdr, monkeypatch):
+    """Review of #26 (Low): a dock across workspaces briefly makes the focus checks wrong (a new
+    pane id); "a dock is running" is checked first, so the arrow runs after the dock, not lost."""
+    docked = _record_docks(monkeypatch)
+    app = await _docked_app(fake_herdr)
+    async with app.run_test(size=(46, 45)) as pilot:
+        await _loaded(app, pilot)
+        app.docking = True
+        app.my_pane, app.herdr_focused_pane = "w5:p1", "w7:p2"  # mid-dock: the new id not known yet
+        await _arrow(app, pilot, "down", wait=0.4)
+        assert docked == [] and app._arrow_again
+        app.my_pane = "w7:p2"  # the dock returned it
+        app._docked(None)
+        await _arrow(app, pilot, wait=0.4)
+        assert docked == [(app.view.orch, True)]
         await pilot.press("q")
 
 

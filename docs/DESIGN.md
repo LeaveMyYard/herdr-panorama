@@ -1315,6 +1315,25 @@ tile in its off phase.
       agent is focused as before. `g`, and Enter on the docked entry, go into the agent.
       Follow sees the operator in panorama and does nothing, so the two never loop. The full
       2a graph is unchanged: Enter there goes into the agent.
+    - **The blink.** Switching chats shows one in-between frame. Measured on an isolated
+      herdr 0.9.3 with a real client attached in a pty (its output through a terminal
+      emulator, every distinct screen recorded, the real panorama TUI in the moving pane;
+      three runs each):
+
+      | order | in-between frame | final frame |
+      |---|---|---|
+      | move, swap, ratio, tab focus, pane focus (before) | the chat being left, without the panel, at 9–11.5 ms | 28.5–29.8 ms |
+      | the same over the socket | same, at ~8.6 ms | ~28 ms |
+      | move at the final ratio, then swap (no ratio step) | same, at ~8.6 ms | ~27.5 ms |
+      | **tab focus first**, then move and swap (now) | the chat asked for, without the panel yet, at 8.2–9.5 ms | 26.1–28.2 ms |
+
+      herdr renders the first change at once, then about 20 ms later; it has no batch call
+      (`layout.apply` makes new panes, it cannot move one), and panorama's pane must leave a
+      tab before it appears in another, so one frame stays. Focusing the agent's tab first
+      (explicit docks only; a follow is already there) makes it the target chat, shown about
+      20 ms sooner. Panorama itself never drew a wrong-width or blank panel in between (the
+      client shows its pane only at the final width), so holding its repaint would change
+      nothing; the socket and ratio-first orders changed no frame, so they were left out.
     - The click is armed like Enter: right after a refresh changed the selected entry, it
       may select but does not dock.
     - It acts on the identity drawn under it, re-checked against the model, and the

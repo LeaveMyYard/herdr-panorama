@@ -170,6 +170,15 @@ def _move_next_to(snap: dict, me: home.Home, t: dict, keep_focus_on: str | None,
     err = _leave(snap, me)
     if err:
         return None, f"panorama stays: could not relabel the tab it would leave: {err}"
+    if keep_focus_on is None:
+        # an explicit dock (Enter, a click, the arrows): show the agent's tab first. herdr 0.9.3
+        # draws one in-between frame whatever the order (it renders the first change at once,
+        # then ~20 ms later); this way it is the chat asked for (without the panel yet), not the
+        # chat being left without its panel, and the target shows ~20 ms sooner (measured with
+        # an attached client: docs/DESIGN.md, "Keep focus").
+        terr = herdr.focus_tab(t["tab_id"])
+        if terr:
+            log.warning("could not show %s before docking: %s", t["tab_id"], terr)
     global moving_until
     moving_until = time.monotonic() + 1.0  # herdr resizes this pane in steps until the ratio is set
     res, err = herdr.move_pane_to_tab(me.pane_id, t["tab_id"], target)
