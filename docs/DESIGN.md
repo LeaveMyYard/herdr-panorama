@@ -1349,6 +1349,143 @@ tile in its off phase.
   - `a answer` is left out of the footer when there is no inbox.
   - `z graph` sits on the footer's rule (see Follow).
 
+## Per-tab panels (design, not built yet)
+
+The operator's option 1 for the switching blink: give every orchestrator tab its own docked
+panel, so switching chats is a plain tab switch with the panel already in place.
+
+### Why
+
+Docking moves panorama's one pane between tabs. With herdr 0.9.3 that always shows one
+in-between frame of about 20 ms, whatever the order of the calls (see "The blink" under the
+docked panel): herdr draws the first change at once, then throttles, it has no batch call, and
+the pane has to leave one tab before it appears in another. A tab switch between two tabs that
+both already have a panel changes nothing but the visible tab, so there is no in-between
+frame. This is to be confirmed by measurement: the same harness, with a client attached in a
+pty and every distinct screen recorded, switching between two tabs that each have a panel.
+
+### Architecture: one collector, thin viewers
+
+Running a full panorama per tab is too heavy today. Measured on this machine:
+
+| process | memory | CPU |
+|---|---|---|
+| the live panorama (collector, Textual, full graph) | ~205 MB RSS (plus a 31 MB `uv` wrapper) | ~8 % |
+| a render-only Textual panel on a static model, after 40 animation frames | ~41 MB | |
+| `render.dock_panel` to text without Textual | ~26 MB | ~1.5 ms per frame |
+
+So the work splits in two:
+
+- **The collector ("core")** is the panorama in the home tab, or a headless `panorama core`
+  when the home tab is off. It keeps everything that is shared: collection (herdr snapshot,
+  transcripts, inbox, machines), the unseen tracker and its state file, the theme, and the
+  panel manager (below). It publishes state on a local socket,
+  `$HERDR_PLUGIN_STATE_DIR/panorama.sock`.
+- **A viewer** (`panorama panel`) runs in each orchestrator tab's panel pane. It renders the
+  docked panel (9e with turn 10's colours) from the published state. It keeps only what is its
+  own: its cursor, hover and arming, its focus look (the terminal's focus reports and herdr's
+  `pane_focused`), and the animation frame. It does no collection and runs no follow thread.
+
+### The protocol (language-neutral, versioned)
+
+A Rust viewer (ratatui, issue #22) should be able to replace the Python one as the first Rust
+component, so the protocol carries render-ready state, not Python objects.
+
+- **Transport:** a Unix stream socket, newline-delimited JSON (one object per line, UTF-8).
+  msgpack is a later option, behind the same version field.
+- **The viewer opens with** `{"hello": {"protocol": 1, "role": "panel", "pane_id": <its herdr
+  pane>, "tab_id": <its tab>}}`. The core answers `{"welcome": {"protocol": 1}}`, or
+  `{"error": ...}` on a version it doesn't speak.
+- **The core sends:**
+  - `{"state": {...}}`: a full snapshot on connect, then one after every collect (~1.5 s).
+    It contains the orchestrators, threads and agents with exactly the fields the panel
+    draws (ids, names, tab numbers, statuses, spinner sequence numbers, question counts,
+    machine labels), the docked pairing per tab, the unseen marks, the header counts, any
+    errors, and the theme tokens with `panel_colors` / `focus_tint`. Field names follow
+    `model.py`, documented next to it, with a JSON schema in `docs/protocol/`.
+  - `{"ping": n}` every few seconds, so a viewer can tell a stalled core from a quiet one.
+- **The viewer sends:**
+  - `{"seen": [agent ids]}`: the core owns the unseen state.
+  - `{"focus": {"tab_id": ..., "focused": bool}}`: so the core knows which panel has the
+    keyboard (for logging and tests only).
+  - `{"bye": {}}` when it quits.
+- **Not on the socket:** actions that act on herdr (focus a tab or pane, answer through the
+  inbox, open New agent). The viewer calls herdr itself, as today, since it runs in a herdr
+  pane with herdr's socket.
+- **Compatibility:** unknown fields are ignored, and a new major `protocol` number is refused.
+
+### The panel manager (in the core)
+
+Agent panes are never moved, closed or resized. Panel panes are found by content, as
+`home.candidates` finds panorama today: the plugin's own pane, running `panorama panel`, with
+the label `◆ panorama`. A pane that only looks similar is never touched.
+
+- **Which tabs.** Tabs holding a local Claude orchestrator pane in panorama's workspace. With
+  `cockpit_follow_tabs = "single"`, only tabs where it is the only pane. No remote machines
+  (their tabs are on another herdr).
+- **Creation.** `plugin.pane.open` with `placement: "split"`, the orchestrator pane as
+  `target_pane_id`, `focus: false`. The panel is then put on the left (`pane.swap`, which needs
+  a focus re-check: herdr focuses the swap's source) and sized with `fit`, as today. This
+  happens when an orchestrator tab appears, before the operator goes there, so the first visit
+  has no blink either. An option is to create lazily on the first visit, at the cost of one
+  in-between frame then.
+- **Removal.** When an orchestrator's tab loses its orchestrator, or the cockpit is turned off,
+  the core closes that tab's panel (`plugin.pane.close`, identity re-checked). A tab herdr
+  closes takes its panel with it.
+- **Width.** Each viewer keeps its own split at `cockpit_width` (the current `fit` and
+  measured frame), so every tab's panel has the same width.
+
+### Navigation
+
+- **Arrows, a click, Enter.** In any tab's panel these work as today, except that "docking"
+  becomes `tab.focus <target tab>` plus `pane.focus <target tab's panel>` (keep focus), or
+  focus on the agent (Enter). The arrows' settle delay, the identity and arrival checks and
+  the "operator moved on" check stay. The target tab's viewer starts with its cursor on its
+  own orchestrator, so the arrows continue from there.
+- **Follow** goes away: every tab already has its panel, so nothing moves.
+- **The home tab and the full graph** are unchanged. The home pane is the core and keeps its
+  2a graph.
+
+### Shared and per-viewer state
+
+- **Shared, in the core:** the model, unseen marks (a viewer reports seen, the core clears and
+  broadcasts), the inbox counts, the theme.
+- **Per viewer:** the cursor, the hover, the arming, the focus look, the animation.
+- **Animation is paused in hidden tabs.** A viewer learns from herdr's `tab_focused` events
+  whether its tab is the one shown, and while hidden it draws no frames. So N panels don't cost
+  N times the animation CPU (~1.5 ms per frame each at 4 frames a second).
+
+### Failure
+
+- **The core goes away.** A viewer whose core is gone keeps its last picture, dimmed, with a
+  one-line notice, and reconnects with backoff. The notice's wording needs the operator's OK.
+- **Too old a core.** A viewer started against a core with an older protocol number shows the
+  same notice.
+- **The core restarts.** It finds the existing panels by content and adopts them; it never
+  makes a second one in a tab.
+
+### Migration and the fallback
+
+`cockpit_panels = "per-tab"` (the new default) or `"moving"` (today's single moving panel). The
+moving code stays as it is; the fallback costs only the setting and its tests.
+
+### Cost, and a Rust viewer (input to #22)
+
+- **Python viewer:** about 40 MB (Textual) or about 26 MB (plain text output, our own input
+  parsing). For 10 tabs that is 260–410 MB, against about 2 GB for 10 full panoramas.
+- **Rust viewer:** a ratatui binary speaking the same protocol would likely need 3–8 MB RSS and
+  well under 1 % CPU. That is an estimate from typical ratatui tools, not a measurement.
+- **The core** stays one process either way.
+- **First Rust component:** the viewer is the natural one. It is small: render the panel from
+  JSON, handle keys, mouse and focus, call herdr.
+
+### Questions for the operator
+
+1. Create panels eagerly for every orchestrator tab (no blink on any visit, about 40 MB
+   each), or lazily on first visit (one in-between frame then)?
+2. A viewer that loses the core: the wording of its notice.
+3. Keep `"moving"` as a fallback, or drop it once per-tab is proven?
+
 ## Refresh strategy
 
 A background worker rebuilds the model every 1.5 s; the view animates from the
