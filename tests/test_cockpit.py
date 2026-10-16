@@ -106,6 +106,35 @@ def test_dock_moves_only_panorama_left_of_the_agent(herdr):
     assert not any(c[1] in ("prompt", "send-keys", "send-text") for c in herdr.calls() if len(c) > 1)
 
 
+def test_dock_keep_focus_puts_the_operator_on_panorama_and_follow_leaves_it(herdr):
+    """dock_keep_focus: panorama is the swap's source, so focus lands on panorama in the agent's
+    tab; that focus never starts a follow (the operator is in panorama): no loop."""
+    h, _ = home.ensure(focus=False)
+    a, ta = add_agent(herdr, "billing")
+    assert cockpit.dock(a, focus_me=True) == (h.pane_id, None)
+    assert herdr.calls("pane", "swap") == [["pane", "swap", "--source-pane", h.pane_id, "--target-pane", a]]
+    assert in_tab(herdr, ta) == [h.pane_id, a]  # the same layout as without it: panorama on the left
+    assert state(herdr)["focus"] == h.pane_id
+    assert sockets(herdr, "pane.focus") == []  # the swap did it: no second focus change
+    assert cockpit.follow(h.pane_id) == (None, "the operator is in panorama")
+    only_panorama_moved(herdr, h.pane_id)
+
+
+def test_dock_keep_focus_without_a_swap_still_focuses_panorama(herdr, monkeypatch):
+    h, _ = home.ensure(focus=False)
+    a, _ = add_agent(herdr, "billing")
+    monkeypatch.setattr(cockpit.herdr, "swap_panes", lambda s, t: "not swapped: test")
+    assert cockpit.dock(a, focus_me=True) == (h.pane_id, None)
+    assert sockets(herdr, "pane.focus") == [{"pane_id": h.pane_id}]
+
+
+def test_dock_keep_focus_setting_defaults_on():
+    configure("cockpit = true\n")
+    assert cockpit.keep_focus_setting()
+    configure("cockpit = true\ndock_keep_focus = false\n")
+    assert not cockpit.keep_focus_setting()
+
+
 def test_docking_elsewhere_leaves_the_previous_agent_alone_in_its_tab(herdr):
     h, _ = home.ensure(focus=False)
     a, ta = add_agent(herdr, "billing")
@@ -241,6 +270,89 @@ async def test_enter_docks_and_focuses_the_agent(fake_herdr, monkeypatch):
         assert docked == ["w1:p2"] and app.is_running
         await pilot.press("q")
     assert fake_herdr.calls_of("agent", "focus") == [["agent", "focus", "w1:p2"]]
+
+
+def _record_docks(monkeypatch) -> list:
+    docked: list = []
+
+    def dock(p, me=None, on_docked=None, focus_me=False):
+        docked.append((p, focus_me))
+        return me or "w1:p9", None
+    monkeypatch.setattr(cockpit, "dock", dock)
+    return docked
+
+
+async def _docked_app(fake_herdr):
+    from herdr_panorama.tui import SwarmApp
+    from .design_dock import design_swarm
+    return SwarmApp(source=design_swarm, live_refresh=False, clock=lambda: 0.0, focus_pane="w1:p3",
+                    home_mode=True, cockpit_mode=True)  # docked next to tab 3: the 3a panel
+
+
+async def _settled(app, pilot):
+    for _ in range(40):
+        await pilot.pause(0.05)
+        if not app.docking:
+            return
+
+
+@pytest.mark.parametrize("key,keep", [("enter", True), ("g", False)])
+async def test_docked_enter_browses_and_g_goes_into_the_agent(fake_herdr, monkeypatch, key, keep):
+    """The operator's request: in the docked panel, Enter on another orchestrator docks next to
+    it and the keyboard stays on panorama (↑/↓ + Enter browse the chats); g goes into it."""
+    docked = _record_docks(monkeypatch)
+    app = await _docked_app(fake_herdr)
+    async with app.run_test(size=(46, 45)) as pilot:
+        await _loaded(app, pilot)
+        assert app.view.dock
+        target = next(o.pane_id for o in app.swarm.orchestrators if o.pane_id != app.swarm.docked)
+        app._select(0, target)
+        await pilot.press(key)
+        await _settled(app, pilot)
+        assert docked == [(target, keep)]
+        await pilot.press("q")
+    assert fake_herdr.calls_of("agent", "focus") == ([] if keep else [["agent", "focus", target]])
+
+
+async def test_docked_enter_with_keep_focus_off_focuses_the_agent(fake_herdr, monkeypatch):
+    docked = _record_docks(monkeypatch)
+    monkeypatch.setattr(cockpit, "keep_focus_setting", lambda: False)
+    app = await _docked_app(fake_herdr)
+    async with app.run_test(size=(46, 45)) as pilot:
+        await _loaded(app, pilot)
+        target = next(o.pane_id for o in app.swarm.orchestrators if o.pane_id != app.swarm.docked)
+        app._select(0, target)
+        await pilot.press("enter")
+        await _settled(app, pilot)
+        await pilot.press("q")
+    assert docked == [(target, False)] and fake_herdr.calls_of("agent", "focus") == [["agent", "focus", target]]
+
+
+async def test_a_failed_keep_focus_dock_still_goes_to_the_agent(fake_herdr, monkeypatch):
+    monkeypatch.setattr(cockpit, "dock", lambda p, me=None, on_docked=None, focus_me=False: (None, "no move"))
+    app = await _docked_app(fake_herdr)
+    async with app.run_test(size=(46, 45)) as pilot:
+        await _loaded(app, pilot)
+        target = next(o.pane_id for o in app.swarm.orchestrators if o.pane_id != app.swarm.docked)
+        app._select(0, target)
+        await pilot.press("enter")
+        await _settled(app, pilot)
+        await pilot.press("q")
+    assert fake_herdr.calls_of("agent", "focus") == [["agent", "focus", target]]
+
+
+async def test_the_2a_graph_enter_still_focuses_the_agent(fake_herdr, monkeypatch):
+    """The full graph (wide, not the docked panel) is unchanged: Enter goes into the agent."""
+    docked = _record_docks(monkeypatch)
+    app = await _app(fake_herdr)
+    async with app.run_test(size=(160, 45)) as pilot:
+        await _loaded(app, pilot)
+        assert not app.view.dock
+        await pilot.press("down", "enter")
+        await _settled(app, pilot)
+        await pilot.press("q")
+    assert docked and all(not keep for _, keep in docked)
+    assert fake_herdr.calls_of("agent", "focus") == [["agent", "focus", docked[0][0]]]
 
 
 async def test_a_failed_dock_still_goes_to_the_agent(fake_herdr, monkeypatch):

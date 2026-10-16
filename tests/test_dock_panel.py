@@ -140,11 +140,22 @@ async def wait_for(pilot, cond, n=40):
     return cond()
 
 
-async def test_one_click_on_an_entry_docks_and_question_marks_answer(fake_herdr, monkeypatch):
-    """The docked 3a panel: one click switches to that orchestrator (the operator's request)."""
+def record_docks(monkeypatch) -> list:
+    """cockpit.dock replaced: each call's (target, focus_me) recorded, panorama 'docked' in place."""
     from herdr_panorama import cockpit
-    docked = []
-    monkeypatch.setattr(cockpit, "dock", lambda p, me=None, on_docked=None: (docked.append(p), (me, None))[1])
+    docked: list = []
+
+    def dock(p, me=None, on_docked=None, focus_me=False):
+        docked.append((p, focus_me))
+        return me or "w1:p9", None  # panorama's pane after the move
+    monkeypatch.setattr(cockpit, "dock", dock)
+    return docked
+
+
+async def test_one_click_on_an_entry_docks_and_question_marks_answer(fake_herdr, monkeypatch):
+    """The docked 3a panel: one click switches to that orchestrator (the operator's request),
+    and the keyboard stays on panorama (dock_keep_focus, the default)."""
+    docked = record_docks(monkeypatch)
     answered = []
     app = await docked_app(fake_herdr)
     async with app.run_test(size=(46, 45)) as pilot:
@@ -152,24 +163,23 @@ async def test_one_click_on_an_entry_docks_and_question_marks_answer(fake_herdr,
         monkeypatch.setattr(app, "_open_inbox", lambda question=None, pane=None: answered.append(pane))
         await pilot.click(app.grid, offset=spot(app, "orch", ("w1:p2",)))
         assert await wait_for(pilot, lambda: docked)
-        assert app.view.orch == "w1:p2" and docked == ["w1:p2"]  # one click: selected and docked
-        assert fake_herdr.calls_of("agent", "focus")[-1] == ["agent", "focus", "w1:p2"]
+        assert app.view.orch == "w1:p2" and docked == [("w1:p2", True)]  # one click: selected and docked
+        await wait_for(pilot, lambda: not app.docking)
+        assert fake_herdr.calls_of("agent", "focus") == []  # the keyboard stays on panorama
         await pilot.click(app.grid, offset=spot(app, "answer-orch", ("w1:p1",)))
         await pilot.pause()
-        assert answered == ["w1:p1"] and docked == ["w1:p2"]  # ?N answers, it does not dock
+        assert answered == ["w1:p1"] and docked == [("w1:p2", True)]  # ?N answers, it does not dock
 
 
 async def test_one_click_on_the_docked_entry_focuses_its_agent_like_enter(fake_herdr, monkeypatch):
-    from herdr_panorama import cockpit
-    docked = []
-    monkeypatch.setattr(cockpit, "dock", lambda p, me=None, on_docked=None: (docked.append(p), (me, None))[1])
+    docked = record_docks(monkeypatch)
     app = await docked_app(fake_herdr)
     async with app.run_test(size=(46, 45)) as pilot:
         await loaded(app, pilot)
         await pilot.press("down")  # the cursor off the docked entry
         await pilot.click(app.grid, offset=spot(app, "orch", ("w1:p3",)))
         assert await wait_for(pilot, lambda: fake_herdr.calls_of("agent", "focus"))
-        assert docked == ["w1:p3"]  # the same path as Enter: "already there", then its agent
+        assert docked == [("w1:p3", False)]  # the same path as Enter: "already there", then its agent
         assert fake_herdr.calls_of("agent", "focus") == [["agent", "focus", "w1:p3"]]
 
 

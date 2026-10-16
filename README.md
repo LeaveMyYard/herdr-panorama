@@ -105,11 +105,16 @@ cockpit = true        # default false while experimental
 cockpit_width = 46    # panorama's columns on the left
 cockpit_follow = true # follow you to whichever orchestrator tab you switch to (default true)
 cockpit_follow_tabs = "any" # "single": only into tabs where the orchestrator is the only pane
+dock_keep_focus = true # Enter in the docked list keeps the keyboard on panorama (default true)
 ```
 
 - **Enter** on an orchestrator (or **g**, or a click on the selected card) moves panorama's
   own pane into that agent's tab, on its left, and focuses the agent. The agent never
   moves: closing a tab closes that agent's tab, as always, and panorama with it.
+- **Browse the chats.** In the docked list, Enter (or a click) on another orchestrator
+  docks next to it and keeps the keyboard on panorama, so ↑/↓ and Enter go through the
+  chats one after another. **g**, or Enter on the entry already docked, goes into the
+  agent. `dock_keep_focus = false` makes Enter go into the agent every time.
 - **It follows you.** Switch tabs any other way (the tab bar, `prefix+1..9`, a
   notification, `herdr agent focus`), and when you land on a Claude orchestrator's tab the
   panel moves there too, beside the agent. You stay exactly where you clicked. It never
@@ -161,6 +166,7 @@ cockpit = false      # experimental: panorama docked left of the selected agent 
 cockpit_width = 46   # the list's width in the cockpit
 cockpit_follow = true # the cockpit follows you to the orchestrator tab you switch to
 cockpit_follow_tabs = "any" # or "single": follow only into one-pane orchestrator tabs
+dock_keep_focus = true # docked list: Enter on another orchestrator keeps the keyboard on panorama
 machines = "all"     # herdr's saved SSH machines to show: "all", "none" or ["label", ...]
 highlight_unseen = true # pulse what failed, asked or finished since you last looked
 ```
