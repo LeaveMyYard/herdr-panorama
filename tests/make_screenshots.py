@@ -197,3 +197,37 @@ async def test_unseen_shots(fake_herdr):
                     "--window-size=2700,1560", f"--screenshot={OUT / 'unseen-design.png'}", html.as_uri()],
                    check=True, capture_output=True, timeout=60)
     html.unlink()
+
+
+async def test_wide_shots(fake_herdr):
+    """Wider cards (design turn 7) on its dataset at 240 and 320 columns, next to the design:
+    docs/screenshots/wide-{240,320}-app.png and wide-design.png."""
+    from .design_wide import NOW as WNOW, TID, wide_swarm
+    t = wide_swarm().orchestrators[0].threads[0]
+    r1 = next(a.id for a in t.agents if a.depth == 2 and a.activity.startswith("tracing"))
+    for w, px in ((240, 2400), (320, 3000)):
+        app = SwarmApp(source=wide_swarm, live_refresh=False, clock=lambda: WNOW, focus_pane="w1:p3")
+        async with app.run_test(size=(w, 45)) as pilot:
+            for _ in range(50):
+                await pilot.pause(0.02)
+                if app.loaded:
+                    break
+            app.view.thread, app.view.agent, app.view.focus, app.view.frame = TID, r1, 3, 4
+            app.repaint()
+            await pilot.pause()
+            shot(app, f"wide-{w}-app", px)
+    design = Path(__file__).resolve().parent.parent / "docs" / "design"
+    page = subprocess.run(["node", "-e", """
+import('./swarm-wide.js').then(m => {
+  const r = m.renderWide(4);
+  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const css = o => Object.entries(o).filter(([, v]) => v !== undefined).map(([k, v]) => k.replace(/[A-Z]/g, c => '-' + c.toLowerCase()) + ':' + v).join(';');
+  const grid = (rows, w) => `<div class="g" style="width:${w}ch">` + rows.map(x => '<div class="r">' + x.r.map(c => `<span style="${css(c.st)}">${esc(c.t)}</span>`).join('') + '</div>').join('') + '</div>';
+  console.log(`<!doctype html><meta charset="utf-8"><style>body{margin:0;background:#e6e4df;display:flex;flex-direction:column;gap:16px;padding:16px}.g{background:#101215;padding:14px 16px;font-family:'JetBrains Mono','DejaVu Sans Mono',monospace;font-size:12px;line-height:16px}.r{display:flex;height:16px;white-space:pre}</style>${grid(r.W240, 240)}${grid(r.R320, 320)}`);
+});"""], cwd=design, capture_output=True, text=True, check=True).stdout
+    html = OUT / "wide-design.html"
+    html.write_text(page)
+    subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--no-sandbox", "--hide-scrollbars",
+                    "--window-size=2400,1580", f"--screenshot={OUT / 'wide-design.png'}", html.as_uri()],
+                   check=True, capture_output=True, timeout=60)
+    html.unlink()

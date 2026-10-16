@@ -630,11 +630,14 @@ def agent_state(a: Agent) -> OrchState:
     return OrchState(a.status, "", "", a.status == RUN)
 
 
+SWEEP_LAP = 48  # frames of 250 ms: 12 s, the lap of a 44-column card (operator: wide cards must not sweep slower)
+
+
 def edge(cv: Screen, x: int, y: int, w: int, h: int, st: OrchState, frame: float, seed: int = 0) -> None:
     """The design's animated card edge: the left border in the state colour (blinking when it
     needs you: see ``blink``), and while agents work a 4-cell bar in the running colour
-    sweeping the bottom border one cell per frame, shifted by ``seed * 7`` so cards do not
-    move in lockstep."""
+    sweeping the bottom border (``sweep_pos``), shifted by ``seed * 7`` so cards do not move
+    in lockstep."""
     if st.st in QUIET:
         return
     col = blink_col(ST[st.st], frame) if st.attention else ST[st.st]
@@ -651,8 +654,11 @@ def edge(cv: Screen, x: int, y: int, w: int, h: int, st: OrchState, frame: float
 
 
 def sweep_pos(frame: float, seed: int, n: int) -> int:
-    """The first cell of the 4-cell bar on an ``n``-cell bottom border (may be off either end)."""
-    return (int(frame) + seed * 7) % (n + 6) - 3
+    """The first cell of the 4-cell bar on an ``n``-cell bottom border (may be off either end).
+    A lap takes at most SWEEP_LAP frames however wide the card (design turn 7): up to a
+    44-column card one cell a frame, as before; a wider card moves further each frame."""
+    lap = min(n + 6, SWEEP_LAP)
+    return ((int(frame) + seed * 7) % lap) * (n + 6) // lap - 3
 
 
 def _sweep_ch(frame: float, i: int, n: int, seed: int, ch: str, fg: str) -> str:
@@ -1329,7 +1335,17 @@ def render(swarm: Swarm, view: View, w: int, h: int, stale: str | None = None) -
     return s
 
 
-DW, DMIN = 44, 36  # a depth column's width; the last one shown may shrink to DMIN to fit
+DW, DMIN = 44, 36  # a depth column's width (below 220 columns); the last one shown may shrink to DMIN to fit
+
+
+def tier(w: int) -> tuple[int, int, int]:
+    """Card widths (orchestrators, threads, agents) by the terminal width (design turn 7): a
+    little wider on big screens, capped, never stretched."""
+    if w >= 300:
+        return 36, 64, 60
+    if w >= 220:
+        return 32, 56, 56
+    return 28, max(36, min(50, int((w - 36 - 7 - 2) * 50 / 115))), DW
 
 
 def window(widths: list[int], gaps: list[int], f: int, avail: int, hcol: int | None) -> tuple[int, int]:
@@ -1366,8 +1382,7 @@ def _wide(s: Screen, swarm: Swarm, view: View) -> bool:
     """Columns: orchestrators | threads | depth 1 | depth 2 | ... (as deep as the selected
     thread's tree), scrolled sideways around the focus. True when some are off-screen."""
     w, h = s.w, s.h
-    OW = 28
-    TW = max(36, min(50, int((w - 36 - 7 - 2) * 50 / 115)))
+    OW, TW, dw = tier(w)
     top, bottom = 3, h - 4
     height = bottom - top
     o = find_orch(swarm, view.orch)
@@ -1376,11 +1391,11 @@ def _wide(s: Screen, swarm: Swarm, view: View) -> bool:
     t = find_thread(o, view.thread)
     entries = tree_entries(t, view) if t is not None else []
     depth = max([e.depth for e in entries], default=1)
-    widths = [OW, TW] + [DW] * (depth if t is not None else 0)
+    widths = [OW, TW] + [dw] * (depth if t is not None else 0)
     if o is None:
         widths = widths[:1]
     elif t is None:
-        widths = widths[:2] + [DW]  # 2a's empty agent column
+        widths = widths[:2] + [dw]  # 2a's empty agent column
     gaps = [0, 6] + [7] * (len(widths) - 2)
     f = min(view.focus, len(widths) - 1)
     lo, hi = window(widths, gaps, f, w - 6, view.hcol)
@@ -1388,7 +1403,7 @@ def _wide(s: Screen, swarm: Swarm, view: View) -> bool:
     avail = w - 2 - x0
     if hi >= 2:  # columns keep their width; the last one shrinks to fit (down to DMIN), never stretches:
         # the space left on the right stays empty (operator: a stretched card's sweep runs too long)
-        widths[hi] = min(DW, avail - (sum(widths[lo:hi]) + sum(gaps[lo + 1:hi + 1])))
+        widths[hi] = min(dw, avail - (sum(widths[lo:hi]) + sum(gaps[lo + 1:hi + 1])))
     xs: dict[int, int] = {}
     x = x0
     for i in range(lo, hi + 1):

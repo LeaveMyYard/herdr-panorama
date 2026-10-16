@@ -21,10 +21,23 @@ QUIET_AFTER = 30 * 60  # a running agent silent this long reads "quiet 42m"
 INBOX_MARK = re.compile(r"^(?:❓\d+\s+)+")  # herdr-inbox's tab-label prefix; the card shows ?N itself
 
 
+_MODEL_AFTER = re.compile(r"(opus|sonnet|haiku|fable)[-_ ]?(\d{1,2})(?:[-_.](\d{1,2}))?(?!\d)")
+_MODEL_BEFORE = re.compile(r"(?<!\d)(\d{1,2})(?:[-_.](\d{1,2}))?[-_ ](opus|sonnet|haiku|fable)")
+
+
 def short_model(model: str | None) -> str | None:
+    """The model's family and version: "claude-opus-4-5-20251101" -> "opus 4.5",
+    "claude-3-5-sonnet-20241022" -> "sonnet 3.5"; the family alone when there is no version
+    (design turn 7: wide cards show the version)."""
     if not model:
         return None
     low = model.lower()
+    m = _MODEL_AFTER.search(low)
+    if m:
+        return f"{m.group(1)} {m.group(2)}" + (f".{m.group(3)}" if m.group(3) else "")
+    m = _MODEL_BEFORE.search(low)
+    if m:
+        return f"{m.group(3)} {m.group(1)}" + (f".{m.group(2)}" if m.group(2) else "")
     for name in ("opus", "sonnet", "haiku", "fable"):
         if name in low:
             return name
