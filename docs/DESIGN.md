@@ -1544,8 +1544,8 @@ It is the natural first Rust component: small, render-only, its own input handli
 
 ### Failure
 
-- **The core goes away.** A viewer keeps its last picture, dimmed, with a one-line notice (its
-  wording needs the operator's OK, Q139). It disables everything that depends on state (switch,
+- **The core goes away.** A viewer keeps its last picture, dimmed, with the one-line notice
+  `panorama is restarting…` (the operator, Q139). It disables everything that depends on state (switch,
   answer, New agent) and reconnects with backoff.
 - **No core for a long time** (proposed: 10 minutes). The viewer closes its own pane, which is
   a plugin pane and so may close itself, so no orphans are left if the core never returns.
@@ -1560,15 +1560,17 @@ It is the natural first Rust component: small, render-only, its own input handli
 ### Migration and the fallback
 
 `cockpit_panels = "per-tab"` (the new default, once the blink measurement holds) or `"moving"`
-(today's single moving panel). The moving code stays as it is (Q140).
+(today's single moving panel). The moving code stays for now and is to be removed once per-tab
+has proven itself (the operator, Q140).
 
-### Questions for the operator
+### The operator's answers
 
-1. **Creation (Q138).** Lazily on first visit, the left panel, one flash per tab once; or
-   eagerly on the right (no flash, the panel on the other side)? Tabs from `+ New agent` get
-   their panel without a flash either way.
-2. **Notice (Q139).** The wording of a viewer's "lost the core" notice.
-3. **Fallback (Q140).** Keep `"moving"`, or drop it once per-tab is proven?
+1. **Creation (Q138): eagerly.** Which side is still being confirmed: eager on the right, the
+   left on first visit, or eager on the left accepting being pulled to the tab. Placement sits
+   behind one function, so the answer slots in without touching the rest.
+2. **Notice (Q139):** `panorama is restarting…`
+3. **Fallback (Q140): drop it later.** `cockpit_panels = "moving"` stays for now, and its
+   removal is planned once per-tab has proven itself.
 
 ## Refresh strategy
 
