@@ -249,6 +249,7 @@ class View:
     hover: tuple | None = None  # the (kind, identity) under the mouse
     dock: bool = False  # cockpit: panorama is docked next to an agent -> the 3a panel
     zoom_hint: bool = False  # docked next to an agent: z zooms between the panel and the graph
+    open_key: tuple[str, str] = ("prefix+space", "pfx+spc")  # the open key, (full, short): openkey.py
     # the docked panel's look from herdr's theme, focused or not (theme.panel_colors): its
     # background and panorama's text colours mapped; None: panorama's own colours (design 9e)
     panel: tuple[str, dict] | None = None
@@ -1730,6 +1731,7 @@ DOCK_HOV = "#171a1f"  # swarm-dock.js HOV
 DOCK_LABEL = {DONE: "done", FAIL: "failed", BLK: "blocked", RUN: "working", REV: "working", WAIT: "needs you",
               Q: "idle", BGW: "waiting", STALE: "stale"}  # turn 8: questions read "needs you", as in 2a
 DOCK_KEYS = [("↑↓", " move "), ("ret", " open "), ("a", " answer "), ("n", " new "), ("pfx+spc", " back")]
+OPEN_KEY = "pfx+spc"  # DOCK_KEYS' slot for the open key (view.open_key fills it)
 
 
 @dataclass
@@ -2041,6 +2043,10 @@ def dock_panel(swarm: Swarm, view: View, w: int, h: int, stale: str | None = Non
     if view.zoom_hint:  # extension: the design's footer has no room for it, so it sits in the rule
         _rp(s, w - 2, h - 2, [(" ", LINE), ("z", KEY), (" graph ", FAINT)])
     keys_ = [(k, lab) for k, lab in DOCK_KEYS if k != "a" or swarm.inbox_ok]
+    full, brief = view.open_key  # the bound key whole when every hint still fits, else its short form
+    # columns for the key itself: the hints start at x=1 and leave the last column free
+    room = w - 2 - sum(len(k) + len(lab) for k, lab in keys_) + len(OPEN_KEY)
+    keys_ = [((full if len(full) <= room else brief) if k == OPEN_KEY else k, lab) for k, lab in keys_]
     for drop in ("n", "a", "ret", "↑↓"):  # a narrow pane drops hints whole, never cuts one
         if 1 + sum(len(k) + len(lab) for k, lab in keys_) <= w:
             break

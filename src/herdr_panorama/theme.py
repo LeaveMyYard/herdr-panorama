@@ -62,7 +62,7 @@ NAMED = {"black": "#000000", "white": "#ffffff", "red": "#ff0000", "green": "#00
 _HEX = re.compile(r"^#([0-9a-fA-F]{6})$")
 _RGB = re.compile(r"^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$")
 
-_cache: dict = {"path": None, "mtime": None, "tokens": None}
+_cache: dict = {"path": None, "mtime": None, "tokens": None, "cfg": {}}
 
 
 def config_path() -> Path:
@@ -107,6 +107,17 @@ def resolve(cfg: dict) -> dict | None:
 
 def current() -> dict | None:
     """The tokens of herdr's theme now (re-read when its config.toml changes)."""
+    _load()
+    return _cache["tokens"]
+
+
+def herdr_config() -> dict:
+    """herdr's config.toml as read (re-read when it changes); {} when missing or unreadable."""
+    _load()
+    return _cache["cfg"]
+
+
+def _load() -> None:
     path = config_path()
     try:
         mtime = path.stat().st_mtime
@@ -120,8 +131,7 @@ def current() -> dict | None:
                     cfg = tomllib.load(fh)
             except (OSError, tomllib.TOMLDecodeError) as exc:
                 log.warning("ignoring herdr's %s: %s", path, exc)
-        _cache.update(path=path, mtime=mtime, tokens=resolve(cfg))
-    return _cache["tokens"]
+        _cache.update(path=path, mtime=mtime, tokens=resolve(cfg), cfg=cfg)
 
 
 DEFAULT_TINT = 0.15  # the operator's preference
