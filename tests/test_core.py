@@ -409,7 +409,12 @@ def test_idle_connections_are_capped_and_hold_no_threads(paths, monkeypatch):
     sock, lock = paths
     c = core.Core.start(sock, lock)
     before = threading.active_count()
-    idle = [connect(sock) for _ in range(100)]
+    idle = []
+    for _ in range(100):
+        try:
+            idle.append(connect(sock))
+        except ConnectionRefusedError:
+            pass  # macOS: a full accept backlog refuses at once; refused is fine here too
     assert wait(lambda: len(c.viewers) == 8)
     time.sleep(0.2)
     assert len(c.viewers) <= 8 and threading.active_count() - before <= 8
