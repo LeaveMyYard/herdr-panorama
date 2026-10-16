@@ -453,6 +453,27 @@ async def test_arrows_off_or_the_2a_graph_never_dock_on_arrows(fake_herdr, monke
         await pilot.press("q")
 
 
+@pytest.mark.parametrize("why", ["following", "blurred", "herdr says another pane"])
+async def test_an_arrow_dock_is_skipped_when_the_keyboard_left_or_a_follow_runs(fake_herdr, monkeypatch, why):
+    """Review of #26: when the arrows' timer fires, panorama must still have the keyboard and no
+    follow may be moving it."""
+    docked = _record_docks(monkeypatch)
+    app = await _docked_app(fake_herdr)
+    async with app.run_test(size=(46, 45)) as pilot:
+        await _loaded(app, pilot)
+        app.my_pane = "w1:p9"
+        await pilot.press("down")
+        if why == "following":
+            app.following = True
+        elif why == "blurred":
+            app.pane_focused = False
+        else:
+            app.herdr_focused_pane = "w1:p1"  # herdr's last report: the operator is in another pane
+        await _arrow(app, pilot, wait=0.4)
+        assert docked == []
+        await pilot.press("q")
+
+
 async def test_an_arrow_dock_due_during_a_dock_runs_after_it(fake_herdr, monkeypatch):
     docked = _record_docks(monkeypatch)
     app = await _docked_app(fake_herdr)

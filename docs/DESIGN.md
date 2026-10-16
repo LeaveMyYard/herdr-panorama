@@ -1297,7 +1297,8 @@ tile in its off phase.
       last entry), through the same keep-focus path as below; Enter (like `g`) goes into that
       agent. Not for the docked entry, `+ New agent`, or an orchestrator on another machine
       (Enter keeps its hint). An arrow dock that comes due while a dock runs is looked at
-      again when it ends. A click still switches at once. Off: Enter docks as below. It needs
+      again when it ends; none happens while a follow runs or once the keyboard has left
+      panorama (the terminal's blur, or herdr reporting another pane focused). A click still switches at once. Off: Enter docks as below. It needs
       `dock_keep_focus`: an arrow never moves the keyboard into an agent.
     - **Keep focus** (`dock_keep_focus`, default true; the operator's request: browsing the
       chats took the open key each time). On another entry, Enter and the click dock next to
