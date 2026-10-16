@@ -631,7 +631,7 @@ class SwarmApp(App):
         if v.focus == 0 and v.orch == render.NEW_ROW:
             self.action_new_agent()
         elif v.focus == 0 and self.home_mode and v.orch:
-            self.action_goto()  # home: Enter on an orchestrator goes to its pane
+            self.action_goto(switch=True)  # home: Enter on an orchestrator goes to its pane
         elif v.focus == 1 and v.thread and v.thread.startswith(render.DONE_CARD):
             pane = v.thread[len(render.DONE_CARD):]
             v.done_open ^= {pane}
@@ -677,7 +677,11 @@ class SwarmApp(App):
         a = render.find_agent(t, v.agent) if v.focus >= 2 or t is not None else None
         return o, t, a
 
-    def action_goto(self) -> None:
+    def action_goto(self, switch: bool = False) -> None:
+        """g: the selected orchestrator's pane (docked next to it with the cockpit on). Enter and
+        the docked panel's one-click switch (``switch``) on another orchestrator than the docked
+        one leave the keyboard on panorama (``dock_keep_focus``), so the next ↑/↓ and Enter browse
+        on; on the docked one, and with g, focus goes into the agent."""
         if not self.armed():
             return
         o, _, _ = self._selection()
@@ -688,7 +692,9 @@ class SwarmApp(App):
             self._goto_remote(o)  # never a dock or a local focus: it lives on another server
             return
         if self.cockpit_mode():
-            self._dock(o.pane_id)
+            keep = (switch and self.view.dock and o.pane_id != self.swarm.docked
+                    and cockpit.keep_focus_setting())
+            self._dock(o.pane_id, keep)
             return
         err = herdr.focus_agent(o.pane_id)
         if err:
@@ -789,26 +795,31 @@ class SwarmApp(App):
             if err:
                 self.notify(herdr.clean(err, 200), title="zoom", severity="warning")
 
-    def _dock(self, pane_id: str) -> None:
+    def _dock(self, pane_id: str, keep_focus: bool = False) -> None:
         if self.docking:
             return
         self.docking = True
         self.dock_hold_until = time.monotonic() + DOCK_HOLD_SECONDS
-        self.run_worker(lambda: self._dock_worker(pane_id), thread=True, group="dock")
+        self.run_worker(lambda: self._dock_worker(pane_id, keep_focus), thread=True, group="dock")
 
-    def _dock_worker(self, pane_id: str) -> None:
+    def _dock_worker(self, pane_id: str, keep_focus: bool = False) -> None:
         err, mine = None, None
         try:
             if self.my_pane:
                 self.measure_frame(self.my_pane)
-            mine, err = cockpit.dock(pane_id, self.my_pane, on_docked=self._docked_now)
+            if keep_focus:
+                mine, err = cockpit.dock(pane_id, self.my_pane, on_docked=self._docked_now, focus_me=True)
+            else:
+                mine, err = cockpit.dock(pane_id, self.my_pane, on_docked=self._docked_now)
             if mine:
                 self.my_pane = mine  # an id changes when panorama moves across workspaces
                 self.collector.self_pane = mine
-            # focus goes to the agent; if panorama could not move, still go there, as without
+            # focus goes to the agent (with dock_keep_focus it stays on panorama, which the dock
+            # swap put there); if panorama could not move, still go to the agent, as without
             # the cockpit (the agent never moved, so this is always safe)
-            ferr = herdr.focus_agent(pane_id)
-            err = err or ferr
+            if not (keep_focus and mine):
+                ferr = herdr.focus_agent(pane_id)
+                err = err or ferr
         except Exception as exc:  # noqa: BLE001 - never kill the view
             err = f"{type(exc).__name__}: {exc}"
         self._to_ui(self._docked, err)
@@ -948,14 +959,14 @@ class SwarmApp(App):
                     self._point(ident[0])
                     self.repaint()
                     self.action_answer()
-            elif again:
-                self.action_goto()  # the selected card, clicked again: its pane (g)
             elif self.view.dock:
                 # the docked 3a panel: one click switches to it (what Enter then does, armed
                 # and identity-checked like Enter; on the docked entry: focus its agent)
                 self._point(ident[0])
                 self.repaint()
-                self.action_goto()
+                self.action_goto(switch=True)
+            elif again:
+                self.action_goto()  # the selected card, clicked again: its pane (g)
             else:
                 self._point(ident[0])
                 self.repaint()

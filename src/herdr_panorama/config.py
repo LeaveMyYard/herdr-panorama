@@ -10,7 +10,8 @@ changes. Keys:
 - ``home_tab``: panorama in its own first tab (default true).
 - ``machines``: herdr's saved SSH machines to show, "all" (default), "none" or a list of
   labels (machines.py).
-- ``cockpit`` / ``cockpit_width``: experimental, panorama docked left of the selected agent (cockpit.py).
+- ``cockpit`` / ``cockpit_width``: experimental, panorama docked left of the selected agent (cockpit.py);
+  ``dock_keep_focus`` (default true): Enter in the docked list keeps the keyboard on panorama.
 - ``highlight_unseen``: pulse what failed, asked or finished since the operator looked (unseen.py),
   default true.
 - ``animation_fps``: how often colours move (pulses, blinks), 2 to 30, default 20. Lower costs less

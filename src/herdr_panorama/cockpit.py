@@ -62,6 +62,14 @@ def follow_setting() -> bool:
     return value is not False and str(value).lower() not in ("false", "0", "no", "off")
 
 
+def keep_focus_setting() -> bool:
+    """``dock_keep_focus`` (default true): Enter or a click on another orchestrator in the docked
+    panel docks panorama next to it and leaves the keyboard on panorama, so ↑/↓ and Enter browse
+    the chats one after another; ``g`` goes into the agent. False: Enter focuses the agent too."""
+    value = config.load().get("dock_keep_focus", True)
+    return value is not False and str(value).lower() not in ("false", "0", "no", "off")
+
+
 def follow_tabs() -> str:
     """``cockpit_follow_tabs``: "any" (the default, the operator's choice) also follows into
     tabs the operator split (panorama then takes ~46 columns of that layout); "single" only
@@ -133,11 +141,13 @@ def _send_back(where: tuple[str, str]) -> None:
 
 
 def _move_next_to(snap: dict, me: home.Home, t: dict, keep_focus_on: str | None,
-                  focus_log: FocusLog | None = None, on_docked=None) -> tuple[str | None, str | None]:
+                  focus_log: FocusLog | None = None, on_docked=None,
+                  focus_me: bool = False) -> tuple[str | None, str | None]:
     """The one dock path (under home's lock): release a shared home tab, move panorama's own
     pane in with ``--no-focus``, put it on the agent's left, size it. ``keep_focus_on``: the
     follow path, where the operator is on that agent and must stay exactly there; it swaps
-    only with ``focus_log`` (the live event stream), else panorama stays on the right."""
+    only with ``focus_log`` (the live event stream), else panorama stays on the right.
+    ``focus_me`` (an explicit dock with ``dock_keep_focus``): focus ends on panorama itself."""
     target = t["pane_id"]
     if keep_focus_on is not None:
         # follow: one more look right before anything changes. The decision's checks took a
@@ -171,9 +181,14 @@ def _move_next_to(snap: dict, me: home.Home, t: dict, keep_focus_on: str | None,
         if now.get("focused_pane_id") != keep_focus_on:
             fit(mine, t["tab_id"])
             return mine, None
-    serr = herdr.swap_panes(target, mine)
+    # dock_keep_focus: panorama is the swap's source, so focus lands on panorama, in the new tab
+    serr = herdr.swap_panes(mine, target) if focus_me else herdr.swap_panes(target, mine)
     if serr:
         log.warning("panorama stays right of %s: %s", target, serr)
+        if focus_me:
+            ferr = herdr.focus_pane(mine)  # no swap, no focus change: put the operator on panorama
+            if ferr:
+                log.warning("could not focus panorama after docking: %s", ferr)
     if keep_focus_on is not None and not serr:
         # Close the check-to-swap window. If the operator switched away just before the swap,
         # the swap pulled them back onto the agent, and herdr reports that as the agent's
@@ -193,20 +208,23 @@ def _move_next_to(snap: dict, me: home.Home, t: dict, keep_focus_on: str | None,
     return mine, None
 
 
-def dock(target: str, me_id: str | None = None, on_docked=None) -> tuple[str | None, str | None]:
+def dock(target: str, me_id: str | None = None, on_docked=None,
+         focus_me: bool = False) -> tuple[str | None, str | None]:
     t0 = time.perf_counter()
     try:
-        return _dock(target, me_id, on_docked)
+        return _dock(target, me_id, on_docked, focus_me)
     except home.LockBusy:
         return None, "another panorama operation holds the home lock"
     finally:
         herdr.trace("step dock", t0)
 
 
-def _dock(target: str, me_id: str | None = None, on_docked=None) -> tuple[str | None, str | None]:
+def _dock(target: str, me_id: str | None = None, on_docked=None,
+          focus_me: bool = False) -> tuple[str | None, str | None]:
     """Move panorama's pane (``me_id``: the instance whose key was pressed, if verified)
     next to ``target`` (an agent's pane), on its left. Returns (panorama's pane id now,
-    None), or (None, error) with panorama left where it was. The agent's pane never moves."""
+    None), or (None, error) with panorama left where it was. The agent's pane never moves.
+    ``focus_me``: focus ends on panorama (``dock_keep_focus``), not on the agent."""
     with home._lock():
         snap = herdr.snapshot()
         if snap is None:
@@ -220,7 +238,7 @@ def _dock(target: str, me_id: str | None = None, on_docked=None) -> tuple[str | 
         if t.get("tab_id") == me.tab_id:
             fit(me.pane_id, me.tab_id)
             return me.pane_id, None  # already next to it
-        return _move_next_to(snap, me, t, None, None, on_docked)
+        return _move_next_to(snap, me, t, None, None, on_docked, focus_me)
 
 
 def follow(me_id: str | None, focus_log: FocusLog | None = None, on_docked=None) -> tuple[str | None, str]:
