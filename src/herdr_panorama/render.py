@@ -663,7 +663,7 @@ def _sweep_fg(frame: float, i: int, n: int, seed: int, ch: str, fg: str) -> str:
     return ST[RUN] if 0 <= i - sweep_pos(frame, seed, n) < 4 else fg
 
 
-# -- smooth colour animation (design turn 8) ----------------------------------------------
+# -- smooth colour animation (design: smooth, swarm-smooth.js) ------------------------------
 #
 # Colours are functions of continuous time, not of whole frames: an ``Anim`` is the colour at
 # ``frame`` (it is a str, so everything that draws or compares colours takes it as is) and
@@ -779,7 +779,7 @@ def restyle(scr: Screen, frame: float) -> list[tuple[int, int, int]]:
             c.ch = nc
         if type(c.fg) is Anim:
             nf = at(c.fg)
-            changed = nf != c.fg
+            changed = changed or nf != c.fg
             c.fg = nf
         if type(c.bg) is Anim:
             nb = at(c.bg)

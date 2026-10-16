@@ -212,5 +212,5 @@ export function renderMin(f = 0) {
   };
 }
 
-// The interactive prototype (Swarm View 2a.dc.html) steps f every 250 ms.
+// The interactive prototype (Swarm View 2a.dc.html) ticks f at 20 fps (swarm-smooth.js COLOUR_MS).
 export function renderGraphAt(w, h, o, f = 0) { F = f; setFrame(Math.floor(f)); return renderGraph(w, h, o); }

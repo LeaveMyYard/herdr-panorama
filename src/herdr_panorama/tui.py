@@ -23,6 +23,8 @@ import time
 
 from rich.segment import Segment
 from rich.style import Style
+import textual
+from rich.cells import cell_len
 from rich.control import Control
 from textual import _compositor, work
 from textual.app import App, ComposeResult
@@ -41,30 +43,51 @@ from .model import BLK, Swarm, live
 
 
 
+TEXTUAL_CROP_VERIFIED = "8.2."  # the Textual versions _render_segments was checked against (tests/test_smooth.py)
+_textual_render_segments = getattr(getattr(_compositor, "ChopsUpdate", None), "render_segments", None)
+
+
 def _render_segments(self, console) -> str:
     """Textual's ``ChopsUpdate.render_segments`` with each span cropped on both sides. Textual
-    (8.x) crops a partly updated line only on the right and re-sends it from the widget's left
+    (8.2) crops a partly updated line only on the right and re-sends it from the widget's left
     edge, so a few pulsing cells in the middle of the one full-width Grid re-sent almost the
-    whole screen at every colour tick. Same output otherwise (tests/test_smooth.py)."""
-    move_to = Control.move_to
-    out: list[str] = []
-    last_y = self.spans[-1][0]
-    for y, x1, x2 in self.spans:
-        for end, (x, strip) in zip(self.chop_ends[y], self.chops[y].items()):
-            if strip is None or x > x2 or end <= x1:
-                continue
-            if not (x2 > x >= x1 and end <= x2):
-                lo = max(x, x1)
-                strip = strip.crop(lo - x, min(end, x2) - x)
-                x = lo
-            out.append(move_to(x, y).segment.text)
-            out.append(strip.render(console))
-        if y != last_y:
-            out.append("\n")
-    return "".join(out)
+    whole screen at every colour tick. Same output otherwise (tests/test_smooth.py). A crop never
+    starts inside a double-width character, and anything unexpected falls back to Textual's own."""
+    try:
+        move_to = Control.move_to
+        out: list[str] = []
+        last_y = self.spans[-1][0]
+        for y, x1, x2 in self.spans:
+            for end, (x, strip) in zip(self.chop_ends[y], self.chops[y].items(), strict=False):
+                if strip is None or x > x2 or end <= x1:
+                    continue
+                if not (x2 > x >= x1 and end <= x2):
+                    lo = x
+                    if x1 > x:  # start at the character holding column x1, never in its middle
+                        for seg in strip:
+                            w = cell_len(seg.text)
+                            if lo + w > x1:
+                                for ch in seg.text:
+                                    cw = cell_len(ch)
+                                    if lo + cw > x1:
+                                        break
+                                    lo += cw
+                                break
+                            lo += w
+                    strip = strip.crop(lo - x, min(end, x2) - x)
+                    x = lo
+                out.append(move_to(x, y).segment.text)
+                out.append(strip.render(console))
+            if y != last_y:
+                out.append("\n")
+        return "".join(out)
+    except Exception:  # noqa: BLE001 - a changed Textual internal: its own (slower) output, never a dead view
+        return _textual_render_segments(self, console)
 
 
-_compositor.ChopsUpdate.render_segments = _render_segments
+if (_textual_render_segments is not None and textual.__version__.startswith(TEXTUAL_CROP_VERIFIED)
+        and all(hasattr(_compositor.ChopsUpdate, a) for a in ("__init__", "render_segments"))):
+    _compositor.ChopsUpdate.render_segments = _render_segments
 
 REFRESH_SECONDS = 1.5
 DOCK_HOLD_SECONDS = 1.0  # after a dock or follow: keep the docked panel while herdr settles the split

@@ -1,4 +1,4 @@
-// Turn 8: smooth animation. F is the time in design frames of 250 ms; the page advances it at 20 fps
+// Smooth animation. F is the time in design frames of 250 ms; the page advances it at 20 fps
 // (COLOUR_MS), so between two whole frames F is fractional. Whole steps (Math.floor(F)) move spinners
 // and sweeps; colours follow F itself: the unseen pulse is already a sine of F, and the attention
 // blink eases with a sine ramp instead of switching. At whole frames every colour is exactly the old

@@ -1,4 +1,4 @@
-"""Smooth colour animation (design turn 8): pulses and blinks are continuous in time, the colour
+"""Smooth colour animation (design: smooth animation): pulses and blinks are continuous in time, the colour
 tick restyles only the animated cells between whole frames, and whole frames stay exactly the
 stepped design frames (the goldens in test_unseen / test_dock_panel / test_deep hold them)."""
 
@@ -51,9 +51,15 @@ def test_restyling_equals_a_full_render(name, swarm, kw, w, f, start):
     would draw."""
     whole = render.render(swarm(), render.View(frame=int(f) if start == "same frame" else 0, **kw), w, 45)
     assert whole.animated(), "nothing animated in this layout: the test would be vacuous"
+    before = dump(whole)
     spans = render.restyle(whole, f)
+    after = dump(whole)
     full = render.render(swarm(), render.View(frame=f, **kw), w, 45)
-    assert dump(whole) == dump(full)
+    assert after == dump(full)
+    # every cell that changed is inside a repainted span (else the terminal keeps the old cell)
+    covered = {(y, x) for y, x0, x1 in spans for x in range(x0, x1)}
+    moved = {(y, x) for y in range(45) for x in range(w) if before[y][x] != after[y][x]}
+    assert moved <= covered, sorted(moved - covered)[:5]
     if kw.get("unseen") or 1 < f % 4 < 2 or 3 < f % 4:  # a pulse, or a blink easing
         assert spans  # something moved between the frames
 
@@ -155,6 +161,60 @@ async def test_a_frame_or_a_refresh_repaints_only_what_changed(fake_herdr, monke
         assert len(dirty) == 1 and dirty[0] and len({r.y for r in dirty[0]}) <= 6
 
 
+@pytest.mark.parametrize("seed", range(40))
+def test_random_restyles_repaint_every_changed_cell(seed):
+    """The review's probe: random pairs of times (glyphs stepping while a pulse colour repeats)."""
+    import random
+    rnd = random.Random(seed)
+    name, swarm, kw, w = rnd.choice(layouts())
+    a = rnd.choice([0, 0.5, 2.25, 5.5, 6.0, 11.5, 11.95])
+    b = a + rnd.choice([0.05, 0.2, 0.25, 1.0, 1.05, 3.0])
+    scr = render.render(swarm(), render.View(frame=a, **kw), w, 45)
+    before = dump(scr)
+    spans = render.restyle(scr, b)
+    after = dump(scr)
+    covered = {(y, x) for y, x0, x1 in spans for x in range(x0, x1)}
+    moved = {(y, x) for y in range(45) for x in range(w) if before[y][x] != after[y][x]}
+    assert moved <= covered, (name, a, b, sorted(moved - covered)[:5])
+
+
+def test_the_textual_crop_patch_is_on_for_the_verified_textual_only():
+    """tui patches Textual's ChopsUpdate (a private API). Verified against Textual 8.2; a newer
+    Textual must be re-verified (the tests below) before TEXTUAL_CROP_VERIFIED is widened."""
+    import textual
+    from textual._compositor import ChopsUpdate
+    assert textual.__version__.startswith(tui.TEXTUAL_CROP_VERIFIED), (
+        f"Textual {textual.__version__}: re-verify tui._render_segments against its ChopsUpdate, then update "
+        "TEXTUAL_CROP_VERIFIED and the pin in pyproject.toml")
+    assert ChopsUpdate.render_segments is tui._render_segments
+
+
+def test_the_crop_patch_falls_back_to_textual_on_anything_unexpected():
+    from rich.console import Console
+
+    class Odd:  # a changed internal layout: no chops/chop_ends
+        spans = [(0, 1, 2)]
+
+    calls = []
+    orig = tui._textual_render_segments
+    try:
+        tui._textual_render_segments = lambda self, console: calls.append(self) or "fallback"
+        assert tui._render_segments(Odd(), Console()) == "fallback" and calls
+    finally:
+        tui._textual_render_segments = orig
+
+
+def test_the_crop_never_starts_inside_a_wide_character():
+    from rich.console import Console
+    from rich.segment import Segment
+    from textual._compositor import ChopsUpdate
+    from textual.strip import Strip
+    strip = Strip([Segment("ab漢cd")])  # 漢 holds columns 2 and 3
+    upd = ChopsUpdate([{0: strip}], [(0, 3, 6)], [[6]])
+    out = upd.render_segments(Console(force_terminal=True, color_system="truecolor"))
+    assert out == "\x1b[1;3H漢cd"
+
+
 def test_textual_partial_updates_send_only_the_changed_cells():
     """tui patches Textual's ChopsUpdate: a span in the middle of a line is sent from its own
     column, not from the line's start."""
@@ -189,29 +249,29 @@ async def test_a_low_animation_fps_keeps_spinners_at_their_speed(fake_herdr, tmp
         assert dump(app.grid.screen_data) == dump(render.render(app.swarm, app.view, 160, 45))
 
 
-# -- the design between whole frames (turn 8: docs/design/render-8.mjs, swarm-smooth.js) ----------
+# -- the design between whole frames (smooth: docs/design/render-smooth.mjs, swarm-smooth.js) ----------
 
-EIGHT = json.loads((FIX / "design_8.json").read_text())["frames"]
+SMOOTH = json.loads((FIX / "design_smooth.json").read_text())["frames"]
 
 
-@pytest.mark.parametrize("frame", sorted(EIGHT, key=float))
+@pytest.mark.parametrize("frame", sorted(SMOOTH, key=float))
 def test_3a_glides_exactly_like_the_design_between_frames(frame):
     """The whole 46-column panel at a fractional frame, cell for cell: tints, pulsing and
     blinking glyphs mid-way."""
     v = render.View(orch="w1:p3", dock=True, frame=float(frame), unseen=dict(MARKS))
     v.hover = ("orch", ("w1:p4",))
     got = cells(render.render(design_swarm(), v, 46, 45), 46)
-    want = grid(EIGHT[frame]["P"])
+    want = grid(SMOOTH[frame]["P"])
     diffs = [(x, y, want[y][x], got[y][x]) for y in range(45) for x in range(46) if want[y][x] != got[y][x]]
     assert not diffs, f"{len(diffs)} cells differ, first: {diffs[:5]}"
 
 
-@pytest.mark.parametrize("frame", sorted(EIGHT, key=float))
+@pytest.mark.parametrize("frame", sorted(SMOOTH, key=float))
 def test_2a_glides_like_the_design_between_frames(frame):
     """The pulsed cells (unseen vs none) and the blinking edges at a fractional frame match the
     design's colours, where the design and the app draw the same character."""
     f = float(frame)
-    d_on, d_off = grid(EIGHT[frame]["G"]), grid(EIGHT[frame]["N"])
+    d_on, d_off = grid(SMOOTH[frame]["G"]), grid(SMOOTH[frame]["N"])
     a_on = cells(render.render(design_swarm(), render.View(orch="w1:p1", thread="t595", agent="a2", focus=2,
                                                            frame=f, unseen=dict(MARKS)), 160, 45), 160)
     a_off = cells(render.render(design_swarm(), render.View(orch="w1:p1", thread="t595", agent="a2", focus=2,

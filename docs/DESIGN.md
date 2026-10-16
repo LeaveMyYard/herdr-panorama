@@ -666,12 +666,12 @@ compares cell for cell (the whole 3a panel; every pulsed cell of 2a).
   a week are forgotten. `highlight_unseen = false` turns it all off.
 - The narrow layout (< 120 columns) and the docked panel's spawner rows have no pulse.
 
-### Smooth animation (design turn 8)
+### Smooth animation (design: swarm-smooth.js)
 
 The operator's report: colour animations moved in visible steps and looked laggy, because every
 colour changed only on the 250 ms frame. Reference: `docs/design/swarm-smooth.js` (used by
 `swarm-min.js`, `swarm-dock.js`, `swarm-unseen.js`, `swarm-deep.js`), rendered between whole frames
-by `render-8.mjs`; `tests/test_smooth.py` compares those frames cell for cell.
+by `render-smooth.mjs`; `tests/test_smooth.py` compares those frames cell for cell.
 
 - **Time, not steps.** `View.frame` is the animation time in 250 ms frames and may be
   fractional. Whole frames move spinners and sweeps, one step a frame, as before. Colours follow
