@@ -253,10 +253,12 @@ def pane_label(snapshot: dict, pane_id: str) -> str | None:
     return p.get("label")
 
 
-def runs_panorama(pane_id: str) -> bool | None:
-    """Whether the pane's foreground process is panorama's view: some foreground argv holds
-    ``panorama`` (any path to it, as uv and the venv script both run it) followed by
-    ``tui``. Read-only ``pane process-info``. None when herdr cannot say."""
+def runs_panorama(pane_id: str, command: str = "tui", pid: int | None = None) -> bool | None:
+    """Whether the pane's foreground process is panorama's ``command`` (``tui`` the view,
+    ``panel`` a per-tab panel): some foreground argv holds ``panorama`` (any path to it, as uv
+    and the venv script both run it) followed by ``command``; with ``pid``, that very process
+    must be this pid (a panel proving the pane it claims is its own). Read-only
+    ``pane process-info``. None when herdr cannot say."""
     res, _ = call("pane", "process-info", "--pane", pane_id)
     if res is None:
         return None
@@ -265,9 +267,9 @@ def runs_panorama(pane_id: str) -> bool | None:
         return None  # mid-exec or mid-restore: unknown, not "something else"
     for proc in procs:
         argv = proc.get("argv") if isinstance(proc, dict) else None
-        if isinstance(argv, list):
+        if isinstance(argv, list) and (pid is None or proc.get("pid") == pid):
             words = [str(a) for a in argv]
-            if any(os.path.basename(w) == "panorama" and nxt == "tui" for w, nxt in zip(words, words[1:], strict=False)):
+            if any(os.path.basename(w) == "panorama" and nxt == command for w, nxt in zip(words, words[1:], strict=False)):
                 return True
     return False
 

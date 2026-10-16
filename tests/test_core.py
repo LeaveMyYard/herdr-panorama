@@ -119,7 +119,7 @@ def test_a_dead_cores_socket_is_replaced_under_the_lock(paths):
 def test_another_users_connection_is_refused(paths, monkeypatch):
     sock, lock = paths
     c = core.Core.start(sock, lock)
-    monkeypatch.setattr(core, "_peer_uid", lambda conn: os.getuid() + 1)
+    monkeypatch.setattr(protocol, "peer_cred", lambda conn: (1, os.getuid() + 1))
     v = connect(sock)
     try:
         v.sendall(protocol.encode({"hello": {"protocol": protocol.PROTOCOL}}))
@@ -133,7 +133,7 @@ def test_another_users_connection_is_refused(paths, monkeypatch):
 def test_hello_welcome_state_seen_and_an_old_major_refused(paths):
     sock, lock = paths
     seen = []
-    c = core.Core.start(sock, lock, on_seen=seen.extend, verify_pane=lambda p: p == "w1:p9")
+    c = core.Core.start(sock, lock, on_seen=seen.extend, verify_pane=lambda p, pid: p == "w1:p9")
     c.publish(protocol.state_message(design_swarm(NINE["data"]), {"a5": "done"}, "w1:p3", ["w1:t3"]))
     v = connect(sock)
     v.sendall(protocol.encode({"hello": {"protocol": "1.3", "role": "panel", "pane_id": "w1:p9", "tab_id": "w1:t3"}}))
@@ -153,7 +153,7 @@ def test_hello_welcome_state_seen_and_an_old_major_refused(paths):
 
 def test_an_unverified_pane_claim_is_not_trusted(paths):
     sock, lock = paths
-    c = core.Core.start(sock, lock, verify_pane=lambda p: False)
+    c = core.Core.start(sock, lock, verify_pane=lambda p, pid: False)
     v = connect(sock)
     v.sendall(protocol.encode({"hello": {"protocol": protocol.PROTOCOL, "pane_id": "w9:p1"}}))
     lines(v, 1)
@@ -327,3 +327,140 @@ async def test_the_home_panorama_publishes_each_refresh_and_takes_seen_back(path
         v.close()
         app.core.stop()
         app.core = None
+
+
+# -- the review of #30 ------------------------------------------------------------------------
+
+def test_the_line_reader_is_linear_and_one_read_reports_seen_once(paths):
+    """Low: one feed splits once (not once per line), and a read's seen ids go out together."""
+    many = b'{"seen":["a1"]}\n' * 200_000  # 3 MB: about 6 s when every line re-copies the rest
+    t0 = time.monotonic()
+    assert len(protocol.LineReader().feed(many)) == 200_000
+    assert time.monotonic() - t0 < 1.5
+    sock, lock = paths
+    calls = []
+    c = core.Core.start(sock, lock, on_seen=calls.append)
+    v = connect(sock)
+    v.sendall(protocol.encode({"hello": {"protocol": protocol.PROTOCOL}})
+              + protocol.encode({"seen": ["a1"]}) + protocol.encode({"seen": ["a2", "a1"]}))
+    assert wait(lambda: calls)
+    time.sleep(0.1)
+    assert calls == [["a1", "a2"]]
+    v.close()
+    c.stop()
+
+
+@pytest.mark.parametrize("bad", ["symlink", "group-writable", "not-ours"])
+def test_an_unsafe_socket_directory_is_refused(paths, bad):
+    """Medium: the socket's directory must be a real 0700 directory of ours, or no core."""
+    sock, lock = paths
+    real = sock.parent.parent / "elsewhere"
+    real.mkdir(mode=0o700)
+    kw = {}
+    if bad == "symlink":
+        sock.parent.symlink_to(real)
+    elif bad == "group-writable":
+        sock.parent.mkdir()
+        os.chmod(sock.parent, 0o770)
+    else:
+        sock.parent.mkdir(mode=0o700)
+        kw["uid"] = os.getuid() + 1
+    assert core.Core.start(sock, lock, **kw) is None
+    assert not sock.exists() and not (real / sock.name).exists()
+
+
+def test_a_viewer_refuses_a_core_of_another_user(paths, monkeypatch):
+    """Medium: the viewer checks who answers before it says hello or believes a state."""
+    sock, lock = paths
+    sock.parent.mkdir(mode=0o700)
+    srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    srv.bind(str(sock))
+    srv.listen(4)
+    srv.settimeout(3)
+    monkeypatch.setattr(protocol, "peer_cred", lambda conn: (1, os.getuid() + 1))
+    from herdr_panorama.panel import PanelClient
+    status = []
+    cl = PanelClient(sock, "w1:p9", "w1:t3", lambda st: None, status.append).start()
+    conn, _ = srv.accept()
+    conn.settimeout(3)
+    assert conn.recv(1000) == b""  # closed without a hello
+    assert status == [] and not cl.connected
+    cl.stop()
+    conn.close()
+    srv.close()
+
+
+def test_a_connection_without_hello_is_closed_at_the_deadline(paths, monkeypatch):
+    monkeypatch.setattr(core, "HELLO_SECONDS", 0.3)
+    sock, lock = paths
+    c = core.Core.start(sock, lock)
+    v = connect(sock)
+    v.sendall(b'{"hel')  # a start, never finished
+    t0 = time.monotonic()
+    assert v.recv(100) == b"" and time.monotonic() - t0 < 2
+    assert wait(lambda: c.viewers == [])
+    c.stop()
+
+
+def test_idle_connections_are_capped_and_hold_no_threads(paths, monkeypatch):
+    """Medium: 100 connections that never say hello: at most MAX_VIEWERS are kept, one thread each."""
+    import threading
+    monkeypatch.setattr(core, "MAX_VIEWERS", 8)
+    sock, lock = paths
+    c = core.Core.start(sock, lock)
+    before = threading.active_count()
+    idle = [connect(sock) for _ in range(100)]
+    assert wait(lambda: len(c.viewers) == 8)
+    time.sleep(0.2)
+    assert len(c.viewers) <= 8 and threading.active_count() - before <= 8
+    for s in idle:
+        s.close()
+    c.stop()
+
+
+def test_a_viewer_that_never_reads_is_dropped_after_the_send_timeout(paths, monkeypatch):
+    """Medium: the writer's sendall gives up, the viewer goes, its threads end."""
+    import threading
+    monkeypatch.setattr(core, "SEND_SECONDS", 0.3)
+    sock, lock = paths
+    c = core.Core.start(sock, lock)
+    stuck = connect(sock)
+    stuck.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4096)
+    before = threading.active_count()
+    stuck.sendall(protocol.encode({"hello": {"protocol": protocol.PROTOCOL}}))
+    assert wait(lambda: c.connected())
+    big = protocol.state_message(design_swarm(NINE["data"]), {}, None, None)
+    end = time.monotonic() + 5
+    while c.connected() and time.monotonic() < end:
+        c.publish(big)
+        time.sleep(0.01)
+    assert not c.connected() and wait(lambda: c.viewers == [])
+    assert wait(lambda: threading.active_count() <= before)
+    stuck.close()
+    c.stop()
+
+
+def test_a_pane_claim_is_checked_against_the_peers_own_process(paths):
+    """Low: verify_pane gets the claimed pane and the connecting process's pid (the panel's
+    ownership check: that pane's foreground runs this pid as ``panorama panel``)."""
+    sock, lock = paths
+    asked = []
+    c = core.Core.start(sock, lock, verify_pane=lambda pane, pid: asked.append((pane, pid)) or True)
+    v = connect(sock)
+    v.sendall(protocol.encode({"hello": {"protocol": protocol.PROTOCOL, "pane_id": "w1:p9"}}))
+    lines(v, 1)
+    assert asked == [("w1:p9", os.getpid())]
+    v.close()
+    c.stop()
+
+
+def test_a_pane_runs_our_panel_only_with_that_pid_and_argv(monkeypatch):
+    from herdr_panorama import herdr
+    procs = [{"argv": ["uv", "run", "panorama", "panel"], "pid": 10},
+             {"argv": ["/v/bin/python3", "/v/bin/panorama", "panel"], "pid": 11}]
+    monkeypatch.setattr(herdr, "call", lambda *a, **k: ({"process_info": {"foreground_processes": procs}}, None))
+    assert herdr.runs_panorama("w1:p9", "panel", pid=11) is True
+    assert herdr.runs_panorama("w1:p9", "panel", pid=12) is False  # another process's claim
+    assert herdr.runs_panorama("w1:p9", "tui", pid=11) is False
+    procs[1]["argv"] = ["/usr/bin/python3", "-c", "panorama panel"]
+    assert herdr.runs_panorama("w1:p9", "panel", pid=11) is False

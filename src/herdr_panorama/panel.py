@@ -95,6 +95,10 @@ class PanelClient:
         except OSError:
             s.close()
             return False
+        if protocol.peer_cred(s)[1] != os.getuid():  # not our core: as good as no core
+            log.warning("refused %s: the socket is not served by this user", self.sock_path)
+            s.close()
+            return False
         with self._mu:
             self._sock = s
         welcomed = False

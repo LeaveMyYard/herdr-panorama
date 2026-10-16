@@ -4,12 +4,17 @@
 Hardening (the design review of #29, M1 and M7):
 - one core: an exclusive flock (``core-<session>.lock``) held for the core's whole life;
 - a socket file left by a dead core is removed only after a connect to it failed, lock held;
-- the socket is 0600 in a 0700 directory, and a peer must have our uid (SO_PEERCRED);
+- the socket is 0600 in a directory that must be a real 0700 directory of ours (not a
+  symlink, not another user's, not group/world-accessible), and a peer must have our uid;
+- a connection must say hello within HELLO_SECONDS, at most MAX_VIEWERS are open at once, and
+  a send that does not finish in SEND_SECONDS drops the viewer: no connection holds a thread
+  forever;
 - lines over protocol.MAX_LINE close the connection;
 - each viewer has a small bounded outbox: a slow viewer loses older ``state`` messages, it
   never stalls the core;
-- a viewer's ``hello.pane_id`` is only a claim: ``verify_pane`` (herdr's snapshot) decides
-  whether it is trusted, and it is never authority to close anything.
+- a viewer's ``hello.pane_id`` is only a claim: ``verify_pane(pane_id, pid)`` decides whether
+  it is trusted (the home panorama asks herdr whether that pane's foreground runs the peer's
+  own pid as ``panorama panel``), and it is never authority to close anything.
 """
 
 from __future__ import annotations
@@ -20,9 +25,9 @@ import logging
 import os
 import queue
 import socket
-import struct
-import sys
+import stat
 import threading
+import time
 from pathlib import Path
 
 from . import protocol
@@ -31,19 +36,26 @@ log = logging.getLogger("herdr_panorama.core")
 
 OUTBOX = 4  # queued messages per viewer; when full the oldest is dropped
 PING_SECONDS = 5.0
+HELLO_SECONDS = 5.0  # a connection that has not said hello by then is closed
+SEND_SECONDS = 10.0  # a viewer that does not take a message in this long is dropped
+MAX_VIEWERS = 64  # open connections at once (a viewer per tab); more are refused
 
 
-def _peer_uid(conn: socket.socket) -> int | None:
-    """The connecting process's uid (Linux SO_PEERCRED; macOS LOCAL_PEERCRED), or None."""
+def private_dir(d: Path, uid: int) -> str | None:
+    """Why ``d`` is not a safe home for the socket, or None: it must be a real directory (not a
+    symlink), owned by ``uid``, with no group or world access."""
     try:
-        if hasattr(socket, "SO_PEERCRED"):  # Linux: struct ucred {pid, uid, gid}
-            creds = conn.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, struct.calcsize("3i"))
-            return struct.unpack("3i", creds)[1]
-        if sys.platform == "darwin":  # SOL_LOCAL 0, LOCAL_PEERCRED 1: struct xucred {version, uid, ...}
-            creds = conn.getsockopt(0, 1, 76)
-            return struct.unpack_from("2I", creds)[1]
-    except OSError:
-        return None
+        st = os.lstat(d)
+    except OSError as exc:
+        return str(exc)
+    if stat.S_ISLNK(st.st_mode):
+        return "a symlink"
+    if not stat.S_ISDIR(st.st_mode):
+        return "not a directory"
+    if st.st_uid != uid:
+        return f"owned by uid {st.st_uid}"
+    if st.st_mode & 0o077:
+        return f"mode {stat.S_IMODE(st.st_mode):o}, not 700"
     return None
 
 
@@ -53,6 +65,7 @@ class Viewer:
     def __init__(self, conn: socket.socket):
         self.conn = conn
         self.outbox: queue.Queue = queue.Queue(maxsize=OUTBOX)
+        self.pid, _ = protocol.peer_cred(conn)
         self.pane_id: str | None = None  # verified hello.pane_id, else None
         self.tab_id: str | None = None
         self.hello = False
@@ -89,7 +102,7 @@ class Core:
         self.sock_path = Path(sock_path)
         self.lock_path = Path(lock_path)
         self.on_seen = on_seen or (lambda ids: None)
-        self.verify_pane = verify_pane or (lambda pane_id: False)
+        self.verify_pane = verify_pane or (lambda pane_id, pid: False)
         self.uid = os.getuid() if uid is None else uid
         self.viewers: list[Viewer] = []
         self._lock_fd: int | None = None
@@ -107,12 +120,23 @@ class Core:
 
     def _start(self) -> bool:
         d = self.sock_path.parent
-        os.makedirs(d, mode=0o700, exist_ok=True)
         try:
-            os.chmod(d, 0o700)
-        except OSError:
+            os.makedirs(d.parent, exist_ok=True)
+            os.mkdir(d, 0o700)
+        except FileExistsError:
             pass
-        fd = os.open(self.lock_path, os.O_RDWR | os.O_CREAT, 0o600)
+        except OSError as exc:
+            log.warning("no socket directory %s: %s", d, exc)
+            return False
+        why = private_dir(d, self.uid)
+        if why is not None:
+            log.warning("not starting: the socket directory %s is %s", d, why)
+            return False
+        try:
+            fd = os.open(self.lock_path, os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0), 0o600)
+        except OSError as exc:
+            log.warning("no lock file %s: %s", self.lock_path, exc)
+            return False
         try:
             fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except OSError:
@@ -206,15 +230,22 @@ class Core:
                 if self._stop.is_set() or exc.errno in (errno.EBADF, errno.EINVAL):
                     return
                 continue
-            if _peer_uid(conn) != self.uid:
+            if protocol.peer_cred(conn)[1] != self.uid:
                 log.warning("refused a connection from another user")
                 conn.close()
                 continue
-            v = Viewer(conn)
             with self._mu:
-                self.viewers.append(v)
+                full = len(self.viewers) >= MAX_VIEWERS
+                v = None if full else Viewer(conn)
+                if v is not None:
+                    self.viewers.append(v)
+            if v is None:
+                log.warning("refused a connection: %d open already", MAX_VIEWERS)
+                conn.close()
+                continue
+            # the writer starts at hello: until then a connection holds one thread, for at
+            # most HELLO_SECONDS
             threading.Thread(target=self._read, args=(v,), daemon=True, name="core-read").start()
-            threading.Thread(target=self._write, args=(v,), daemon=True, name="core-write").start()
 
     def _write(self, v: Viewer) -> None:
         while not v.closed.is_set():
@@ -230,21 +261,42 @@ class Core:
 
     def _read(self, v: Viewer) -> None:
         reader = protocol.LineReader()
+        deadline = time.monotonic() + HELLO_SECONDS
         try:
             while not v.closed.is_set():
-                data = v.conn.recv(65536)
+                if not v.hello:
+                    left = deadline - time.monotonic()
+                    if left <= 0:
+                        log.info("viewer dropped: no hello in %ss", HELLO_SECONDS)
+                        return
+                    v.conn.settimeout(left)
+                try:
+                    data = v.conn.recv(65536)
+                except TimeoutError:
+                    if v.hello:
+                        continue  # a quiet viewer is fine; only the hello has a deadline
+                    log.info("viewer dropped: no hello in %ss", HELLO_SECONDS)
+                    return
                 if not data:
                     break
+                seen: list[str] = []
                 for msg in reader.feed(data):
-                    if not self._handle(v, msg):
+                    said_hello = v.hello
+                    if not self._handle(v, msg, seen):
                         return
+                    if v.hello and not said_hello:  # the writer's sends time out; recv retries
+                        v.conn.settimeout(SEND_SECONDS)
+                        threading.Thread(target=self._write, args=(v,), daemon=True, name="core-write").start()
+                if seen:
+                    self.on_seen(list(dict.fromkeys(seen)))  # one call per read
         except (OSError, protocol.TooLong) as exc:
             log.info("viewer dropped: %s", exc)
         finally:
             self._drop(v)
 
-    def _handle(self, v: Viewer, msg: dict) -> bool:
-        """One message from a viewer; False closes the connection."""
+    def _handle(self, v: Viewer, msg: dict, seen: list[str]) -> bool:
+        """One message from a viewer; False closes the connection. ``seen`` ids are collected
+        into ``seen`` (the caller reports a read's worth at once)."""
         if "hello" in msg:
             hello = msg["hello"] if isinstance(msg["hello"], dict) else {}
             if not protocol.compatible(hello.get("protocol")):
@@ -255,7 +307,7 @@ class Core:
                     pass
                 return False
             pane = hello.get("pane_id")
-            v.pane_id = pane if isinstance(pane, str) and self.verify_pane(pane) else None
+            v.pane_id = pane if isinstance(pane, str) and v.pid and self.verify_pane(pane, v.pid) else None
             v.tab_id = hello.get("tab_id") if isinstance(hello.get("tab_id"), str) else None
             v.hello = True
             v.send(protocol.encode({"welcome": {"protocol": protocol.PROTOCOL}}))
@@ -266,8 +318,7 @@ class Core:
             return False  # anything before hello: not a panel of ours
         if "seen" in msg:
             ids = [i for i in msg["seen"] if isinstance(i, str)] if isinstance(msg["seen"], list) else []
-            if ids:
-                self.on_seen(ids)
+            seen += ids
             return True
         if "bye" in msg:
             return False

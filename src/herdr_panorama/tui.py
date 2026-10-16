@@ -286,7 +286,7 @@ class SwarmApp(App):
         if self.live_refresh and self.home_mode and cockpit.panels_mode() == "per-tab":
             self.core = core.Core.start(protocol.socket_path(), protocol.lock_path(),
                                         on_seen=lambda ids: self._to_ui(self._seen, ids),
-                                        verify_pane=self._known_pane)
+                                        verify_pane=self._owned_pane)
         self.refresh_model()
         if self.live_refresh:
             self.set_interval(REFRESH_SECONDS, self.refresh_model)
@@ -386,10 +386,10 @@ class SwarmApp(App):
             self.publish()
 
     @staticmethod
-    def _known_pane(pane_id: str) -> bool:
-        """A viewer's hello names its pane: trusted only if herdr knows that pane."""
-        snap = herdr.snapshot() or {}
-        return any(p.get("pane_id") == pane_id for p in snap.get("panes") or [] if isinstance(p, dict))
+    def _owned_pane(pane_id: str, pid: int) -> bool:
+        """A viewer's hello names its pane: trusted only if herdr says that pane's foreground
+        runs ``panorama panel`` as the connecting process itself (docs/DESIGN.md M2)."""
+        return herdr.runs_panorama(pane_id, "panel", pid=pid) is True
 
     def _cells(self) -> dict[tuple, tuple]:
         scr = self.grid.screen_data if hasattr(self, "grid") else None

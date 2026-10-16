@@ -11,6 +11,9 @@ from __future__ import annotations
 import dataclasses
 import json
 import os
+import socket
+import struct
+import sys
 from pathlib import Path
 
 from .model import Agent, BgTask, Orchestrator, Phase, Swarm, Thread
@@ -49,10 +52,9 @@ class LineReader:
         self._buf = b""
 
     def feed(self, data: bytes) -> list[dict]:
-        self._buf += data
+        *lines, self._buf = (self._buf + data).split(b"\n")  # one split per read: linear
         out = []
-        while b"\n" in self._buf:
-            line, self._buf = self._buf.split(b"\n", 1)
+        for line in lines:
             if len(line) > MAX_LINE:
                 raise TooLong(f"{len(line)} bytes")
             try:
@@ -64,6 +66,26 @@ class LineReader:
         if len(self._buf) > MAX_LINE:
             raise TooLong(f"{len(self._buf)} bytes without a newline")
         return out
+
+
+def peer_cred(conn: socket.socket) -> tuple[int | None, int | None]:
+    """The other end's (pid, uid): Linux SO_PEERCRED, macOS LOCAL_PEERPID and LOCAL_PEERCRED;
+    (None, None) when the platform cannot say (and a uid check then fails closed)."""
+    try:
+        if hasattr(socket, "SO_PEERCRED"):  # Linux: struct ucred {pid, uid, gid}
+            creds = conn.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, struct.calcsize("3i"))
+            pid, uid, _ = struct.unpack("3i", creds)
+            return pid, uid
+        if sys.platform == "darwin":  # SOL_LOCAL 0: LOCAL_PEERCRED 1 (struct xucred), LOCAL_PEERPID 2
+            uid = struct.unpack_from("2I", conn.getsockopt(0, 1, 76))[1]
+            try:
+                pid = struct.unpack("i", conn.getsockopt(0, 2, 4))[0]
+            except OSError:
+                pid = None
+            return pid, uid
+    except OSError:
+        pass
+    return None, None
 
 
 # -- the model on the wire -----------------------------------------------------------------
@@ -121,11 +143,13 @@ SUN_PATH_MAX = 100  # sockaddr_un holds 108 bytes on Linux, 104 on macOS: stay u
 
 
 def socket_dir() -> Path:
-    """A 0700 directory for the core's socket and lock: the plugin's state dir, or the runtime
-    dir when that path is too long for a Unix socket."""
+    """The core's own directory for its socket and lock (the core makes it 0700 and refuses one
+    that is not a private directory of ours, core.private_dir): under the plugin's state dir,
+    or the runtime dir when that path is too long for a Unix socket."""
     from . import home
     name = "core-0123456789ab.sock"
-    for d in (home.state_dir(), Path(os.environ.get("XDG_RUNTIME_DIR") or "/tmp") / f"herdr-panorama-{os.getuid()}"):
+    for d in (home.state_dir() / "sockets",
+              Path(os.environ.get("XDG_RUNTIME_DIR") or "/tmp") / f"herdr-panorama-{os.getuid()}"):
         if len(str(d / name)) <= SUN_PATH_MAX:
             return d
     return Path("/tmp") / f"herdr-panorama-{os.getuid()}"  # macOS: long temp and state paths
