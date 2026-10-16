@@ -147,8 +147,8 @@ class Session:
         self.agents: dict[str, AgentRec] = {}
         self.journals: dict[str, FileState] = {}
         self.hook_file = FileState(str(hookmod.hooks_path(session_id)), "hooks")
-        self.bg_alive = lambda launch: None
-        self._bg_scanned: set[tuple[str, float]] = set()  # skipped old files searched for a launch  # collect.py: True/False when the task's process can be checked
+        self.bg_alive = lambda launch: None  # collect.py: True/False when the task's process can be checked
+        self._bg_scanned: set[tuple[str, float]] = set()  # skipped old files searched for a launch
         self._reset_stores()
 
     def _reset_stores(self) -> None:
@@ -192,11 +192,11 @@ class Session:
     # -- reading ------------------------------------------------------------------
 
     def update(self, since: float | None = None) -> None:
-        self._children = None
-        self._bg_index: dict[str, list[BgLaunch]] | None = None
         """Read what changed. ``since``: agent files last written before it and never read are
         skipped (they cannot change anything inside a done window that starts later; the main
         transcript is always read in full). Skipped files are read once they change."""
+        self._children = None
+        self._bg_index: dict[str, list[BgLaunch]] | None = None
         main = self.files.get(self.root) or self.files.setdefault(self.root, FileState(self.root, MAIN))
         agent_files, journals = discovery.related(self.root)
         for af in agent_files:

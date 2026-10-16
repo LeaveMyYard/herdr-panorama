@@ -1,5 +1,5 @@
 // Render turn 8 ("waiting and stale") from the reference JS.
-// Usage: node render-8.mjs json > 8.json  (frames 0, 4, 7, 12: A the 2a graph with Deploy Watch's background card,
+// Usage: node render-8.mjs json > 8.json  (frames 0, 4, 7, 12 and 1.5, 3.4 between frames: A the 2a graph with Deploy Watch's background card,
 //                                          B the 2a graph with the waiting agent n1, R the same with the "running"
 //                                          filter, P the 46 docked-panel columns; chars and colours per cell)
 //        node render-8.mjs html > 8.html  (a static page for a screenshot)
@@ -8,7 +8,7 @@ const mode = process.argv[2] || 'html';
 const cells = rows => rows.map(row => { const out = []; for (const u of row.r) { const t = Array.from(u.t); const n = parseInt(u.st.width); for (let i = 0; i < n; i++) out.push([t[i] ?? ' ', u.st.color, u.st.background === 'transparent' ? null : u.st.background, u.st.fontWeight === 700]); } return out; });
 if (mode === 'json') {
   const frames = {};
-  for (const f of [0, 4, 7, 12]) { const r = renderStates(f); frames[f] = { A: cells(r.A), B: cells(r.B), R: cells(r.R), P: cells(r.P).map(x => x.slice(0, 46)) }; }
+  for (const f of [0, 4, 7, 12, 1.5, 3.4]) { const r = renderStates(f); frames[f] = { A: cells(r.A), B: cells(r.B), R: cells(r.R), P: cells(r.P).map(x => x.slice(0, 46)) }; }
   console.log(JSON.stringify(frames));
 } else {
   const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
