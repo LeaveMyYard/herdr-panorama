@@ -21,6 +21,7 @@ import os
 import queue
 import socket
 import struct
+import sys
 import threading
 from pathlib import Path
 
@@ -35,12 +36,12 @@ PING_SECONDS = 5.0
 def _peer_uid(conn: socket.socket) -> int | None:
     """The connecting process's uid (Linux SO_PEERCRED; macOS LOCAL_PEERCRED), or None."""
     try:
-        if hasattr(socket, "SO_PEERCRED"):
+        if hasattr(socket, "SO_PEERCRED"):  # Linux: struct ucred {pid, uid, gid}
             creds = conn.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, struct.calcsize("3i"))
             return struct.unpack("3i", creds)[1]
-        getpeereid = getattr(os, "getpeereid", None)  # not in CPython; kept for other runtimes
-        if getpeereid:
-            return getpeereid(conn.fileno())[0]
+        if sys.platform == "darwin":  # SOL_LOCAL 0, LOCAL_PEERCRED 1: struct xucred {version, uid, ...}
+            creds = conn.getsockopt(0, 1, 76)
+            return struct.unpack_from("2I", creds)[1]
     except OSError:
         return None
     return None

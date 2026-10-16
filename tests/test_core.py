@@ -55,16 +55,22 @@ def test_lines_are_capped(monkeypatch):
 def test_a_long_state_dir_falls_back_to_a_short_socket_path(monkeypatch, tmp_path):
     monkeypatch.setenv("HERDR_PLUGIN_STATE_DIR", str(tmp_path / ("x" * 120)))
     monkeypatch.setenv("XDG_RUNTIME_DIR", str(tmp_path))
-    assert len(str(protocol.socket_path())) <= protocol.SUN_PATH_MAX + 20
+    assert len(str(protocol.socket_path())) <= protocol.SUN_PATH_MAX
     assert protocol.socket_path().parent.name.startswith("herdr-panorama-")
 
 
 # -- the core ----------------------------------------------------------------------------------
 
 @pytest.fixture
-def paths(tmp_path):
-    d = tmp_path / "s"
-    return d / "core.sock", d / "core.lock"
+def paths():
+    """A short directory: Unix socket paths are limited (macOS's temp dirs are long)."""
+    import shutil
+    import tempfile
+    from pathlib import Path
+    base = Path(tempfile.mkdtemp(prefix="pc", dir="/tmp"))
+    d = base / "s"
+    yield d / "core.sock", d / "core.lock"
+    shutil.rmtree(base, ignore_errors=True)
 
 
 def connect(sock):

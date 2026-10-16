@@ -124,10 +124,11 @@ def socket_dir() -> Path:
     """A 0700 directory for the core's socket and lock: the plugin's state dir, or the runtime
     dir when that path is too long for a Unix socket."""
     from . import home
-    d = home.state_dir()
-    if len(str(d / "core-0123456789ab.sock")) > SUN_PATH_MAX:
-        d = Path(os.environ.get("XDG_RUNTIME_DIR") or "/tmp") / f"herdr-panorama-{os.getuid()}"
-    return d
+    name = "core-0123456789ab.sock"
+    for d in (home.state_dir(), Path(os.environ.get("XDG_RUNTIME_DIR") or "/tmp") / f"herdr-panorama-{os.getuid()}"):
+        if len(str(d / name)) <= SUN_PATH_MAX:
+            return d
+    return Path("/tmp") / f"herdr-panorama-{os.getuid()}"  # macOS: long temp and state paths
 
 
 def socket_path() -> Path:
