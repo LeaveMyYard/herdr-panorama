@@ -26,7 +26,7 @@ from rich.style import Style
 import textual
 from rich.cells import cell_len
 from rich.control import Control
-from textual import _compositor, work
+from textual import work
 from textual.app import App, ComposeResult
 from textual.containers import Vertical
 from textual.geometry import Region
@@ -44,6 +44,10 @@ from .model import BLK, Swarm, live
 
 
 TEXTUAL_CROP_VERIFIED = "8.2."  # the Textual versions _render_segments was checked against (tests/test_smooth.py)
+try:  # a private Textual module: if it moves, panorama runs on Textual's own (slower) partial updates
+    from textual import _compositor
+except ImportError:
+    _compositor = None
 _textual_render_segments = getattr(getattr(_compositor, "ChopsUpdate", None), "render_segments", None)
 
 
@@ -85,8 +89,7 @@ def _render_segments(self, console) -> str:
         return _textual_render_segments(self, console)
 
 
-if (_textual_render_segments is not None and textual.__version__.startswith(TEXTUAL_CROP_VERIFIED)
-        and all(hasattr(_compositor.ChopsUpdate, a) for a in ("__init__", "render_segments"))):
+if _textual_render_segments is not None and textual.__version__.startswith(TEXTUAL_CROP_VERIFIED):
     _compositor.ChopsUpdate.render_segments = _render_segments
 
 REFRESH_SECONDS = 1.5
