@@ -142,9 +142,15 @@ def open_view(split: bool = False) -> str | None:
 
 # -- home tab and new agents ---------------------------------------------------------
 
+class NoReply(str):
+    """A socket request's error when it was sent but no reply came (a timeout, a dropped
+    connection): herdr may have done it all the same. Any other error is a refusal."""
+
+
 def socket_call(method: str, params: dict, timeout: float = TIMEOUT) -> tuple[dict | None, str | None]:
     """One raw socket API request (newline-delimited JSON) for methods the CLI does not wrap,
-    such as ``tab.move``. Never raises."""
+    such as ``tab.move``. Never raises; the error is a ``NoReply`` when the request went out
+    unanswered."""
     import time as _t
     t0 = _t.perf_counter()
     try:
@@ -159,11 +165,13 @@ def _socket_call(method: str, params: dict, timeout: float = TIMEOUT) -> tuple[d
     if not path:
         return None, "HERDR_SOCKET_PATH is not set"
     req = json.dumps({"id": "panorama:1", "method": method, "params": params}) + "\n"
+    sent = False
     try:
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
             s.settimeout(timeout)
             s.connect(path)
             s.sendall(req.encode())
+            sent = True
             buf = b""
             while b"\n" not in buf:
                 chunk = s.recv(65536)
@@ -171,7 +179,9 @@ def _socket_call(method: str, params: dict, timeout: float = TIMEOUT) -> tuple[d
                     break
                 buf += chunk
         reply = json.loads(buf.split(b"\n", 1)[0] or b"{}")
-    except (OSError, ValueError) as exc:
+    except OSError as exc:
+        return None, NoReply(str(exc) or "timed out") if sent else str(exc)
+    except ValueError as exc:
         return None, str(exc)
     if not isinstance(reply, dict) or "error" in reply:
         return None, str((reply or {}).get("error") if isinstance(reply, dict) else reply)
@@ -183,7 +193,8 @@ NEW_AGENT_POPUP = (84, 26)  # the popup's outer size in cells (the form is 76 wi
 
 def open_new_agent(cwd: str) -> str | None:
     """The + New agent form in its own herdr popup (the plugin's ``new-agent`` entrypoint), with
-    ``cwd`` as its default directory. An error or None."""
+    ``cwd`` as its default directory. None, or the error (a ``NoReply`` when herdr may have
+    opened it without answering)."""
     plugin_id = os.environ.get("HERDR_PLUGIN_ID", PLUGIN_ID)
     params = {"plugin_id": plugin_id, "entrypoint": "new-agent", "placement": "popup", "focus": True,
               "width": NEW_AGENT_POPUP[0], "height": NEW_AGENT_POPUP[1],

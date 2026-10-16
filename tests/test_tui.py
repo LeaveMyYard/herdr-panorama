@@ -567,6 +567,43 @@ async def test_a_wide_pane_keeps_the_form_in_place_and_a_failed_popup_falls_back
         assert isinstance(narrow.screen, NewAgentForm) and calls == ["plugin.pane.open"]
 
 
+async def test_a_popup_request_herdr_never_answered_does_not_also_open_the_form(fake_herdr, monkeypatch):
+    """#31 follow-up: the request went out but no reply came (a timeout). herdr may have opened
+    the popup all the same, so the in-pane form would make a second one: only a refusal falls
+    back."""
+    from herdr_panorama import herdr
+    from herdr_panorama.tui import NewAgentForm
+    monkeypatch.setattr(herdr, "socket_call", lambda m, p, timeout=None: (None, herdr.NoReply("timed out")))
+    app = make_home_app(home_mode=True)
+    async with app.run_test(size=(46, 45)) as pilot:
+        await loaded(app, pilot)
+        app.action_new_agent()
+        await pilot.pause()
+        assert not isinstance(app.screen, NewAgentForm)
+
+
+def test_a_socket_request_that_was_sent_but_never_answered_says_so(tmp_path, monkeypatch):
+    """The difference the fallback needs: refused (no connection, or herdr's error) versus sent
+    and unanswered."""
+    import os
+    import socket as so
+    import tempfile
+    from herdr_panorama import herdr
+    d = tempfile.mkdtemp(prefix="pn", dir="/tmp")
+    path = os.path.join(d, "h.sock")
+    monkeypatch.setenv("HERDR_SOCKET_PATH", path)
+    _, err = herdr.socket_call("plugin.pane.open", {}, timeout=0.3)
+    assert err and not isinstance(err, herdr.NoReply)  # nobody listens: refused
+    srv = so.socket(so.AF_UNIX, so.SOCK_STREAM)
+    srv.bind(path)
+    srv.listen(1)
+    _, err = herdr.socket_call("plugin.pane.open", {}, timeout=0.3)  # accepted, never answered
+    assert isinstance(err, herdr.NoReply)
+    srv.close()
+    os.unlink(path)
+    os.rmdir(d)
+
+
 async def test_the_popup_shows_the_same_form_and_closes_with_it(fake_herdr, monkeypatch):
     """``panorama new-agent``: the identical form (same widgets and texts as in the full view),
     its directory from the environment; cancelling it ends the popup's process."""
