@@ -409,7 +409,12 @@ def test_idle_connections_are_capped_and_hold_no_threads(paths, monkeypatch):
     sock, lock = paths
     c = core.Core.start(sock, lock)
     before = threading.active_count()
-    idle = [connect(sock) for _ in range(100)]
+    idle = []
+    for _ in range(100):
+        try:
+            idle.append(connect(sock))
+        except ConnectionRefusedError:
+            pass  # macOS: a full accept backlog refuses at once; refused is fine here too
     assert wait(lambda: len(c.viewers) == 8)
     time.sleep(0.2)
     assert len(c.viewers) <= 8 and threading.active_count() - before <= 8
@@ -464,3 +469,16 @@ def test_a_pane_runs_our_panel_only_with_that_pid_and_argv(monkeypatch):
     assert herdr.runs_panorama("w1:p9", "tui", pid=11) is False
     procs[1]["argv"] = ["/usr/bin/python3", "-c", "panorama panel"]
     assert herdr.runs_panorama("w1:p9", "panel", pid=11) is False
+
+
+def test_the_tmp_fallbacks_parent_must_be_safe_too(paths, monkeypatch):
+    """Low (#30 review): the socket directory's parent is checked too: ours, or root's with the
+    sticky bit (/tmp); a parent another user can write in (without sticky) is refused."""
+    sock, lock = paths
+    os.chmod(sock.parent.parent, 0o777)  # world-writable, no sticky bit
+    assert core.Core.start(sock, lock) is None
+    os.chmod(sock.parent.parent, 0o1777)  # like /tmp, but ours: fine
+    c = core.Core.start(sock, lock)
+    assert c is not None
+    c.stop()
+    assert core.private_dir(sock.parent, os.getuid()) is None

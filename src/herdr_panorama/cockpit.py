@@ -73,9 +73,19 @@ def keep_focus_setting() -> bool:
 
 def panels_mode() -> str:
     """``cockpit_panels``: "per-tab" (each orchestrator tab its own panel, fed by the core:
-    docs/DESIGN.md "Per-tab panels") or "moving" (one panel moved between tabs). "moving" until
-    the per-tab panel manager is built."""
+    docs/DESIGN.md "Per-tab panels") or "moving" (one panel moved between tabs, the default until
+    the blink measurement holds)."""
     return "per-tab" if str(config.load().get("cockpit_panels", "moving")).lower() == "per-tab" else "moving"
+
+
+def per_tab() -> bool:
+    """The cockpit with per-tab panels: the home panorama stays home and feeds them (panels.py)."""
+    return enabled() and panels_mode() == "per-tab"
+
+
+def moving() -> bool:
+    """The cockpit with the one moving panel: the home panorama docks and follows."""
+    return enabled() and panels_mode() != "per-tab"
 
 
 def arrows_setting() -> bool:

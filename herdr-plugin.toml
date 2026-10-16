@@ -31,6 +31,15 @@ width = 84
 height = 26
 command = ["sh", "-c", "exec uv run --quiet --frozen --no-dev --project \"${HERDR_PLUGIN_ROOT:-.}\" panorama new-agent"]
 
+# A per-tab panel (cockpit_panels = "per-tab"): this tab's docked panel, drawn from the core's
+# state (the home panorama). Opened by the core as a split beside an orchestrator's pane. Started
+# from the venv the build made (no uv parent per panel); uv run only without one.
+[[panes]]
+id = "panel"
+title = "Panorama panel"
+placement = "split"
+command = ["sh", "-c", "R=\"${HERDR_PLUGIN_ROOT:-.}\"; [ -x \"$R/.venv/bin/panorama\" ] && exec \"$R/.venv/bin/panorama\" panel; exec uv run --quiet --frozen --no-dev --project \"$R\" panorama panel"]
+
 # Bind a key to this (suggested: prefix+space). With the home tab on (default), it focuses
 # the "◆ panorama" tab, opening it if missing; with home_tab = false it opens the popup.
 [[actions]]

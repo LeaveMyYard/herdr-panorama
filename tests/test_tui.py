@@ -2,6 +2,8 @@
 
 import time
 
+import pytest
+
 from herdr_panorama import herdr, render
 from herdr_panorama.model import DONE, RUN
 from herdr_panorama.tui import ARM_SECONDS, Grid, SwarmApp
@@ -599,6 +601,69 @@ def test_a_socket_request_that_was_sent_but_never_answered_says_so(tmp_path, mon
     srv.listen(1)
     _, err = herdr.socket_call("plugin.pane.open", {}, timeout=0.3)  # accepted, never answered
     assert isinstance(err, herdr.NoReply)
+    srv.close()
+    os.unlink(path)
+    os.rmdir(d)
+
+
+async def test_an_unanswered_popup_that_never_starts_says_so(fake_herdr, monkeypatch):
+    """Low (#33 review): after a NoReply, a popup whose process never started (no marker from
+    NewAgentApp) gets a short notice, so the operator knows to press n again; one that started
+    gets none."""
+    from herdr_panorama import herdr, tui
+    from herdr_panorama.tui import NewAgentApp
+    monkeypatch.setattr(tui, "POPUP_START_SECONDS", 0.3)
+    monkeypatch.setattr(herdr, "socket_call", lambda m, p, timeout=None: (None, herdr.NoReply("timed out")))
+    app = make_home_app(home_mode=True)
+    shown = []
+    async with app.run_test(size=(46, 45)) as pilot:
+        await loaded(app, pilot)
+        monkeypatch.setattr(app, "notify", lambda msg, **kw: shown.append(msg))
+        app.action_new_agent()
+        for _ in range(40):
+            await pilot.pause(0.05)
+            if shown:
+                break
+    assert shown == [tui.POPUP_DID_NOT_OPEN]
+
+    def started(m, p, timeout=None):  # herdr opened it: the popup's process marks its start
+        NewAgentApp.mark_started()
+        return None, herdr.NoReply("timed out")
+    monkeypatch.setattr(herdr, "socket_call", started)
+    app = make_home_app(home_mode=True)
+    shown = []
+    async with app.run_test(size=(46, 45)) as pilot:
+        await loaded(app, pilot)
+        monkeypatch.setattr(app, "notify", lambda msg, **kw: shown.append(msg))
+        app.action_new_agent()
+        await pilot.pause(0.6)
+    assert shown == []
+
+
+@pytest.mark.parametrize("reply", [b"", b"not json\n"])
+def test_a_reply_that_is_missing_or_garbled_after_sending_is_no_reply(monkeypatch, reply):
+    """Low (#33 review): a connection closed without a reply, or a garbled one, after the request
+    went out is NoReply for every caller, never success."""
+    import os
+    import socket as so
+    import tempfile
+    import threading
+    from herdr_panorama import herdr
+    d = tempfile.mkdtemp(prefix="pn", dir="/tmp")
+    path = os.path.join(d, "h.sock")
+    monkeypatch.setenv("HERDR_SOCKET_PATH", path)
+    srv = so.socket(so.AF_UNIX, so.SOCK_STREAM)
+    srv.bind(path)
+    srv.listen(1)
+
+    def answer():
+        c, _ = srv.accept()
+        c.recv(65536)
+        c.sendall(reply)
+        c.close()
+    threading.Thread(target=answer, daemon=True).start()
+    res, err = herdr.socket_call("tab.move", {}, timeout=2)
+    assert res is None and isinstance(err, herdr.NoReply)
     srv.close()
     os.unlink(path)
     os.rmdir(d)

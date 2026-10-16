@@ -21,6 +21,9 @@ def test_plugin_manifest():
     form = next(p for p in m["panes"] if p["id"] == "new-agent")  # + New agent as its own popup
     assert form["placement"] == "popup" and "panorama new-agent" in " ".join(form["command"])
     assert isinstance(form["width"], int) and form["width"] >= 80 and form["height"] >= 24
+    panel = next(p for p in m["panes"] if p["id"] == "panel")  # a per-tab panel
+    from herdr_panorama import herdr
+    assert panel["placement"] == "split" and panel["command"] == herdr.PANEL_COMMAND  # layout.apply uses it too
 
 
 def test_cli_entry_point():

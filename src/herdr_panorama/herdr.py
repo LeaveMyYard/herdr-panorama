@@ -178,11 +178,13 @@ def _socket_call(method: str, params: dict, timeout: float = TIMEOUT) -> tuple[d
                 if not chunk:
                     break
                 buf += chunk
-        reply = json.loads(buf.split(b"\n", 1)[0] or b"{}")
+        if not buf.strip():
+            return None, NoReply("closed without a reply")  # not a success: nobody said it was done
+        reply = json.loads(buf.split(b"\n", 1)[0])
     except OSError as exc:
         return None, NoReply(str(exc) or "timed out") if sent else str(exc)
     except ValueError as exc:
-        return None, str(exc)
+        return None, NoReply(f"garbled reply: {exc}")  # only a sent request gets this far
     if not isinstance(reply, dict) or "error" in reply:
         return None, str((reply or {}).get("error") if isinstance(reply, dict) else reply)
     return reply.get("result") or {}, None
@@ -218,6 +220,55 @@ def open_tab_pane(focus: bool) -> tuple[dict | None, str | None]:
         return None, err
     pane = (res.get("plugin_pane") or {}).get("pane") or {}
     return (pane, None) if pane.get("pane_id") else (None, "no pane in the reply")
+
+
+# The per-tab panel's command, as in the manifest's ``panel`` pane (a test keeps them equal):
+# ``layout.apply`` panes are not plugin panes, so a + New agent tab's panel is started with it.
+# The venv's own entry point (the plugin's build ran `uv sync`): `uv run` would keep a ~31 MB
+# uv parent alive beside every panel. `uv run` only when there is no venv.
+PANEL_COMMAND = ["sh", "-c", 'R="${HERDR_PLUGIN_ROOT:-.}"; [ -x "$R/.venv/bin/panorama" ] && exec "$R/.venv/bin/panorama" panel; '
+                 'exec uv run --quiet --frozen --no-dev --project "$R" panorama panel']
+PLUGIN_ENV = ("HERDR_PLUGIN_ID", "HERDR_PLUGIN_ROOT", "HERDR_PLUGIN_STATE_DIR", "HERDR_PLUGIN_CONFIG_DIR")
+
+
+def open_panel(target_pane: str) -> tuple[dict | None, str | None]:
+    """A per-tab panel (the plugin's ``panel`` entrypoint) split right of ``target_pane``,
+    without focus: the operator stays where they are. Returns the PaneInfo."""
+    plugin_id = os.environ.get("HERDR_PLUGIN_ID", PLUGIN_ID)
+    args = ["plugin", "pane", "open", "--plugin", plugin_id, "--entrypoint", "panel", "--placement", "split",
+            "--direction", "right", "--target-pane", target_pane, "--no-focus"]
+    root = os.environ.get("HERDR_PLUGIN_ROOT")
+    if root:
+        args += ["--cwd", root]
+    res, err = call(*args)
+    if res is None:
+        return None, err
+    pane = (res.get("plugin_pane") or {}).get("pane") or {}
+    return (pane, None) if pane.get("pane_id") else (None, "no pane in the reply")
+
+
+def close_plugin_pane(pane_id: str) -> str | None:
+    return call("plugin", "pane", "close", pane_id)[1]
+
+
+def apply_panel_layout(label: str, cwd: str | None, ratio: float) -> tuple[dict | None, str | None]:
+    """A new, unfocused tab with a per-tab panel on the left and a plain pane on the right (for
+    + New agent: no panel ever has to be swapped in there). Returns the layout: its ``tab_id``
+    and ``root.first`` / ``root.second`` pane ids."""
+    root = os.environ.get("HERDR_PLUGIN_ROOT")
+    env = {k: os.environ[k] for k in PLUGIN_ENV if os.environ.get(k)}
+    first = {"type": "pane", "command": PANEL_COMMAND, "env": env, "label": "Panorama panel"}
+    if root:
+        first["cwd"] = root
+    second = {"type": "pane"}
+    if cwd:
+        second["cwd"] = cwd
+    res, err = socket_call("layout.apply", {"tab_label": clean(label, 200), "focus": False, "root": {
+        "type": "split", "direction": "right", "ratio": ratio, "first": first, "second": second}})
+    if res is None:
+        return None, err
+    lay = res.get("layout") or {}
+    return (lay, None) if lay.get("tab_id") else (None, "no tab in the reply")
 
 
 def rename_tab(tab_id: str, label: str) -> str | None:

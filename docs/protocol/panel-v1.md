@@ -35,35 +35,43 @@ in another language, such as Rust or ratatui, can speak it.
 
 ### Viewer → core
 
-- `{"hello": {"protocol": "1.0", "role": "panel", "pane_id": "<herdr pane>", "tab_id": "<herdr tab>"}}`.
+- `{"hello": {"protocol": "1.1", "role": "panel", "pane_id": "<herdr pane>", "tab_id": "<herdr tab>"}}`.
   This is the first message. `pane_id` is a claim. The core trusts it only when herdr reports
   that pane's foreground process as the connecting process itself (its pid), running
   `panorama panel`. It never uses it as authority to close anything.
 - `{"seen": ["<agent id>", ...]}`: the operator looked at these agents. A viewer queues these
   while disconnected and sends them again after the next `welcome`.
 - `{"bye": {}}`: the viewer is closing.
+- `{"open": {}}` (1.1): from the open key, which says `hello` with `"role": "key"`. The core
+  focuses this tab's panel, makes one, or shows the home tab, and answers with `opened`. A key
+  connection gets no `state`.
 
 Any message before `hello` closes the connection.
 
 ### Core → viewer
 
-- `{"welcome": {"protocol": "1.0"}}`: the answer to a compatible `hello`. The last `state`
+- `{"welcome": {"protocol": "1.1"}}`: the answer to a compatible `hello`. The last `state`
   follows at once, if there is one.
-- `{"error": {"message": "protocol", "protocol": "1.0"}}`: an incompatible `hello`. The
+- `{"error": {"message": "protocol", "protocol": "1.1"}}`: an incompatible `hello`. The
   connection then closes.
 - `{"state": {...}}`: always a full snapshot (no deltas in v1). It is sent after every collect
   (~1.5 s), on focus and tab changes, and right after `welcome`.
 - `{"ping": n}`: every 5 s.
+- `{"opened": {"result": "panel" | "home" | "failed" | "busy"}}` (1.1): the answer to `open`.
+- `{"shutdown": {}}` (1.1): the panels go (the home panorama quits, or per-tab is turned off).
+  The viewer exits, and herdr closes its pane with it. A viewer that has had no core for
+  10 minutes exits as well.
 
 ### `state`
 
 | field | meaning |
 |---|---|
-| `protocol` | `"1.0"` |
+| `protocol` | `"1.1"` |
 | `swarm.generated_at`, `swarm.herdr_ok`, `swarm.inbox_ok`, `swarm.errors`, `swarm.stale_after` | as `model.Swarm` |
 | `swarm.orchestrators[]` | `model.Orchestrator` fields, with `threads[]` (`model.Thread`, with `phases[]` and `agents[]`) and `bg[]`, field for field. `model.py` documents each field. |
 | `unseen` | `{agent id: "fail" \| "wait" \| "done"}`, the unseen marks |
 | `focused_pane` | the pane herdr last reported focused, or `null` |
+| `panels` | (1.1) `{tab id: pane id}` of the per-tab panels: where a switch to that tab puts the keyboard |
 | `visible_tabs` | the tabs herdr shows, or `null` if unknown. A viewer whose tab is not listed stops animating; unknown counts as visible. In v1 this is herdr's one focused tab. herdr 0.9.3 does not say how many clients are attached, or which tab each shows, so with two clients the second client's panel can pause until its tab is focused. |
 
 The viewer picks its own tab's orchestrator (`tab_id` equals its own) as the panel's docked

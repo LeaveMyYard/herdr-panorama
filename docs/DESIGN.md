@@ -1362,7 +1362,7 @@ tile in its off phase.
   - `a answer` is left out of the footer when there is no inbox.
   - `z graph` sits on the footer's rule (see Follow).
 
-## Per-tab panels (design, not built yet)
+## Per-tab panels (built, off by default)
 
 The operator's option 1 for the switching blink: give every orchestrator tab its own docked
 panel, so switching chats is a plain tab switch with the panel already in place. Revised after
@@ -1566,7 +1566,7 @@ It is the natural first Rust component: small, render-only, its own input handli
 - **The core goes away.** A viewer keeps its last picture, dimmed, with the one-line notice
   `panorama is restarting…` (the operator, Q139). It disables everything that depends on state (switch,
   answer, New agent) and reconnects with backoff.
-- **No core for a long time** (proposed: 10 minutes). The viewer closes its own pane, which is
+- **No core for a long time** (10 minutes, built: `panel.NO_CORE_SECONDS`). The viewer closes its own pane, which is
   a plugin pane and so may close itself, so no orphans are left if the core never returns.
 - **A core restarts.** It adopts the existing panels (found and verified as above) and never
   makes a second one in a tab.
@@ -1578,8 +1578,8 @@ It is the natural first Rust component: small, render-only, its own input handli
 
 ### Migration and the fallback
 
-`cockpit_panels = "per-tab"` (the new default, once the blink measurement holds) or `"moving"`
-(today's single moving panel). The moving code stays for now and is to be removed once per-tab
+`cockpit_panels = "per-tab"` or `"moving"` (today's single moving panel, still the default).
+The blink measurement holds (below); making per-tab the default is the operator's call. The moving code stays for now and is to be removed once per-tab
 has proven itself (the operator, Q140).
 
 ### The operator's answers
@@ -1587,7 +1587,8 @@ has proven itself (the operator, Q140).
 1. **Creation (Q138, Q142): eagerly, on the left, accepting being pulled** during placement.
    To keep the disruption small:
    - Placement runs in one batch: when the core starts, and when a new orchestrator tab
-     appears.
+     appears. (Narrowed in the review of #30, see "As built": the batch runs only at core
+     start; a later tab gets its panel when the operator is in it.)
    - Before the batch, the operator's focused tab and pane are remembered. Afterwards they are
      restored, with the usual guard: if the operator actively moved during the batch, they are
      left where they went.
@@ -1598,6 +1599,84 @@ has proven itself (the operator, Q140).
 2. **Notice (Q139):** `panorama is restarting…`
 3. **Fallback (Q140): drop it later.** `cockpit_panels = "moving"` stays for now, and its
    removal is planned once per-tab has proven itself.
+
+### As built
+
+- **Code.** `panels.py` is the manager, run by the home panorama (the core) after every
+  refresh and every focus change, one pass at a time, under the home lock. `place()` is the
+  only placement: `plugin pane open --entrypoint panel --placement split --direction right
+  --no-focus` beside the agent, then a swap with the agent as its source, then the width.
+- **The start batch runs only at core start.** While a swap has pulled the operator into
+  another tab, any key they type (even Enter) goes to that tab's agent. herdr 0.9.3 has no way
+  to hold or route input: `pane.input.set` only sets right-click behaviour. So:
+  - the batch runs only when the core starts;
+  - the restore guard skips the batch's own focus events: for each swap, its tab's
+    `tab_focused` and then its agent's `pane_focused`, matched in order. herdr may leave one
+    out, and the guard waits up to 0.3 s for the last one. Any other event, including a move
+    to a tab the batch also touched, means the operator moved, and they are left there;
+  - `Manager.guard` wraps the batch and is a no-op today. It is the slot for something that
+    holds the keyboard during the batch (Q153).
+- **Later tabs.** A tab that becomes an orchestrator tab after the start gets its panel only
+  while the operator is in it. Just before the swap the manager looks again: if they left,
+  the panel waits on the right, and is swapped left on their next visit. If they were on
+  another pane of that tab, that pane gets the focus back after the swap.
+- **What is ours.**
+  - herdr's snapshot has no plugin-ownership field. Its pane label (the manifest title
+    "Panorama panel") is not used as proof.
+  - A pane counts as a panel when `pane process-info` shows `panorama panel` in its
+    foreground. Such a pane is never doubled.
+  - The manager closes only panels it opened itself, or whose viewer said a verified hello
+    (its pid, from the socket, running `panorama panel` in the claimed pane).
+  - A `process-info` answer is cached for 30 s either way, so a pass doesn't ask about every
+    panel again.
+  - A tab with a pane herdr could not check gets no panel that pass.
+- **Closed stays closed.** A panel of ours that disappears while its tab still has its
+  orchestrator, after its viewer had connected, was closed by the operator. Its tab is
+  recorded in `panels-<session>.json` in the state dir, so a restarted core remembers it.
+- **A crash is not a close.** A panel that disappears before its viewer ever connected (for
+  example a broken environment) died on its own, and so did a viewer that left a crash marker
+  (`panel-crash-<pane>` in the state dir, written when the viewer exits with an error). Either
+  is logged as a warning and made again. After 3 such deaths in one tab, the manager stops
+  making panels there for the rest of the core's life and says so in the log.
+- **No panel is left behind.**
+  - **Quitting or switching off:** on quit, and when per-tab is turned off, the core sends
+    `shutdown`. Every viewer exits, and herdr closes a pane whose command exits. That was
+    checked for plugin panes and for `layout.apply` panes alike: the `+ New agent` panels
+    are not plugin panes, and `plugin pane close` refuses them.
+  - **Crashed core:** a viewer that has had no core for 10 minutes exits too.
+- **Viewers start from the venv.** The plugin build ran `uv sync`, so a panel runs
+  `.venv/bin/panorama panel` and falls back to `uv run` only when there is no venv. Measured
+  on the isolated herdr: one process of about 41 MB RSS per panel, with no ~31 MB `uv`
+  parent.
+- **Open key.** In per-tab mode the open key asks the core over its socket (`role: "key"`,
+  `{"open": {}}`, answered with `{"opened": {"result": …}}`):
+  - a panel in the operator's tab: it is focused;
+  - none there: the closed mark is cleared, and one is made and focused;
+  - anywhere else: the home tab.
+  
+  Without a core, the key does what it did before.
+- **Navigation.** In a panel, Enter, a click and the arrows do `tab.focus` plus `pane.focus`
+  on the target tab's panel. The panel ids reach the viewers in `state.panels` (protocol
+  1.1). Going into an agent (Enter on the docked entry, or `g`) is `agent.focus`. The home
+  panorama no longer docks or follows in per-tab mode, and `home.ensure` brings it back to
+  its own tab.
+- **+ New agent.** In per-tab mode the tab is built with `layout.apply`: the panel's command
+  (`herdr.PANEL_COMMAND`, the same as the manifest's, with the plugin's environment) on the
+  left, a plain pane on the right for the agent. No swap ever happens there.
+- **Checked on an isolated herdr 0.9.3 with a client attached:**
+  - the start batch: panels left of three orchestrators, and focus back where it was;
+  - a new tab got no panel until visited; on the visit the operator stayed on the agent;
+  - a panel closed by hand stayed closed until the open key, which made and focused a new
+    one;
+  - an arrow in a panel switched to the next tab's panel;
+  - a killed core left the panels showing `panorama is restarting…`. The restarted core
+    adopted them with no duplicates, and its quit closed all of them, adopted ones included;
+  - after the review: quitting closed a `layout.apply`-built panel too, through `shutdown`,
+    and turning per-tab off closed every panel.
+- **The blink measurement.** Switching between two tabs that both have panels
+  (`tab.focus` + `pane.focus`) took 6 of 6 switches straight to the target in one frame,
+  7.5–10 ms after the call. There was no in-between frame, and the split stayed at the same
+  column.
 
 ## Refresh strategy
 
@@ -1644,6 +1723,7 @@ cockpit = false      # experimental: panorama docked left of the selected agent 
 cockpit_width = 46   # the list's drawable columns in the cockpit (36..119)
 cockpit_follow = true # re-dock beside the orchestrator the operator switches to (see Follow)
 cockpit_follow_tabs = "any" # "single": follow only into tabs whose one pane is the orchestrator
+cockpit_panels = "moving"  # "per-tab": every orchestrator tab its own panel (see Per-tab panels)
 machines = "all"     # saved herdr SSH machines to show: "all", "none", ["label", ...] (docs/REMOTE.md)
 highlight_unseen = true # pulse what changed since the operator looked (see Unseen)
 animation_fps = 20   # the colour tick, 2..30 (see Smooth animation); read when the view starts
