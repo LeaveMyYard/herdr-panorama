@@ -33,7 +33,7 @@ HERDR = {"panel_colors": "herdr"}
 def panel(frame, tokens, focused, cfg):
     v = render.View(orch="w1:p3", dock=True, frame=frame)
     v.hover = ("orch", ("w1:p4",))  # the design's hover
-    v.panel = theme.panel_colors(tokens, focused, render.FG, render.DIM, render.FAINT, FB, cfg)
+    v.panel = theme.panel_look(tokens, focused, render.FG, render.DIM, render.FAINT, FB, cfg)
     scr = render.render(design_swarm(NINE["data"]), v, 46, 45)
     return [[norm(c.ch, c.fg, c.bg, c.bold) for c in scr.c[y][:46]] for y in range(45)]
 
@@ -233,3 +233,11 @@ async def test_the_focus_watcher_forwards_herdrs_pane_focus(fake_herdr, monkeypa
         {"type": "pane_focused", "pane_id": "w1:p9"}]))
     app._watch_focus()
     assert seen == ["w1:p9"]
+
+
+def test_the_hover_row_is_a_step_lighter_than_either_background():
+    """#25: the fixed hover #171a1f vanished into the focused #14161b. It now follows the panel."""
+    assert theme.hover_bg("#14161b") == "#1d1f24" and theme.hover_bg("#101215") == "#1a1b1e"
+    for focused in (True, False):
+        bg, _, hover = theme.panel_look(None, focused, render.FG, render.DIM, render.FAINT, FB, {})
+        assert hover == theme.hover_bg(bg) and hover != bg and hover != render.DOCK_HOV

@@ -206,3 +206,20 @@ def panel_colors(tokens: dict | None, focused: bool, fg: str, dim: str, faint: s
     pairs = {fg: tokens["text"], dim: tokens["subtext0"] if focused else tokens["overlay1"],
              faint: tokens["overlay1"] if focused else tokens["overlay0"]}
     return bg, {k_: v for k_, v in pairs.items() if v}
+
+
+HOVER_STEP = 0.04  # the hover row: this far from the panel's background toward white
+
+
+def hover_bg(bg: str) -> str:
+    """The docked list's hover / cursor row: a step lighter than the panel's current background,
+    so it shows on both (#14161b -> #1d1f24, #101215 -> #1a1b1e; the operator: the
+    fixed hover #171a1f vanished into a focused background of nearly that colour)."""
+    return _mix(bg, "#ffffff", HOVER_STEP)
+
+
+def panel_look(tokens: dict | None, focused: bool, fg: str, dim: str, faint: str,
+               fallback: tuple[str, str], cfg: dict | None = None) -> tuple[str, dict[str, str], str]:
+    """``panel_colors`` plus the hover row's background: what the view hands the renderer."""
+    bg, fgs = panel_colors(tokens, focused, fg, dim, faint, fallback, cfg)
+    return bg, fgs, hover_bg(bg)

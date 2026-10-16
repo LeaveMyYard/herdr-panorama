@@ -459,8 +459,8 @@ class SwarmApp(App):
         self._update_dock()
         self.view.zoom_hint = self.home_mode and bool(self.swarm.docked)
         # design turn 10: the docked panel in herdr's theme, focused or not (purely visual)
-        self.view.panel = theme.panel_colors(theme.current(), self.pane_focused, render.FG, render.DIM,
-                                             render.FAINT, (render.DOCK_HOV, render.BG)) if self.view.dock else None
+        self.view.panel = theme.panel_look(theme.current(), self.pane_focused, render.FG, render.DIM,
+                                           render.FAINT, (render.DOCK_HOV, render.BG)) if self.view.dock else None
         grid.show(render.render(self.swarm, self.view, size.width, size.height,
                                 stale=self.error or (self.swarm.errors[0] if self.swarm.errors else None)))
 

@@ -8,13 +8,15 @@
 //              light); text = its text; dim = subtext0, faint = overlay1
 //   unfocused  background = panorama's own panel_bg if set, else the theme's panel_bg;
 //              text = its text; dim = overlay1, faint = overlay0 (secondary text one step dimmer)
-// The docked entry's and the hover's row backgrounds stay 9e's (their text follows the same rule); tiles keep their
-// own colours. Theme tokens are herdr 0.9.3's own, measured per token.
+// The docked entry's row background stays 9e's; the hover row is a step lighter than the panel (HOVER of the way
+// toward white), so it shows on both backgrounds; their text follows the same rule. Tiles keep their own colours.
+// Theme tokens are herdr 0.9.3's own, measured per token.
 import { renderTiles } from './swarm-tiles.js';
 import { TH } from './swarm-tui.js';
 
 const th = TH.dark, ROWS = new Set([th.sel, '#171a1f']); // 9e's docked-entry and hover row backgrounds
 const TINT = 0.15; // focus_tint's default
+const HOVER = 0.04; // the hover row: this far from the panel's background toward white
 const hx = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
 const toward = (a, b, k) => '#' + hx(a).map((v, i) => Math.round(v + (hx(b)[i] - v) * k).toString(16).padStart(2, '0')).join('');
 // built-in themes: herdr 0.9.3's own values (measured), the tokens this panel reads
@@ -34,7 +36,8 @@ function themed(rows, t, focused) {
     [th.fg]: t.text, [th.dim]: focused ? t.subtext0 : t.overlay1, [th.faint]: focused ? t.overlay1 : t.overlay0 };
   return rows.map(r => ({ r: r.r.map(u => {
     const plain = u.st.background === 'transparent', row = plain || ROWS.has(u.st.background); // not a tile
-    return { ...u, st: { ...u.st, color: row && map[u.st.color] ? map[u.st.color] : u.st.color, background: plain ? bg : u.st.background } };
+    const back = plain ? bg : u.st.background === '#171a1f' ? toward(bg, '#ffffff', HOVER) : u.st.background;
+    return { ...u, st: { ...u.st, color: row && map[u.st.color] ? map[u.st.color] : u.st.color, background: back } };
   }) }));
 }
 
