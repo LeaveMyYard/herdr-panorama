@@ -109,6 +109,21 @@ class Collector:
             sess = nxt
         return ids, sess
 
+    def continuations(self, session_ids: list[str]) -> list[str]:
+        """The sessions these ones continued in, as far as the transcripts read so far tell,
+        including a next one not found yet (the remote mirror then copies it: #39)."""
+        out: list[str] = []
+        for sid in session_ids:
+            seen, sess = {sid}, self.sessions.get(sid)
+            while sess is not None and sess.continued_in and sess.continued_in not in seen \
+                    and len(seen) <= CONTINUE_HOPS:
+                nxt = sess.continued_in
+                seen.add(nxt)
+                if nxt not in out and nxt not in session_ids:
+                    out.append(nxt)
+                sess = self.sessions.get(nxt)
+        return out
+
     # -- the model ------------------------------------------------------------------
 
     def collect(self, snapshot: dict | None, open_qs: list | None) -> Swarm:

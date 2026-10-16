@@ -404,3 +404,52 @@ def test_one_machine_never_syncs_twice_at_once(monkeypatch, tmp_path):
     [t.start() for t in ts]
     [t.join() for t in ts]
     assert peak[0] == 1  # one lock per machine around mirror + prune
+
+
+# -- a conversation continued in a new session (#39) ---------------------------------------
+
+OLD, NEW = "77777777-7777-4777-8777-777777777777", "88888888-8888-4888-8888-888888888888"
+
+
+def test_a_remote_continuation_is_mirrored_and_followed_in_one_refresh(monkeypatch, tmp_path):
+    """herdr on the machine still names the old session; its mirrored transcript ends with
+    continued-in (then bookkeeping records, as captured), so the new session is mirrored too
+    and the orchestrator shows it, in the same refresh."""
+    monkeypatch.setenv("HERDR_PLUGIN_STATE_DIR", str(tmp_path / "state"))
+    src = tmp_path / "remote" / "proj"
+    src.mkdir(parents=True)
+    (src / f"{OLD}.jsonl").write_text(
+        f'{{"type":"ai-title","aiTitle":"work","sessionId":"{OLD}"}}\n'
+        f'{{"type":"continued-in","timestamp":"2026-10-16T18:41:47.545Z","sessionId":"{OLD}","continuedInSessionId":"{NEW}"}}\n'
+        f'{{"type":"last-prompt","lastPrompt":"x","sessionId":"{OLD}"}}\n'
+        f'{{"type":"cost-state","sessionId":"{OLD}","totalCostUSD":1.0}}\n')
+    (src / f"{NEW}.jsonl").write_text(f'{{"type":"ai-title","aiTitle":"work, continued","sessionId":"{NEW}"}}\n')
+    synced = []
+
+    def sync(m, sessions):
+        synced.append(sorted(sessions))
+        dest = machines.mirror_root(m)
+        dest.mkdir(parents=True, exist_ok=True)
+        return machines.mirror(f"{tmp_path / 'remote'}/", dest, sessions)
+    snap = {"tabs": [{"tab_id": "w1:t1", "workspace_id": "w1"}],
+            "agents": [{"pane_id": "w1:p1", "tab_id": "w1:t1", "workspace_id": "w1", "agent": "claude",
+                        "agent_session": {"kind": "id", "value": OLD}}]}
+    monkeypatch.setattr(machines, "remote_snapshot", lambda m: (snap, None))
+    monkeypatch.setattr(machines, "sync", sync)
+    w = machines.Watcher(M)
+    w.refresh()
+    o = w.result.swarm.orchestrators[0]
+    assert o.session_id == NEW and o.tab_label == "work, continued"
+    assert synced == [[OLD], sorted([OLD, NEW])]
+    w.refresh()  # known now: one sync with both
+    assert synced[-1] == sorted([OLD, NEW]) and len(synced) == 3
+
+
+def test_prune_keeps_a_continuation_while_its_old_session_is_named(tmp_path):
+    dest = tmp_path / "mirror"
+    (dest / "proj").mkdir(parents=True)
+    for sid in (OLD, NEW):
+        (dest / "proj" / f"{sid}.jsonl").write_text("x\n")
+    machines.prune(dest, [OLD, NEW], keep_seconds=60, now=1000.0)
+    machines.prune(dest, [OLD, NEW], keep_seconds=60, now=5000.0)  # still named through the old one
+    assert (dest / "proj" / f"{NEW}.jsonl").exists()
