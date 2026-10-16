@@ -1262,9 +1262,12 @@ tile in its off phase.
     as herdr layers it: the built-in theme (`[theme] name`, default catppuccin; with
     `auto_switch` its `dark_name`, since panorama's colours are dark), `[theme.custom]`,
     then `[theme.custom.dark]` with `auto_switch`. Re-read when the file changes. The
-    built-in themes' six tokens are panorama's own table (`theme.py`), from each theme's
-    public palette; `theme.panel_colors` is the one place that turns them into the panel's
-    colours. The `terminal` theme (the host's ANSI palette, which panorama cannot read) and
+    built-in themes' six tokens are panorama's own table (`theme.py`) of herdr 0.9.3's own
+    values, measured per token (an isolated herdr per theme with a client attached, each
+    token overridden by a sentinel colour in turn); three that could not be separated are
+    guesses from the public palettes (`theme.UNVERIFIED`), and catppuccin's `panel_bg` is the
+    design's `#1e1e2e` where herdr draws `#181825` (the operator's call, pending).
+    `theme.panel_colors` is the one place that turns them into the panel's colours. The `terminal` theme (the host's ANSI palette, which panorama cannot read) and
     a `reset` background fall back to panorama's own colours, `#171a1f` focused.
   - Panorama's status colours stay its own; theming them is a possible follow-up.
   - Golden: `tests/test_focus_theme.py` against `tests/fixtures/design_10.json` (the

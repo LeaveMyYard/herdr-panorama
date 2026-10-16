@@ -140,14 +140,26 @@ async def test_the_view_follows_the_terminals_focus_in_and_out(fake_herdr):
         assert wide.view.panel is None and wide.grid.screen_data.c[44][100].bg in (None, render.BG)
 
 
-def test_the_table_uses_what_herdr_draws_where_it_differs_from_the_palettes():
-    """Review of #19: checked against herdr 0.9.3's own output (an isolated herdr per theme, a
-    client attached). These are herdr's colours, not the public palettes' near ones."""
+def test_the_table_is_herdrs_measured_values():
+    """Review of #19: herdr 0.9.3's own values, measured per token (sentinel overrides), for
+    the entries the palettes had wrong; the three unseparable ones are marked unverified."""
     assert theme.HERDR_VERSION == "0.9.3"
-    measured = {("tokyo-night", "overlay1"): "#697196", ("nord", "overlay1"): "#646e82",
-                ("one-dark", "subtext0"): "#969ca8", ("one-dark", "overlay1"): "#737a87",
-                ("one-light", "overlay1"): "#686b77", ("dracula", "subtext0"): "#d2d2dc",
-                ("dracula", "overlay0"): "#828cb4", ("kanagawa", "subtext0"): "#c8c3aa",
-                ("kanagawa", "overlay0"): "#87867d", ("rose-pine-dawn", "text"): "#464261",
-                ("vesper", "overlay1"): "#7e7e7e", ("vesper", "overlay0"): "#5c5c5c"}
-    assert {k: theme.THEMES[k[0]][k[1]] for k in measured} == measured
+    measured = {
+        "tokyo-night": {"active_row_bg": "#232636"}, "tokyo-night-day": {"overlay0": "#8990b3"},
+        "dracula": {"active_row_bg": "#373c52", "subtext0": "#d2d2dc", "overlay1": "#828cb4", "overlay0": "#6272a4"},
+        "nord": {"active_row_bg": "#434c5e", "overlay1": "#646e82"},
+        "gruvbox": {"active_row_bg": "#323130", "overlay1": "#a89984", "overlay0": "#928374"},
+        "gruvbox-light": {"overlay1": "#7c6f64", "overlay0": "#928374"},
+        "one-dark": {"active_row_bg": "#313640", "subtext0": "#969ca8", "overlay1": "#737a87"},
+        "one-light": {"active_row_bg": "#d8dbe2"}, "solarized": {"active_row_bg": "#164b57"},
+        "solarized-light": {"text": "#657b83", "subtext0": "#839496", "overlay1": "#586e75"},
+        "kanagawa": {"subtext0": "#c8c3aa", "overlay1": "#87867d", "overlay0": "#727169"},
+        "kanagawa-lotus": {"subtext0": "#43436c"},
+        "rose-pine": {"subtext0": "#c8c5dc", "overlay1": "#908caa", "overlay0": "#6e6a86"},
+        "rose-pine-dawn": {"active_row_bg": "#e3d9cf", "text": "#464261", "overlay0": "#9893a5"},
+        "vesper": {"panel_bg": "#1a1a1a", "overlay1": "#7e7e7e", "overlay0": "#5c5c5c"},
+    }
+    got = {name: {k: theme.THEMES[name][k] for k in toks} for name, toks in measured.items()}
+    assert got == measured
+    assert theme.UNVERIFIED == {("one-light", "subtext0"), ("kanagawa-lotus", "active_row_bg"),
+                                ("rose-pine", "active_row_bg")}
