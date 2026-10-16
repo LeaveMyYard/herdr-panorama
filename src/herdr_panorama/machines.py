@@ -51,7 +51,7 @@ _locks_guard = threading.Lock()
 def valid_session(sid: str) -> bool:
     """A Claude Code session id: a UUID. Anything else never becomes an rsync rule or a
     path to delete (it could be empty, ``..`` or carry a separator)."""
-    return bool(_SESSION.match(sid or ""))
+    return isinstance(sid, str) and bool(_SESSION.fullmatch(sid))  # the whole string (no trailing newline)
 
 
 def machine_lock(machine_id: str) -> threading.Lock:

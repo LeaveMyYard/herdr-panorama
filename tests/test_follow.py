@@ -321,9 +321,6 @@ def test_r12_m1_a_switch_in_the_swap_window_gets_focus_sent_back(herdr, monkeypa
         fl.record({"type": "pane_focused", "pane_id": source, "workspace_id": "w1"})
         return err
     monkeypatch.setattr(cockpit.herdr, "swap_panes", swap)
-    # the wait ends as soon as that event arrives: a long bound only takes the runner's speed
-    # out of it (#18); without the wait the event is never seen
-    monkeypatch.setattr(cockpit, "SYNC_SECONDS", 10.0)
     cockpit.follow(h.pane_id, fl)
     assert sockets(herdr, "pane.focus") == [{"pane_id": b}]
     assert focus_of(herdr) == b  # where they went, not back on billing
@@ -513,6 +510,10 @@ def test_r12f_l2_a_switch_reported_late_still_gets_focus_sent_back(herdr, monkey
         threading.Timer(0.2, fl.record, args=({"type": "pane_focused", "pane_id": b},)).start()
         return err
     monkeypatch.setattr(cockpit.herdr, "swap_panes", swap)
+    # the event comes 0.2 s after the swap, and nothing ends the wait early here (no swap event:
+    # the normal case), so it runs to its bound: 1.5 s instead of 0.3 s leaves a slow runner
+    # 1.3 s rather than 0.1 s (#18, #9); with the wait a no-op the event is never seen
+    monkeypatch.setattr(cockpit, "SYNC_SECONDS", 1.5)
     cockpit.follow(h.pane_id, fl)
     assert sockets(herdr, "pane.focus") == [{"pane_id": b}]
 

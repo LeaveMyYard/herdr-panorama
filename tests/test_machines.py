@@ -360,7 +360,8 @@ def test_prune_never_touches_live_sessions_or_leaves_the_project(tmp_path):
 
 def test_malformed_session_ids_never_reach_rsync_or_prune():
     assert machines.valid_session("11111111-2222-3333-4444-555555555555")
-    for bad in ("", ".", "..", "../x", "a b", "-" * 8, "x" * 100, "zzzzzzzz-zzzz"):
+    for bad in ("", ".", "..", "../x", "a b", "-" * 8, "x" * 100, "zzzzzzzz-zzzz",
+                "11111111-2222-3333-4444-555555555555\n", None):  # the whole string, like discovery.is_uuid
         assert not machines.valid_session(bad)
     rules = machines._rules(["", "..", "../etc", SID], "jsonl")
     assert all(SID in r for r in rules if r.startswith("--include=*/") and r != "--include=*/")
