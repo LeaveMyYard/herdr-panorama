@@ -17,11 +17,11 @@ GLYPH = {Q: "○", RUN: "⠋", REV: "»", WAIT: "?", BLK: "!", DONE: "✓", FAIL
 LABEL = {Q: "queued", RUN: "running", REV: "reviewing", WAIT: "needs answer", BLK: "blocked",
          DONE: "done", FAIL: "failed", CXL: "cancelled", INF: "done?", LOST: "lost"}
 ORDER = [FAIL, BLK, WAIT, REV, RUN, Q, LOST, INF, DONE, CXL]  # most urgent first
-# The running spinner: a braille arc turning a quarter per frame (top-left, top-right, bottom-right,
-# bottom-left), the old ◐◓◑◒ rhythm. Braille is drawn cell-exact by terminals (ghostty's own sprites);
+# The running spinner: the 10-frame braille dots cycle, one frame per 250 ms (the operator's pick over
+# a 4-frame quarter turn). Braille is drawn cell-exact by terminals (ghostty's own sprites);
 # the half circles came from a fallback font, wider than a cell, and overlapped (the operator's report).
 # This table and GLYPH are the one place glyphs are chosen (the design's swarm-tui.js SPIN / GL match).
-SPIN = "⠋⠹⠼⠧"
+SPIN = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"  # its length is the cycle: animation timing reads len(SPIN)
 
 
 def live(status: str) -> bool:

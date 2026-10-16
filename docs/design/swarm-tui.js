@@ -21,7 +21,7 @@ export const TH = {
 const GL = { q: '○', run: '⠋', rev: '»', wait: '?', blk: '!', done: '✓', fail: '✗', cxl: '-' };
 const LBL = { q: 'queued', run: 'running', rev: 'reviewing', wait: 'needs answer', blk: 'blocked', done: 'done', fail: 'failed', cxl: 'cancelled' };
 const ORDER = ['fail', 'blk', 'wait', 'rev', 'run', 'q', 'done', 'cxl'];
-const SPIN = ['⠋', '⠹', '⠼', '⠧'];
+const SPIN = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
 // Flavours: vocabulary comes from data, never from the renderer.
 const FL = {
@@ -125,7 +125,7 @@ const curIdx = t => { const i = t.ph.findIndex(p => p[1] === 'n' || p[1] === 'f'
 const roleL = (t, r) => FL[t.or.fl].roles[r] || r;
 const nq = l => l.reduce((s, a) => s + (a.st === 'wait' ? (a.q || 1) : 0), 0);
 let FR = 0; const setFrame = f => { FR = f; };
-const glyph = a => a.st === 'run' ? SPIN[(a._n + FR) % 4] : GL[a.st];
+const glyph = a => a.st === 'run' ? SPIN[(a._n + FR) % SPIN.length] : GL[a.st];
 const lastPh = a => a.phs[a.phs.length - 1];
 
 class Scr {

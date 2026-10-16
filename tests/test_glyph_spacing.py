@@ -11,7 +11,7 @@ from .demo import NOW, demo_swarm
 from .design_deep import NOW as DNOW, TID, deep_swarm
 from .design_dock import design_swarm
 
-GLYPHS = set("⠋⠼⠧⠹○✓✗")
+GLYPHS = set("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏○✓✗")
 
 
 def adjacent(scr):
@@ -49,7 +49,7 @@ def test_the_docked_rows_space_their_glyphs():
     text = render.render(sw, render.View(orch="w1:p3", dock=True), 46, 45).text()
     row = next(r for r in text.split("\n") if "3 active · 5 agents" in r)
     glyphs = row.split("  3 active")[0].strip(" ▌")
-    assert glyphs == "? ⠋ ⠧ ✓"  # was "?⠋⠧✓"
+    assert glyphs == "? ⠇ ⠙ ✓"  # was "?⠇⠙✓"
 
 
 def many_threads(n):
@@ -84,7 +84,7 @@ def test_no_half_circle_glyphs_anywhere(name, scr):
     assert not any(c.ch in "◐◑◒◓" for row in scr.c for c in row)
 
 
-def test_the_spinner_is_a_braille_quarter_turn():
+def test_the_spinner_is_the_ten_frame_braille_cycle():
     from herdr_panorama.model import GLYPH, RUN, SPIN
-    assert SPIN == "⠋⠹⠼⠧" and GLYPH[RUN] == SPIN[0]
+    assert SPIN == "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏" and GLYPH[RUN] == SPIN[0]
     assert all(0x2800 <= ord(ch) <= 0x28FF for ch in SPIN)

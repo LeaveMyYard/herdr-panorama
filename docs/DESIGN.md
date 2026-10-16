@@ -70,7 +70,7 @@ optional event files the orchestrators write.
   (spawning agent id for nested agents), `depth`, `resumes`.
 
 Agent `status` uses the design's eight codes: `q` queued ○, `run` running ⠋
-(spinner ⠋⠹⠼⠧), `rev` reviewing », `wait` needs answer ?, `blk` blocked !,
+(spinner ⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏), `rev` reviewing », `wait` needs answer ?, `blk` blocked !,
 `fail` failed ✗, `done` ✓, `cxl` cancelled -. Amber is reserved for `wait` and
 `blk`, red for `fail`.
 
