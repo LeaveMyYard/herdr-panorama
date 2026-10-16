@@ -62,7 +62,7 @@ orchestrators running on those machines next to the local ones, in the same view
      `machine` the label for display). Its herdr ids are namespaced by the machine's
      **id** (`<id>:w1:p2`), because ids are per server and labels can repeat or contain `:`.
 - **Merging.** The view adds every machine's latest result after the local orchestrators,
-  one machine after another. Problems show in the header's `stale` chip:
+  one machine after another. Problems show in the header's `refresh failed` chip:
   - **unreachable:** a machine that has never answered, with its error;
   - **stale:** a machine whose last good result is older than 30 s, or whose last refresh
     failed; it keeps that last result on screen.
@@ -91,3 +91,7 @@ orchestrators running on those machines next to the local ones, in the same view
 - A transcript rewritten shorter on the remote keeps its old mirrored copy until it grows
   past it; transcripts are append-only in practice.
 - `CLAUDE_CONFIG_DIR` on the remote is not honoured: the mirror reads `~/.claude/projects`.
+
+Background work on another machine (design turn 8, "waiting") is judged from its transcripts
+alone: its processes are not checked, so an open background task counts for at most 24 hours
+after it started (`BG_CAP`).

@@ -19,6 +19,13 @@ wire format is captured, never invented. Regenerate on a machine with real
 transcripts:
 
     uv run python tests/fixtures/capture.py ~/.claude/projects > tests/fixtures/templates.json
+    # or add only the kinds a new feature needs, keeping every existing template as it is:
+    uv run python tests/fixtures/capture.py ~/.claude/projects tests/fixtures/templates.json > new.json
+
+The background-work kinds (design turn 8: background Bash and its timed-out variant, Monitor,
+TaskStop, the orphan-summary notice, Monitor events and expiry) were added that way. In a
+notice only the tag skeleton is kept, except the values the parser keys on: the
+`__orphan_summary__` marker id and the `[Monitor expired` event prefix.
     herdr api snapshot | uv run python tests/fixtures/capture.py --snapshot > tests/fixtures/herdr_snapshot.json
 
 Design references (not wire formats), both captured from the design's own code in
@@ -29,4 +36,6 @@ Design references (not wire formats), both captured from the design's own code i
 - `design_9.json`: the design's render of the docked panel 9e (`render-9.mjs`, eight frames,
   plain and with turn 6's unseen marks) and its dataset, as runs of `[text, fg, bg, bold]` per
   row; the golden for `tests/test_tiles.py`.
+- `design_8.json`: turn 8 (waiting and stale, `swarm-states.js` via `render-8.mjs`): its added data
+  and frames 0, 4, 7, 12 of the 2a graphs and the 3a panel; the golden for `tests/test_states.py`.
 Regenerate with `uv run python tests/fixtures/capture_design.py` (needs node).

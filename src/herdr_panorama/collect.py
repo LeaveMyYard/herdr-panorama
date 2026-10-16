@@ -12,11 +12,13 @@ import os
 import re
 import time
 
-from . import config, events, threads
-from .model import BLK, CXL, DONE, FAIL, INF, LOST, REV, RUN, WAIT, Agent, Orchestrator, Phase, Swarm, Thread, live
+from . import bgproc, config, events, herdr, threads
+from .model import (BG, BLK, CXL, DONE, FAIL, INF, LOST, REV, RUN, WAIT, Agent, BgTask, Orchestrator, Phase, Swarm,
+                    Thread, live)
 from .scan import discovery
-from .scan.session import MAIN, Session
+from .scan.session import MAIN, BgLaunch, Session
 
+NO_PID_RETRY = 30.0  # seconds before asking herdr again for a pane's Claude process
 QUIET_AFTER = 30 * 60  # a running agent silent this long reads "quiet 42m"
 INBOX_MARK = re.compile(r"^(?:❓\d+\s+)+")  # herdr-inbox's tab-label prefix; the card shows ?N itself
 
@@ -62,12 +64,19 @@ def _paragraph(text: str, limit: int = 400) -> str:
 
 
 class Collector:
-    def __init__(self, root: str | None = None, now=time.time, done_window: float | None = None):
-        """``done_window`` fixed for tests; by default it follows the plugin config (re-read per collect)."""
+    def __init__(self, root: str | None = None, now=time.time, done_window: float | None = None,
+                 procs: bool = True, pane_pid=herdr.claude_pid, stale_after: float | None = None):
+        """``done_window`` / ``stale_after`` fixed for tests; by default they follow the plugin
+        config (re-read per collect). ``procs``: background tasks can be checked against this
+        machine's processes (False for another machine's mirrored transcripts)."""
         self.root = root or discovery.projects_root()
         self.now = now
         self.fixed_window = done_window
         self.window = done_window if done_window is not None else config.done_window()
+        self.fixed_stale = stale_after
+        self.procs, self.pane_pid = procs, pane_pid
+        self._pids: dict[str, tuple[int, str | None]] = {}  # pane -> its Claude process (pid, start)
+        self._no_pid: dict[str, float] = {}  # pane -> when herdr last could not name its Claude process
         self.sessions: dict[str, Session] = {}
         self.channels: dict[str, events.Channel] = {}
         self.self_pane: str | None = None  # the view's own pane (cockpit: which agent it is docked by)
@@ -88,7 +97,8 @@ class Collector:
         now = self.now()
         if self.fixed_window is None:
             self.window = config.done_window()
-        swarm = Swarm(generated_at=now, herdr_ok=snapshot is not None, inbox_ok=open_qs is not None)
+        swarm = Swarm(generated_at=now, herdr_ok=snapshot is not None, inbox_ok=open_qs is not None,
+                      stale_after=self.fixed_stale if self.fixed_stale is not None else config.stale_after())
         if not snapshot:
             return swarm
         tabs = {t.get("tab_id"): t for t in snapshot.get("tabs") or [] if isinstance(t, dict)}
@@ -137,6 +147,9 @@ class Collector:
         if sess is None:
             return orch
         orch.transcript = sess.root
+        sess.bg_alive = self._bg_alive(orch.pane_id)
+        orch.bg = bg_tasks(sess, sess.waiting_bg(MAIN, now))
+        orch.last_activity = sess.last_activity()
         main_file = sess.files.get(sess.root)
         if orch.herdr_status == "blocked" and main_file is not None:
             orch.pending = pending_prompt(main_file.info.pending)
@@ -147,6 +160,37 @@ class Collector:
         if card is not None:
             orch.threads.insert(0, card)
         return orch
+
+    # -- background work --------------------------------------------------------------
+
+    def _bg_alive(self, pane_id: str):
+        """A ``Session.bg_alive`` for the pane's session: a background Bash is alive while a
+        descendant of the pane's Claude process holds its output file (bgproc.py). The
+        process tree is read at most once per collect, and only when a task is open."""
+        cache: dict = {}
+
+        def alive(launch: BgLaunch) -> bool | None:
+            if not self.procs or launch.kind != "Bash":
+                return None  # a Monitor's process is not visible this way: its timeout decides
+            if "tasks" not in cache:
+                cache["tasks"] = self._live_tasks(pane_id)
+            tasks = cache["tasks"]
+            return None if tasks is None else launch.task in tasks
+        return alive
+
+    def _live_tasks(self, pane_id: str) -> set[str] | None:
+        pid, start = self._pids.get(pane_id, (None, None))
+        if pid is None or bgproc.start_token(pid) != start:
+            if self._no_pid.get(pane_id, float("-inf")) > self.now() - NO_PID_RETRY:
+                return None  # herdr could not name it a moment ago: do not ask on every collect
+            pid = self.pane_pid(pane_id)
+            if pid is None:
+                self._pids.pop(pane_id, None)
+                self._no_pid[pane_id] = self.now()
+                return None
+            start = bgproc.start_token(pid)
+            self._pids[pane_id] = (pid, start)
+        return bgproc.live_tasks(pid)
 
     # -- agents ---------------------------------------------------------------------
 
@@ -173,7 +217,9 @@ class Collector:
         instead (``old`` None: build it anyway)."""
         f = sess.file_of(aid)
         status, ended, inferred = sess.status_of(aid, now)
-        if status == DONE and inferred:
+        if status == "bg":
+            status = BG
+        elif status == DONE and inferred:
             status = INF  # never shown as a confirmed done (issue #2)
         elif status == "lost":
             status = LOST
@@ -204,6 +250,10 @@ class Collector:
         ag.questions = [qtext[q] for q in ag.question_ids]
         if status == FAIL:
             ag.error = (ag.last_message or "failed").splitlines()[0][:200]
+        if status == BG:
+            ag.bg = bg_tasks(sess, sess.waiting_bg(aid, now))
+            n = len(ag.bg)
+            ag.activity = f"turn ended · {n} task{'s' if n != 1 else ''} in background"
         if live(status) and ag.question_ids:
             ag.status = WAIT
         run = rec.file.workflow if rec.file else None
@@ -211,7 +261,7 @@ class Collector:
         ag.role = threads.role_of(label, ag.description, fallback=ag.agent_type)
         if ag.status == RUN and ag.role == "reviewer":
             ag.status = REV
-        if live(ag.status) and last and now - last > QUIET_AFTER:
+        if live(ag.status) and ag.status != BG and last and now - last > QUIET_AFTER:
             ag.activity = f"quiet {dur(now - last)}" + (f" · {ag.activity}" if ag.activity else "")
         out[aid] = ag
 
@@ -275,6 +325,10 @@ class Collector:
                 continue
             kept.append(t)
         return threads.sort_threads(kept), hidden
+
+
+def bg_tasks(sess: Session, launches: list[BgLaunch]) -> list[BgTask]:
+    return [BgTask(x.task, x.kind, sess.bg_description(x), x.ts) for x in launches]
 
 
 def agent_spans(sess: Session, a: Agent) -> list[tuple[float | None, float | None, str]]:

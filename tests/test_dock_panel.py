@@ -242,7 +242,7 @@ async def test_r11_a_refresh_that_docks_the_view_rearms_the_keys(fake_herdr):
 
 # -- the width herdr actually gives the pane (review: clipped "workin", "pfx+spc bac") ----
 
-STATES = ("failed", "blocked", "working", "waiting", "idle", "done")
+STATES = ("failed", "blocked", "working", "needs you", "waiting", "stale", "idle", "done")
 
 
 @pytest.mark.parametrize("w", [36, 40, 44, 46, 50, 60])

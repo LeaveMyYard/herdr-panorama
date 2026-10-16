@@ -231,3 +231,42 @@ import('./swarm-wide.js').then(m => {
                     "--window-size=2400,1580", f"--screenshot={OUT / 'wide-design.png'}", html.as_uri()],
                    check=True, capture_output=True, timeout=60)
     html.unlink()
+
+
+async def test_states_shots(fake_herdr):
+    """Waiting and stale (design turn 8) on the design's dataset, next to the design's render:
+    docs/screenshots/states-{2a,agent,3a}-app.png and states-design.png."""
+    from .test_states import NOW as SNOW
+    from .test_states import states_swarm
+    for name, size, px, cockpit_on, sel in (
+            ("states-2a-app", (160, 56), 2000, False, ("w1:p5", "bg:w1:p5", None)),
+            ("states-agent-app", (160, 56), 2000, False, ("w1:p4", "p214", "n1")),
+            ("states-3a-app", (46, 56), 600, True, ("w1:p5", None, None))):
+        def source():
+            sw = states_swarm()
+            sw.generated_at = SNOW
+            if not cockpit_on:
+                sw.docked = None
+            return sw
+        app = SwarmApp(source=source, live_refresh=False, clock=lambda: SNOW, focus_pane=sel[0],
+                       home_mode=True, cockpit_mode=cockpit_on)
+        async with app.run_test(size=size) as pilot:
+            for _ in range(50):
+                await pilot.pause(0.02)
+                if app.loaded:
+                    break
+            v = app.view
+            v.orch, v.thread, v.agent, v.focus = sel[0], sel[1], sel[2], 0 if cockpit_on else 2
+            if cockpit_on:
+                v.hover = ("orch", ("w1:p7",))
+            app.repaint()
+            await pilot.pause()
+            shot(app, name, px)
+    design = Path(__file__).resolve().parent.parent / "docs" / "design"
+    html = OUT / "states-design.html"
+    html.write_text(subprocess.run(["node", "render-8.mjs", "html"], cwd=design, capture_output=True,
+                                   text=True, check=True).stdout)
+    subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--no-sandbox", "--hide-scrollbars",
+                    "--window-size=2700,1920", f"--screenshot={OUT / 'states-design.png'}", html.as_uri()],
+                   check=True, capture_output=True, timeout=60)
+    html.unlink()

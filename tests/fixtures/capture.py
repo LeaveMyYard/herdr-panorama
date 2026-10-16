@@ -26,10 +26,12 @@ KEEP_STR = {"type", "role", "agentType", "isFork", "operation", "subtype", "user
             "decision", "source", "reasonType", "taskType", "effort", "perTurnEffort", "service_tier",
             "promptSource", "turnOrigin", "turnPosition", "inference_geo"}
 TOOL_NAMES = {"Agent", "Task", "SendMessage", "Workflow", "AskUserQuestion", "Bash", "Read", "SubagentHandback",
-              "StructuredOutput", "mcp__plugin_herdr-inbox_herdr-inbox__ask_operator"}
+              "StructuredOutput", "mcp__plugin_herdr-inbox_herdr-inbox__ask_operator", "Monitor", "TaskStop", "KillShell"}
 UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 TS = re.compile(r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?Z$")
-NOTE_TAGS = re.compile(r"<(task-id|tool-use-id|output-file|status|summary|note|result|usage|subagent_tokens|tool_uses|duration_ms)>")
+NOTE_TAGS = re.compile(r"<(task-id|tool-use-id|output-file|status|summary|note|result|usage|subagent_tokens|tool_uses|duration_ms|event)>")
+# notice values the parser keys on: Claude Code's marker id for orphaned tasks, a Monitor's expiry event
+KEEP_NOTE = {"task-id": ("__orphan_summary__",), "event": ("[Monitor expired",)}
 
 
 ID_KEY = re.compile(r"^(toolu_|call_)|^[0-9a-f]{8}-[0-9a-f]{4}-|^a?[0-9a-f]{16,}$")
@@ -73,8 +75,13 @@ def anon(value, key: str | None = None, parent: dict | None = None):
     if s.startswith("toolu_"):
         return "toolu_TEMPLATE"
     if s.lstrip().startswith("<task-notification>"):
-        tags = NOTE_TAGS.findall(s)
-        return "<task-notification>" + "".join(f"<{t}>…</{t}>" for t in tags) + "</task-notification>"
+        out = []
+        for m in NOTE_TAGS.finditer(s):  # each tag in order; its value only where the parser keys on it
+            t = m.group(1)
+            value = s[m.end(): s.find(f"</{t}>", m.end())]
+            keep = next((k for k in KEEP_NOTE.get(t, ()) if value.startswith(k)), "")
+            out.append(f"<{t}>{keep}…</{t}>")
+        return "<task-notification>" + "".join(out) + "</task-notification>"
     return "" if s else s
 
 
@@ -109,6 +116,7 @@ def tur(rec, key, val=None):
 
 def main() -> None:
     root = sys.argv[1]
+    merge = sys.argv[2] if len(sys.argv) > 2 else None  # an existing templates.json: keep its entries, add new kinds
     mains = sorted(glob.glob(os.path.join(root, "*", "*.jsonl")), key=os.path.getsize, reverse=True)[:40]
     subs = sorted(glob.glob(os.path.join(root, "*", "*", "subagents", "agent-*.jsonl")), key=os.path.getsize)[:400]
     wf_journals = glob.glob(os.path.join(root, "*", "*", "subagents", "workflows", "*", "journal.jsonl"))
@@ -139,6 +147,22 @@ def main() -> None:
         and str(r.get("content", "")).startswith("<task-notification>"),
         "attachment_queued_command": lambda r: r.get("type") == "attachment" and (r.get("attachment") or {}).get("type") == "queued_command"
         and str(r["attachment"].get("prompt", "")).startswith("<task-notification>"),
+        # background work (design turn 8)
+        "assistant_bash_background": lambda r: r.get("type") == "assistant" and any(
+            (b.get("input") or {}).get("run_in_background") is True for b in blocks(r, "tool_use", "Bash")),
+        "result_bash_background": lambda r: r.get("type") == "user" and tur(r, "backgroundTaskId") and not tur(r, "timedOutAfterMs"),
+        "result_bash_timed_out_background": lambda r: r.get("type") == "user" and tur(r, "backgroundTaskId") and tur(r, "timedOutAfterMs"),
+        "assistant_monitor": lambda r: r.get("type") == "assistant" and bool(blocks(r, "tool_use", "Monitor")),
+        "result_monitor": lambda r: r.get("type") == "user" and tur(r, "taskId") and tur(r, "timeoutMs"),
+        "assistant_taskstop": lambda r: r.get("type") == "assistant" and bool(blocks(r, "tool_use", "TaskStop")),
+        "result_taskstop": lambda r: r.get("type") == "user" and tur(r, "task_type") and tur(r, "task_id"),
+        "queue_enqueue_orphan_notice": lambda r: r.get("type") == "queue-operation" and r.get("operation") == "enqueue"
+        and "__orphan_summary__" in str(r.get("content", "")),
+        "queue_enqueue_monitor_event": lambda r: r.get("type") == "queue-operation" and r.get("operation") == "enqueue"
+        and "<event>" in str(r.get("content", "")) and "<status>" not in str(r.get("content", ""))
+        and "[Monitor expired" not in str(r.get("content", "")),
+        "queue_enqueue_monitor_expired": lambda r: r.get("type") == "queue-operation" and r.get("operation") == "enqueue"
+        and "[Monitor expired" in str(r.get("content", "")),
     }
     out: dict = {}
     for kind, pred in preds.items():
@@ -157,6 +181,7 @@ def main() -> None:
         "sub_result_agent_async": lambda r: r.get("type") == "user" and tur(r, "status", "async_launched") and r.get("agentId"),
         "sub_attachment_queued_command": lambda r: r.get("type") == "attachment" and (r.get("attachment") or {}).get("type") == "queued_command"
         and str(r["attachment"].get("prompt", "")).startswith("<task-notification>") and r.get("agentId"),
+        "sub_result_bash_background": lambda r: r.get("type") == "user" and tur(r, "backgroundTaskId") and r.get("agentId"),
     }
     for kind, pred in sub_preds.items():
         for path in subs:
@@ -193,6 +218,9 @@ def main() -> None:
                                    [p for p in data.get("workflowProgress", []) if p.get("type") == "workflow_agent"][:1]
         data["script"] = ""
         out["workflow_summary"] = anon(data)
+    if merge:
+        old = json.load(open(merge))
+        out = {**old, **{k: v for k, v in out.items() if k not in old}}
     print(json.dumps(out, indent=1))  # real key order is part of the wire format
 
 
@@ -212,6 +240,9 @@ def capture_snapshot() -> None:
             return v
         return ""
     out = {"id": data.get("id"), "result": {"snapshot": scrub(snap), "type": data["result"].get("type")}}
+    if merge:
+        old = json.load(open(merge))
+        out = {**old, **{k: v for k, v in out.items() if k not in old}}
     print(json.dumps(out, indent=1))  # real key order is part of the wire format
 
 

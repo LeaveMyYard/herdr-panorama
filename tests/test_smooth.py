@@ -16,6 +16,8 @@ from .demo import demo_swarm
 from .design_deep import deep_swarm
 from .design_dock import FIX, design_swarm
 from .test_tui import loaded, make_app
+from .test_states import NOW as STATES_NOW
+from .test_states import states_swarm
 from .test_unseen import MARKS, cells, grid
 
 NINE = json.loads((FIX / "design_9.json").read_text())
@@ -41,6 +43,12 @@ def layouts():
         ("5d", deep_swarm, {"orch": "w1:p1", "focus": 2, "unseen": {"b1": "fail"}}, 160),
         ("demo 2a", demo_swarm, {"orch": "w1:p2", "thread": "wf:wf_search", "agent": "j1a2b3c", "focus": 2}, 160),
         ("demo narrow", demo_swarm, {"orch": "w1:p1", "focus": 1}, 70),
+        # turn 8: the waiting clock is an Anim on the restyle path too (2a: the background card, a
+        # waiting agent; 9e: the docked entry's background tiles)
+        ("2a waiting", states_swarm, {"orch": "w1:p5", "thread": "bg:w1:p5", "focus": 2, "now": STATES_NOW}, 160),
+        ("2a waiting agent", states_swarm, {"orch": "w1:p4", "thread": "p214", "agent": "n1", "focus": 2,
+                                            "now": STATES_NOW}, 160),
+        ("9e waiting", states_swarm, {"orch": "w1:p5", "dock": True, "now": STATES_NOW}, 46),
     ]
 
 

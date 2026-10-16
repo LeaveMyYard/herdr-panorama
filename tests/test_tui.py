@@ -332,7 +332,7 @@ async def test_l1_a_failing_collect_keeps_the_last_model_and_says_so(fake_herdr)
         app.refresh_model()
         await pilot.pause(0.3)
         assert "Billing API" in screen_text(app)  # last good model kept
-        assert "stale" in screen_text(app).split("\n")[0]
+        assert "refresh failed" in screen_text(app).split("\n")[0]
 
 
 

@@ -1976,5 +1976,599 @@
   ],
   "totalTokens": 0,
   "totalToolCalls": 230
+ },
+ "assistant_bash_background": {
+  "parentUuid": "00000000-0000-4000-8000-000000000000",
+  "isSidechain": false,
+  "message": {
+   "model": "claude-model",
+   "id": "",
+   "type": "message",
+   "role": "assistant",
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "toolu_TEMPLATE",
+     "name": "Bash",
+     "input": {
+      "command": "",
+      "description": "",
+      "run_in_background": true
+     },
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "container": null,
+   "stop_reason": "tool_use",
+   "stop_sequence": null,
+   "stop_details": null,
+   "usage": {
+    "input_tokens": 0,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 0,
+    "output_tokens_details": {
+     "thinking_tokens": 0
+    },
+    "server_tool_use": {
+     "web_search_requests": 0,
+     "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+     "ephemeral_1h_input_tokens": 0,
+     "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+     {
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cache_creation": {
+       "ephemeral_5m_input_tokens": 0,
+       "ephemeral_1h_input_tokens": 0
+      },
+      "type": "message"
+     }
+    ],
+    "speed": "",
+    "fallback_credit": null
+   },
+   "input_transformations": [],
+   "diagnostics": null,
+   "context_management": null
+  },
+  "wireToolInputs": {
+   "toolu_KEY": {
+    "command": "",
+    "description": "",
+    "run_in_background": true
+   }
+  },
+  "wireIngestContext": {
+   "toolu_KEY": {
+    "cwd": ""
+   }
+  },
+  "serverClassifierRequest": "00000000-0000-4000-8000-000000000000",
+  "apiBlockIndex": 2,
+  "requestId": "",
+  "requestedModel": "claude-model",
+  "type": "assistant",
+  "uuid": "00000000-0000-4000-8000-000000000000",
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "advisorModel": "",
+  "effort": "medium",
+  "perTurnEffort": "medium",
+  "session_id": "00000000-0000-4000-8000-000000000000",
+  "userType": "external",
+  "entrypoint": "cli",
+  "cwd": "",
+  "sessionId": "00000000-0000-4000-8000-000000000000",
+  "version": "",
+  "gitBranch": ""
+ },
+ "result_bash_background": {
+  "parentUuid": "00000000-0000-4000-8000-000000000000",
+  "isSidechain": false,
+  "promptId": "00000000-0000-4000-8000-000000000000",
+  "type": "user",
+  "message": {
+   "role": "user",
+   "content": [
+    {
+     "tool_use_id": "toolu_TEMPLATE",
+     "type": "tool_result",
+     "content": "",
+     "is_error": false
+    }
+   ]
+  },
+  "uuid": "00000000-0000-4000-8000-000000000000",
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "toolUseResult": {
+   "stdout": "",
+   "stderr": "",
+   "interrupted": false,
+   "isImage": false,
+   "noOutputExpected": false,
+   "backgroundTaskId": ""
+  },
+  "serverClassifierContext": {
+   "request": "00000000-0000-4000-8000-000000000000",
+   "context": {
+    "git_state": {
+     "cwd": "",
+     "root": "",
+     "branch": "",
+     "default_branch": "",
+     "status": {
+      "clean": false,
+      "counts": {
+       "staged": 0,
+       "modified": 2,
+       "untracked": null,
+       "untracked_normal": 0
+      },
+      "porcelain": null,
+      "truncated": false
+     },
+     "visibility": {
+      "origin": {
+       "host": "",
+       "remote": "",
+       "visibility": ""
+      },
+      "push_remote": "",
+      "remotes": [
+       {
+        "name": "",
+        "host": "",
+        "remote": "",
+        "visibility": ""
+       }
+      ],
+      "visibility_cache": [
+       {
+        "host": "",
+        "remote": "",
+        "visibility": ""
+       }
+      ]
+     }
+    },
+    "live_cwd": "",
+    "platform": ""
+   }
+  },
+  "sourceToolAssistantUUID": "00000000-0000-4000-8000-000000000000",
+  "permissionDecision": {
+   "decision": "accept",
+   "source": "config",
+   "reasonType": "classifier"
+  },
+  "session_id": "00000000-0000-4000-8000-000000000000",
+  "userType": "external",
+  "entrypoint": "cli",
+  "cwd": "",
+  "sessionId": "00000000-0000-4000-8000-000000000000",
+  "version": "",
+  "gitBranch": ""
+ },
+ "result_bash_timed_out_background": {
+  "parentUuid": "00000000-0000-4000-8000-000000000000",
+  "isSidechain": false,
+  "promptId": "00000000-0000-4000-8000-000000000000",
+  "type": "user",
+  "message": {
+   "role": "user",
+   "content": [
+    {
+     "tool_use_id": "toolu_TEMPLATE",
+     "type": "tool_result",
+     "content": "",
+     "is_error": false
+    }
+   ]
+  },
+  "uuid": "00000000-0000-4000-8000-000000000000",
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "toolUseResult": {
+   "stdout": "",
+   "stderr": "",
+   "interrupted": false,
+   "isImage": false,
+   "noOutputExpected": false,
+   "backgroundTaskId": "",
+   "timedOutAfterMs": 0,
+   "backgroundCwdHint": ""
+  },
+  "serverClassifierContext": {
+   "request": "00000000-0000-4000-8000-000000000000",
+   "context": {
+    "git_state": {
+     "cwd": "",
+     "root": "",
+     "branch": null,
+     "default_branch": null,
+     "status": null,
+     "visibility": {
+      "origin": null,
+      "push_remote": "",
+      "remotes": [],
+      "visibility_cache": [
+       {
+        "host": "",
+        "remote": "",
+        "visibility": ""
+       }
+      ]
+     },
+     "error": ""
+    },
+    "live_cwd": "",
+    "platform": ""
+   }
+  },
+  "sourceToolAssistantUUID": "00000000-0000-4000-8000-000000000000",
+  "session_id": "00000000-0000-4000-8000-000000000000",
+  "userType": "external",
+  "entrypoint": "cli",
+  "cwd": "",
+  "sessionId": "00000000-0000-4000-8000-000000000000",
+  "version": "",
+  "gitBranch": ""
+ },
+ "assistant_monitor": {
+  "parentUuid": "00000000-0000-4000-8000-000000000000",
+  "isSidechain": false,
+  "message": {
+   "model": "claude-model",
+   "id": "",
+   "type": "message",
+   "role": "assistant",
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "toolu_TEMPLATE",
+     "name": "Monitor",
+     "input": {
+      "description": "",
+      "timeout_ms": 0,
+      "command": ""
+     },
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "container": null,
+   "stop_reason": "tool_use",
+   "stop_sequence": null,
+   "stop_details": null,
+   "usage": {
+    "input_tokens": 0,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 0,
+    "output_tokens_details": {
+     "thinking_tokens": 0
+    },
+    "server_tool_use": {
+     "web_search_requests": 0,
+     "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+     "ephemeral_1h_input_tokens": 0,
+     "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+     {
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cache_creation": {
+       "ephemeral_5m_input_tokens": 0,
+       "ephemeral_1h_input_tokens": 0
+      },
+      "type": "message"
+     }
+    ],
+    "speed": ""
+   },
+   "input_transformations": [],
+   "diagnostics": null,
+   "context_management": null
+  },
+  "wireToolInputs": {
+   "toolu_KEY": {
+    "description": "",
+    "timeout_ms": 0,
+    "command": ""
+   }
+  },
+  "serverClassifierRequest": "00000000-0000-4000-8000-000000000000",
+  "apiBlockIndex": 0,
+  "requestId": "",
+  "type": "assistant",
+  "uuid": "00000000-0000-4000-8000-000000000000",
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "advisorModel": "",
+  "effort": "medium",
+  "perTurnEffort": null,
+  "session_id": "00000000-0000-4000-8000-000000000000",
+  "userType": "external",
+  "entrypoint": "cli",
+  "cwd": "",
+  "sessionId": "00000000-0000-4000-8000-000000000000",
+  "version": "",
+  "gitBranch": "",
+  "slug": ""
+ },
+ "result_monitor": {
+  "parentUuid": "00000000-0000-4000-8000-000000000000",
+  "isSidechain": false,
+  "promptId": "00000000-0000-4000-8000-000000000000",
+  "type": "user",
+  "message": {
+   "role": "user",
+   "content": [
+    {
+     "tool_use_id": "toolu_TEMPLATE",
+     "type": "tool_result",
+     "content": ""
+    }
+   ]
+  },
+  "uuid": "00000000-0000-4000-8000-000000000000",
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "toolUseResult": {
+   "taskId": "",
+   "timeoutMs": 0,
+   "persistent": false
+  },
+  "serverClassifierContext": {
+   "request": "00000000-0000-4000-8000-000000000000",
+   "context": {
+    "git_state": {
+     "cwd": "",
+     "root": "",
+     "branch": "",
+     "default_branch": "",
+     "status": {
+      "clean": true,
+      "counts": {
+       "staged": 0,
+       "modified": 0,
+       "untracked": null,
+       "untracked_normal": 0
+      },
+      "porcelain": null,
+      "truncated": false
+     },
+     "visibility": {
+      "origin": {
+       "host": "",
+       "remote": "",
+       "visibility": ""
+      },
+      "push_remote": "",
+      "remotes": [
+       {
+        "name": "",
+        "host": "",
+        "remote": "",
+        "visibility": ""
+       }
+      ],
+      "visibility_cache": [
+       {
+        "host": "",
+        "remote": "",
+        "visibility": ""
+       }
+      ]
+     }
+    },
+    "live_cwd": "",
+    "platform": ""
+   }
+  },
+  "sourceToolAssistantUUID": "00000000-0000-4000-8000-000000000000",
+  "session_id": "00000000-0000-4000-8000-000000000000",
+  "userType": "external",
+  "entrypoint": "cli",
+  "cwd": "",
+  "sessionId": "00000000-0000-4000-8000-000000000000",
+  "version": "",
+  "gitBranch": "",
+  "slug": ""
+ },
+ "assistant_taskstop": {
+  "parentUuid": "00000000-0000-4000-8000-000000000000",
+  "isSidechain": false,
+  "message": {
+   "model": "claude-model",
+   "id": "",
+   "type": "message",
+   "role": "assistant",
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "toolu_TEMPLATE",
+     "name": "TaskStop",
+     "input": {
+      "task_id": ""
+     },
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "container": null,
+   "stop_reason": "tool_use",
+   "stop_sequence": null,
+   "stop_details": null,
+   "usage": {
+    "input_tokens": 0,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 0,
+    "output_tokens_details": {
+     "thinking_tokens": 0
+    },
+    "server_tool_use": {
+     "web_search_requests": 0,
+     "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+     "ephemeral_1h_input_tokens": 0,
+     "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+     {
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cache_creation": {
+       "ephemeral_5m_input_tokens": 0,
+       "ephemeral_1h_input_tokens": 0
+      },
+      "type": "message"
+     }
+    ],
+    "speed": "",
+    "fallback_credit": null
+   },
+   "input_transformations": [],
+   "diagnostics": null,
+   "context_management": null
+  },
+  "wireToolInputs": {
+   "toolu_KEY": {
+    "task_id": ""
+   }
+  },
+  "serverClassifierRequest": "00000000-0000-4000-8000-000000000000",
+  "apiBlockIndex": 0,
+  "requestId": "",
+  "requestedModel": "claude-model",
+  "type": "assistant",
+  "uuid": "00000000-0000-4000-8000-000000000000",
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "advisorModel": "",
+  "effort": "medium",
+  "perTurnEffort": "medium",
+  "session_id": "00000000-0000-4000-8000-000000000000",
+  "userType": "external",
+  "entrypoint": "cli",
+  "cwd": "",
+  "sessionId": "00000000-0000-4000-8000-000000000000",
+  "version": "",
+  "gitBranch": ""
+ },
+ "result_taskstop": {
+  "parentUuid": "00000000-0000-4000-8000-000000000000",
+  "isSidechain": false,
+  "promptId": "00000000-0000-4000-8000-000000000000",
+  "type": "user",
+  "message": {
+   "role": "user",
+   "content": [
+    {
+     "tool_use_id": "toolu_TEMPLATE",
+     "type": "tool_result",
+     "content": ""
+    }
+   ]
+  },
+  "uuid": "00000000-0000-4000-8000-000000000000",
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "toolUseResult": {
+   "message": "",
+   "task_id": "",
+   "task_type": "",
+   "command": ""
+  },
+  "sourceToolAssistantUUID": "00000000-0000-4000-8000-000000000000",
+  "permissionDecision": {
+   "decision": "accept",
+   "source": "config"
+  },
+  "session_id": "00000000-0000-4000-8000-000000000000",
+  "userType": "external",
+  "entrypoint": "cli",
+  "cwd": "",
+  "sessionId": "00000000-0000-4000-8000-000000000000",
+  "version": "",
+  "gitBranch": ""
+ },
+ "queue_enqueue_orphan_notice": {
+  "type": "queue-operation",
+  "operation": "enqueue",
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "sessionId": "00000000-0000-4000-8000-000000000000",
+  "content": "<task-notification><task-id>\u2026</task-id><task-id>\u2026</task-id><task-id>__orphan_summary__\u2026</task-id><status>\u2026</status><summary>\u2026</summary><note>\u2026</note></task-notification>"
+ },
+ "queue_enqueue_monitor_event": {
+  "type": "queue-operation",
+  "operation": "enqueue",
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "sessionId": "00000000-0000-4000-8000-000000000000",
+  "content": "<task-notification><task-id>\u2026</task-id><summary>\u2026</summary><event>\u2026</event></task-notification>"
+ },
+ "queue_enqueue_monitor_expired": {
+  "type": "queue-operation",
+  "operation": "enqueue",
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "sessionId": "00000000-0000-4000-8000-000000000000",
+  "content": "<task-notification><task-id>\u2026</task-id><summary>\u2026</summary><event>[Monitor expired\u2026</event></task-notification>"
+ },
+ "sub_result_bash_background": {
+  "parentUuid": "00000000-0000-4000-8000-000000000000",
+  "isSidechain": true,
+  "promptId": "00000000-0000-4000-8000-000000000000",
+  "agentId": "",
+  "type": "user",
+  "message": {
+   "role": "user",
+   "content": [
+    {
+     "tool_use_id": "toolu_TEMPLATE",
+     "type": "tool_result",
+     "content": "",
+     "is_error": false
+    }
+   ]
+  },
+  "uuid": "00000000-0000-4000-8000-000000000000",
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "toolUseResult": {
+   "stdout": "",
+   "stderr": "",
+   "interrupted": false,
+   "isImage": false,
+   "noOutputExpected": false,
+   "backgroundTaskId": "",
+   "backgroundCwdHint": ""
+  },
+  "sourceToolAssistantUUID": "00000000-0000-4000-8000-000000000000",
+  "userType": "external",
+  "entrypoint": "cli",
+  "cwd": "",
+  "sessionId": "00000000-0000-4000-8000-000000000000",
+  "version": "",
+  "gitBranch": "",
+  "slug": ""
  }
 }

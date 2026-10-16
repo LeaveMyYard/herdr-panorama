@@ -272,6 +272,21 @@ def runs_panorama(pane_id: str) -> bool | None:
     return False
 
 
+def claude_pid(pane_id: str) -> int | None:
+    """The pid of the Claude Code process in the pane's foreground (read-only ``pane
+    process-info``), or None."""
+    from .hooks import is_claude
+    res, _ = call("pane", "process-info", "--pane", pane_id)
+    procs = ((res or {}).get("process_info") or {}).get("foreground_processes")
+    for proc in procs if isinstance(procs, list) else []:
+        if not isinstance(proc, dict) or not isinstance(proc.get("pid"), int):
+            continue
+        argv = [str(a) for a in proc.get("argv") or [] if isinstance(a, (str, int))]
+        if is_claude(str(proc.get("name") or ""), argv):
+            return proc["pid"]
+    return None
+
+
 def move_pane_to_tab(pane_id: str, tab_id: str, target_pane: str | None = None) -> tuple[dict | None, str | None]:
     """``pane move <pane> --tab <tab> --split right [--target-pane P] --no-focus``; returns
     ``move_result`` (its ``pane.pane_id`` is the pane's id from now on)."""

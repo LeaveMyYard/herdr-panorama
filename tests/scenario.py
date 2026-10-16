@@ -170,6 +170,61 @@ class Transcript:
             rec["message"]["content"] = text
             self.add(rec, t + 0.02)
 
+    # -- background work (design turn 8) --------------------------------------------------
+
+    def bash_background(self, t: float, task_id: str, description: str, timed_out: bool = False) -> str:
+        """A Bash run in the background (``timed_out``: a foreground Bash its timeout moved there,
+        whose call has no ``run_in_background``)."""
+        tid = self.tid()
+        inp = {"command": "sleep 60", "description": description}
+        if not timed_out:
+            inp["run_in_background"] = True
+        rec = tpl("assistant_bash_background")
+        self.add(tool_block(rec, "Bash", tid, inp), t)
+        kind = "result_bash_timed_out_background" if timed_out else (
+            "sub_result_bash_background" if self.agent_id else "result_bash_background")
+        res = tpl(kind)
+        res["toolUseResult"]["backgroundTaskId"] = task_id
+        self.add(result_block(res, tid, f"Command running in background with ID: {task_id}."), t + 1)
+        return tid
+
+    def monitor(self, t: float, task_id: str, description: str, timeout_ms: int = 1800000,
+                persistent: bool = False) -> str:
+        tid = self.tid()
+        self.add(tool_block(tpl("assistant_monitor"), "Monitor", tid,
+                            {"description": description, "timeout_ms": timeout_ms, "command": "true"}), t)
+        res = tpl("result_monitor")
+        res["toolUseResult"].update(taskId=task_id, timeoutMs=timeout_ms, persistent=persistent)
+        self.add(result_block(res, tid, f"Monitor started (task {task_id})."), t + 1)
+        return tid
+
+    def task_stop(self, t: float, task_id: str, error: bool = False) -> None:
+        tid = self.tid()
+        self.add(tool_block(tpl("assistant_taskstop"), "TaskStop", tid, {"task_id": task_id}), t)
+        res = tpl("result_taskstop")
+        res["toolUseResult"].update(message=f"Successfully stopped task: {task_id}", task_id=task_id,
+                                    task_type="local_bash")
+        self.add(result_block(res, tid, res["toolUseResult"]["message"], error), t + 1)
+
+    def notice_raw(self, t: float, text: str, kind: str) -> None:
+        """A notification shaped like the captured ``kind`` (its tag skeleton), with ``text``."""
+        q = tpl(kind)
+        q["content"] = text
+        self.add(q, t)
+
+    def orphan_notice(self, t: float, task_ids: list[str]) -> None:
+        """What a resumed session gets for the tasks its previous process left: every id, then
+        Claude Code's internal marker id (captured: queue_enqueue_orphan_notice)."""
+        ids = "".join(f"<task-id>{i}</task-id>\n" for i in task_ids)
+        self.notice_raw(t, f"<task-notification>\n{ids}<task-id>__orphan_summary__:shell</task-id>\n"
+                           "<status>stopped</status>\n<summary>orphaned</summary>\n<note>n</note>\n</task-notification>",
+                        "queue_enqueue_orphan_notice")
+
+    def monitor_event(self, t: float, task_id: str, event: str) -> None:
+        kind = "queue_enqueue_monitor_expired" if event.startswith("[Monitor expired") else "queue_enqueue_monitor_event"
+        self.notice_raw(t, f"<task-notification>\n<task-id>{task_id}</task-id>\n<summary>Monitor event</summary>\n"
+                           f"<event>{event}</event>\n</task-notification>", kind)
+
     def resume(self, t: float, agent_id: str, message: str = "continue") -> None:
         """SendMessage to a finished agent: the result names ``resumedAgentId``."""
         tid = self.tid()
