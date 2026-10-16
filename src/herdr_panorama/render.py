@@ -114,6 +114,8 @@ class Screen:
         self.targets: list[tuple[int, int, int, str, tuple]] = []
         # Wheel regions: (x0, x1, y0, y1, column) of each scrollable column as painted.
         self.columns: list[tuple[int, int, int, int, int]] = []
+        self._anim: list | None = None  # animated(): the cells holding an Anim
+        self._smooth = False
 
     def target(self, x0: int, x1: int, y: int, kind: str, ident: tuple) -> None:
         self.targets.append((x0, x1, y, kind, ident))
@@ -153,7 +155,7 @@ class Screen:
         return not isinstance(self.c, _Rows) or list.__getitem__(self.c, y) is not None
 
     def put(self, x: int, y: int, s: str, fg: str | None = None, bg: str | None = None, bold: bool = False) -> int:
-        for ch in str(s):
+        for ch in (s.chars() if type(s) is Anim else str(s)):  # an Anim keeps moving, cell by cell
             if 0 <= y < self.h and 0 <= x < self.w:
                 cell = self.c[y][x]
                 cell.ch, cell.fg, cell.bold = ch, fg or FG, bool(bold)
@@ -199,6 +201,20 @@ class Screen:
     def text(self) -> str:
         return "\n".join("".join(c.ch for c in row).rstrip() for row in self.c)
 
+    def animated(self) -> list[tuple[int, int, Cell]]:
+        """The cells that move (an Anim glyph, fg or bg), found once."""
+        if self._anim is None:
+            self._anim = [(y, x, c) for y in range(self.h) if self.drawn(y) for x, c in enumerate(self.c[y])
+                          if type(c.fg) is Anim or type(c.bg) is Anim or type(c.ch) is Anim]
+            self._smooth = any(type(v) is Anim and not v.step for _, _, c in self._anim for v in (c.ch, c.fg, c.bg))
+        return self._anim
+
+    def smooth(self) -> bool:
+        """Whether something moves between whole frames (a pulse or a blink): only then the
+        colour tick runs between them."""
+        self.animated()
+        return self._smooth
+
     def runs(self, y: int) -> list[tuple[str, str, str | None, bool]]:
         out: list[list] = []
         for c in self.c[y]:
@@ -231,11 +247,22 @@ class View:
     dock: bool = False  # cockpit: panorama is docked next to an agent -> the 3a panel
     zoom_hint: bool = False  # docked next to an agent: z zooms between the panel and the graph
     now: float = 0.0
-    frame: int = 0
+    # Animation time in design frames of 250 ms. Whole steps move spinners and sweeps; the colour
+    # tick sets the fraction in between, which only colours follow (pulses, blinks: Anim).
+    frame: float = 0
 
 
-def glyph(a: Agent, frame: int) -> str:
-    return SPIN[(frame + a.seq) % len(SPIN)] if a.status == RUN else GLYPH.get(a.status, "?")
+def _spin(frame: float, seq: int) -> str:
+    return SPIN[(int(frame) + seq) % len(SPIN)]
+
+
+def spin(frame: float, seq: int = 0) -> str:
+    """A spinner glyph: one step per whole frame (an Anim, so frames need no re-render)."""
+    return Anim(_spin, (seq,), frame, step=True)
+
+
+def glyph(a: Agent, frame: float) -> str:
+    return spin(frame, a.seq) if a.status == RUN else GLYPH.get(a.status, "?")
 
 
 def nq(agents: list[Agent]) -> int:
@@ -441,7 +468,10 @@ def find_agent(t: Thread | None, aid: str | None) -> Agent | None:
 
 def pod(s: Screen, x: int, y: int, st: str, g: str, sel: bool = False) -> None:
     b, f = PB.get(st, PB[Q])
-    s.P(x, y, [((" " + g + " ") if len(g) == 1 else (" " + g)[:3], f, True, b)])
+    if len(g) == 1:  # the glyph on its own: a spinner stays an Anim
+        s.P(x, y, [(" ", f, True, b), (g, f, True, b), (" ", f, True, b)])
+    else:
+        s.P(x, y, [((" " + g)[:3], f, True, b)])
     if sel:
         s.put(x - 1, y, "[", HI, None, True)
         s.put(x + 3, y, "]", HI, None, True)
@@ -578,7 +608,7 @@ def state_of(agents: list[Agent], all_done: bool, frame: int, working_extra: boo
         if hit:
             return OrchState(st, g, label + (" · working" if working else ""), working)
     if working:
-        return OrchState(RUN, glyph(runner, frame) if runner else SPIN[frame % len(SPIN)], "working", True)
+        return OrchState(RUN, glyph(runner, frame) if runner else spin(frame), "working", True)
     if has(REV):
         return OrchState(REV, "»", "reviewing")
     return OrchState(Q, "○", "idle")
@@ -600,21 +630,97 @@ def agent_state(a: Agent) -> OrchState:
     return OrchState(a.status, "", "", a.status == RUN)
 
 
-def edge(cv: Screen, x: int, y: int, w: int, h: int, st: OrchState, frame: int, seed: int = 0) -> None:
-    """The design's animated card edge: the left border in the state colour (blinking 2 frames
-    on / 2 off when it needs you), and while agents work a 4-cell bar in the running colour
-    sweeping the bottom border, shifted by ``seed * 7`` so cards do not move in lockstep."""
+def edge(cv: Screen, x: int, y: int, w: int, h: int, st: OrchState, frame: float, seed: int = 0) -> None:
+    """The design's animated card edge: the left border in the state colour (blinking when it
+    needs you: see ``blink``), and while agents work a 4-cell bar in the running colour
+    sweeping the bottom border one cell per frame, shifted by ``seed * 7`` so cards do not
+    move in lockstep."""
     if st.st in QUIET:
         return
-    on = not st.attention or (frame // 2) % 2 == 0
+    col = blink_col(ST[st.st], frame) if st.attention else ST[st.st]
     for j in range(1, h - 1):
-        cv.put(x, y + j, "┃", ST[st.st] if on else FAINT)
-    if st.working:
+        cv.put(x, y + j, "┃", col)
+    if st.working and 0 <= y + h - 1 < cv.h:
         n = w - 2
-        p = (frame + seed * 7) % (n + 6) - 3
-        for i in range(4):
-            if 0 <= p + i < n:
-                cv.put(x + 1 + p + i, y + h - 1, "━", ST[RUN])
+        row = cv.c[y + h - 1]
+        for i in range(n):  # every cell of the bottom border: the bar moves without a re-render
+            if 0 <= x + 1 + i < cv.w:
+                c = row[x + 1 + i]
+                args = (i, n, seed, str(c.ch), str(c.fg))
+                c.ch, c.fg, c.bold = Anim(_sweep_ch, args, frame, True), Anim(_sweep_fg, args, frame, True), False
+
+
+def sweep_pos(frame: float, seed: int, n: int) -> int:
+    """The first cell of the 4-cell bar on an ``n``-cell bottom border (may be off either end)."""
+    return (int(frame) + seed * 7) % (n + 6) - 3
+
+
+def _sweep_ch(frame: float, i: int, n: int, seed: int, ch: str, fg: str) -> str:
+    return "━" if 0 <= i - sweep_pos(frame, seed, n) < 4 else ch
+
+
+def _sweep_fg(frame: float, i: int, n: int, seed: int, ch: str, fg: str) -> str:
+    return ST[RUN] if 0 <= i - sweep_pos(frame, seed, n) < 4 else fg
+
+
+# -- smooth colour animation (design: smooth, swarm-smooth.js) ------------------------------
+#
+# Colours are functions of continuous time, not of whole frames: an ``Anim`` is the colour at
+# ``frame`` (it is a str, so everything that draws or compares colours takes it as is) and
+# remembers how to recompute itself. Between two 250 ms frames the view's colour tick
+# (tui.COLOUR_SECONDS) restyles only the cells holding an Anim (``restyle``), so pulses and
+# blinks run as smooth truecolor gradients without a re-render. At whole frames every colour
+# is exactly the old stepped one, so the golden frames are unchanged.
+
+class Anim(str):
+    """A colour (or a glyph) that moves: ``fn(frame, *args)`` evaluated at ``frame``. ``step``:
+    it only changes at whole frames (spinners, the sweep)."""
+
+    def __new__(cls, fn, args: tuple, frame: float, step: bool = False):
+        a = str.__new__(cls, fn(frame, *args))
+        a.fn, a.args, a.step, a.k, a.f = fn, args, step, int(frame), frame
+        return a
+
+    def chars(self) -> list:
+        """One Anim per character (``put`` gives each cell its own)."""
+        if len(self) == 1:
+            return [self]
+        return [Anim(_nth, (self.fn, self.args, i), self.f, self.step) for i in range(len(self))]
+
+    def at(self, frame: float) -> Anim:
+        if self.step and int(frame) == self.k:
+            return self
+        return Anim(self.fn, self.args, frame, self.step)
+
+
+def _nth(frame: float, fn, args: tuple, i: int) -> str:
+    return fn(frame, *args)[i]
+
+
+BLINK_PERIOD = 4  # frames: one second, as the design's floor(F / 2) % 2
+
+
+def blink(frame: float) -> float:
+    """The attention blink, 1 on .. 0 off: on for a frame, a sine ease off over the next, off
+    for a frame, a sine ease back on (half on, half off, as before; whole frames hit 1 or 0)."""
+    p = frame % BLINK_PERIOD
+    if p <= 1:
+        return 1.0
+    if p < 2:
+        return (1 + math.cos(math.pi * (p - 1))) / 2
+    if p <= 3:
+        return 0.0
+    return (1 - math.cos(math.pi * (p - 3))) / 2
+
+
+def _blink(frame: float, on: str) -> str:
+    k = blink(frame)
+    return on if k >= 1 else FAINT if k <= 0 else mix(FAINT, on, k)
+
+
+def blink_col(on: str, frame: float) -> str:
+    """``on`` blinking against the faint colour."""
+    return Anim(_blink, (on,), frame)
 
 
 # -- unseen: the slow pulse (design turn 6, swarm-unseen.js) ------------------------------
@@ -623,8 +729,8 @@ PULSE_PERIOD = 12  # frames of 250 ms: one slow pulse every 3 s
 _URGENCY = {"fail": 0, "wait": 1, "done": 2}
 
 
-def wave(frame: int) -> float:
-    """0 .. 1 .. 0 over one pulse."""
+def wave(frame: float) -> float:
+    """0 .. 1 .. 0 over one pulse, a sine ease (continuous in ``frame``)."""
     return (1 - math.cos(2 * math.pi * (frame % PULSE_PERIOD) / PULSE_PERIOD)) / 2
 
 
@@ -642,22 +748,62 @@ def mark_of(agents, unseen: dict[str, str], roll: bool = False) -> tuple[str, bo
     return (evs[0], roll and evs[0] == "done") if evs else None
 
 
-def pulse_col(m: tuple[str, bool], base: str, frame: int) -> str:
-    """Never fully off, so a still frame shows it too: full 35..100 %, quiet 15..45 % of the
-    event colour over ``base``."""
-    ev, quiet = m
+def _pulse(frame: float, ev: str, quiet: bool, base: str) -> str:
     k = 0.15 + 0.3 * wave(frame) if quiet else 0.35 + 0.65 * wave(frame)
     return mix(base, ST[{"fail": FAIL, "wait": WAIT, "done": DONE}[ev]], k)
 
 
-def pulse_tint(m: tuple[str, bool], base: str, frame: int) -> str:
-    """The docked panel's background tint: 8..30 % (quiet 4..14 %) of the event colour."""
-    ev, quiet = m
+def _tint(frame: float, ev: str, quiet: bool, base: str) -> str:
     k = 0.04 + 0.1 * wave(frame) if quiet else 0.08 + 0.22 * wave(frame)
     return mix(base, ST[{"fail": FAIL, "wait": WAIT, "done": DONE}[ev]], k)
 
 
-def pulse_box(cv: Screen, x: int, y: int, w: int, h: int, m: tuple[str, bool] | None, frame: int) -> None:
+def pulse_col(m: tuple[str, bool], base: str, frame: float) -> str:
+    """Never fully off, so a still frame shows it too: full 35..100 %, quiet 15..45 % of the
+    event colour over ``base``."""
+    return Anim(_pulse, (m[0], m[1], base), frame)
+
+
+def pulse_tint(m: tuple[str, bool], base: str, frame: float) -> str:
+    """The docked panel's background tint: 8..30 % (quiet 4..14 %) of the event colour."""
+    return Anim(_tint, (m[0], m[1], base), frame)
+
+
+def restyle(scr: Screen, frame: float) -> list[tuple[int, int, int]]:
+    """Recolour the animated cells of ``scr`` (drawn at the same whole frame) at ``frame``: the
+    screen then equals a full render at ``frame``. Returns the changed spans (y, x0, x1)."""
+    spans: list[tuple[int, int, int]] = []  # runs of changed cells, row by row (cells are in order)
+    memo: dict[int, Anim] = {}  # cells drawn with one Anim (a whole pulsing border) share it
+
+    def at(a: Anim) -> Anim:
+        new = memo.get(id(a))
+        if new is None:
+            new = memo[id(a)] = a.at(frame)
+        return new
+
+    for y, x, c in scr.animated():
+        changed = False
+        if type(c.ch) is Anim:
+            nc = at(c.ch)
+            changed = nc != c.ch
+            c.ch = nc
+        if type(c.fg) is Anim:
+            nf = at(c.fg)
+            changed = changed or nf != c.fg
+            c.fg = nf
+        if type(c.bg) is Anim:
+            nb = at(c.bg)
+            changed = changed or nb != c.bg
+            c.bg = nb
+        if changed:
+            if spans and spans[-1][0] == y and x - spans[-1][2] <= 3:  # a short gap: one span
+                spans[-1] = (y, spans[-1][1], x + 1)
+            else:
+                spans.append((y, x, x + 1))
+    return spans
+
+
+def pulse_box(cv: Screen, x: int, y: int, w: int, h: int, m: tuple[str, bool] | None, frame: float) -> None:
     """The whole border (corners, sides, the animated edge and its sweep) in the pulse colour."""
     if m is None:
         return
@@ -1487,12 +1633,8 @@ def _att(st: str) -> bool:
     return st in (WAIT, BLK, FAIL)
 
 
-def _blink_on(view: View) -> bool:
-    return (view.frame // 2) % 2 == 0
-
-
 def _gcol(st: str, view: View) -> str:
-    return FAINT if _att(st) and not _blink_on(view) else ST.get(st, FG)
+    return blink_col(ST[st], view.frame) if _att(st) else ST.get(st, FG)
 
 
 def _sub_agents(o: Orchestrator) -> list[Agent]:
@@ -1526,7 +1668,7 @@ def dock_state(o: Orchestrator, frame: int) -> DockState:
         st = WAIT
     else:
         st = Q
-    g = (glyph(runner, frame) if runner else SPIN[frame % len(SPIN)]) if st == RUN else GLYPH.get(st, "?")
+    g = (glyph(runner, frame) if runner else spin(frame)) if st == RUN else GLYPH.get(st, "?")
     live_ags = [a for a in ags if live(a.status)]
     return DockState(st, DOCK_LABEL[st], q, g, working, ags, live_ags,
                      [t for t in threads if not t.done], [t for t in threads if t.done])
@@ -1560,11 +1702,34 @@ def _rp(s: Screen, xr: int, y: int, segs) -> None:
 TILE_OFF = ("#2a2e35", "#4d535c")  # swarm-tiles.js OFF: (background, glyph)
 
 
+def _tile_bg(frame: float, on: str, off: str, ev: str | None, quiet: bool) -> str:
+    """A needs-you tile's background: blinking between ``on`` and ``off`` (``blink``), then the
+    unseen pulse over it (as swarm-tiles.js: pulseTile over tileC)."""
+    base = _blink_between(frame, on, off)
+    return base if ev is None else _pulse(frame, ev, quiet, base)
+
+
+def _blink_between(frame: float, on: str, off: str) -> str:
+    k = blink(frame)
+    return on if k >= 1 else off if k <= 0 else mix(off, on, k)
+
+
+def _padded(frame: float, fn, args: tuple) -> str:
+    return " " + fn(frame, *args) + " "
+
+
 def dock_tile(st: str, g: str, view: View, m: tuple[str, bool] | None = None) -> tuple:
-    """swarm-tiles.js tile (and pulseTile): `` g `` bold in the state's tile colours. Unseen (``m``):
-    its background pulses toward the event colour, never fully off (the operator, Q115)."""
-    b, f = TILE_OFF if _att(st) and not _blink_on(view) else PB.get(st, PB[Q])
-    return (f" {g} ", f, True, pulse_col(m, b, view.frame) if m else b)
+    """swarm-tiles.js tile (and pulseTile): `` g `` bold in the state's tile colours. A needs-you
+    tile blinks to TILE_OFF (easing, see ``blink``). Unseen (``m``): its background pulses toward the
+    event colour, never fully off (the operator, Q115)."""
+    b, f = PB.get(st, PB[Q])
+    if _att(st):
+        bg = Anim(_tile_bg, (b, TILE_OFF[0], m[0] if m else None, m[1] if m else False), view.frame)
+        f = Anim(_blink_between, (f, TILE_OFF[1]), view.frame)
+    else:
+        bg = pulse_col(m, b, view.frame) if m else b
+    text = Anim(_padded, (g.fn, g.args), view.frame, True) if type(g) is Anim else f" {g} "
+    return (text, f, True, bg)
 
 
 def _thread_segs(d: DockState, view: View) -> list:

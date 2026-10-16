@@ -13,6 +13,8 @@ changes. Keys:
 - ``cockpit`` / ``cockpit_width``: experimental, panorama docked left of the selected agent (cockpit.py).
 - ``highlight_unseen``: pulse what failed, asked or finished since the operator looked (unseen.py),
   default true.
+- ``animation_fps``: how often colours move (pulses, blinks), 2 to 30, default 20. Lower costs less
+  CPU and looks steppier; spinners and sweeps keep their speed. Read when the view starts.
 """
 
 from __future__ import annotations
@@ -83,3 +85,17 @@ def done_window() -> float:
             return val
     val = parse_duration(load().get("done_window"))
     return DEFAULT_DONE_WINDOW if val is None else val
+
+
+DEFAULT_ANIMATION_FPS = 20
+ANIMATION_FPS_RANGE = (2, 30)
+
+
+def animation_fps() -> float:
+    """``animation_fps`` clamped to 2..30 (a typo or a non-number: the default)."""
+    value = load().get("animation_fps", DEFAULT_ANIMATION_FPS)
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        log.warning("animation_fps: not a number (%r), using %s", value, DEFAULT_ANIMATION_FPS)
+        return float(DEFAULT_ANIMATION_FPS)
+    lo, hi = ANIMATION_FPS_RANGE
+    return float(min(max(value, lo), hi))

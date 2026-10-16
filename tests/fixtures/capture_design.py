@@ -1,6 +1,6 @@
 """Capture the design references: the sample dataset, turn 5's
-direction 5d (subagents to any depth: its dataset and its frames), turn 6 (unseen) and turn 9's 9e
-(tiles in the docked panel).
+direction 5d (subagents to any depth: its dataset and its frames), turn 6 (unseen), turn 9's 9e
+(tiles in the docked panel) and the smooth animation (turn 6 between whole frames).
 
     uv run python tests/fixtures/capture_design.py   (needs node)
 """
@@ -62,6 +62,12 @@ def main() -> None:
                       "E the docked panel, U the same with turn 6's unseen sample marks; data the dataset (swarm-tui.js "
                       "plus the finished Docs Site); rows as runs of [text, fg, bg, bold]")
     (HERE / "design_9.json").write_text(json.dumps(nine, ensure_ascii=False, separators=(",", ":")))
+    smooth = {f: {k: [run_length(r) for r in v] for k, v in fr.items()}
+              for f, fr in json.loads(node("render-smooth.mjs", "json")).items()}
+    (HERE / "design_smooth.json").write_text(json.dumps(
+        {"source": "docs/design/swarm-unseen.js with swarm-smooth.js (smooth animation) rendered by "
+                   "docs/design/render-smooth.mjs between whole frames: G and N as in design_6.json, E and U (swarm-tiles.js 9e) as in design_9.json",
+         "frames": smooth}, ensure_ascii=False, separators=(",", ":")))
 
 
 if __name__ == "__main__":

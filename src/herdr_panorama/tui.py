@@ -23,9 +23,13 @@ import time
 
 from rich.segment import Segment
 from rich.style import Style
-from textual import work
+import textual
+from rich.cells import cell_len
+from rich.control import Control
+from textual import _compositor, work
 from textual.app import App, ComposeResult
 from textual.containers import Vertical
+from textual.geometry import Region
 from textual.screen import ModalScreen
 from textual.widgets import Input, Label, Static
 from textual.binding import Binding
@@ -33,13 +37,62 @@ from textual.message import Message
 from textual.strip import Strip
 from textual.widget import Widget
 
-from . import cockpit, herdr, home, inbox, inbox_link, machines, render, unseen
+from . import cockpit, config, herdr, home, inbox, inbox_link, machines, render, unseen
 from .collect import Collector
 from .model import BLK, Swarm, live
 
+
+
+TEXTUAL_CROP_VERIFIED = "8.2."  # the Textual versions _render_segments was checked against (tests/test_smooth.py)
+_textual_render_segments = getattr(getattr(_compositor, "ChopsUpdate", None), "render_segments", None)
+
+
+def _render_segments(self, console) -> str:
+    """Textual's ``ChopsUpdate.render_segments`` with each span cropped on both sides. Textual
+    (8.2) crops a partly updated line only on the right and re-sends it from the widget's left
+    edge, so a few pulsing cells in the middle of the one full-width Grid re-sent almost the
+    whole screen at every colour tick. Same output otherwise (tests/test_smooth.py). A crop never
+    starts inside a double-width character, and anything unexpected falls back to Textual's own."""
+    try:
+        move_to = Control.move_to
+        out: list[str] = []
+        last_y = self.spans[-1][0]
+        for y, x1, x2 in self.spans:
+            for end, (x, strip) in zip(self.chop_ends[y], self.chops[y].items(), strict=False):
+                if strip is None or x > x2 or end <= x1:
+                    continue
+                if not (x2 > x >= x1 and end <= x2):
+                    lo = x
+                    if x1 > x:  # start at the character holding column x1, never in its middle
+                        for seg in strip:
+                            w = cell_len(seg.text)
+                            if lo + w > x1:
+                                for ch in seg.text:
+                                    cw = cell_len(ch)
+                                    if lo + cw > x1:
+                                        break
+                                    lo += cw
+                                break
+                            lo += w
+                    strip = strip.crop(lo - x, min(end, x2) - x)
+                    x = lo
+                out.append(move_to(x, y).segment.text)
+                out.append(strip.render(console))
+            if y != last_y:
+                out.append("\n")
+        return "".join(out)
+    except Exception:  # noqa: BLE001 - a changed Textual internal: its own (slower) output, never a dead view
+        return _textual_render_segments(self, console)
+
+
+if (_textual_render_segments is not None and textual.__version__.startswith(TEXTUAL_CROP_VERIFIED)
+        and all(hasattr(_compositor.ChopsUpdate, a) for a in ("__init__", "render_segments"))):
+    _compositor.ChopsUpdate.render_segments = _render_segments
+
 REFRESH_SECONDS = 1.5
 DOCK_HOLD_SECONDS = 1.0  # after a dock or follow: keep the docked panel while herdr settles the split
-FRAME_SECONDS = 0.25
+FRAME_SECONDS = 0.25  # a design frame: spinners turn and sweeps move one step
+COLOUR_SECONDS = 0.05  # the colour tick (config animation_fps, default 20): pulses and blinks between frames
 ARM_SECONDS = 0.4
 QUIET_FOLLOW = cockpit.QUIET  # follow's normal "no"s: not logged
 FOLLOW_DEBOUNCE = 0.15  # cockpit follow: act on the last of a burst of focus events
@@ -62,6 +115,9 @@ class Grid(Widget):
         super().__init__()
         self.screen_data: render.Screen | None = None
         self._styles: dict[tuple, Style] = {}
+        self._strips: dict[int, Strip] = {}  # render_line's rows, until show / restyle change them
+        self._strips_of: render.Screen | None = None  # the screen and width they were made from
+        self._strips_width = 0
 
     def style(self, fg: str, bg: str | None, bold: bool) -> Style:
         key = (fg, bg, bold)
@@ -108,13 +164,51 @@ class Grid(Widget):
     def on_leave(self, event) -> None:
         self.app.hover(None)
 
+    def show(self, scr: render.Screen) -> None:
+        """Paint ``scr``: only the spans that differ from the screen on display (all of it after
+        a resize), so a frame where a spinner turned sends a few cells, not the whole view."""
+        old, self.screen_data = self.screen_data, scr
+        if old is None or (old.w, old.h) != (scr.w, scr.h):
+            self.refresh()
+            return
+        if self._strips_of is old:
+            self._strips_of = scr  # the rows that did not change keep their strips
+        regions = []
+        for y in range(scr.h):
+            a, b = old.c[y], scr.c[y]
+            if a == b:
+                continue
+            self._strips.pop(y, None)
+            x0 = next(x for x in range(scr.w) if a[x] != b[x])
+            x1 = next(x for x in range(scr.w - 1, -1, -1) if a[x] != b[x])
+            regions.append(Region(x0, y, x1 - x0 + 1, 1))
+        if regions:
+            self.refresh(*regions)
+
+    def restyle(self, frame: float) -> None:
+        """The colour tick: recolour the animated cells in place and repaint only those."""
+        scr = self.screen_data
+        if scr is None:
+            return
+        spans = render.restyle(scr, frame)
+        for y, _, _ in spans:
+            self._strips.pop(y, None)
+        if spans:
+            self.refresh(*(Region(x0, y, x1 - x0, 1) for y, x0, x1 in spans))
+
     def render_line(self, y: int) -> Strip:
         scr = self.screen_data
         width = self.size.width
         if scr is None or y >= scr.h:
             return Strip([Segment(" " * width, self.style(render.FG, None, False))])
-        segs = [Segment(text, self.style(fg, bg, bold)) for text, fg, bg, bold in scr.runs(y)]
-        return Strip(segs).crop(0, width)
+        if self._strips_of is not scr or self._strips_width != width:  # set directly, or resized
+            self._strips.clear()
+            self._strips_of, self._strips_width = scr, width
+        strip = self._strips.get(y)
+        if strip is None:
+            segs = [Segment(text, self.style(fg, bg, bold)) for text, fg, bg, bold in scr.runs(y)]
+            strip = self._strips[y] = Strip(segs).crop(0, width)
+        return strip
 
 
 class SwarmApp(App):
@@ -171,6 +265,8 @@ class SwarmApp(App):
         self._stopping = False
         self.focus_log: cockpit.FocusLog | None = None  # set while the event stream is up
         self.fit_total: int | None = None  # the shared split's width at the last fit
+        self._next_frame = 0.0  # animate(): when the next whole frame is due (anim_clock)
+        self.anim_clock = time.monotonic
 
     def compose(self) -> ComposeResult:
         self.grid = Grid()  # kept: query_one would search a modal screen on top (the form)
@@ -180,7 +276,7 @@ class SwarmApp(App):
         self.refresh_model()
         if self.live_refresh:
             self.set_interval(REFRESH_SECONDS, self.refresh_model)
-            self.set_interval(FRAME_SECONDS, self.tick)
+            self.set_interval(self.colour_seconds(), self.animate)
             if self.home_mode:  # cockpit follow listens to herdr's focus events (read-only)
                 threading.Thread(target=self._watch_focus, daemon=True).start()
 
@@ -303,8 +399,52 @@ class SwarmApp(App):
         docked panel next to an agent is unfocused nearly all the time), not only a hidden one."""
         if not render.animated(self.swarm, self.view.unseen):
             return
-        self.view.frame += 1
-        self.repaint()
+        self._step(int(self.view.frame) + 1)
+
+    def _step(self, frame: float) -> None:
+        """Move the animation to ``frame`` from the cached screen: the cells that move (render.Anim:
+        spinners, sweeps, pulses, blinks) are restyled in place and only they are repainted, no
+        render and no layout. A frame where the docked panel's hold ran out repaints in full."""
+        whole = int(frame) != int(self.view.frame)
+        self.view.frame = frame
+        if whole and hasattr(self, "grid"):
+            dock = self.view.dock
+            self._update_dock()
+            if self.view.dock != dock:
+                self.view.dock = dock
+                self.repaint()
+                return
+        if hasattr(self, "grid"):
+            self.grid.restyle(frame)
+
+    @staticmethod
+    def colour_seconds() -> float:
+        """The colour tick's period: ``animation_fps`` from the config (2..30, default 20)."""
+        try:
+            return 1 / config.animation_fps()
+        except (OSError, ValueError, TypeError):  # never let a broken config stop the view
+            return COLOUR_SECONDS
+
+    def animate(self) -> None:
+        """The animation tick (every COLOUR_SECONDS): a whole frame every FRAME_SECONDS (spinners
+        and sweeps step, ``tick``), and in between the colours glide (pulses, blinks). Nothing to
+        do while nothing moves."""
+        now = self.anim_clock()
+        if now >= self._next_frame:
+            # at a low animation_fps (or a late timer) whole frames are skipped, so spinners and
+            # sweeps keep their speed; a long stall resumes from now instead of racing to catch up
+            steps = 1 + min(int((now - self._next_frame) / FRAME_SECONDS), 7)
+            self._next_frame += steps * FRAME_SECONDS
+            if self._next_frame <= now:
+                self._next_frame = now + FRAME_SECONDS
+            if render.animated(self.swarm, self.view.unseen):
+                self._step(int(self.view.frame) + steps)
+            return
+        scr = self.grid.screen_data
+        if scr is None or not scr.smooth() or not render.animated(self.swarm, self.view.unseen):
+            return
+        sub = 1 - (self._next_frame - now) / FRAME_SECONDS
+        self._step(int(self.view.frame) + min(max(sub, 0.0), 0.999))
 
     def repaint(self) -> None:
         grid = self.grid
@@ -314,9 +454,8 @@ class SwarmApp(App):
         self.view.now = self.clock()
         self._update_dock()
         self.view.zoom_hint = self.home_mode and bool(self.swarm.docked)
-        grid.screen_data = render.render(self.swarm, self.view, size.width, size.height,
-                                         stale=self.error or (self.swarm.errors[0] if self.swarm.errors else None))
-        grid.refresh()
+        grid.show(render.render(self.swarm, self.view, size.width, size.height,
+                                stale=self.error or (self.swarm.errors[0] if self.swarm.errors else None)))
 
     def _update_dock(self) -> None:
         """Docked next to an agent (cockpit) and narrower than the wide layout: the 3a panel,

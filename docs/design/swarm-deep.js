@@ -4,6 +4,7 @@
 //   5b  drill-down columns: the agent area splits into two levels, a breadcrumb for the rest
 //   5c  nested pods: each agent card carries its children as a pod row; → steps one level in
 import { TH, DATA, H } from './swarm-tui.js';
+import { blinkCol } from './swarm-smooth.js';
 const { setFrame, Scr, LIVE, byUrg, isDone, curIdx, glyph, trunc, fit, len, GL, LBL, dur, tm, NOW } = H;
 let F = 0;
 const th = TH.dark;
@@ -64,9 +65,9 @@ function link(s, fx, fy, tx, toX, ys) {
 }
 function edge(s, x, y, w, h, os, seed = 0) {
   if (!os || os.st === 'q' || os.st === 'done' || os.st === 'cxl') return;
-  const c = th.st[os.st].t, on = !ATT(os.st) || Math.floor(F / 2) % 2 === 0;
-  for (let j = 1; j < h - 1; j++) s.put(x, y + j, '┃', on ? c : th.faint);
-  if (os.working) { const n = w - 2, p = (F + seed * 7) % (n + 6) - 3; for (let i = 0; i < 4; i++) { const xx = p + i; if (xx >= 0 && xx < n) s.put(x + 1 + xx, y + h - 1, '━', th.st.run.t); } }
+  const c = th.st[os.st].t, col = ATT(os.st) ? blinkCol(th, c, F) : c;
+  for (let j = 1; j < h - 1; j++) s.put(x, y + j, '┃', col);
+  if (os.working) { const n = w - 2, p = (Math.floor(F) + seed * 7) % (n + 6) - 3; for (let i = 0; i < 4; i++) { const xx = p + i; if (xx >= 0 && xx < n) s.put(x + 1 + xx, y + h - 1, '━', th.st.run.t); } }
 }
 const agSt = a => ({ st: a.st, working: a.st === 'run' });
 function stOf(ags) {
@@ -327,7 +328,7 @@ function v5d(w, h, focus) {
 // ── the docked 3a panel's thread list, per direction (46 columns)
 const PW = 46;
 function panel(kind) {
-  const s = new Scr(PW, 45, th), on = Math.floor(F / 2) % 2 === 0, gcol = st => ATT(st) && !on ? th.faint : th.st[st].t;
+  const s = new Scr(PW, 45, th), gcol = st => ATT(st) ? blinkCol(th, th.st[st].t, F) : th.st[st].t;
   s.P(1, 0, [['SWARM', th.dim, 1], ['  4 orchestrators', th.faint]]);
   s.P(PW - 1 - 8, 0, [['?4', th.st.wait.t, 1], ' ', ['!1', th.st.blk.t, 1], ' ', ['✗3', th.st.fail.t, 1]]);
   let y = 2;
@@ -388,7 +389,7 @@ function panel(kind) {
 }
 
 export function renderDeep(f = 0) {
-  F = f; setFrame(f);
+  F = f; setFrame(Math.floor(f));
   return { V1: v5a(160, 45).rows(), V2: v5b(160, 45).rows(), V3: v5c(160, 45).rows(), P1: panel('a').rows(), P2: panel('b').rows(), P3: panel('c').rows(),
     V4: v5d(160, 45, 'thread').rows(), V5: v5d(160, 45, 'b1').rows(), V6: v5d(160, 45, 'c1').rows(), P4: panel('d').rows() };
 }
