@@ -37,7 +37,7 @@ from textual.message import Message
 from textual.strip import Strip
 from textual.widget import Widget
 
-from . import cockpit, config, herdr, home, inbox, inbox_link, machines, render, unseen
+from . import cockpit, config, herdr, home, inbox, inbox_link, machines, render, theme, unseen
 from .collect import Collector
 from .model import BLK, Swarm, live
 
@@ -260,6 +260,7 @@ class SwarmApp(App):
         self.my_pane = os.environ.get("HERDR_PANE_ID") if self.home_mode else None
         self.collector.self_pane = self.my_pane
         self.docking = False  # one dock at a time
+        self.pane_focused = True  # panorama's pane has the keyboard (the terminal's focus in/out)
         self.dock_hold_until = 0.0  # keep the docked panel until herdr has settled the split
         self.docked_hint: tuple[str, float] | None = None  # (agent pane, when) set by a dock
         self.following = False  # one follow at a time
@@ -457,8 +458,21 @@ class SwarmApp(App):
         self.view.now = self.clock()
         self._update_dock()
         self.view.zoom_hint = self.home_mode and bool(self.swarm.docked)
+        # design turn 10: the docked panel in herdr's theme, focused or not (purely visual)
+        self.view.panel = theme.panel_colors(theme.current(), self.pane_focused, render.FG, render.DIM,
+                                             render.FAINT, (render.DOCK_HOV, render.BG)) if self.view.dock else None
         grid.show(render.render(self.swarm, self.view, size.width, size.height,
                                 stale=self.error or (self.swarm.errors[0] if self.swarm.errors else None)))
+
+    def on_app_focus(self, event) -> None:
+        """The terminal reports focus in (herdr passes it to the focused pane): the panel's
+        focused look. Visual only: nothing else depends on it."""
+        self.pane_focused = True
+        self.repaint()
+
+    def on_app_blur(self, event) -> None:
+        self.pane_focused = False
+        self.repaint()
 
     def _update_dock(self) -> None:
         """Docked next to an agent (cockpit) and narrower than the wide layout: the 3a panel,

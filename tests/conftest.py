@@ -66,6 +66,7 @@ def no_real_state(tmp_path, monkeypatch):
     monkeypatch.delenv("PANORAMA_DONE_WINDOW", raising=False)
     monkeypatch.setenv("PANORAMA_HOOKS_DIR", str(tmp_path / "hooks"))
     monkeypatch.setenv("HERDR_PLUGIN_STATE_DIR", str(tmp_path / "plugin-state"))  # unseen.json, home records
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg-config"))  # herdr's config.toml (theme.py): none
     monkeypatch.delenv("PANORAMA_TRACE", raising=False)
     from herdr_panorama import cockpit  # its process-wide dock state never leaks between tests
     monkeypatch.setattr(cockpit, "moving_until", 0.0)

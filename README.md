@@ -225,8 +225,11 @@ dock_keep_focus = true # Enter in the docked list keeps the keyboard on panorama
 - Docked, panorama shows the compact list from design 3a with design 9e's coloured tiles:
   per orchestrator its tab number, a state tile, `?N` and one tile per thread; the docked one
   lists its threads (a tile each) with their agents instead.
+- The panel takes its background from herdr's theme (`[theme]` and `[theme.custom]` in
+  herdr's `config.toml`): the theme's `active_row_bg` while panorama has the keyboard, its
+  `panel_bg` (with dimmer secondary text) when it does not.
 
-  <img src="docs/screenshots/dock-9e-app.png" alt="The docked cockpit panel" width="300">
+  <img src="docs/screenshots/dock-app.png" alt="The docked cockpit panel" width="300">
 - `cockpit = false` stops docking at the next Enter, and brings panorama back to its own
   first tab at the next `prefix+space` or start.
 - If you split the home tab and run something next to panorama, docking renames that tab

@@ -1249,7 +1249,28 @@ tile in its off phase.
   Docs Site), the panel matches 9e's render (`tests/fixtures/design_9.json`) cell for cell:
   characters, colours and bold, in eight animation frames, plain and with turn 6's unseen
   marks (`tests/test_tiles.py`). Blank cells are compared by background only.
-  `docs/screenshots/dock-9e-app.png` and `dock-9e-design.png` show the two.
+- **Focused or not, in herdr's theme** (design turn 10, `docs/design/swarm-focus.js`; the
+  operator approved it as drawn). The panel shows whether panorama's pane has the keyboard,
+  from Textual's app focus / blur (the terminal's focus reports, which herdr passes to the
+  focused pane). Purely visual: nothing else depends on it.
+  - Focused: the theme's `active_row_bg`; text the theme's `text`, dim `subtext0`, faint
+    `overlay1`. Not focused: its `panel_bg`; dim `overlay1`, faint `overlay0` (one step
+    dimmer). The panel's own background changes; the docked entry's and the hover's row
+    backgrounds stay, their text follows. Tiles, status colours, pulses and anything
+    animated stay as in 9e. The 2a graph is unchanged.
+  - The theme is read from herdr's `config.toml` (herdr's API has no theme colours), layered
+    as herdr layers it: the built-in theme (`[theme] name`, default catppuccin; with
+    `auto_switch` its `dark_name`, since panorama's colours are dark), `[theme.custom]`,
+    then `[theme.custom.dark]` with `auto_switch`. Re-read when the file changes. The
+    built-in themes' six tokens are panorama's own table (`theme.py`), from each theme's
+    public palette; `theme.panel_colors` is the one place that turns them into the panel's
+    colours. The `terminal` theme (the host's ANSI palette, which panorama cannot read) and
+    a `reset` background fall back to panorama's own colours, `#171a1f` focused.
+  - Panorama's status colours stay its own; theming them is a possible follow-up.
+  - Golden: `tests/test_focus_theme.py` against `tests/fixtures/design_10.json` (the
+    operator's theme and tokyo-night, focused and not, four frames).
+    `docs/screenshots/dock-app.png` / `dock-design.png` (focused) and `dock-app-unfocused.png`
+    / `dock-design-unfocused.png` show the app and the design side by side.
 - **Interaction.**
   - The panel is one column: ↑/↓ move between the entries and `+ New agent`; → does nothing.
   - Enter on an entry docks panorama next to that orchestrator. **One click** on an entry
