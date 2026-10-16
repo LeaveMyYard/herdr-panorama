@@ -20,7 +20,19 @@ Status rules (study §3 and §6, fixing zoetrope's three errors on our data):
    written within ``ACTIVE`` seconds, or a tool call in flight for at most
    ``PENDING_CAP`` (an abandoned call no longer keeps it running forever), or
    a background agent that has not been notified yet, within ``ASYNC_QUIET``.
-   Otherwise it ended silently (done, ``inferred``).
+   Otherwise, if background work it started is still in flight (``waiting_bg``),
+   it is waiting (``bg``, design turn 8); else it ended silently (done,
+   ``inferred``).
+
+Background work (``bg``): a Bash result with ``backgroundTaskId`` (run in the
+background, or moved there by its timeout) or a Monitor result (``taskId`` with
+``timeoutMs``) starts a task owned by the file's owner. It ends with any
+terminal notice naming it (every ``<task-id>`` of a notice counts), a Monitor's
+"[Monitor expired" event or its timeout, or a successful TaskStop / KillShell.
+Claude Code can also end one without a record (a stop from its UI, the process
+exiting), so an open task only counts while ``bg_alive`` says its process lives
+(local machines: collect.py checks the Claude process's descendants), or, when
+that cannot be checked, for at most ``BG_CAP`` after it started.
 
 Parentage (study §1): ``meta.toolUseId`` is the ``tool_use.id`` of the spawning
 call; the owner of that call (main or another agent's file) is the parent, so
@@ -50,6 +62,9 @@ TAIL_BYTES = 65536
 TOOL_USE = b'"type":"tool_use"'
 ASSISTANT = b'"type":"assistant"'
 TAIL_MAX = 8 * 1024 * 1024  # the tail window grows up to this when the last records are huge
+BG_MARK = b'"backgroundTaskId"'  # a Bash moved to the background (the result record)
+BG_CAP = 24 * 3600.0  # an open background task nobody can check (remote, no /proc) counts this long
+MONITOR_SLACK = 60.0  # a Monitor past its timeout by this much has expired even without its last event
 
 
 @dataclass
@@ -82,6 +97,17 @@ class WorkflowLaunch:
     task_id: str | None
     name: str | None
     summary: str | None
+
+
+@dataclass
+class BgLaunch:
+    task: str
+    owner: str  # MAIN or the agent whose file launched it
+    ts: float | None
+    kind: str  # Bash | Monitor
+    call: str
+    timeout: float | None = None  # Monitor: seconds until it expires (unless persistent)
+    persistent: bool = False
 
 
 @dataclass
@@ -121,6 +147,8 @@ class Session:
         self.agents: dict[str, AgentRec] = {}
         self.journals: dict[str, FileState] = {}
         self.hook_file = FileState(str(hookmod.hooks_path(session_id)), "hooks")
+        self.bg_alive = lambda launch: None
+        self._bg_scanned: set[tuple[str, float]] = set()  # skipped old files searched for a launch  # collect.py: True/False when the task's process can be checked
         self._reset_stores()
 
     def _reset_stores(self) -> None:
@@ -148,6 +176,11 @@ class Session:
         self.hook_stops: dict[str, list[float]] = {}
         self.hook_procs: list[tuple[float, int, str]] = []  # (ts, pid, start) of every hook record
         self._alive: dict[tuple[int, str], bool | None] = {}
+        self.bg: dict[str, BgLaunch] = {}  # task id -> its launch
+        self._bg_index = None
+        self.bg_calls: dict[str, tuple[str, str]] = {}  # call -> (Bash | Monitor, description)
+        self.bg_stop_calls: dict[str, str] = {}  # TaskStop / KillShell call -> task id
+        self.bg_stops: dict[str, float] = {}  # task id -> when a TaskStop ended it
         if hasattr(self, "hook_file"):
             self.hook_file.tail = tail.TailState()
         for f in getattr(self, "files", {}).values():
@@ -160,6 +193,7 @@ class Session:
 
     def update(self, since: float | None = None) -> None:
         self._children = None
+        self._bg_index: dict[str, list[BgLaunch]] | None = None
         """Read what changed. ``since``: agent files last written before it and never read are
         skipped (they cannot change anything inside a done window that starts later; the main
         transcript is always read in full). Skipped files are read once they change."""
@@ -178,14 +212,34 @@ class Session:
             self.journals.setdefault(run, FileState(path, f"journal:{run}"))
             self._read_summary(run)
         reset = False
+        skipped: list[FileState] = []
         for f in list(self.files.values()):
             if since is not None and f.owner != MAIN and f.tail.identity is None:
                 try:
                     if os.path.getmtime(f.path) < since:
+                        skipped.append(f)
                         continue
                 except OSError:
                     continue
             reset |= self._read_file(f)
+        for f in skipped:
+            # an old file of an agent nobody saw end (no notice, no completed acknowledgement) can
+            # still be waiting on its own background work (turn 8): read it after all when it
+            # holds a background launch (a byte search, once per file version)
+            ack = self.ack(f.owner)
+            if f.owner in self.notices or (ack and ack.status == "completed"):
+                continue
+            key = (f.path, _mtime(f.path))
+            if key in self._bg_scanned:
+                continue
+            self._bg_scanned.add(key)
+            try:
+                with open(f.path, "rb") as fh:
+                    has_bg = BG_MARK in fh.read()
+            except OSError:
+                continue
+            if has_bg:
+                reset |= self._read_file(f)
         for run, j in self.journals.items():
             kind, lines = tail.read_appended(j.path, j.tail)
             if kind == tail.RESET:
@@ -332,6 +386,12 @@ class Session:
                                                  bg is True or str(bg).lower() == "true")
                 elif name.endswith("ask_operator"):
                     self._pending_ask[b["id"]] = owner
+                elif name in ("Bash", "Monitor"):
+                    self.bg_calls[b["id"]] = (name, str(inp.get("description") or ""))
+                elif name in wire.BG_STOP_TOOLS:
+                    task = inp.get("task_id") or inp.get("shell_id")
+                    if isinstance(task, str) and task:
+                        self.bg_stop_calls[b["id"]] = task
         elif kind == "user":
             if owner == MAIN and wire.is_human_prompt(rec) and when is not None:
                 text = wire.string_content(rec) or ""
@@ -354,11 +414,76 @@ class Session:
                                                             tur.get("workflowName"), tur.get("summary"))
                 if isinstance(tur.get("resumedAgentId"), str) and tur.get("success") is not False and when is not None:
                     self.resumes.setdefault(str(tur["resumedAgentId"]), set()).add(when)
+                self._background(owner, call, tur, b, when)
                 if call in self._pending_ask:
                     self.qids.setdefault(self._pending_ask.pop(call), set()).update(
                         wire.question_ids(wire.text_of(b.get("content"))))
 
+    def _background(self, owner: str, call: str, tur: dict, block: dict, when: float | None) -> None:
+        task = tur.get("backgroundTaskId")
+        kind = "Bash"
+        timeout, persistent = None, False
+        if not (isinstance(task, str) and task):
+            task = tur.get("taskId")
+            if not (isinstance(task, str) and task and "timeoutMs" in tur and "runId" not in tur):
+                task = None
+            else:
+                kind = "Monitor"
+                ms = tur.get("timeoutMs")
+                timeout = ms / 1000.0 if isinstance(ms, (int, float)) and not isinstance(ms, bool) and ms > 0 else None
+                persistent = tur.get("persistent") is True
+        if task:
+            old = self.bg.get(task)
+            # a fork's file repeats its parent's history, background launches included: main
+            # wins, then the earliest record
+            if old is None or (old.owner != MAIN and (owner == MAIN or (when or float("inf")) < (old.ts or float("inf")))):
+                self.bg[task] = BgLaunch(task, owner, when, kind, call, timeout, persistent)
+        stop = self.bg_stop_calls.get(call)
+        if not stop and isinstance(tur.get("task_id"), str) and "task_type" in tur:
+            stop = tur["task_id"]  # TaskStop's own result names the task it stopped
+        if stop and block.get("is_error") is not True and when is not None:
+            self.bg_stops[stop] = min(when, self.bg_stops.get(stop, when))
+
     # -- queries --------------------------------------------------------------------
+
+    def _bg_of(self, owner: str) -> list[BgLaunch]:
+        """``owner``'s launches, indexed once per update (status queries ask per agent)."""
+        if self._bg_index is None:
+            self._bg_index = {}
+            for launch in self.bg.values():
+                self._bg_index.setdefault(launch.owner, []).append(launch)
+        return self._bg_index.get(owner, [])
+
+    def bg_description(self, launch: BgLaunch) -> str:
+        return self.bg_calls.get(launch.call, ("", ""))[1]
+
+    def open_bg(self, owner: str, now: float) -> list[BgLaunch]:
+        """``owner``'s background tasks with no ending in the transcripts, oldest first."""
+        out = []
+        for launch in self._bg_of(owner):
+            if launch.task in self.notices or launch.task in self.bg_stops:
+                continue
+            if (launch.kind == "Monitor" and not launch.persistent and launch.timeout and launch.ts is not None
+                    and now > launch.ts + launch.timeout + MONITOR_SLACK):
+                continue
+            out.append(launch)
+        return sorted(out, key=lambda x: x.ts or 0.0)
+
+    def waiting_bg(self, owner: str, now: float) -> list[BgLaunch]:
+        """The open tasks that are still running: their process lives (``bg_alive``), or, when
+        that cannot be checked, they started at most ``BG_CAP`` ago."""
+        out = []
+        for launch in self.open_bg(owner, now):
+            alive = self.bg_alive(launch)
+            if alive is False or (alive is None and (launch.ts is None or now - launch.ts > BG_CAP)):
+                continue
+            out.append(launch)
+        return out
+
+    def last_activity(self) -> float | None:
+        """The newest timestamp in any file read: a prompt, a reply, a tool call, a notice."""
+        stamps = [t for f in self.files.values() for t in (f.info.last_ts, f.last_ts) if t is not None]
+        return max(stamps, default=None)
 
     def file_of(self, agent_id: str) -> FileState | None:
         rec = self.agents.get(agent_id)
@@ -436,7 +561,7 @@ class Session:
         status = self._status(agent_id, now)
         if status[0] == "done" and status[2] and agent_id not in _seen:
             seen = _seen | {agent_id}
-            if any(self.status_of(c, now, seen)[0] == "run" for c in self.children(agent_id) if c not in seen):
+            if any(self.status_of(c, now, seen)[0] in ("run", "bg") for c in self.children(agent_id) if c not in seen):
                 return "run", None, True
         return status
 
@@ -512,6 +637,8 @@ class Session:
         pend_ok = any(p_ts is not None and now - p_ts <= PENDING_CAP for _, _, p_ts in pending)
         if now - last <= ACTIVE or pend_ok:
             return "run", None, False
+        if self.waiting_bg(agent_id, now):
+            return "bg", None, False  # its turn ended, its background work is still running
         if meta.get("agentType") == "fork":
             return "done", last, True  # interactive sidechain: idle
         background = (ack is not None and ack.status == "async_launched") or meta.get("requestShape") == "background"

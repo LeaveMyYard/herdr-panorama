@@ -30,10 +30,17 @@ MARKERS = (
     b"async_launched", b'"totalToolUseCount"', b"resumedAgentId", b"runId", b"task-notification",
     b"ask_operator", b"Recorded as Q", b"already with the operator",
     b'"type":"custom-title"', b'"type":"agent-name"', b'"type":"ai-title"',
+    # background work (design turn 8): Bash in the background, Monitor watches, TaskStop / KillShell
+    b'"run_in_background":true', b'"backgroundTaskId"', b'"name":"Monitor"', b'"timeoutMs"',
+    b'"name":"TaskStop"', b'"name":"KillShell"', b'"task_type"', b'"shell_id"',
 )
+BG_STOP_TOOLS = ("TaskStop", "KillShell")
+ORPHAN = "__orphan_summary__"  # Claude Code's marker id in the notice that lists tasks a restart orphaned
 PROMPT_MARKERS = (b'"role":"user"', b'"content":"')  # a user message with string content, any key order
 
 _TAG = re.compile(r"<(task-id|tool-use-id|status|tool_uses)>\s*([^<]*?)\s*</\1>")
+_TASK_IDS = re.compile(r"<task-id>\s*([^<]*?)\s*</task-id>")
+_EVENT = re.compile(r"<event>\s*\[Monitor expired")  # a Monitor's last event: it ended (no status tag)
 _QID = re.compile(r"(?:Recorded as Q|\bQ)(\d+)\b")
 _QID_JSON = re.compile(r'"id"\s*:\s*(\d+)\s*,\s*"status"\s*:\s*"(?:open|already_open)"')
 
@@ -115,14 +122,19 @@ _BLOCK = re.compile(r"<task-notification>.*?</task-notification>", re.S)
 
 
 def parse_notices(text: str) -> list[dict]:
-    """Every ``<task-notification>`` block in a carrier (one carrier can hold several)."""
+    """Every ``<task-notification>`` block in a carrier (one carrier can hold several), one
+    notice per task it names: the notice a resumed session gets for the background tasks its
+    previous process left lists several ``<task-id>``s (plus an internal marker id, skipped)."""
     if not isinstance(text, str) or not text.lstrip().startswith("<task-notification>"):
         return []
     out = []
     for m in _BLOCK.finditer(text):
         n = parse_notice(m.group(0))
-        if n is not None:
-            out.append(n)
+        if n is None:
+            continue
+        ids = [i for i in _TASK_IDS.findall(m.group(0)) if i and not i.startswith(ORPHAN)]
+        for i in ids or [n["task"]]:
+            out.append({**n, "task": i})
     return out
 
 
@@ -131,11 +143,15 @@ def parse_notice(text: str) -> dict | None:
     if not isinstance(text, str) or not text.lstrip().startswith("<task-notification>"):
         return None
     tags = dict(_TAG.findall(text))
-    if not tags.get("task-id"):
+    first = next((i for i in _TASK_IDS.findall(text) if i and not i.startswith(ORPHAN)), None)
+    if not first:
         return None
     uses = tags.get("tool_uses", "")
-    return {"task": tags["task-id"], "tool_use": tags.get("tool-use-id"),
-            "status": NOTICE_STATUS.get(tags.get("status", "")), "tool_uses": int(uses) if uses.isdigit() else None}
+    status = NOTICE_STATUS.get(tags.get("status", ""))
+    if status is None and _EVENT.search(text):
+        status = "done"  # "[Monitor expired after 30m ...]": the watch is over
+    return {"task": first, "tool_use": tags.get("tool-use-id"),
+            "status": status, "tool_uses": int(uses) if uses.isdigit() else None}
 
 
 def notice_text(rec: dict) -> str | None:

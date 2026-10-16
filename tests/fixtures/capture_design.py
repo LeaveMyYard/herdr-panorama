@@ -1,5 +1,5 @@
 """Capture the design references: the sample dataset, turn 5's direction 5d (subagents to any
-depth: its dataset and its frames), turn 6 (unseen), turn 7 (wider cards), turn 9's 9e (tiles in
+depth: its dataset and its frames), turn 6 (unseen), turn 7 (wider cards), turn 8 (waiting and stale), turn 9's 9e (tiles in
 the docked panel) and the smooth animation (turn 6 between whole frames).
 
     uv run python tests/fixtures/capture_design.py   (needs node)
@@ -32,6 +32,17 @@ import { TREE, THREAD } from './swarm-wide.js';
 const flat = (a) => ({ id: a.hex, role: a.role, st: a.st, act: a.act, model: a.model, age: a.age, tools: a.tools,
   n: a._n, q: a.q || 0, qs: a.qs || [], err: a.err || null, kids: a.kids.map(flat) });
 console.log(JSON.stringify({ thread: { name: THREAD.name, ph: THREAD.ph.map(p => [p[0], p[1]]) }, tree: TREE.map(flat) }));
+"""
+
+
+STATES_JS = """
+import { STATES } from './swarm-states.js';
+const n1 = STATES.DATA.flatMap(o => o.threads).flatMap(t => t.agents).find(a => a.id === 'n1');
+console.log(JSON.stringify({
+  orchs: STATES.DATA.map(o => ({ name: o.name, tab: o.tab, fl: o.fl, last: o.last, bgAge: o.bgAge || null,
+    bg: (o.bg || []).map(b => ({ kind: b.kind, desc: b.desc, since: b.since })) })),
+  n1: { st: n1.st, act: n1.act, msg: n1.msg, phs: n1.phs, tools: n1.tools, age: n1.age,
+    bg: n1.bg.map(b => ({ kind: b.kind, desc: b.desc, since: b.since })) } }));
 """
 
 
@@ -81,6 +92,14 @@ def main() -> None:
     wide["source"] = ("docs/design/swarm-wide.js (turn 7, wider cards) rendered by docs/design/render-7.mjs: W160/W240/"
                       "W320 focus on the thread, R160/R320 on depth 2, S the sweep strip; rows as runs of [text, fg, bg, bold]")
     (HERE / "design_7.json").write_text(json.dumps(wide, ensure_ascii=False, separators=(",", ":")))
+    eight = {f: {k: [run_length(r) for r in v] for k, v in fr.items()}
+             for f, fr in json.loads(node("render-8.mjs", "json")).items()}
+    (HERE / "design_8.json").write_text(json.dumps(
+        {"source": "docs/design/swarm-states.js (turn 8, waiting and stale) rendered by docs/design/render-8.mjs: per "
+                   "frame A the 2a graph (Deploy Watch's background card), B the 2a graph (n1 waiting), R the same "
+                   "with the running filter, P the 46 docked-panel columns; rows as runs of [text, fg, bg, bold]",
+         "data": json.loads(node("--input-type=module", "-", stdin=STATES_JS)), "frames": eight},
+        ensure_ascii=False, separators=(",", ":")))
 
 
 if __name__ == "__main__":

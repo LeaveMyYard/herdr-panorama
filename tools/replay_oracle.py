@@ -35,7 +35,7 @@ PROJECTS = os.path.join(os.path.expanduser("~"), ".claude", "projects")
 SCRATCH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".scratch", "replay")
 BLOCK = re.compile(r"<task-notification>.*?</task-notification>", re.S)
 TAG = re.compile(r"<(task-id|status)>\s*([^<]*?)\s*</\1>")
-RUNNING = {"run", "rev", "wait", "blk", "q"}
+RUNNING = {"run", "rev", "wait", "blk", "q", "bg"}  # bg: waiting on its own background work (turn 8)
 WINDOW = 3600.0
 HORIZON = 30 * 60.0  # "running at T" = shows life again within 30 min (the reviewer's oracle)
 
@@ -212,7 +212,7 @@ def main() -> None:
     with_subs = [r for r in glob.glob(os.path.join(PROJECTS, "*", "*.jsonl")) if os.path.isdir(r[:-6] + "/subagents")]
     roots += [r for r in sorted(with_subs, key=os.path.getmtime, reverse=True)[:newest] if r not in roots]
     total = {"agent_instants": 0, "truth_running": 0, "false_done": 0, "false_running": 0, "parent_checked": 0,
-             "parent_wrong": 0}
+             "parent_wrong": 0, "bg": 0, "bg_woken_30m": 0, "bg_woken_later": 0}
     for root in roots:
         truth = Truth(root)
         lo, hi = truth.span()
@@ -257,6 +257,17 @@ def main() -> None:
                           f"spawn_result={sp is not None and sp.call in getattr(s, 'spawn_results', set())} "
                           f"shape={truth.meta.get(a, {}).get('requestShape')} wf={truth.agent_files[a][1] is not None}")
                 c["false_running"] += got and not want
+                if status == "bg":  # waiting: was it woken again (a write or a notice) at all, later?
+                    c["bg"] += 1
+                    c["bg_woken_30m"] += want
+                    c["bg_woken_later"] += any(x > T for x in truth.writes.get(a, []) + truth.notices.get(a, []))
+                    if "--bg-details" in args:
+                        nxt = min([x for x in truth.writes.get(a, []) + truth.notices.get(a, []) if x > T] or [float("inf")])
+                        tasks = [(x.task, x.kind, (round(min(truth.notices[x.task]) - T) if truth.notices.get(x.task) else None))
+                                 for x in s.waiting_bg(a, T)]
+                        term = [round(x - T) for x in truth.terminal.get(a, []) if x > T][:1]
+                        print(f"   bg {a[:10]} T+{T - lo:.0f}s woken_in={nxt - T:.0f}s agent_end_in={term} "
+                              f"tasks(id,kind,notice_in_s)={tasks}")
                 p = truth.parent(a)
                 if p is not None and truth.meta.get(a, {}).get("toolUseId"):
                     c["parent_checked"] += 1

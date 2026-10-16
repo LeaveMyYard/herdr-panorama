@@ -36,13 +36,21 @@ def cmd_snapshot(args) -> int:
         print(json.dumps(swarm.to_json(), indent=2, ensure_ascii=False))
     else:
         from .model import GLYPH
+        from .render import View, ago, orch_state
+        view = View(now=swarm.generated_at, stale_after=swarm.stale_after)
         for o in swarm.orchestrators:
             marks = " ".join(m for m in ("!" if o.herdr_status == "blocked" else "", f"?{len(o.inbox)}" if o.inbox else "") if m)
-            print(f"{o.tab_label}  [{o.herdr_status}] {o.flavour} {marks}")
+            st = orch_state(o, 0, view)
+            idle = f" idle {ago(swarm.generated_at - o.last_activity)}" if o.last_activity else ""
+            print(f"{o.tab_label}  [{o.herdr_status}] {st.label}{idle} {o.flavour} {marks}")
+            for b in o.bg:
+                print(f"  {GLYPH['bg']} {b.kind:<8} {b.id} {b.description[:60]}")
             for t in o.threads:
                 print(f"  {'✓' if t.done else '•'} {t.name}  ({t.source}, {t.status}, {len(t.agents)} agents)")
                 for a in t.agents:
                     print(f"      {GLYPH.get(a.status, '?')} {a.role:<9} {a.id[:10]} {a.model or '':<6} {a.activity[:60]}")
+                    for b in a.bg:
+                        print(f"          {GLYPH['bg']} {b.kind:<8} {b.id} {b.description[:50]}")
     return 0
 
 

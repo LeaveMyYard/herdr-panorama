@@ -32,7 +32,10 @@ open questions are in [docs/DESIGN.md](docs/DESIGN.md).
 ## What it shows
 
 - **Orchestrators**: every herdr pane running Claude Code, named by its tab, with its state
-  (failed, blocked, needs you, working, reviewing, idle, all done). The card's left edge shows the
+  (failed, blocked, needs you, working, reviewing, waiting, stale, idle, all done). **Waiting** ⠁ (a dot circling the cell):
+  herdr says idle, but a Bash it put in the background or a Monitor watch is still running, so it
+  will wake up by itself; its tasks are listed. **Stale** ◌: idle for longer than `stale_after`
+  (12 h), probably forgotten. The card's left edge shows the
   state and blinks when something needs you, and a bar sweeps along the bottom while it works. It
   also carries `✗` failed,
   `!` blocked (permission prompt or question dialog) and `?N` open
@@ -43,7 +46,7 @@ open questions are in [docs/DESIGN.md](docs/DESIGN.md).
   questions, last message. Finished agents fold into one card.
 
 Status is colour and glyph: `?` needs answer · `!` blocked · `✗` failed · `⠋` running ·
-`»` reviewing · `○` queued · `✓` done · `✓?` done, inferred from silence (not recorded) ·
+`»` reviewing · `⠁` waiting on its background work · `○` queued · `✓` done · `✓?` done, inferred from silence (not recorded) ·
 `~` lost (needs the Claude Code plugin) · `-` cancelled.
 
 It never types into a pane. Its only actions are focusing a pane (`g`) and opening the
@@ -170,6 +173,7 @@ dock_keep_focus = true # docked list: Enter on another orchestrator keeps the ke
 machines = "all"     # herdr's saved SSH machines to show: "all", "none" or ["label", ...]
 highlight_unseen = true # pulse what failed, asked or finished since you last looked
 animation_fps = 20   # how smoothly pulses and blinks fade (2..30): lower it on a slow terminal or remote link
+stale_after = "12h"  # an orchestrator idle this long (nothing in flight) reads "stale"
 ```
 
 **Unseen.** A new failure, a new question or a finished agent makes its card pulse slowly in

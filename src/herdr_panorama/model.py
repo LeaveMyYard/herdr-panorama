@@ -13,15 +13,23 @@ Q, RUN, REV, WAIT, BLK, FAIL, DONE, CXL = "q", "run", "rev", "wait", "blk", "fai
 # INF: the ending was inferred from silence, not recorded (issue #2); LOST: the hook recorded a
 # start, no stop, and the Claude process that ran the agent is gone.
 INF, LOST = "inf", "lost"
-GLYPH = {Q: "○", RUN: "⠋", REV: "»", WAIT: "?", BLK: "!", DONE: "✓", FAIL: "✗", CXL: "-", INF: "✓?", LOST: "~"}
+# BG (waiting, design turn 8): the agent's turn ended, but background work it started (a Bash in the
+# background, a Monitor watch) is still in flight. STALE: an orchestrator idle for longer than
+# stale_after (never an agent status; the views derive it).
+BG, STALE = "bg", "stale"
+GLYPH = {Q: "○", RUN: "⠋", REV: "»", WAIT: "?", BLK: "!", DONE: "✓", FAIL: "✗", CXL: "-", INF: "✓?", LOST: "~",
+         BG: "⠁", STALE: "◌"}
 LABEL = {Q: "queued", RUN: "running", REV: "reviewing", WAIT: "needs answer", BLK: "blocked",
-         DONE: "done", FAIL: "failed", CXL: "cancelled", INF: "done?", LOST: "lost"}
-ORDER = [FAIL, BLK, WAIT, REV, RUN, Q, LOST, INF, DONE, CXL]  # most urgent first
+         DONE: "done", FAIL: "failed", CXL: "cancelled", INF: "done?", LOST: "lost", BG: "waiting", STALE: "stale"}
+ORDER = [FAIL, BLK, WAIT, REV, RUN, BG, Q, LOST, INF, DONE, CXL]  # most urgent first
 # The running spinner: the 10-frame braille dots cycle, one frame per 250 ms (the operator's pick over
 # a 4-frame quarter turn). Braille is drawn cell-exact by terminals (ghostty's own sprites);
 # the half circles came from a fallback font, wider than a cell, and overlapped (the operator's report).
 # This table and GLYPH are the one place glyphs are chosen (the design's swarm-tui.js SPIN / GL match).
 SPIN = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"  # its length is the cycle: animation timing reads len(SPIN)
+# Waiting (turn 8): one braille dot circling the cell, a step per second (every 4 frames); calmer than
+# the spinner and braille for the same reason (the design's first clocks ◴◵◶◷ came from a fallback font).
+CLOCK = "⠁⠈⠐⠠⢀⡀⠄⠂"
 
 
 def live(status: str) -> bool:
@@ -30,6 +38,16 @@ def live(status: str) -> bool:
 
 def urgency(status: str) -> int:
     return ORDER.index(status) if status in ORDER else len(ORDER)
+
+
+@dataclass
+class BgTask:
+    """Background work a session or agent started and has not heard the end of: a Bash run in
+    the background (or moved there by its timeout) or a Monitor watch."""
+    id: str
+    kind: str  # Bash | Monitor
+    description: str = ""
+    started: float | None = None
 
 
 @dataclass
@@ -67,6 +85,7 @@ class Agent:
     inferred: bool = False  # status guessed from the agent's own file
     transcript: str | None = None
     seq: int = 0  # stable index for the spinner frame
+    bg: list[BgTask] = field(default_factory=list)  # its own background work in flight
 
 
 @dataclass
@@ -108,6 +127,8 @@ class Orchestrator:
     tab_no: int | None = None  # the tab's position in its workspace, 1-based (herdr's tab number)
     machine: str | None = None  # a saved herdr SSH machine's label; None = this machine
     machine_id: str | None = None  # that machine's stable id (identity, --machine)
+    bg: list[BgTask] = field(default_factory=list)  # the main session's background work in flight
+    last_activity: float | None = None  # the newest transcript timestamp of the session or its agents
 
     def agents(self) -> list[Agent]:
         return [a for t in self.threads for a in t.agents]
@@ -121,6 +142,7 @@ class Swarm:
     inbox_ok: bool = False
     errors: list[str] = field(default_factory=list)  # sessions or records that could not be read
     docked: str | None = None  # cockpit: the orchestrator pane panorama is docked next to
+    stale_after: float = 12 * 3600.0  # config stale_after: idle this long reads "stale"
 
     def counts(self) -> dict:
         ags = [a for o in self.orchestrators for a in o.agents()]
@@ -130,6 +152,7 @@ class Swarm:
             "active_threads": sum(1 for o in self.orchestrators for t in o.threads if not t.done),
             "agents": len(ags),
             "running": sum(1 for a in ags if a.status in (RUN, REV)),
+            "waiting": sum(1 for o in self.orchestrators if o.bg) + sum(1 for a in ags if a.status == BG),
             "questions": sum(len(o.inbox) for o in self.orchestrators),
             "blocked": sum(1 for o in self.orchestrators if o.herdr_status == "blocked"),
             "failed": sum(1 for a in ags if a.status == FAIL),

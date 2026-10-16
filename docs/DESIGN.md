@@ -72,7 +72,9 @@ optional event files the orchestrators write.
 Agent `status` uses the design's eight codes: `q` queued ○, `run` running ⠋
 (spinner ⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏), `rev` reviewing », `wait` needs answer ?, `blk` blocked !,
 `fail` failed ✗, `done` ✓, `cxl` cancelled -. Amber is reserved for `wait` and
-`blk`, red for `fail`.
+`blk`, red for `fail`. Turn 8 adds `bg` waiting ⠁ (lavender, one braille dot circling the cell,
+`⠁⠈⠐⠠⢀⡀⠄⠂`): see *Waiting and stale*. Agents and orchestrators carry `bg` (their background
+tasks in flight); orchestrators carry `last_activity`; the swarm carries `stale_after`.
 
 ## Data layer (`src/herdr_panorama/scan/`)
 
@@ -149,7 +151,7 @@ last timestamp, the calls without a result (in flight), the current activity
 Tool calls: a byte count of `"type":"tool_use"` in the agent's assistant
 records, or the notice's `tool_uses` when higher. A record that cannot be
 applied is counted and skipped, never stopping the rest of the batch; the
-count shows in the header's `stale` chip.
+count shows in the header's `refresh failed` chip.
 
 ### Linking
 
@@ -717,6 +719,88 @@ colours and `TILE_OFF` the same way, and an unseen tile's pulse runs over that b
   tick: 35 KB per full frame before, about 1.3 KB per tick now. herdr diffs pane output, so its
   client only redraws what changed; its cost grows with the fps, not with the screen.
 
+### Waiting and stale (design turn 8, approved by the operator)
+
+Reference: `docs/design/swarm-states.js`, rendered by `render-8.mjs`; `tests/test_states.py`
+compares cell for cell (the whole docked panel, 9e since turn 9; in 2a the new orchestrator cards, the state lines
+of the earlier ones, the background card and the waiting agent's card). The operator's
+answers: the 3a questions label is now `needs you` (Q109), the header chip `refresh failed`
+(Q110), and a long wait stays `waiting` with its age (Q111).
+
+- **Waiting** (`bg`, ⠁, lavender `#b39ddb`): herdr says the session is idle (or an agent's
+  turn ended), but background work it started is still running, so it will wake up by
+  itself. One braille dot circles the cell, a step per second (`⠁⠈⠐⠠⢀⡀⠄⠂`; the design's first
+  draft had the clocks `◴◵◶◷`, but ghostty takes those from a wider fallback font, the problem
+  that replaced `◐◓◑◒` with braille); the left edge is steady (no sweep:
+  nothing thinks; no blink: nothing needs you).
+- **Stale** (◌, grey `#646a73`): an orchestrator that would be idle or all done, with nothing
+  in flight, whose last activity is older than `stale_after` (default `"12h"`). Last activity
+  is the newest timestamp in its session's transcript or any of its agents' (a prompt, a
+  reply, a tool call, a notice). Name and label go faint: `stale 15h` (hours up to 48, then
+  days). It keeps its place in tab order.
+- **Order:** failed > blocked > needs you > working > reviewing > waiting > stale | idle |
+  all done. A waiting orchestrator older than `stale_after` stays waiting and says how long:
+  `waiting 15h` (the oldest task's age).
+- **2a:** the orchestrator card reads `waiting · N bg`. Its background tasks are a
+  `background` card above its threads (selectable; Enter stays: nothing is behind it), one
+  row per task: clock, kind (`Bash`, `Monitor`), description, age; the bottom tag says
+  `turn ended Nm ago` (since the last activity). A waiting agent's expanded card lists its
+  tasks under `now  turn ended · N task(s) in background`, and its label is `waiting 3m`
+  (since its oldest task).
+- **Docked panel (9e tiles):** the state tile and the label `waiting` (or `stale 15h`), the
+  second line appends ` · N bg`, and the docked entry lists its background tasks first, a
+  lavender tile each (`bash 14m` on the right). An entry without threads starts its counts
+  where the tiles would be. In 9e too, questions read `needs you` (Q109).
+- **Animation:** the clock is an `Anim` on the restyle path (`render.clock`), stepping at whole
+  frames like the spinner; `tests/test_smooth.py` covers the 2a and 9e waiting layouts.
+- **Filters and counts:** `running` keeps waiting orchestrators and drops stale ones; `needs
+  me` shows neither. The header's `? ! ✗` are unchanged. The legend gains `⠁ waiting` and
+  `◌ stale` (a narrow legend drops whole entries that do not fit: stale, waiting, lost, done?).
+
+**Detecting background work (`scan/session.py`).** Records, all captured in
+`tests/fixtures/templates.json`:
+
+| Record | Meaning |
+|---|---|
+| `toolUseResult.backgroundTaskId` on a Bash result | a Bash in the background (`run_in_background`, or moved there by its timeout: `timedOutAfterMs`) |
+| `toolUseResult` `taskId` + `timeoutMs` (+ `persistent`) | a Monitor watch; it expires after `timeoutMs` unless persistent |
+| `<task-notification>` with a `<status>` naming the task | it ended. **Every** `<task-id>` of a notice counts: a resumed session gets one notice listing all the tasks its previous process left, plus Claude Code's own `__orphan_summary__` marker id (skipped) |
+| a notice whose `<event>` starts with `[Monitor expired` | the Monitor ended |
+| a TaskStop / KillShell result, not `is_error` (`task_id` + `task_type`) | stopped |
+
+A task belongs to the file that launched it (main, or an agent; a fork's copy of its parent's
+history never claims it). It is open until one of the endings above, or a Monitor's timeout
+(+60 s). Claude Code can also end a task without any record (a stop from its UI, the process
+exiting), so an open task is only *waiting* while:
+
+- **its process lives (local machines, Linux):** a background Bash runs as a shell under the
+  Claude process, writing `…/tasks/<task id>.output`; while it runs, a descendant of the
+  pane's Claude process (`herdr pane process-info`, cached per pane, re-checked by start
+  time) holds that file open (`bgproc.py`, `/proc/<pid>/task/*/children` and
+  `/proc/<pid>/fd`). A shell left by an earlier Claude process (the session was resumed) is
+  not a descendant: nobody will be told it finished. The tree is read once per collect and
+  only when a task is open.
+- **otherwise at most `BG_CAP` = 24 h after it started:** another machine's mirrored
+  transcripts (`machines.py`: transcript only), no `/proc` (macOS), a Monitor (its process is
+  not visible this way; its timeout usually ends it first), or a pane whose Claude process
+  herdr cannot name.
+
+An agent is waiting when, without terminal evidence for it (a notice, a completed
+acknowledgement, a journal result: the **completion guard**), it is not writing (120 s), has
+no call in flight and still has a waiting task. Its own notice only comes once its background
+children are gone, so a finished agent's leftover loops never make it waiting (seen on the
+operator's machine: poll loops of agents done days ago, still alive). An agent waiting on a
+waiting child counts as running, as for a running child.
+
+**Validation** (read-only, on the operator's 30 days of transcripts, transcript rule alone):
+of 1,408 idle gaps of main sessions (an `end_turn`, then over a minute of silence) the rule
+called waiting, 1,361 had that task's ending notice arrive later (96.7 %), 6 were tasks still
+running, and 41 belonged to one task stopped without a record (the process check removes
+it). One idle gap was woken by a task the rule did not know (launched under an earlier
+session id, before a resume). Live: of 7 idle orchestrators, one was waiting (a poll loop,
+a child of its Claude process for 15 h, checked by hand); the other six were idle for 13–39 h
+(stale). The replay oracle's counts for agents are in *Accuracy*.
+
 ### Subagents to any depth (design turn 5, direction 5d)
 
 Agents spawn subagents, which spawn theirs. The collector already puts a nested
@@ -1141,7 +1225,8 @@ tile in its off phase.
 - **Header.** `SWARM  N orchestrators`, with `?N !N ✗N` on the right.
 - **One entry per orchestrator, two lines.**
   - The first line: tab number, the state in a tile, name (dim when all done), then `?N`
-    and the state label (`failed`, `blocked`, `working`, `waiting`, `idle` or `done`).
+    and the state label (`failed`, `blocked`, `working`, `needs you`, `waiting`, `stale`, `idle` or `done`;
+    turn 8 renamed the questions label from `waiting` to `needs you`).
   - The second line: one tile per active thread (its most urgent agent's state), a cell
     apart; the done threads fold into one `✓n` tile; then `N active · N agents`. When the
     tiles do not all fit, the first ones then `+n`, so the counts stay whole.
@@ -1192,7 +1277,7 @@ tile in its off phase.
 - **Extensions the design does not show.**
   - 3a has no separate "selected" look. The keyboard cursor wears the design's hover look:
     the darker background and a dim `›`. On the docked entry, its gold bar wins.
-  - A `stale` chip appears after the header when a refresh fails.
+  - A `refresh failed` chip appears after the header when a refresh fails.
   - `a answer` is left out of the footer when there is no inbox.
   - `z graph` sits on the footer's rule (see Follow).
 
@@ -1203,7 +1288,7 @@ last render (see Smooth animation) and re-renders only on a refresh or input. Co
 collect still running is skipped (a Textual `exclusive` worker only marks the
 old thread cancelled, it keeps running), so one collect at a time owns the
 tail offsets. A failing collect keeps the last good model on screen and the
-header shows a `stale` chip with the reason.
+header shows a `refresh failed` chip with the reason (called `stale` before turn 8).
 
 - `herdr api snapshot`: one call.
 - Per session, every file is stat-ed. Unchanged files cost nothing; changed
@@ -1213,7 +1298,10 @@ header shows a `stale` chip with the reason.
   workflow launches, notices, inbox receipts, titles, string user messages).
   The rest are only counted for `"type":"tool_use"`.
 - Agent files untouched since before the done window and never read are
-  skipped until they change: they cannot affect anything the view shows.
+  skipped until they change: they cannot affect anything the view shows. Except (turn 8) an
+  agent that never ended (no notice, no completed acknowledgement): it may still be waiting on
+  its own background Bash, so its file is read after all when it holds a background launch
+  (one byte search per file version).
   Main transcripts are always read in full.
 - Measured on this machine (7 live sessions, 48 MB largest main transcript,
   175 agents in one session): first load 0.8 s in the worker, later ticks
@@ -1232,6 +1320,7 @@ changes; the same pattern as herdr-inbox's `tab_prefix`:
 
 ```toml
 done_window = "1h"   # how long finished threads stay visible: seconds or "90m", "2h30m"
+stale_after = "12h"  # an orchestrator idle this long reads "stale" (PANORAMA_STALE_AFTER overrides)
 home_tab = true      # the home tab (false: the key opens the popup)
 cockpit = false      # experimental: panorama docked left of the selected agent (see Cockpit)
 cockpit_width = 46   # the list's drawable columns in the cockpit (36..119)

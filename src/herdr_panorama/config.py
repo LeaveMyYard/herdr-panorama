@@ -16,6 +16,9 @@ changes. Keys:
   default true.
 - ``animation_fps``: how often colours move (pulses, blinks), 2 to 30, default 20. Lower costs less
   CPU and looks steppier; spinners and sweeps keep their speed. Read when the view starts.
+- ``stale_after``: an orchestrator idle this long (nothing in its transcripts, nothing in flight)
+  reads "stale". A duration like ``done_window``; default ``"12h"``. ``PANORAMA_STALE_AFTER``
+  overrides it.
 """
 
 from __future__ import annotations
@@ -31,6 +34,7 @@ from . import herdr
 log = logging.getLogger("herdr_panorama.config")
 
 DEFAULT_DONE_WINDOW = 3600.0
+DEFAULT_STALE_AFTER = 12 * 3600.0
 _DUR = re.compile(r"^\s*(?:(\d+)\s*h)?\s*(?:(\d+)\s*m)?\s*(?:(\d+)\s*s)?\s*$")
 _cache: dict = {"dir": None, "mtime": None, "data": {}}
 
@@ -100,3 +104,13 @@ def animation_fps() -> float:
         return float(DEFAULT_ANIMATION_FPS)
     lo, hi = ANIMATION_FPS_RANGE
     return float(min(max(value, lo), hi))
+
+
+def stale_after() -> float:
+    env = os.environ.get("PANORAMA_STALE_AFTER")
+    if env:
+        val = parse_duration(env)
+        if val is not None:
+            return val
+    val = parse_duration(load().get("stale_after"))
+    return DEFAULT_STALE_AFTER if val is None else val

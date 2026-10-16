@@ -297,7 +297,7 @@ class Watcher:
 
     def __init__(self, machine: Machine, now=time.time):
         self.machine = machine
-        self.collector = Collector(root=str(mirror_root(machine)), now=now)
+        self.collector = Collector(root=str(mirror_root(machine)), now=now, procs=False)  # transcripts only
         self.result = Result()
         self._stop = threading.Event()
 

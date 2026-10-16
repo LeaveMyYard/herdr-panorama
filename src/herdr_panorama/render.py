@@ -16,24 +16,27 @@ import time
 from dataclasses import dataclass, field
 
 from .herdr import clean
-from .model import (BLK, CXL, DONE, FAIL, GLYPH, INF, LABEL, LOST, Q, REV, RUN, SPIN, WAIT, Agent, Orchestrator,
-                    Swarm, Thread, live, urgency)
+from .model import BG as BGW  # waiting (render's BG is the background colour)
+from .model import (BLK, CLOCK, CXL, DONE, FAIL, GLYPH, INF, LABEL, LOST, REV, RUN, SPIN, STALE, WAIT, Agent, BgTask,
+                    Orchestrator, Q, Swarm, Thread, live, urgency)
 
 # -- theme (TH.dark and the pod colours PB from the design) ---------------------------
 
 BG, FG, HI, DIM, FAINT, LINE, SEL, HDR, KEY = ("#101215", "#c3c7cd", "#eceef1", "#80868f", "#4d535c", "#2c313a",
                                               "#1e2937", "#171a1f", "#e2cf9c")
 ST = {Q: "#8d939d", RUN: "#68c2b5", REV: "#8eaee6", WAIT: "#ffb547", BLK: "#ffb547", DONE: "#6c9673",
-      FAIL: "#ff6b6b", CXL: "#646a73", INF: "#8a9a8d", LOST: "#c08a8a"}
+      FAIL: "#ff6b6b", CXL: "#646a73", INF: "#8a9a8d", LOST: "#c08a8a", BGW: "#b39ddb", STALE: "#646a73"}
 PB = {DONE: ("#2c6b4c", "#e3f2e9"), RUN: ("#1f625c", "#d8f2ee"), REV: ("#2e4f86", "#dfe8f8"),
       Q: ("#2a2e35", "#9aa0aa"), WAIT: ("#f2a93b", "#1b1203"), BLK: ("#f2a93b", "#1b1203"),
       FAIL: ("#d8363e", "#ffffff"), CXL: ("#24272c", "#6b717a"), "next": ("#1c1f24", "#454b54"),
-      INF: ("#26312a", "#a9bcae"), LOST: ("#3a2526", "#e0b4b4")}  # muted: not confirmed (issue #2)
+      INF: ("#26312a", "#a9bcae"), LOST: ("#3a2526", "#e0b4b4"),  # muted: not confirmed (issue #2)
+      BGW: ("#3b3159", "#e6def8"), STALE: ("#1b1e23", "#6b717a")}  # design turn 8
 
 WIDE = 120
 FILTERS = ("all", "running", "needs")
 FILTER_LABEL = {"all": "all", "running": "running", "needs": "needs me"}
 DONE_CARD = "done:"  # thread-column id of the "✓ n complete" card
+BG_CARD = "bg:"  # thread-column id of an orchestrator's "background" card (design turn 8)
 NEW_ROW = "new:"  # orchestrator-column id of the "+ New agent" row (always last, never moves)
 FIN_CARD = "fin:"  # agent-column id of the "n finished" card
 CARDS = ("orch", "new", "thread", "done", "agent", "fin")  # click-target kinds that are whole cards
@@ -250,6 +253,7 @@ class View:
     # Animation time in design frames of 250 ms. Whole steps move spinners and sweeps; the colour
     # tick sets the fraction in between, which only colours follow (pulses, blinks: Anim).
     frame: float = 0
+    stale_after: float = 12 * 3600.0  # the swarm's (config stale_after), set by render()
 
 
 def _spin(frame: float, seq: int) -> str:
@@ -262,7 +266,30 @@ def spin(frame: float, seq: int = 0) -> str:
 
 
 def glyph(a: Agent, frame: float) -> str:
+    if a.status == BGW:
+        return clock(frame, a.seq)
     return spin(frame, a.seq) if a.status == RUN else GLYPH.get(a.status, "?")
+
+
+def _clock(frame: float, seed: int) -> str:
+    return CLOCK[(int(frame) // 4 + seed) % len(CLOCK)]
+
+
+def clock(frame: float, seed: int = 0) -> str:
+    """Waiting: one braille dot circles the cell, a step per second (every 4 frames of 250 ms).
+    An Anim on the restyle path, like the spinner: it moves without a re-render."""
+    return Anim(_clock, (seed,), frame, step=True)
+
+
+def ago(seconds: float) -> str:
+    """An idle age: minutes, hours up to 48, then days."""
+    m = int(max(0.0, seconds) // 60)
+    return f"{m // 1440}d" if m >= 2880 else f"{m // 60}h" if m >= 60 else f"{m}m"
+
+
+def is_stale(o: Orchestrator, view: View) -> bool:
+    """Idle longer than stale_after: nothing in its transcripts or its agents' for that long."""
+    return o.last_activity is not None and view.now - o.last_activity > view.stale_after
 
 
 def nq(agents: list[Agent]) -> int:
@@ -278,8 +305,10 @@ def orch_needs(o: Orchestrator) -> bool:
 
 
 def visible_orchs(swarm: Swarm, view: View) -> list[Orchestrator]:
-    if view.filter == "running":
-        return [o for o in swarm.orchestrators if any(not t.done for t in o.threads) or o.herdr_status == "working"]
+    if view.filter == "running":  # waiting counts (work is in flight), stale does not
+        return [o for o in swarm.orchestrators if orch_state(o, 0, view).st != STALE and (
+            any(not t.done for t in o.threads) or o.herdr_status == "working" or o.bg
+            or any(a.status == BGW for a in o.agents()))]
     if view.filter == "needs":
         return [o for o in swarm.orchestrators if orch_needs(o)]
     return list(swarm.orchestrators)
@@ -429,7 +458,7 @@ def nav(swarm: Swarm, view: View) -> list[list[str]]:
     if o is None:
         return cols
     active, done = split_threads(o, view)
-    cols[1] = [t.id for t in active]
+    cols[1] = ([BG_CARD + o.pane_id] if o.bg else []) + [t.id for t in active]
     if done:
         cols[1].append(DONE_CARD + o.pane_id)
         if o.pane_id in view.done_open:
@@ -582,26 +611,31 @@ class OrchState:
     glyph: str
     label: str
     working: bool = False
+    bg: int = 0  # waiting: the background tasks in flight
 
     @property
     def quiet(self) -> bool:
-        return self.st in (Q, DONE, CXL, INF, LOST)
+        return self.st in (Q, DONE, CXL, INF, LOST, STALE)
 
     @property
     def attention(self) -> bool:
         return self.st in (FAIL, BLK, WAIT)
 
 
-QUIET = (Q, DONE, CXL, INF, LOST)
+QUIET = (Q, DONE, CXL, INF, LOST, STALE)
 
 
 def state_of(agents: list[Agent], all_done: bool, frame: int, working_extra: bool = False,
-             blocked_extra: bool = False, waiting_extra: bool = False) -> OrchState:
-    """The design's stOf: attention > working > reviewing > idle; done when everything is."""
+             blocked_extra: bool = False, waiting_extra: bool = False, bg_extra: list[BgTask] | None = None,
+             stale_label: str | None = None, now: float = 0.0, stale_after: float | None = None) -> OrchState:
+    """The design's stOf: attention > working > reviewing > waiting > stale | idle; done when
+    everything is (design turn 8: waiting and stale win over done)."""
     has = lambda st: any(a.status == st for a in agents)  # noqa: E731
     runner = next((a for a in agents if a.status == RUN), None)
     working = runner is not None or working_extra
-    if all_done and not working and not blocked_extra:
+    tasks = list(bg_extra or []) + [b for a in agents if a.status == BGW for b in a.bg]
+    n_bg = len(bg_extra or []) + sum(1 for a in agents if a.status == BGW)
+    if all_done and not working and not blocked_extra and not n_bg and not stale_label:
         return OrchState(DONE, "✓", "all done")
     for st, g, label, hit in ((FAIL, "✗", "failed", has(FAIL)), (BLK, "!", "blocked", has(BLK) or blocked_extra),
                               (WAIT, "?", "needs you", has(WAIT) or waiting_extra)):
@@ -611,15 +645,25 @@ def state_of(agents: list[Agent], all_done: bool, frame: int, working_extra: boo
         return OrchState(RUN, glyph(runner, frame) if runner else spin(frame), "working", True)
     if has(REV):
         return OrchState(REV, "»", "reviewing")
+    if n_bg:
+        label = "waiting"
+        oldest = min((b.started for b in tasks if b.started is not None), default=None)
+        if stale_after is not None and oldest is not None and now - oldest > stale_after:
+            label += " " + ago(now - oldest)  # waiting longer than stale_after: say how long
+        return OrchState(BGW, clock(frame), label, bg=n_bg)
+    if stale_label:
+        return OrchState(STALE, GLYPH[STALE], stale_label)
     return OrchState(Q, "○", "idle")
 
 
-def orch_state(o: Orchestrator, frame: int) -> OrchState:
+def orch_state(o: Orchestrator, frame: int, view: View | None = None) -> OrchState:
     """The design's orchSt. Extensions (declared in DESIGN): herdr reporting the main session
     ``working`` counts as working, ``blocked`` as blocked, and inbox questions no agent filed
-    as needs you: the main session's own state."""
+    as needs you: the main session's own state. With ``view``: waiting and stale (turn 8)."""
+    stale = f"stale {ago(view.now - o.last_activity)}" if view is not None and is_stale(o, view) else None
     return state_of(o.agents(), all(t.done for t in o.threads), frame, o.herdr_status == "working",
-                    o.herdr_status == "blocked", bool(o.inbox))
+                    o.herdr_status == "blocked", bool(o.inbox), o.bg, stale,
+                    view.now if view else 0.0, view.stale_after if view else None)
 
 
 def thread_state(t: Thread, frame: int) -> OrchState:
@@ -832,8 +876,8 @@ def animated(swarm: Swarm, unseen: dict[str, str] | None = None) -> bool:
     for o in swarm.orchestrators:
         if o.herdr_status in ("working", "blocked") or o.inbox:
             return True
-        if any(a.status in (RUN, FAIL, BLK, WAIT) for a in o.agents()):
-            return True
+        if o.bg or any(a.status in (RUN, FAIL, BLK, WAIT, BGW) for a in o.agents()):
+            return True  # (waiting: the clock hand turns)
     return False
 
 
@@ -941,9 +985,19 @@ def role_label(a: Agent) -> str:
     return a.role or a.agent_type or "agent"
 
 
-def agent_detail_lines(a: Agent, w: int) -> list[list]:
+def bg_row(b: BgTask, w: int, now: float, frame: int, i: int) -> list:
+    """One background task in ``w`` cells: its clock, kind, description and age (right)."""
+    when = dur(now - b.started) if b.started else ""
+    room = max(1, w - 11 - len(when))
+    return [(clock(frame, i + 1), ST[BGW], True), (" ", FG), (fit(b.kind, 8), DIM),
+            (fit(clean(b.description) or "in the background", room), FG), (" ", FG), (when, DIM)]
+
+
+def agent_detail_lines(a: Agent, w: int, now: float = 0.0, frame: int = 0) -> list[list]:
     out: list[list] = []
     out.append([("now  ", FAINT), (trunc(clean(a.activity or LABEL.get(a.status, "")), w - 5), FG)])
+    if a.status == BGW:
+        out += [bg_row(b, w - 1, now, frame, i) for i, b in enumerate(a.bg)]
     for q in a.questions:
         for i, line in enumerate(wrap(clean(q), w - 2)[:4]):
             out.append([("  " if i else "? ", ST[WAIT], True), (line, ST[WAIT])])
@@ -993,8 +1047,9 @@ def header(s: Screen, swarm: Swarm, view: View, stale: str | None = None) -> Non
         start = x
         x = s.P(x, 0, [(FILTER_LABEL[k], HI if on else FAINT, on)]) + 3
         s.target(start, x - 3, 0, "filter", (k,))
-    if stale:
-        s.P(x, 0, [(" stale ", "#1b1203", True, ST[WAIT]), (" " + trunc(clean(stale), max(0, s.w - x - 40)), FAINT)])
+    if stale:  # the last refresh failed (operator: "refresh failed", not "stale", since turn 8)
+        s.P(x, 0, [(" refresh failed ", "#1b1203", True, ST[WAIT]),
+                   (" " + trunc(clean(stale), max(0, s.w - x - 49)), FAINT)])
     c = swarm.counts()
     segs = [(f"? {c['questions']}", ST[WAIT], True), "  ", (f"! {c['blocked']}", ST[BLK], True), "  ",
             (f"✗ {c['failed']}", ST[FAIL], True), "    ", (hhmm(view.now), DIM)]
@@ -1005,15 +1060,26 @@ def header(s: Screen, swarm: Swarm, view: View, stale: str | None = None) -> Non
 
 
 LEGEND = [(DONE, "✓", "done"), (INF, "✓?", "done?"), (RUN, "⠋", "running"), (REV, "»", "review"),
-          (Q, "○", "queued"), (WAIT, "?", "question"), (BLK, "!", "blocked"), (FAIL, "✗", "failed"),
-          (LOST, "~", "lost")]
+          (BGW, GLYPH[BGW], "waiting"), (Q, "○", "queued"), (STALE, "◌", "stale"), (WAIT, "?", "question"),
+          (BLK, "!", "blocked"), (FAIL, "✗", "failed"), (LOST, "~", "lost")]
 SHORT = {"running": "run", "question": "ask", "blocked": "block", "failed": "fail", "queued": "queue",
-         "review": "rev"}
+         "review": "rev", "waiting": "wait"}
+
+
+NARROW_DROP = (STALE, BGW, LOST, INF)  # a narrow legend that does not fit drops whole entries, these first
 
 
 def legend(s: Screen, y: int) -> None:
     x = 1
-    for k, g, lab in LEGEND:
+    items = list(LEGEND)
+    if s.w < WIDE:
+        gap = 2 if s.w >= 80 else 1
+        width = lambda its: 1 + sum(len(g) + 1 + len(SHORT.get(lab, lab)) + gap for _, g, lab in its)  # noqa: E731
+        for k in NARROW_DROP:
+            if width(items) - gap <= s.w - 1:
+                break
+            items = [it for it in items if it[0] != k]
+    for k, g, lab in items:
         if s.w >= WIDE:
             pod(s, x, y, k, g)
             x = s.P(x + 4, y, [(lab, FAINT)]) + 2
@@ -1089,7 +1155,7 @@ def orch_column(swarm: Swarm, view: View, w: int) -> tuple[Column, int]:
             y += 1
         is_sel = o.pane_id == view.orch
         focus = is_sel and view.focus == 0
-        os_ = orch_state(o, view.frame)
+        os_ = orch_state(o, view.frame, view)
         cv.area(0, w, y, y + 4, "orch", (o.pane_id,))
         rbox(cv, 0, y, w, 4, border(view, "orch", (o.pane_id,), focus, is_sel))
         edge(cv, 0, y, w, 4, os_, view.frame, 0)
@@ -1100,12 +1166,17 @@ def orch_column(swarm: Swarm, view: View, w: int) -> tuple[Column, int]:
         mk = [m for m in marks_of(o.agents(), o.herdr_status == "blocked", loose)
               if not (m[0] == "✗" and os_.st == FAIL) and not (m[0] == "!" and os_.st == BLK)]
         mw = marks_right(cv, w - 2, y + 1, mk, o.pane_id)
-        cv.P(6, y + 1, [(trunc(clean(o.tab_label), w - 9 - mw), HI if is_sel else DIM if os_.quiet else FG, True)])
+        stale = os_.st == STALE
+        name_fg = HI if is_sel else FAINT if stale else DIM if os_.quiet else FG
+        cv.P(6, y + 1, [(trunc(clean(o.tab_label), w - 9 - mw), name_fg, True)])
         active = sum(1 for t in o.threads if not t.done and t.source != "session")
         n_live = sum(1 for a in o.agents() if live(a.status) and not a.id.startswith("main:"))
         label = trunc(os_.label, w - 8)
-        rest = "" if os_.quiet else trunc(f" · {active}/{n_live}", max(0, w - 8 - len(label)))
-        cv.P(6, y + 2, [(label, FAINT if os_.quiet else ST[os_.st], not os_.quiet), (rest, DIM)])
+        if os_.st == BGW:
+            rest = trunc(f" · {os_.bg} bg", max(0, w - 8 - len(label)))
+        else:
+            rest = "" if os_.quiet else trunc(f" · {active}/{n_live}", max(0, w - 8 - len(label)))
+        cv.P(6, y + 2, [(label, ST[STALE] if stale else FAINT if os_.quiet else ST[os_.st], not os_.quiet), (rest, DIM)])
         tags(cv, 0, y + 3, w, [o.flavour])
         anchors.append(y + 1)
         if is_sel:
@@ -1142,10 +1213,34 @@ def thread_card(cv: Screen, x: int, y: int, w: int, t: Thread, view: View, is_se
     return hh
 
 
+def bg_card(cv: Screen, x: int, y: int, w: int, o: Orchestrator, view: View, is_sel: bool, focus: bool) -> int:
+    """The orchestrator's own background tasks (design turn 8): a card above its threads. Its height."""
+    hh = 3 + len(o.bg)
+    ident = (o.pane_id, BG_CARD + o.pane_id)
+    cv.area(x, x + w, y, y + hh, "thread", ident)
+    rbox(cv, x, y, w, hh, border(view, "thread", ident, focus, is_sel))
+    edge(cv, x, y, w, hh, OrchState(BGW, "", ""), view.frame)
+    n = len(o.bg)
+    cv.P(x + 2, y + 1, [(clock(view.frame), ST[BGW], True), " ", ("background", HI if is_sel else FG, True),
+                        (trunc(f"  {n} task{'s' if n != 1 else ''} · main session", w - 15), DIM)])
+    for i, b in enumerate(o.bg):
+        cv.P(x + 4, y + 2 + i, bg_row(b, w - 7, view.now, view.frame, i))
+    if o.last_activity:
+        tags(cv, x, y + hh - 1, w, [f"turn ended {dur(view.now - o.last_activity)} ago"])
+    return hh
+
+
 def thread_column(o: Orchestrator, view: View, w: int) -> tuple[Column, int]:
     cv = Screen(w, TALL)
     active, done = split_threads(o, view)
     y, anchors, sel, sel_anchor = 0, [], None, None
+    if o.bg:
+        is_sel = view.thread == BG_CARD + o.pane_id
+        hh = bg_card(cv, 0, y, w, o, view, is_sel, is_sel and view.focus == 1)
+        anchors.append(y + 1)
+        if is_sel:
+            sel, sel_anchor = (y, y + hh), y + 1
+        y += hh + 1
     for t in active:
         is_sel = t.id == view.thread
         hh = thread_card(cv, 0, y, w, t, view, is_sel, is_sel and view.focus == 1, len(anchors) + 1,
@@ -1177,7 +1272,7 @@ def thread_column(o: Orchestrator, view: View, w: int) -> tuple[Column, int]:
                 if is_sel:
                     sel, sel_anchor = (y, y + hh), y + 1
                 y += hh + 1
-    if not active and not done:
+    if not active and not done and not o.bg:
         cv.P(2, 0, [("no subagents in the last hours", FAINT)])
         y = 1
     return Column(cv, anchors, sel, sel_anchor), y
@@ -1223,7 +1318,7 @@ def agent_card(cv: Screen, x: int, y: int, w: int, a: Agent, t: Thread, view: Vi
             cv.P(x + w - 2 - len(right), y + 1, [(right, DIM, True)])
         tags(cv, x, y + 2, w, [age_of(a, view), f"{a.tool_calls} calls" if a.tool_calls else None])
         return 3
-    lines = agent_detail_lines(a, w - 6)
+    lines = agent_detail_lines(a, w - 6, view.now, view.frame)
     hh = 6 + len(lines)
     cv.area(x, x + w, y, y + hh, "agent", ident)
     rbox(cv, x, y, w, hh, border(view, "agent", ident, focus, True))
@@ -1231,6 +1326,8 @@ def agent_card(cv: Screen, x: int, y: int, w: int, a: Agent, t: Thread, view: Vi
     pulse_box(cv, x, y, w, hh, mark_of([a], view.unseen), view.frame)
     apod(cv, x + 2, y + 1, a, view)
     st = LABEL.get(a.status, a.status) + (" " + dur(view.now - a.ended) + " ago" if a.ended and not live(a.status) else "")
+    if a.status == BGW and any(b.started for b in a.bg):
+        st += " " + dur(view.now - min(b.started for b in a.bg if b.started))  # waiting since its oldest task
     title = [(clean(role_label(a)), HI, True), (" " + short_id(a), FAINT), (" · " + clean(a.model) if a.model else "", DIM)]
     cv.P(x + 6, y + 1, fit_segs(title, max(1, x + w - 2 - len(st) - 1 - (x + 6))))  # never into the state
     cv.P(x + w - 2 - len(st), y + 1, [(st, ST.get(a.status, FG), True)])
@@ -1313,6 +1410,7 @@ def age_of(a: Agent, view: View) -> str | None:
 
 def render(swarm: Swarm, view: View, w: int, h: int, stale: str | None = None) -> Screen:
     """``stale``: why the model may be out of date (a failed refresh, unreadable records)."""
+    view.stale_after = swarm.stale_after
     s = Screen(w, h)
     s.bg(0, 0, w, h, BG)
     header(s, swarm, view, stale)
@@ -1464,7 +1562,7 @@ def _wide(s: Screen, swarm: Swarm, view: View) -> bool:
 
     def card_h(e: Entry) -> int:
         if e.agent is not None and e.ident == view.agent and vis(e.depth):
-            return 6 + len(agent_detail_lines(e.agent, widths[1 + e.depth] - 6))
+            return 6 + len(agent_detail_lines(e.agent, widths[1 + e.depth] - 6, view.now, view.frame))
         return 3
 
     placed, groups, end = place_tree(entries, card_h)
@@ -1523,8 +1621,8 @@ def _narrow(s: Screen, swarm: Swarm, view: View) -> None:
         is_sel = o.pane_id == view.orch
         mk = marks_of(o.agents(), o.herdr_status == "blocked")
         active, done = split_threads(o, view)
-        os_ = orch_state(o, view.frame)
-        state_col = FAINT if os_.quiet else ST[os_.st]
+        os_ = orch_state(o, view.frame, view)
+        state_col = ST[STALE] if os_.st == STALE else FAINT if os_.quiet else ST[os_.st]
         cv.area(0, w, y, y + 1, "orch", (o.pane_id,))
         if not is_sel:
             if view.hover == ("orch", (o.pane_id,)):
@@ -1560,7 +1658,7 @@ def _narrow(s: Screen, swarm: Swarm, view: View) -> None:
                 continue
             exp = t.id == view.thread
             a = find_agent(t, view.agent) if exp else None
-            det = agent_detail_lines(a, w - 10) if a else []
+            det = agent_detail_lines(a, w - 10, view.now, view.frame) if a else []
             steps = len(t.phases)
             hh = (4 + 1 + steps + 1 + 1 + len(det) + 1 + 1) if exp and a else (4 + 1 + steps + 1) if exp else 4
             focus = exp and view.focus == 1
@@ -1626,8 +1724,8 @@ def _narrow(s: Screen, swarm: Swarm, view: View) -> None:
 # "selected" state; the keyboard cursor uses its hover look (background and a dim ›).
 
 DOCK_HOV = "#171a1f"  # swarm-dock.js HOV
-DOCK_LABEL = {DONE: "done", FAIL: "failed", BLK: "blocked", RUN: "working", REV: "working", WAIT: "waiting",
-              Q: "idle"}
+DOCK_LABEL = {DONE: "done", FAIL: "failed", BLK: "blocked", RUN: "working", REV: "working", WAIT: "needs you",
+              Q: "idle", BGW: "waiting", STALE: "stale"}  # turn 8: questions read "needs you", as in 2a
 DOCK_KEYS = [("↑↓", " move "), ("ret", " open "), ("a", " answer "), ("n", " new "), ("pfx+spc", " back")]
 
 
@@ -1642,6 +1740,7 @@ class DockState:
     live: list
     active: list
     done: list
+    bg: int = 0  # background tasks in flight (the session's and its waiting agents')
 
 
 def _att(st: str) -> bool:
@@ -1661,17 +1760,22 @@ def _threads(o: Orchestrator) -> list[Thread]:
     return [t for t in o.threads if t.source != "session"]
 
 
-def dock_state(o: Orchestrator, frame: int) -> DockState:
-    """swarm-dock.js oState: done > failed > blocked > working > waiting > idle. Extensions,
-    as in 2a: herdr reporting the main session working counts as working, blocked as
-    blocked, and the session's open inbox questions are its ?N."""
+def dock_state(o: Orchestrator, frame: int, view: View | None = None) -> DockState:
+    """swarm-dock.js oState (turn 8: swarm-states.js): done > failed > blocked > working >
+    needs you > waiting > stale | idle. Extensions, as in 2a: herdr reporting the main session
+    working counts as working, blocked as blocked, and the session's open inbox questions are
+    its ?N."""
     ags = _sub_agents(o)
     threads = _threads(o)
     has = lambda st: any(a.status == st for a in ags)  # noqa: E731
     runner = next((a for a in ags if a.status == RUN), None)
     q = len(o.inbox) or nq(ags)
     working = runner is not None or has(REV) or o.herdr_status == "working"
-    if threads and all(t.done for t in threads) and not working and o.herdr_status != "blocked" and not q:
+    n_bg = len(o.bg) + sum(1 for a in ags if a.status == BGW)
+    stale = view is not None and is_stale(o, view)
+    label = None
+    if threads and all(t.done for t in threads) and not working and o.herdr_status != "blocked" and not q \
+            and not n_bg and not stale:
         st = DONE
     elif has(FAIL):
         st = FAIL
@@ -1681,16 +1785,26 @@ def dock_state(o: Orchestrator, frame: int) -> DockState:
         st = RUN if (runner or o.herdr_status == "working") else REV
     elif q:
         st = WAIT
+    elif n_bg:
+        st = BGW
+        oldest = min((b.started for b in o.bg if b.started is not None), default=None)
+        if view is not None and oldest is not None and view.now - oldest > view.stale_after:
+            label = f"waiting {ago(view.now - oldest)}"
+    elif stale:
+        st, label = STALE, f"stale {ago(view.now - o.last_activity)}"
     else:
         st = Q
-    g = (glyph(runner, frame) if runner else spin(frame)) if st == RUN else GLYPH.get(st, "?")
+    if st == RUN:
+        g = glyph(runner, frame) if runner else spin(frame)
+    else:
+        g = clock(frame) if st == BGW else GLYPH.get(st, "?")
     live_ags = [a for a in ags if live(a.status)]
-    return DockState(st, DOCK_LABEL[st], q, g, working, ags, live_ags,
-                     [t for t in threads if not t.done], [t for t in threads if t.done])
+    return DockState(st, label or DOCK_LABEL[st], q, g, working, ags, live_ags,
+                     [t for t in threads if not t.done], [t for t in threads if t.done], n_bg)
 
 
 def _dock_stcol(d: DockState) -> str:
-    return ST[d.st] if _att(d.st) else ST[RUN] if d.working else DIM
+    return ST[d.st] if _att(d.st) else ST[RUN] if d.working else ST[BGW] if d.st == BGW else DIM
 
 
 def _thread_glyph(t: Thread, frame: int) -> tuple[str, str]:
@@ -1826,12 +1940,15 @@ def _spawn_rows(t: Thread) -> list[tuple[str, bool, Agent]]:
 
 
 def dock_row(cv: Screen, y: int, o: Orchestrator, view: View, docked: bool, cursor: bool, w: int = 46) -> int:
-    """One orchestrator at row ``y`` (swarm-dock.js vA with swarm-tiles.js 9e's tiles): tab number,
-    state tile, name, ?N and state; its threads' tiles and counts, or for the docked one only the
-    counts and then its thread list, a tile per thread. Its height."""
-    d = dock_state(o, view.frame)
+    """One orchestrator at row ``y`` (swarm-dock.js vA with swarm-tiles.js 9e's tiles; turn 8's
+    waiting and stale from swarm-states.js): tab number, state tile, name, ?N and state; its
+    threads' tiles and counts, or for the docked one only the counts and then its background
+    tasks and its thread list, a tile each. Its height."""
+    d = dock_state(o, view.frame, view)
     threads = (d.active + ([None] if d.done else [])) if docked else []
     items: list = []  # (thread or None for the done row, None) or (thread, (prefix, last, agent)) tree rows
+    if docked:  # the session's own background tasks first (turn 8), one row each
+        items += [(b, None) for b in o.bg]
     for t in threads:
         items.append((t, None))
         if t is not None:
@@ -1854,17 +1971,19 @@ def dock_row(cv: Screen, y: int, o: Orchestrator, view: View, docked: bool, curs
     state = dock_tile(d.st, d.glyph, view)
     x_name = 2 + len(tab) + 1 + len(state[0]) + 1
     room = max(1, min(22, xr - _seglen(right) - 1 - x_name))  # a narrow pane cuts the name, never the state
-    cv.P(2, y, [(tab, FAINT), " ", state, " ",
-                (trunc(clean(o.tab_label), room), HI if docked or hov else DIM if d.st == DONE else FG, docked)])
+    name_fg = HI if docked or hov else FAINT if d.st == STALE else DIM if d.st == DONE else FG
+    cv.P(2, y, [(tab, FAINT), " ", state, " ", (trunc(clean(o.tab_label), room), name_fg, docked)])
     _rp(cv, xr, y, right)
     if d.q:
         xq = xr - _seglen(right)
         cv.target(xq, xq + 1 + len(str(d.q)), y, "answer-orch", (o.pane_id,))
-    counts = f"{len(d.active)} active · {len(d.live)} agents"
+    extra = f" · {d.bg} bg" if d.st == BGW else ""  # turn 8
+    counts = f"{len(d.active)} active · {len(d.live)} agents{extra}"
     if items:  # 9e: the docked entry's list shows the thread tiles, so its line 2 keeps only the counts
         cv.P(x_name, y + 1, [(trunc(counts, w - x_name), FAINT)])
     else:
-        cv.P(x_name, y + 1, _fit_thread_segs(_thread_segs(d, view), "  " + counts, w - x_name))
+        segs = _thread_segs(d, view)
+        cv.P(x_name, y + 1, _fit_thread_segs(segs, ("  " if segs else "") + counts, w - x_name))
     last_thread = max((i for i, (_, r) in enumerate(items) if r is None), default=-1)
     for i, (t, row) in enumerate(items):
         yy = y + 2 + i
@@ -1882,6 +2001,13 @@ def dock_row(cv: Screen, y: int, o: Orchestrator, view: View, docked: bool, curs
             _rp(cv, xr, yy, segs)
             continue
         cv.put(3, yy, "└" if i == last_thread else "├", LINE)
+        if isinstance(t, BgTask):
+            when = f"{t.kind.lower()} {dur(view.now - t.started)}" if t.started else t.kind.lower()
+            tile = dock_tile(BGW, clock(view.frame, i + 1), view)  # 9e: a tile, like the thread rows
+            room = max(1, min(22, xr - len(when) - 1 - (5 + len(tile[0]) + 1)))
+            cv.P(5, yy, [tile, " ", (trunc(clean(t.description) or "in the background", room), FG)])
+            _rp(cv, xr, yy, [(when, DIM)])
+            continue
         if t is None:
             fm = mark_of([a for x in d.done for a in x.agents], view.unseen, True)  # unseen: the tile pulses
             cv.P(5, yy, [dock_tile(DONE, "✓", view, fm), " ", (f"{len(d.done)} done", FAINT)])
@@ -1898,13 +2024,14 @@ def dock_row(cv: Screen, y: int, o: Orchestrator, view: View, docked: bool, curs
 def dock_panel(swarm: Swarm, view: View, w: int, h: int, stale: str | None = None) -> Screen:
     """The cockpit's docked panel (3a): header, one entry per orchestrator, + New agent,
     footer. Every entry is a click target for its orchestrator; ?N answers it."""
+    view.stale_after = swarm.stale_after
     s = Screen(w, h)
     s.bg(0, 0, w, h, BG)
     c = swarm.counts()
     orchs = visible_orchs(swarm, view)
     s.P(1, 0, [("SWARM", DIM, True), (f"  {len(orchs)} orchestrators", FAINT)])
-    if stale:
-        s.P(1 + 5 + 2 + len(f"{len(orchs)} orchestrators") + 1, 0, [(" stale ", "#1b1203", True, ST[WAIT])])
+    if stale:  # the last refresh failed
+        s.P(1 + 5 + 2 + len(f"{len(orchs)} orchestrators") + 1, 0, [(" refresh failed ", "#1b1203", True, ST[WAIT])])
     _rp(s, w - 1, 0, [(f"?{c['questions']}", ST[WAIT], True), " ", (f"!{c['blocked']}", ST[BLK], True), " ",
                       (f"✗{c['failed']}", ST[FAIL], True)])
     s.put(0, h - 2, "─" * w, LINE)

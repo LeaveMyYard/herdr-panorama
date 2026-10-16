@@ -50,7 +50,7 @@ function oState(or, G) {
   else if (has('fail')) [st, l] = ['fail', 'failed'];
   else if (has('blk')) [st, l] = ['blk', 'blocked'];
   else if (r || has('rev')) [st, l] = [r ? 'run' : 'rev', 'working'];
-  else if (q) [st, l] = ['wait', 'waiting'];
+  else if (q) [st, l] = ['wait', 'needs you']; // turn 8 (operator, Q109): 'waiting' means background work
   else [st, l] = ['q', 'idle'];
   return { st, l, q, g: st === 'run' ? G(r) : GL[st], working: !!r || has('rev'), ags, live: ags.filter(LIVE), act: or.threads.filter(t => !isDone(t)), done: or.threads.filter(isDone) };
 }
