@@ -1,0 +1,162 @@
+"""Smooth colour animation (design turn 8): pulses and blinks are continuous in time, the colour
+tick restyles only the animated cells between whole frames, and whole frames stay exactly the
+stepped design frames (the goldens in test_unseen / test_dock_panel / test_deep hold them)."""
+
+import math
+
+import pytest
+
+from herdr_panorama import render, tui
+from herdr_panorama.model import FAIL
+from herdr_panorama.render import FAINT, ST
+
+from .design_deep import deep_swarm
+from .demo import demo_swarm
+from .design_dock import design_swarm
+from .test_tui import loaded, make_app
+from .test_unseen import MARKS
+
+FRACTIONS = [0.3, 1.5, 2.7, 3.95, 5.25, 9.9, 11.6]
+
+
+def rgb(c: str) -> tuple[int, int, int]:
+    return tuple(int(c[i:i + 2], 16) for i in (1, 3, 5))
+
+
+def dump(scr: render.Screen):
+    return [[(c.ch, str(c.fg), str(c.bg) if c.bg else None, c.bold) for c in scr.c[y]] for y in range(scr.h)]
+
+
+def layouts():
+    """(name, swarm factory, view kwargs, width): every layout that animates colours."""
+    return [
+        ("2a unseen", design_swarm, dict(orch="w1:p1", thread="t595", agent="a2", focus=2, unseen=dict(MARKS)), 160),
+        ("3a unseen", design_swarm, dict(orch="w1:p3", dock=True, unseen=dict(MARKS)), 46),
+        ("3a", design_swarm, dict(orch="w1:p3", dock=True), 46),
+        ("narrow", design_swarm, dict(orch="w1:p1", thread="t595", focus=1), 70),
+        ("5d", deep_swarm, dict(orch="w1:p1", focus=2, unseen={"b1": "fail"}), 160),
+        ("demo 2a", demo_swarm, dict(orch="w1:p2", thread="wf:wf_search", agent="j1a2b3c", focus=2), 160),
+        ("demo narrow", demo_swarm, dict(orch="w1:p1", focus=1), 70),
+    ]
+
+
+@pytest.mark.parametrize("name,swarm,kw,w", layouts(), ids=[x[0] for x in layouts()])
+@pytest.mark.parametrize("f", FRACTIONS)
+@pytest.mark.parametrize("start", ["same frame", "frame 0"])
+def test_restyling_equals_a_full_render(name, swarm, kw, w, f, start):
+    """The animation tick's contract: a screen drawn once and restyled to ``f`` (within its frame,
+    or frames later: spinners and sweeps too) is cell for cell the screen a full render at ``f``
+    would draw."""
+    whole = render.render(swarm(), render.View(frame=int(f) if start == "same frame" else 0, **kw), w, 45)
+    assert whole.animated(), "nothing animated in this layout: the test would be vacuous"
+    spans = render.restyle(whole, f)
+    full = render.render(swarm(), render.View(frame=f, **kw), w, 45)
+    assert dump(whole) == dump(full)
+    if kw.get("unseen") or 1 < f % 4 < 2 or 3 < f % 4:  # a pulse, or a blink easing
+        assert spans  # something moved between the frames
+
+
+def test_whole_frames_are_the_stepped_design_frames():
+    """At whole frames the blink is on, on, off, off (the design's floor(F / 2) % 2) and the
+    pulse is the design's 12-step wave, exactly."""
+    assert [render.blink(f) for f in range(8)] == [1, 1, 0, 0, 1, 1, 0, 0]
+    assert [render.blink_col(ST[FAIL], f) for f in range(4)] == [ST[FAIL], ST[FAIL], FAINT, FAINT]
+    old = [(1 - math.cos(2 * math.pi * (f % 12) / 12)) / 2 for f in range(24)]
+    assert [render.wave(f) for f in range(24)] == old
+
+
+def test_colours_glide_in_small_steps_at_the_colour_tick():
+    """Between two colour ticks (COLOUR_SECONDS) no animated colour jumps by more than a few
+    levels per channel: a gradient, not the 4 fps steps."""
+    step = tui.COLOUR_SECONDS / tui.FRAME_SECONDS  # in frames
+    ticks = [i * step for i in range(int(12 / step) + 1)]
+    for fn, most, levels in ((lambda f: render.pulse_col(("fail", False), render.LINE, f), 10, 25),
+                             (lambda f: render.pulse_tint(("wait", False), render.SEL, f), 10, 12),
+                             (lambda f: render.blink_col(ST[FAIL], f), 60, 5)):  # the blink eases over a frame
+        cols = [rgb(fn(f)) for f in ticks]
+        jump = max(max(abs(a - b) for a, b in zip(p, q)) for p, q in zip(cols, cols[1:]))
+        assert jump <= most, jump
+        assert len(set(cols)) > levels  # in-between colours, not two or three levels
+    # the old 4 fps blink jumped the whole way at once
+    assert max(abs(a - b) for a, b in zip(rgb(ST[FAIL]), rgb(FAINT))) > 150
+
+
+def test_a_still_view_has_nothing_to_restyle():
+    from herdr_panorama.model import DONE, Swarm
+    sw = demo_swarm()
+    for o in sw.orchestrators:
+        o.herdr_status, o.inbox = "idle", []
+        for a in o.agents():
+            a.status = DONE
+    scr = render.render(sw, render.View(), 160, 45)
+    assert not scr.animated() and render.restyle(scr, 0.5) == []
+    assert not render.animated(Swarm(orchestrators=sw.orchestrators))
+
+
+async def test_the_animation_tick_restyles_only_animated_cells_never_renders(fake_herdr, monkeypatch):
+    """Between frames the tick repaints only the animated cells, without a render; at a whole
+    frame (every FRAME_SECONDS) spinners and sweeps step the same way."""
+    clock = {"t": 1000.0}
+    app, holder = make_app(design_swarm(), focus_pane="w1:p1")
+    app.anim_clock = lambda: clock["t"]
+    async with app.run_test(size=(160, 45)) as pilot:
+        await loaded(app, pilot)
+        app.view.unseen = dict(MARKS)
+        app.repaint()
+        renders = {"n": 0}
+        real = tui.render.render
+
+        def counting(*a, **k):
+            renders["n"] += 1
+            return real(*a, **k)
+
+        monkeypatch.setattr(tui.render, "render", counting)
+        dirty: list = []
+        monkeypatch.setattr(app.grid, "refresh", lambda *r, **k: dirty.append(r))
+        app._next_frame = clock["t"] + tui.FRAME_SECONDS
+        frame0 = int(app.view.frame)
+        for i in range(1, 5):  # four colour ticks inside one frame
+            clock["t"] += tui.COLOUR_SECONDS
+            app.animate()
+        assert renders["n"] == 0 and int(app.view.frame) == frame0 and app.view.frame > frame0
+        cells = {(y, x) for y, x, _ in app.grid.screen_data.animated()}
+        assert dirty and all(r for r in dirty)  # regions, never a whole-widget refresh
+        for regions in dirty:
+            for r in regions:
+                assert r.height == 1
+                assert {(r.y, x) for x in range(r.x, r.x + r.width)} & cells
+        painted = sum(r.width for regions in dirty for r in regions) / len(dirty)
+        assert painted < 160 * 45 / 10  # a small part of the screen per tick
+        clock["t"] = app._next_frame  # the next whole frame: spinners and sweeps step, still no render
+        dirty.clear()
+        app.animate()
+        assert renders["n"] == 0 and app.view.frame == frame0 + 1 and dirty
+        assert dump(app.grid.screen_data) == dump(real(app.swarm, app.view, 160, 45))
+        await pilot.pause()
+
+
+async def test_a_frame_or_a_refresh_repaints_only_what_changed(fake_herdr, monkeypatch):
+    app, holder = make_app()
+    async with app.run_test(size=(160, 45)) as pilot:
+        await loaded(app, pilot)
+        dirty: list = []
+        monkeypatch.setattr(app.grid, "refresh", lambda *r, **k: dirty.append(r))
+        app.tick()
+        assert len(dirty) == 1 and dirty[0]  # regions only
+        assert 0 < len({r.y for r in dirty[0]}) < 45
+        dirty.clear()
+        app.hover(("orch", ("w1:p2",)))  # a re-render: only the hovered card's cells differ
+        assert len(dirty) == 1 and dirty[0] and len({r.y for r in dirty[0]}) <= 6
+
+
+def test_textual_partial_updates_send_only_the_changed_cells():
+    """tui patches Textual's ChopsUpdate: a span in the middle of a line is sent from its own
+    column, not from the line's start."""
+    from rich.console import Console
+    from rich.segment import Segment
+    from textual._compositor import ChopsUpdate
+    from textual.strip import Strip
+    strip = Strip([Segment("a" * 10), Segment("B" * 5), Segment("c" * 10)])
+    upd = ChopsUpdate([{0: strip}], [(0, 12, 14)], [[25]])
+    out = upd.render_segments(Console(force_terminal=True, color_system="truecolor"))
+    assert out == "\x1b[1;13HBB"
