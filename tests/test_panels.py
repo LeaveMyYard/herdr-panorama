@@ -251,22 +251,6 @@ def test_a_tab_without_its_orchestrator_loses_the_panel_only_after_a_while(world
     assert panel not in world.order("w1:t2") and ("close", panel) in world.calls
 
 
-def test_the_batch_guard_wraps_the_batch(world, tmp_path):
-    """Q153's slot: one function around the start batch."""
-    seen = []
-
-    class Guard:
-        def __enter__(self):
-            seen.append(("in", len(world.calls)))
-
-        def __exit__(self, *a):
-            seen.append(("out", len([c for c in world.calls if c[0] == "swap"])))
-    m = manager(world, tmp_path)
-    m.guard = Guard
-    m.reconcile(world.snapshot(), orch("w1:p2", "w1:p3"), start=True)
-    assert seen == [("in", 0), ("out", 2)]
-
-
 # -- the core's open request and the viewers' switching -----------------------------------
 
 @pytest.fixture

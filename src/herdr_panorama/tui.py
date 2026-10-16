@@ -1331,7 +1331,7 @@ def live_count(swarm: Swarm) -> int:
 
 NEW_AGENT_MIN_WIDTH = 80  # the form is 76 columns wide (plus its margin): narrower panes use a popup
 POPUP_START_SECONDS = 3.0  # after an unanswered popup request: how long its process may take to start
-POPUP_DID_NOT_OPEN = "herdr did not open the New agent popup; press n again"  # PENDING the operator (Q154)
+POPUP_DID_NOT_OPEN = "herdr did not open the New agent popup; press n again"  # the operator's wording (Q154)
 
 
 class NewAgentApp(App):
