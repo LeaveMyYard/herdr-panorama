@@ -29,7 +29,6 @@ asks for it there again. A tab whose orchestrator went away loses its panel afte
 
 from __future__ import annotations
 
-import contextlib
 import json
 import logging
 import threading
@@ -113,9 +112,6 @@ class Manager:
         self.broken: set[str] = set()  # tabs given up on (CRASH_LIMIT), for this core's life
         self._mu = threading.Lock()
         self.started = False  # the start batch ran
-        # around the start batch: a no-op now; the slot for something that holds the keyboard
-        # while the swaps pull the operator through the tabs (Q153)
-        self.guard = contextlib.nullcontext
 
     # -- state -----------------------------------------------------------------------------
 
@@ -241,12 +237,11 @@ class Manager:
         where = (sv.focused_tab, sv.focused_pane)
         expected: list[tuple[str, str]] = []  # the focus events the batch's own swaps cause, in order
         made = []
-        with self.guard():
-            for tab, agent in missing:
-                panel = self.place(tab, agent, lazy=False)
-                if panel:
-                    made.append(panel)
-                    expected += [("tab_focused", tab), ("pane_focused", agent["pane_id"])]
+        for tab, agent in missing:
+            panel = self.place(tab, agent, lazy=False)
+            if panel:
+                made.append(panel)
+                expected += [("tab_focused", tab), ("pane_focused", agent["pane_id"])]
         if not made or not where[0]:
             return made
         if self.focus_log is not None and self.focus_log.live:

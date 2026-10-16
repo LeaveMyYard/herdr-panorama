@@ -1614,8 +1614,9 @@ has proven itself (the operator, Q140).
     `tab_focused` and then its agent's `pane_focused`, matched in order. herdr may leave one
     out, and the guard waits up to 0.3 s for the last one. Any other event, including a move
     to a tab the batch also touched, means the operator moved, and they are left there;
-  - `Manager.guard` wraps the batch and is a no-op today. It is the slot for something that
-    holds the keyboard during the batch (Q153).
+  - nothing holds the keyboard during the batch: a focus-catching "setting up panels…"
+    popup was considered and declined by the operator (Q153: "No popup"). The batch window
+    is a few herdr calls per tab, at core start only.
 - **Later tabs.** A tab that becomes an orchestrator tab after the start gets its panel only
   while the operator is in it. Just before the swap the manager looks again: if they left,
   the panel waits on the right, and is swapped left on their next visit. If they were on
