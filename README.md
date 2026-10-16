@@ -208,17 +208,21 @@ cockpit = true        # default false while experimental
 cockpit_width = 46    # panorama's columns on the left
 cockpit_follow = true # follow you to whichever orchestrator tab you switch to (default true)
 cockpit_follow_tabs = "any" # "single": only into tabs where the orchestrator is the only pane
-dock_keep_focus = true # Enter in the docked list keeps the keyboard on panorama (default true)
+dock_keep_focus = true # switching chats leaves the keyboard on panorama (default true)
+dock_on_arrows = true  # ↑/↓ in the docked panel switch the chats (default true)
 ```
 
-- **Enter** on an orchestrator (or **g**, or a click on the selected card) moves panorama's
-  own pane into that agent's tab, on its left, and focuses the agent. The agent never
-  moves: closing a tab closes that agent's tab, as always, and panorama with it.
-- **Browse the chats.** In the docked list, ↑/↓ switch the chats themselves: once the
-  arrows rest (0.2 s; holding one docks once), panorama docks next to the highlighted
-  orchestrator and keeps the keyboard. A click does the same at once. **Enter** (or **g**)
-  goes into the agent. `dock_on_arrows = false` brings back Enter-to-dock (keeping the
-  keyboard); `dock_keep_focus = false` makes Enter go into the agent every time.
+- **Enter** on an orchestrator in the full view (or **g**, or a click on the selected card)
+  moves panorama's own pane into that agent's tab, on its left, and focuses the agent. The
+  agent never moves: closing a tab closes that agent's tab, as always, and panorama with it.
+- **Browse the chats.** In the docked panel, ↑/↓ switch the chats themselves: once the
+  arrows rest for 0.2 s (holding one docks once), panorama docks next to the highlighted
+  orchestrator and keeps the keyboard. A click on another orchestrator does the same at once.
+  **Enter** (or **g**) goes into the highlighted agent; your open key brings you back.
+- `dock_on_arrows = false`: the arrows only move the highlight, and Enter on another
+  orchestrator docks next to it, keeping the keyboard (Enter on the docked one goes into it).
+  `dock_keep_focus = false`: Enter always goes into the agent, and the arrows never dock
+  (they would leave the keyboard in an agent).
 - **It follows you.** Switch tabs any other way (the tab bar, `prefix+1..9`, a
   notification, `herdr agent focus`), and when you land on a Claude orchestrator's tab the
   panel moves there too, beside the agent. You stay exactly where you clicked. It never
