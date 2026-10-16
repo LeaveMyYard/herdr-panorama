@@ -1,49 +1,17 @@
-"""The cockpit's docked panel matches design 3a "Compact list" cell for cell (chars,
-colours, bold), on the design's own dataset, across animation frames (spinners, the blinking
-needs-you glyphs); plus its click targets and layout rules."""
-
-import json
+"""The cockpit's docked panel (design 3a "Compact list", drawn with 9e's tiles: its cell-for-cell
+golden is tests/test_tiles.py): its click targets and layout rules."""
 
 import pytest
 
 from herdr_panorama import render
 
-from .design_dock import FIX, design_swarm
-
-GOLD = json.loads((FIX / "design_3a.json").read_text())["frames"]
-
-
-def norm(ch, fg, bg, bold):
-    """A blank shows only its background: its colour and weight are invisible (and blit does
-    not copy blank cells), so they are not compared."""
-    bg = (bg or render.BG).lower()
-    return (ch, None, bg, None) if ch == " " else (ch, fg.lower(), bg, bool(bold))
-
-
-def cells(runs):
-    return [norm(ch, fg, bg, bold) for text, fg, bg, bold in runs for ch in text]
-
-
-def app_cells(scr: render.Screen, y: int):
-    return [norm(c.ch, c.fg or render.FG, c.bg, c.bold) for c in scr.c[y][:46]]
+from .design_dock import design_swarm
 
 
 def design_view(frame: int) -> render.View:
     v = render.View(orch="w1:p3", dock=True, frame=frame)
     v.hover = ("orch", ("w1:p4",))  # the design's hover: Billing Migrations
     return v
-
-
-@pytest.mark.parametrize("frame", sorted(GOLD, key=int))
-def test_3a_matches_the_design_cell_for_cell(frame):
-    scr = render.render(design_swarm(), design_view(int(frame)), 46, 45)
-    diffs = []
-    for y, runs in enumerate(GOLD[frame]):
-        want, got = cells(runs), app_cells(scr, y)
-        for x, (w, g) in enumerate(zip(want, got, strict=True)):
-            if w != g:
-                diffs.append((x, y, w, g))
-    assert not diffs, f"{len(diffs)} cells differ, first: {diffs[:5]}"
 
 
 def test_every_card_is_a_click_target_and_question_marks_answer():
@@ -64,7 +32,7 @@ def test_the_cursor_wears_the_hover_look_and_the_docked_entry_keeps_its_bar():
     v = design_view(4)
     v.hover, v.orch = None, "w1:p2"
     scr = render.render(design_swarm(), v, 46, 45)
-    assert scr.c[5][0].ch == "›" and scr.c[6][20].bg == render.DOCK_HOV  # Data Pipeline, the cursor
+    assert scr.c[5][0].ch == "›" and scr.c[6][40].bg == render.DOCK_HOV  # Data Pipeline, the cursor
     assert scr.c[8][0].ch == "▌" and scr.c[8][0].fg == render.KEY and scr.c[8][20].bg == render.SEL  # docked
 
 

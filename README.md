@@ -122,11 +122,11 @@ cockpit_follow_tabs = "any" # "single": only into tabs where the orchestrator is
 - `prefix+space` takes you back to the list wherever it is; if panorama was closed, it
   opens again in its home tab.
 - In a tab with several panes, panorama docks left of the agent's own pane.
-- Docked, panorama shows the compact list from design 3a: per orchestrator its tab number,
-  state, `?N` and one glyph per thread; the docked one also lists its threads with their
-  agents.
+- Docked, panorama shows the compact list from design 3a with design 9e's coloured tiles:
+  per orchestrator its tab number, a state tile, `?N` and one tile per thread; the docked one
+  lists its threads (a tile each) with their agents instead.
 
-  <img src="docs/screenshots/dock-3a-app.png" alt="The docked cockpit panel" width="300">
+  <img src="docs/screenshots/dock-9e-app.png" alt="The docked cockpit panel" width="300">
 - `cockpit = false` stops docking at the next Enter, and brings panorama back to its own
   first tab at the next `prefix+space` or start.
 - If you split the home tab and run something next to panorama, docking renames that tab

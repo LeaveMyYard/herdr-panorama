@@ -26,6 +26,7 @@ Design references (not wire formats), both captured from the design's own code i
 
 - `design_data.json`: the design's sample dataset (`DATA` in `swarm-tui.js`), the shape
   `tests/design_dock.py` turns into a model Swarm.
-- `design_3a.json`: the design's render of the docked panel 3a (`render-3a.mjs`, frames 0–4
-  and 7), as runs of `[text, fg, bg, bold]` per row; the golden for `tests/test_dock_panel.py`.
+- `design_9.json`: the design's render of the docked panel 9e (`render-9.mjs`, eight frames,
+  plain and with turn 6's unseen marks) and its dataset, as runs of `[text, fg, bg, bold]` per
+  row; the golden for `tests/test_tiles.py`.
 Regenerate with `uv run python tests/fixtures/capture_design.py` (needs node).

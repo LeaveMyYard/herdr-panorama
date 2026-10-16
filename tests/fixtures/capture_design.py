@@ -1,5 +1,6 @@
-"""Capture the design references: the sample dataset, the 3a dock panel render, turn 5's
-direction 5d (subagents to any depth: its dataset and its frames) and turn 6 (unseen).
+"""Capture the design references: the sample dataset, turn 5's
+direction 5d (subagents to any depth: its dataset and its frames), turn 6 (unseen) and turn 9's 9e
+(tiles in the docked panel).
 
     uv run python tests/fixtures/capture_design.py   (needs node)
 """
@@ -43,19 +44,6 @@ def run_length(cells: list) -> list:
 
 def main() -> None:
     (HERE / "design_data.json").write_text(node("--input-type=module", "-", stdin=DATA_JS))
-    frames = {}
-    for f in (0, 1, 2, 3, 4, 7):
-        rows = json.loads(node("render-3a.mjs", str(f), "json"))["rows"]
-        out = []
-        for r in rows:
-            runs: list = []
-            for ch, fg, bg, b in r:
-                if runs and runs[-1][1:] == [fg, bg, b]:
-                    runs[-1][0] += ch
-                else:
-                    runs.append([ch, fg, bg, b])
-            out.append(runs)
-        frames[f] = out
     deep = json.loads(node("--input-type=module", "-", stdin=DEEP_JS))
     deep["frames"] = {f: {k: [run_length(r) for r in v] for k, v in json.loads(node("render-5d.mjs", str(f), "json")).items()
                           if k != "frame"} for f in (0, 1, 4)}
@@ -68,9 +56,12 @@ def main() -> None:
         {"source": "docs/design/swarm-unseen.js (turn 6, unseen) rendered by docs/design/render-6.mjs: per frame G the "
                    "2a graph with the sample unseen marks, N the same with none, P the 46 docked-panel columns; rows "
                    "as runs of [text, fg, bg, bold]", "frames": six}, ensure_ascii=False, separators=(",", ":")))
-    (HERE / "design_3a.json").write_text(json.dumps(
-        {"source": "docs/design/swarm-dock.js vA (3a) rendered by docs/design/render-3a.mjs; the 46 panel columns "
-                   "as runs of [text, fg, bg, bold]", "frames": frames}, ensure_ascii=False, separators=(",", ":")))
+    nine = json.loads(node("render-9.mjs", "json"))
+    nine["frames"] = {f: {k: [run_length(r) for r in v] for k, v in fr.items()} for f, fr in nine["frames"].items()}
+    nine["source"] = ("docs/design/swarm-tiles.js (turn 9, variant 9e) rendered by docs/design/render-9.mjs: per frame "
+                      "E the docked panel, U the same with turn 6's unseen sample marks; data the dataset (swarm-tui.js "
+                      "plus the finished Docs Site); rows as runs of [text, fg, bg, bold]")
+    (HERE / "design_9.json").write_text(json.dumps(nine, ensure_ascii=False, separators=(",", ":")))
 
 
 if __name__ == "__main__":

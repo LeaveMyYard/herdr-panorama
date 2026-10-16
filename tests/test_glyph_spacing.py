@@ -43,13 +43,18 @@ def test_no_two_glyphs_touch(name, scr):
     assert adjacent(scr) == []
 
 
+def line_two(row: str) -> list[str]:
+    """An entry's second line: its thread tiles (" g ", a cell apart) and a "+n", before the counts."""
+    return row.split(" active · ")[0].rsplit("  ", 1)[0].split()
+
+
 def test_the_docked_rows_space_their_glyphs():
+    """9e: one tile per thread on line 2, a cell apart; the done threads fold into one ✓n tile."""
     sw = design_swarm()
     sw.docked = "w1:p3"
     text = render.render(sw, render.View(orch="w1:p3", dock=True), 46, 45).text()
-    row = next(r for r in text.split("\n") if "3 active · 5 agents" in r)
-    glyphs = row.split("  3 active")[0].strip(" ▌")
-    assert glyphs == "? ⠇ ⠙ ✓"  # was "?⠇⠙✓"
+    row = next(r for r in text.split("\n") if "3 active · 4 agents" in r and "!" in r)  # Data Pipeline
+    assert row.startswith("         !   ⠋   ○   ✓2   3 active")  # was "? ⠇ ⠙ ✓", bare glyphs
 
 
 def many_threads(n):
@@ -68,7 +73,7 @@ def test_review_m_many_threads_keep_the_counts_whole(n, w):
     scr = render.render(many_threads(n), render.View(dock=True, orch="w1:p1"), w, 45)
     row = next(r for r in scr.text().split("\n") if "active · " in r)
     assert row.rstrip().endswith(f"{n} active · {n} agents") and len(row.rstrip()) <= w
-    shown = row.strip(" ▌").split("  ")[0].split()
+    shown = line_two(row)
     assert shown[-1].startswith("+") and len(shown) - 1 + int(shown[-1][1:]) == n
     assert adjacent(scr) == []
 
@@ -76,7 +81,7 @@ def test_review_m_many_threads_keep_the_counts_whole(n, w):
 def test_a_few_threads_show_every_glyph():
     scr = render.render(many_threads(3), render.View(dock=True, orch="w1:p1"), 46, 45)
     row = next(r for r in scr.text().split("\n") if "active · " in r)
-    assert "+" not in row and len(row.strip(" ▌").split("  ")[0].split()) == 3
+    assert "+" not in row and len(line_two(row)) == 3
 
 
 @pytest.mark.parametrize("name,scr", list(screens()), ids=lambda v: v if isinstance(v, str) else "")

@@ -51,15 +51,19 @@ def test_5d_matches_the_design_cell_for_cell(frame, key, sel, x0):
 
 @pytest.mark.parametrize("frame", sorted(FRAMES))
 def test_docked_panel_tree_rows_match_the_design(frame):
-    """The thread row and the indented tree of the agents that spawned others (x >= 5: the
-    design's thread is not the last one, so its trunk column differs)."""
+    """The indented tree of the agents that spawned others (x >= 5: the design's thread is not the
+    last one, so its trunk column differs), and the thread row's agent glyphs. The thread itself
+    is a 9e tile now (tests/test_tiles.py), where 5d drew a bare glyph."""
     sw = deep_swarm()
     sw.docked = "w1:p3"
     scr = render.render(sw, render.View(orch="w1:p3", dock=True, now=NOW, frame=int(frame)), 46, 45)
-    for y in range(4, 10):
-        want = [norm(ch, r[1], r[2], r[3]) for r in FRAMES[frame]["P4"][y] for ch in r[0]][5:46]
-        got = [norm(c.ch, c.fg or render.FG, c.bg, c.bold) for c in scr.c[y][5:46]]
+    for y, x0 in [(4, 34)] + [(y, 5) for y in range(5, 10)]:
+        want = [norm(ch, r[1], r[2], r[3]) for r in FRAMES[frame]["P4"][y] for ch in r[0]][x0:46]
+        got = [norm(c.ch, c.fg or render.FG, c.bg, c.bold) for c in scr.c[y][x0:46]]
         assert want == got, (y, "".join(c[0] for c in got))
+    g = FRAMES[frame]["P4"][4]  # the thread's glyph in 5d sits in its tile in 9e
+    glyph = "".join(r[0] for r in g)[5]
+    assert "".join(c.ch for c in scr.c[4][5:8]) == f" {glyph} " and scr.c[4][6].bg == render.PB[render.FAIL][0]
     assert "".join(c.ch for c in scr.c[4][:5]) == "▌  └ "  # the only thread: its row closes the list
 
 
