@@ -2,6 +2,8 @@
 tick restyles only the animated cells between whole frames, and whole frames stay exactly the
 stepped design frames (the goldens in test_unseen / test_dock_panel / test_deep hold them)."""
 
+import itertools
+import json
 import math
 
 import pytest
@@ -10,11 +12,11 @@ from herdr_panorama import render, tui
 from herdr_panorama.model import FAIL
 from herdr_panorama.render import FAINT, ST
 
-from .design_deep import deep_swarm
 from .demo import demo_swarm
-from .design_dock import design_swarm
+from .design_deep import deep_swarm
+from .design_dock import FIX, design_swarm
 from .test_tui import loaded, make_app
-from .test_unseen import MARKS
+from .test_unseen import MARKS, cells, grid
 
 FRACTIONS = [0.3, 1.5, 2.7, 3.95, 5.25, 9.9, 11.6]
 
@@ -30,13 +32,13 @@ def dump(scr: render.Screen):
 def layouts():
     """(name, swarm factory, view kwargs, width): every layout that animates colours."""
     return [
-        ("2a unseen", design_swarm, dict(orch="w1:p1", thread="t595", agent="a2", focus=2, unseen=dict(MARKS)), 160),
-        ("3a unseen", design_swarm, dict(orch="w1:p3", dock=True, unseen=dict(MARKS)), 46),
-        ("3a", design_swarm, dict(orch="w1:p3", dock=True), 46),
-        ("narrow", design_swarm, dict(orch="w1:p1", thread="t595", focus=1), 70),
-        ("5d", deep_swarm, dict(orch="w1:p1", focus=2, unseen={"b1": "fail"}), 160),
-        ("demo 2a", demo_swarm, dict(orch="w1:p2", thread="wf:wf_search", agent="j1a2b3c", focus=2), 160),
-        ("demo narrow", demo_swarm, dict(orch="w1:p1", focus=1), 70),
+        ("2a unseen", design_swarm, {"orch": "w1:p1", "thread": "t595", "agent": "a2", "focus": 2, "unseen": dict(MARKS)}, 160),
+        ("3a unseen", design_swarm, {"orch": "w1:p3", "dock": True, "unseen": dict(MARKS)}, 46),
+        ("3a", design_swarm, {"orch": "w1:p3", "dock": True}, 46),
+        ("narrow", design_swarm, {"orch": "w1:p1", "thread": "t595", "focus": 1}, 70),
+        ("5d", deep_swarm, {"orch": "w1:p1", "focus": 2, "unseen": {"b1": "fail"}}, 160),
+        ("demo 2a", demo_swarm, {"orch": "w1:p2", "thread": "wf:wf_search", "agent": "j1a2b3c", "focus": 2}, 160),
+        ("demo narrow", demo_swarm, {"orch": "w1:p1", "focus": 1}, 70),
     ]
 
 
@@ -74,7 +76,7 @@ def test_colours_glide_in_small_steps_at_the_colour_tick():
                              (lambda f: render.pulse_tint(("wait", False), render.SEL, f), 10, 12),
                              (lambda f: render.blink_col(ST[FAIL], f), 60, 5)):  # the blink eases over a frame
         cols = [rgb(fn(f)) for f in ticks]
-        jump = max(max(abs(a - b) for a, b in zip(p, q)) for p, q in zip(cols, cols[1:]))
+        jump = max(max(abs(a - b) for a, b in zip(p, q)) for p, q in itertools.pairwise(cols))
         assert jump <= most, jump
         assert len(set(cols)) > levels  # in-between colours, not two or three levels
     # the old 4 fps blink jumped the whole way at once
@@ -89,15 +91,19 @@ def test_a_still_view_has_nothing_to_restyle():
         for a in o.agents():
             a.status = DONE
     scr = render.render(sw, render.View(), 160, 45)
-    assert not scr.animated() and render.restyle(scr, 0.5) == []
+    assert not scr.animated() and not scr.smooth() and render.restyle(scr, 0.5) == []
     assert not render.animated(Swarm(orchestrators=sw.orchestrators))
+    sw.orchestrators[0].agents()[0].status = "run"  # only a spinner and a sweep: whole frames only
+    sw.orchestrators[0].herdr_status = "working"
+    scr = render.render(sw, render.View(), 160, 45)
+    assert scr.animated() and not scr.smooth() and render.restyle(scr, 0.5) == []
 
 
 async def test_the_animation_tick_restyles_only_animated_cells_never_renders(fake_herdr, monkeypatch):
     """Between frames the tick repaints only the animated cells, without a render; at a whole
     frame (every FRAME_SECONDS) spinners and sweeps step the same way."""
     clock = {"t": 1000.0}
-    app, holder = make_app(design_swarm(), focus_pane="w1:p1")
+    app, _ = make_app(design_swarm(), focus_pane="w1:p1")
     app.anim_clock = lambda: clock["t"]
     async with app.run_test(size=(160, 45)) as pilot:
         await loaded(app, pilot)
@@ -136,7 +142,7 @@ async def test_the_animation_tick_restyles_only_animated_cells_never_renders(fak
 
 
 async def test_a_frame_or_a_refresh_repaints_only_what_changed(fake_herdr, monkeypatch):
-    app, holder = make_app()
+    app, _ = make_app()
     async with app.run_test(size=(160, 45)) as pilot:
         await loaded(app, pilot)
         dirty: list = []
@@ -160,3 +166,63 @@ def test_textual_partial_updates_send_only_the_changed_cells():
     upd = ChopsUpdate([{0: strip}], [(0, 12, 14)], [[25]])
     out = upd.render_segments(Console(force_terminal=True, color_system="truecolor"))
     assert out == "\x1b[1;13HBB"
+
+
+async def test_a_low_animation_fps_keeps_spinners_at_their_speed(fake_herdr, tmp_path):
+    """animation_fps = 2: the tick comes every 500 ms, so each one moves two whole frames (steppier,
+    not slower); the timer runs at the configured rate."""
+    d = tmp_path / "plugin-config"
+    d.mkdir(exist_ok=True)
+    (d / "config.toml").write_text("animation_fps = 2\n")
+    assert tui.SwarmApp.colour_seconds() == 0.5
+    clock = {"t": 1000.0}
+    app, _ = make_app(design_swarm(), focus_pane="w1:p1")
+    app.anim_clock = lambda: clock["t"]
+    async with app.run_test(size=(160, 45)) as pilot:
+        await loaded(app, pilot)
+        app._next_frame = clock["t"]
+        f0 = int(app.view.frame)
+        for _ in range(4):
+            app.animate()
+            clock["t"] += 0.5
+        assert int(app.view.frame) == f0 + 1 + 2 + 2 + 2  # 1.75 s of frames, minus the first tick's lead
+        assert dump(app.grid.screen_data) == dump(render.render(app.swarm, app.view, 160, 45))
+
+
+# -- the design between whole frames (turn 8: docs/design/render-8.mjs, swarm-smooth.js) ----------
+
+EIGHT = json.loads((FIX / "design_8.json").read_text())["frames"]
+
+
+@pytest.mark.parametrize("frame", sorted(EIGHT, key=float))
+def test_3a_glides_exactly_like_the_design_between_frames(frame):
+    """The whole 46-column panel at a fractional frame, cell for cell: tints, pulsing and
+    blinking glyphs mid-way."""
+    v = render.View(orch="w1:p3", dock=True, frame=float(frame), unseen=dict(MARKS))
+    v.hover = ("orch", ("w1:p4",))
+    got = cells(render.render(design_swarm(), v, 46, 45), 46)
+    want = grid(EIGHT[frame]["P"])
+    diffs = [(x, y, want[y][x], got[y][x]) for y in range(45) for x in range(46) if want[y][x] != got[y][x]]
+    assert not diffs, f"{len(diffs)} cells differ, first: {diffs[:5]}"
+
+
+@pytest.mark.parametrize("frame", sorted(EIGHT, key=float))
+def test_2a_glides_like_the_design_between_frames(frame):
+    """The pulsed cells (unseen vs none) and the blinking edges at a fractional frame match the
+    design's colours, where the design and the app draw the same character."""
+    f = float(frame)
+    d_on, d_off = grid(EIGHT[frame]["G"]), grid(EIGHT[frame]["N"])
+    a_on = cells(render.render(design_swarm(), render.View(orch="w1:p1", thread="t595", agent="a2", focus=2,
+                                                           frame=f, unseen=dict(MARKS)), 160, 45), 160)
+    a_off = cells(render.render(design_swarm(), render.View(orch="w1:p1", thread="t595", agent="a2", focus=2,
+                                                            frame=f), 160, 45), 160)
+    same = {(x, y) for y in range(45) for x in range(160) if d_off[y][x][0] == a_off[y][x][0]}
+    want = {(x, y): d_on[y][x] for x, y in same if d_on[y][x] != d_off[y][x]}
+    got = {(x, y): a_on[y][x] for x, y in same if a_on[y][x] != a_off[y][x]}
+    assert len(want) > 400 and want == got
+    # the blinking left edges (┃ in an attention colour, no pulse) glide the same way
+    edges = [(x, y) for x, y in same if d_off[y][x][0] == "┃"]
+    assert edges and all(d_off[y][x] == a_off[y][x] for x, y in edges)
+    blinking = {d_off[y][x][1] for x, y in edges} - {ST[s] for s in ST} - {render.FAINT}
+    if 1 < f % 4 < 2 or 3 < f % 4:
+        assert blinking  # mid-fade: in-between colours, not on or off

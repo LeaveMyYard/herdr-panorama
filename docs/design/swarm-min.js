@@ -1,6 +1,7 @@
 // Minimal, Argo-style Swarm view: cards + solid box-drawing links + square pods.
 // Reference copy for herdr-panorama (design turn 3: "lines and some animations", every card's edge animated).
 import { TH, DATA, H } from './swarm-tui.js';
+import { blinkCol } from './swarm-smooth.js';
 let F = 0;
 const { setFrame, Scr, IDX, TIDX, LIVE, byUrg, isDone, curIdx, roleL, glyph, lastPh, fit, trunc, wrap, tm, dur, NOW, FL, LBL, phaseGlyph, mark, markLen, len, urgent } = H;
 
@@ -71,9 +72,9 @@ function actions(s, x, y, a) {
 // Animated card edge: blinking left bar when it needs you, a sweep along the bottom while agents work.
 function edge(s, x, y, w, h, os, seed = 0) {
   if (!os || os.st === 'q' || os.st === 'done' || os.st === 'cxl') return;
-  const th = s.th, c = th.st[os.st].t, att = os.st === 'wait' || os.st === 'blk' || os.st === 'fail', on = !att || Math.floor(F / 2) % 2 === 0;
-  for (let j = 1; j < h - 1; j++) s.put(x, y + j, '┃', on ? c : th.faint);
-  if (os.working) { const n = w - 2, p = (F + seed * 7) % (n + 6) - 3; for (let i = 0; i < 4; i++) { const xx = p + i; if (xx >= 0 && xx < n) s.put(x + 1 + xx, y + h - 1, '━', th.st.run.t); } }
+  const th = s.th, c = th.st[os.st].t, att = os.st === 'wait' || os.st === 'blk' || os.st === 'fail', col = att ? blinkCol(th, c, F) : c;
+  for (let j = 1; j < h - 1; j++) s.put(x, y + j, '┃', col);
+  if (os.working) { const n = w - 2, p = (Math.floor(F) + seed * 7) % (n + 6) - 3; for (let i = 0; i < 4; i++) { const xx = p + i; if (xx >= 0 && xx < n) s.put(x + 1 + xx, y + h - 1, '━', th.st.run.t); } }
 }
 const agSt = a => ({ st: a.st, working: a.st === 'run' });
 const thSt = t => stOf(t.agents, isDone(t));
@@ -204,7 +205,7 @@ function renderGraph(w, h, o) {
 // project and is omitted from this reference copy.)
 
 export function renderMin(f = 0) {
-  F = f; setFrame(f);
+  F = f; setFrame(Math.floor(f));
   return {
     G1: renderGraph(160, 45, { orch: 'Payments UI', selT: 't595', selA: 'a2' }),
     G2: renderGraph(70, 45, { orch: 'herdr core', selT: 'w1', selA: 'i3' }),
@@ -212,4 +213,4 @@ export function renderMin(f = 0) {
 }
 
 // The interactive prototype (Swarm View 2a.dc.html) steps f every 250 ms.
-export function renderGraphAt(w, h, o, f = 0) { F = f; setFrame(f); return renderGraph(w, h, o); }
+export function renderGraphAt(w, h, o, f = 0) { F = f; setFrame(Math.floor(f)); return renderGraph(w, h, o); }

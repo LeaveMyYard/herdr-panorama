@@ -597,8 +597,9 @@ design's characters, colours (`TH.dark`, pod colours `PB`) and coordinates.
   list's tree uses the same lines.
 - **Every card has an animated edge:** orchestrators, threads and agents. The
   design's `edge()`:
-  - the left border takes the card's state colour, blinking 2 frames on,
-    2 off when it needs you (failed, blocked, needs you);
+  - the left border takes the card's state colour, blinking when it needs you
+    (failed, blocked, needs you): one second a blink, on for a frame, a sine fade
+    off over the next, off for a frame, a fade back on (see Smooth animation);
   - while agents work, a 4-cell `━` bar in the running colour sweeps the
     bottom border, one cell per 250 ms frame;
   - the sweep is shifted by `seed × 7` cells, with seed 0 for orchestrators
@@ -616,8 +617,8 @@ design's characters, colours (`TH.dark`, pod colours `PB`) and coordinates.
   These are the main session's own state; an orchestrator often works without
   subagents.
 - **Spinners** turn one step per frame.
-- **Cost:** a frame repaints from the cached model (no collect, no file read),
-  about 3 ms for 160×45. No cell ever changes width.
+- **Cost:** a frame never re-renders: it restyles the moving cells of the last render in place
+  (see Smooth animation). No cell ever changes width.
 - **Pausing:** frames are skipped only while nothing moves. Focus is ignored:
   herdr forwards focus-out to a pane whenever the operator focuses another one
   (measured on herdr 0.9.3), so app blur means "the operator is typing next
@@ -652,7 +653,7 @@ compares cell for cell (the whole 3a panel; every pulsed cell of 2a).
   sweep) pulses in the event colour. A `n finished` card holding one does too. Thread,
   `✓ n complete` and orchestrator cards take the most urgent mark of their agents: the same
   pulse for a failure or a question, a quieter one for a finished agent. One pulse every 12
-  frames (3 s), never fully off: full 35–100 % of the event colour over the line colour,
+  frames (3 s), a sine wave in time, never fully off: full 35–100 % of the event colour over the line colour,
   quiet 15–45 %. The docked panel tints the entry's two lines (8–30 %, quiet 4–14 %) and
   pulses the docked list's thread glyph (and `✓ n done`). Unseen marks keep frames running.
 - **State:** `unseen-<session>.json` in panorama's state dir, shared by every panorama process
@@ -664,6 +665,39 @@ compares cell for cell (the whole 3a panel; every pulsed cell of 2a).
   appears already finished counts only if it ended after the last save. Agents not seen for
   a week are forgotten. `highlight_unseen = false` turns it all off.
 - The narrow layout (< 120 columns) and the docked panel's spawner rows have no pulse.
+
+### Smooth animation (design turn 8)
+
+The operator's report: colour animations moved in visible steps and looked laggy, because every
+colour changed only on the 250 ms frame. Reference: `docs/design/swarm-smooth.js` (used by
+`swarm-min.js`, `swarm-dock.js`, `swarm-unseen.js`, `swarm-deep.js`), rendered between whole frames
+by `render-8.mjs`; `tests/test_smooth.py` compares those frames cell for cell.
+
+- **Time, not steps.** `View.frame` is the animation time in 250 ms frames and may be
+  fractional. Whole frames move spinners and sweeps, one step a frame, as before. Colours follow
+  the time itself: the unseen pulse is a sine of it, and the attention blink eases on and off
+  with a sine ramp (on 1 frame, fade 1, off 1, fade 1). At whole frames every colour is exactly
+  the old stepped one, so the golden frames of turns 3, 5 and 6 are unchanged.
+- **The colour tick:** `animation_fps` (default 20, clamped to 2..30, read when the view starts;
+  the operator's choice). It runs only while something on screen moves, like frames. Between
+  frames it runs only while a pulse or a blink is visible. Each tick costs no render: the last
+  render's moving cells hold `render.Anim` values (a str that knows how to recompute itself:
+  colours, spinner glyphs, sweep cells). `restyle` recomputes them in place and only the cells
+  that changed are repainted. At a lower fps a tick can span several frames, so spinners and
+  sweeps keep their speed, only steppier.
+- **Renders** happen only on a refresh, a key, the mouse or a resize, and then only the spans that
+  differ from the screen on display are repainted. A frame where the docked panel's hold ran out
+  repaints in full (the panel may turn back into the graph).
+- **Textual crop.** Textual 8 sends a partly updated line from the widget's left edge, so a few
+  cells in the middle of the one full-width grid re-sent most of the screen. `tui.py` replaces
+  `ChopsUpdate.render_segments` with one that crops both sides (tested).
+- **Measured** (isolated herdr 0.9.3, the design dataset at 160×45 with five unseen pulses and
+  blinking edges; CPU of panorama + herdr server + herdr client): before, 4 fps full renders,
+  4.7 + 0.9 + 1.3 = 6.9 %. A naive full render at 20 fps costs 22.7 + 4.0 + 5.5 = 32 %. With the
+  colour tick at 20 fps: 8.1 + 1.9 + 5.1 = 15 %; at 10 fps 7.1 %; 15 fps 11.5 %; 30 fps 22 %.
+  With blinks but no pulses, 20 fps costs 2.9 + 0.8 + 2.9 = 6.6 %. Bytes from panorama per
+  tick: 35 KB per full frame before, about 1.3 KB per tick now. herdr diffs pane output, so its
+  client only redraws what changed; its cost grows with the fps, not with the screen.
 
 ### Subagents to any depth (design turn 5, direction 5d)
 
@@ -1137,8 +1171,8 @@ tile in its off phase.
 
 ## Refresh strategy
 
-A background worker rebuilds the model every 1.5 s; the view repaints every
-250 ms (spinner). Collects never overlap: a tick that finds the previous
+A background worker rebuilds the model every 1.5 s; the view animates from the
+last render (see Smooth animation) and re-renders only on a refresh or input. Collects never overlap: a tick that finds the previous
 collect still running is skipped (a Textual `exclusive` worker only marks the
 old thread cancelled, it keeps running), so one collect at a time owns the
 tail offsets. A failing collect keeps the last good model on screen and the
@@ -1178,6 +1212,7 @@ cockpit_follow = true # re-dock beside the orchestrator the operator switches to
 cockpit_follow_tabs = "any" # "single": follow only into tabs whose one pane is the orchestrator
 machines = "all"     # saved herdr SSH machines to show: "all", "none", ["label", ...] (docs/REMOTE.md)
 highlight_unseen = true # pulse what changed since the operator looked (see Unseen)
+animation_fps = 20   # the colour tick, 2..30 (see Smooth animation); read when the view starts
 ```
 
 Default 1 hour. `PANORAMA_DONE_WINDOW` (seconds or a duration) overrides it.

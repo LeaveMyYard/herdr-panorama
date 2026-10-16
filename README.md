@@ -163,6 +163,7 @@ cockpit_follow = true # the cockpit follows you to the orchestrator tab you swit
 cockpit_follow_tabs = "any" # or "single": follow only into one-pane orchestrator tabs
 machines = "all"     # herdr's saved SSH machines to show: "all", "none" or ["label", ...]
 highlight_unseen = true # pulse what failed, asked or finished since you last looked
+animation_fps = 20   # how smoothly pulses and blinks fade (2..30): lower it on a slow terminal or remote link
 ```
 
 **Unseen.** A new failure, a new question or a finished agent makes its card pulse slowly in

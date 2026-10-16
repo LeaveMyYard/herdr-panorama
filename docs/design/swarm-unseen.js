@@ -11,6 +11,7 @@
 // Agent cards are 44 columns wide and do not stretch, as the shipped 2a does since turn 5.
 // Minimal, Argo-style Swarm view: cards + dashed links + square pods.
 import { TH, DATA, H } from './swarm-tui.js';
+import { blinkCol } from './swarm-smooth.js';
 let F = 0;
 const { setFrame, Scr, IDX, TIDX, LIVE, byUrg, isDone, curIdx, roleL, glyph, lastPh, fit, trunc, wrap, tm, dur, NOW, FL, LBL, phaseGlyph, mark, markLen, len, urgent } = H;
 
@@ -81,9 +82,9 @@ function actions(s, x, y, a) {
 // Animated card edge: blinking left bar when it needs you, a sweep along the bottom while agents work.
 function edge(s, x, y, w, h, os, seed = 0) {
   if (!os || os.st === 'q' || os.st === 'done' || os.st === 'cxl') return;
-  const th = s.th, c = th.st[os.st].t, att = os.st === 'wait' || os.st === 'blk' || os.st === 'fail', on = !att || Math.floor(F / 2) % 2 === 0;
-  for (let j = 1; j < h - 1; j++) s.put(x, y + j, '┃', on ? c : th.faint);
-  if (os.working) { const n = w - 2, p = (F + seed * 7) % (n + 6) - 3; for (let i = 0; i < 4; i++) { const xx = p + i; if (xx >= 0 && xx < n) s.put(x + 1 + xx, y + h - 1, '━', th.st.run.t); } }
+  const th = s.th, c = th.st[os.st].t, att = os.st === 'wait' || os.st === 'blk' || os.st === 'fail', col = att ? blinkCol(th, c, F) : c;
+  for (let j = 1; j < h - 1; j++) s.put(x, y + j, '┃', col);
+  if (os.working) { const n = w - 2, p = (Math.floor(F) + seed * 7) % (n + 6) - 3; for (let i = 0; i < 4; i++) { const xx = p + i; if (xx >= 0 && xx < n) s.put(x + 1 + xx, y + h - 1, '━', th.st.run.t); } }
 }
 const agSt = a => ({ st: a.st, working: a.st === 'run' });
 const thSt = t => stOf(t.agents, isDone(t));
@@ -181,7 +182,7 @@ function renderGraphU(w, h, o) {
 const UNSEEN = { b3: 'fail', c1: 'wait', a5: 'done', i3: 'wait', k2: 'done' };
 const RANK = { fail: 0, wait: 1, done: 2 };
 let MARKS = UNSEEN; // what renderUnseen draws (the golden test also renders none)
-const PERIOD = 12; // frames of 250 ms: one slow pulse every 3 s
+const PERIOD = 12; // frames of 250 ms: one slow pulse every 3 s (F is continuous: a smooth sine, swarm-smooth.js)
 const hex = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
 const mix = (a, b, k) => '#' + hex(a).map((v, i) => Math.round(v + (hex(b)[i] - v) * k).toString(16).padStart(2, '0')).join('');
 const wave = () => (1 - Math.cos(2 * Math.PI * (F % PERIOD) / PERIOD)) / 2; // 0 .. 1 .. 0
@@ -234,7 +235,7 @@ function panelU() {
 
 // frames: the pulse at rest (0), rising (3), at its peak (6) and falling (9)
 export function renderUnseen(f = 0, marks = UNSEEN) {
-  F = f; setFrame(f); DK.setF(f); MARKS = marks;
+  F = f; setFrame(Math.floor(f)); DK.setF(f); MARKS = marks;
   const g = renderGraphU(160, 45, { orch: 'Payments UI', selT: 't595', selA: 'a2' });
   return { G: g, P: panelU().rows() };
 }

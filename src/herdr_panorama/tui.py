@@ -35,7 +35,7 @@ from textual.message import Message
 from textual.strip import Strip
 from textual.widget import Widget
 
-from . import cockpit, herdr, home, inbox, inbox_link, machines, render, unseen
+from . import cockpit, config, herdr, home, inbox, inbox_link, machines, render, unseen
 from .collect import Collector
 from .model import BLK, Swarm, live
 
@@ -69,7 +69,7 @@ _compositor.ChopsUpdate.render_segments = _render_segments
 REFRESH_SECONDS = 1.5
 DOCK_HOLD_SECONDS = 1.0  # after a dock or follow: keep the docked panel while herdr settles the split
 FRAME_SECONDS = 0.25  # a design frame: spinners turn and sweeps move one step
-COLOUR_SECONDS = 0.05  # the colour tick (20 fps): pulses and blinks between frames (design turn 8)
+COLOUR_SECONDS = 0.05  # the colour tick (config animation_fps, default 20): pulses and blinks between frames
 ARM_SECONDS = 0.4
 QUIET_FOLLOW = cockpit.QUIET  # follow's normal "no"s: not logged
 FOLLOW_DEBOUNCE = 0.15  # cockpit follow: act on the last of a burst of focus events
@@ -253,7 +253,7 @@ class SwarmApp(App):
         self.refresh_model()
         if self.live_refresh:
             self.set_interval(REFRESH_SECONDS, self.refresh_model)
-            self.set_interval(COLOUR_SECONDS, self.animate)
+            self.set_interval(self.colour_seconds(), self.animate)
             if self.home_mode:  # cockpit follow listens to herdr's focus events (read-only)
                 threading.Thread(target=self._watch_focus, daemon=True).start()
 
@@ -394,18 +394,31 @@ class SwarmApp(App):
         if hasattr(self, "grid"):
             self.grid.restyle(frame)
 
+    @staticmethod
+    def colour_seconds() -> float:
+        """The colour tick's period: ``animation_fps`` from the config (2..30, default 20)."""
+        try:
+            return 1 / config.animation_fps()
+        except (OSError, ValueError, TypeError):  # never let a broken config stop the view
+            return COLOUR_SECONDS
+
     def animate(self) -> None:
         """The animation tick (every COLOUR_SECONDS): a whole frame every FRAME_SECONDS (spinners
         and sweeps step, ``tick``), and in between the colours glide (pulses, blinks). Nothing to
         do while nothing moves."""
         now = self.anim_clock()
         if now >= self._next_frame:
-            # a late timer does not catch up frame by frame: it resumes from now
-            self._next_frame = max(self._next_frame + FRAME_SECONDS, now + FRAME_SECONDS / 2)
-            self.tick()
+            # at a low animation_fps (or a late timer) whole frames are skipped, so spinners and
+            # sweeps keep their speed; a long stall resumes from now instead of racing to catch up
+            steps = 1 + min(int((now - self._next_frame) / FRAME_SECONDS), 7)
+            self._next_frame += steps * FRAME_SECONDS
+            if self._next_frame <= now:
+                self._next_frame = now + FRAME_SECONDS
+            if render.animated(self.swarm, self.view.unseen):
+                self._step(int(self.view.frame) + steps)
             return
         scr = self.grid.screen_data
-        if scr is None or not scr.animated() or not render.animated(self.swarm, self.view.unseen):
+        if scr is None or not scr.smooth() or not render.animated(self.swarm, self.view.unseen):
             return
         sub = 1 - (self._next_frame - now) / FRAME_SECONDS
         self._step(int(self.view.frame) + min(max(sub, 0.0), 0.999))

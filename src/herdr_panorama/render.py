@@ -115,6 +115,7 @@ class Screen:
         # Wheel regions: (x0, x1, y0, y1, column) of each scrollable column as painted.
         self.columns: list[tuple[int, int, int, int, int]] = []
         self._anim: list | None = None  # animated(): the cells holding an Anim
+        self._smooth = False
 
     def target(self, x0: int, x1: int, y: int, kind: str, ident: tuple) -> None:
         self.targets.append((x0, x1, y, kind, ident))
@@ -200,12 +201,19 @@ class Screen:
     def text(self) -> str:
         return "\n".join("".join(c.ch for c in row).rstrip() for row in self.c)
 
-    def animated(self) -> list[tuple[int, int, "Cell"]]:
+    def animated(self) -> list[tuple[int, int, Cell]]:
         """The cells that move (an Anim glyph, fg or bg), found once."""
         if self._anim is None:
             self._anim = [(y, x, c) for y in range(self.h) if self.drawn(y) for x, c in enumerate(self.c[y])
                           if type(c.fg) is Anim or type(c.bg) is Anim or type(c.ch) is Anim]
+            self._smooth = any(type(v) is Anim and not v.step for _, _, c in self._anim for v in (c.ch, c.fg, c.bg))
         return self._anim
+
+    def smooth(self) -> bool:
+        """Whether something moves between whole frames (a pulse or a blink): only then the
+        colour tick runs between them."""
+        self.animated()
+        return self._smooth
 
     def runs(self, y: int) -> list[tuple[str, str, str | None, bool]]:
         out: list[list] = []
@@ -673,7 +681,7 @@ class Anim(str):
         a.fn, a.args, a.step, a.k = fn, args, step, int(frame)
         return a
 
-    def at(self, frame: float) -> "Anim":
+    def at(self, frame: float) -> Anim:
         if self.step and int(frame) == self.k:
             return self
         return Anim(self.fn, self.args, frame, self.step)
@@ -751,7 +759,7 @@ def pulse_tint(m: tuple[str, bool], base: str, frame: float) -> str:
     return Anim(_tint, (m[0], m[1], base), frame)
 
 
-def restyle(scr: "Screen", frame: float) -> list[tuple[int, int, int]]:
+def restyle(scr: Screen, frame: float) -> list[tuple[int, int, int]]:
     """Recolour the animated cells of ``scr`` (drawn at the same whole frame) at ``frame``: the
     screen then equals a full render at ``frame``. Returns the changed spans (y, x0, x1)."""
     spans: list[tuple[int, int, int]] = []  # runs of changed cells, row by row (cells are in order)

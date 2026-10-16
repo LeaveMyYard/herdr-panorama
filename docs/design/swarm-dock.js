@@ -2,13 +2,14 @@
 // Reference copy for herdr-panorama: the operator picked 3a (vA, "Compact list"; 3b was used before); names follow
 // the anonymised dataset in swarm-tui.js.
 import { TH, DATA, H } from './swarm-tui.js';
+import { blinkCol } from './swarm-smooth.js';
 const { setFrame, Scr, LIVE, byUrg, isDone, curIdx, roleL, glyph, nq, trunc, fit, len, GL } = H;
 const th = TH.dark, PW = 46, W = 120, HH = 45, HOV = '#171a1f';
 let F = 0, DOCK = 'herdr core';
 const PB = { done: ['#2c6b4c', '#e3f2e9'], run: ['#1f625c', '#d8f2ee'], rev: ['#2e4f86', '#dfe8f8'], q: ['#2a2e35', '#9aa0aa'], wait: ['#f2a93b', '#1b1203'], blk: ['#f2a93b', '#1b1203'], fail: ['#d8363e', '#ffffff'], cxl: ['#24272c', '#6b717a'] };
 const ATT = st => st === 'wait' || st === 'blk' || st === 'fail';
 const on = () => Math.floor(F / 2) % 2 === 0;
-const gcol = st => ATT(st) && !on() ? th.faint : th.st[st].t;
+const gcol = st => ATT(st) ? blinkCol(th, th.st[st].t, F) : th.st[st].t;
 const sl = segs => segs.reduce((a, g) => a + (g == null ? 0 : len(typeof g === 'string' ? g : g[0])), 0);
 const RP = (s, xr, y, segs) => s.P(xr - sl(segs), y, segs);
 const pod = (s, x, y, st, g) => { const [b, f] = PB[st]; s.P(x, y, [[' ' + g + ' ', f, 1, b]]); };
@@ -17,7 +18,7 @@ function rbox(s, x, y, w, h, col) { s.put(x, y, '╭' + '─'.repeat(w - 2) + '�
 function edge(s, x, y, w, h, o, seed = 0) {
   if (o.st === 'q' || o.st === 'done') return;
   for (let j = 1; j < h - 1; j++) s.put(x, y + j, '┃', gcol(o.st));
-  if (o.working) { const n = w - 2, p = (F + seed * 7) % (n + 6) - 3; for (let i = 0; i < 4; i++) { const xx = p + i; if (xx >= 0 && xx < n) s.put(x + 1 + xx, y + h - 1, '━', th.st.run.t); } }
+  if (o.working) { const n = w - 2, p = (Math.floor(F) + seed * 7) % (n + 6) - 3; for (let i = 0; i < 4; i++) { const xx = p + i; if (xx >= 0 && xx < n) s.put(x + 1 + xx, y + h - 1, '━', th.st.run.t); } }
 }
 function oState(or) {
   const ags = or.threads.flatMap(t => t.agents), has = k => ags.some(a => a.st === k), r = ags.find(a => a.st === 'run'), q = nq(ags);
@@ -187,8 +188,8 @@ function vD() {
 }
 
 export function renderDock(f = 0) {
-  F = f; setFrame(f);
+  F = f; setFrame(Math.floor(f));
   return { K1: vA().rows(), K2: vB().rows(), K3: vC().rows(), K4: vD().rows() };
 }
 
-export const DK = { th, PW, W, HH, HOV, PB, ATT, on, gcol, sl, RP, pod, bar, rbox, edge, oState, stCol, tState, agSegs, thSegs, tItems, right, frame, newAgent, setF: f => { F = f; setFrame(f); } };
+export const DK = { th, PW, W, HH, HOV, PB, ATT, on, gcol, sl, RP, pod, bar, rbox, edge, oState, stCol, tState, agSegs, thSegs, tItems, right, frame, newAgent, setF: f => { F = f; setFrame(Math.floor(f)); } };
