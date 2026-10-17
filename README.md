@@ -377,6 +377,10 @@ uv run --with pillow python docs/screenshots/hero_gif.py  # the README GIF (need
 `tools/accuracy.py` compares agent statuses against an independent checker on real sessions
 (read-only; see DESIGN.md "Accuracy").
 
+## Contributing
+
+Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) (how to build, test and send a PR; the Python code is on a bug-fix-only freeze while the Rust port is in progress). Please follow the [Code of Conduct](CODE_OF_CONDUCT.md); report security problems as described in [SECURITY.md](SECURITY.md).
+
 ## Credits
 
 The session scanner (`src/herdr_panorama/scan/`) is a Python port of the discovery, linking,
