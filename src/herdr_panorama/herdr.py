@@ -228,6 +228,7 @@ def open_tab_pane(focus: bool) -> tuple[dict | None, str | None]:
 # uv parent alive beside every panel. `uv run` only when there is no venv.
 PANEL_COMMAND = ["sh", "-c", 'R="${HERDR_PLUGIN_ROOT:-.}"; [ -x "$R/.venv/bin/panorama" ] && exec "$R/.venv/bin/panorama" panel; '
                  'exec uv run --quiet --frozen --no-dev --project "$R" panorama panel']
+PANEL_LABEL = "Panorama panel"  # the manifest's title for the panel entrypoint; herdr labels the pane with it
 PLUGIN_ENV = ("HERDR_PLUGIN_ID", "HERDR_PLUGIN_ROOT", "HERDR_PLUGIN_STATE_DIR", "HERDR_PLUGIN_CONFIG_DIR")
 
 
@@ -251,13 +252,82 @@ def close_plugin_pane(pane_id: str) -> str | None:
     return call("plugin", "pane", "close", pane_id)[1]
 
 
+def close_pane(pane_id: str) -> str | None:
+    """``pane close``: any pane, plugin or not. Used only for a per-tab panel that herdr's
+    session restore brought back as a plain shell (panels.Manager proves it is one first);
+    herdr no longer counts such a pane as a plugin pane, so ``plugin pane close`` refuses it."""
+    return call("pane", "close", pane_id)[1]
+
+
+def _etime_seconds(text: str) -> float | None:
+    """``ps -o etime`` (``[[dd-]hh:]mm:ss``) in seconds, or None."""
+    days, _, rest = text.strip().rpartition("-")
+    try:
+        parts = [int(x) for x in rest.split(":")]
+        d = int(days) if days else 0
+    except ValueError:
+        return None
+    if not 2 <= len(parts) <= 3:
+        return None
+    h, m, s = ([0] + parts)[-3:]
+    return float(((d * 24 + h) * 60 + m) * 60 + s)
+
+
+def _ps(*args: str) -> subprocess.CompletedProcess | None:
+    try:
+        return subprocess.run(list(args), capture_output=True, text=True, timeout=TIMEOUT)
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+def shell_state(pid: int) -> tuple[float | None, bool | None]:
+    """A local process's age in seconds (``ps -o etime=``) and whether it has any child
+    process (``pgrep -P``), each None when unknown. Linux and macOS. Assumes herdr runs in this
+    pid namespace; macOS computes ``etime`` from the wall clock, so a clock step skews it."""
+    try:
+        pid = int(pid)
+    except (TypeError, ValueError):
+        return None, None
+    proc = _ps("ps", "-o", "etime=", "-p", str(pid))
+    age = _etime_seconds(proc.stdout) if proc is not None and proc.returncode == 0 else None
+    kids = _ps("pgrep", "-P", str(pid))
+    # pgrep: 0 = some child, 1 = none, anything else = it could not say
+    children = None if kids is None or kids.returncode not in (0, 1) else kids.returncode == 0
+    return age, children
+
+
+SHELLS = frozenset({"sh", "bash", "zsh", "fish", "dash", "ksh", "mksh", "tcsh", "csh", "nu", "xonsh", "elvish"})
+
+
+def pane_shell(pane_id: str) -> tuple[bool | None, int | None]:
+    """Whether the pane's foreground is nothing but a plain shell that is the pane's own
+    (one foreground process, the pane's ``shell_pid``, whose argv is a shell and nothing
+    else): what herdr's session restore leaves in a pane whose command it does not start
+    again. With that ``shell_pid``. (None, None) when herdr cannot say. A process ``exec``-ed
+    in the shell keeps its pid, so the argv is checked too. Read-only ``pane process-info``."""
+    res, _ = call("pane", "process-info", "--pane", pane_id)
+    info = (res or {}).get("process_info")
+    if not isinstance(info, dict):
+        return None, None
+    procs = info.get("foreground_processes")
+    shell = info.get("shell_pid")
+    if not isinstance(procs, list) or not procs or not isinstance(shell, int):
+        return None, None  # mid-exec or mid-restore: unknown
+    if len(procs) != 1 or not isinstance(procs[0], dict) or procs[0].get("pid") != shell:
+        return False, shell  # something runs in it
+    argv = [str(a) for a in procs[0].get("argv") or []]
+    plain = bool(argv) and os.path.basename(argv[0]).lstrip("-") in SHELLS \
+        and all(a in ("-l", "--login", "-i") for a in argv[1:])
+    return plain, shell
+
+
 def apply_panel_layout(label: str, cwd: str | None, ratio: float) -> tuple[dict | None, str | None]:
     """A new, unfocused tab with a per-tab panel on the left and a plain pane on the right (for
     + New agent: no panel ever has to be swapped in there). Returns the layout: its ``tab_id``
     and ``root.first`` / ``root.second`` pane ids."""
     root = os.environ.get("HERDR_PLUGIN_ROOT")
     env = {k: os.environ[k] for k in PLUGIN_ENV if os.environ.get(k)}
-    first = {"type": "pane", "command": PANEL_COMMAND, "env": env, "label": "Panorama panel"}
+    first = {"type": "pane", "command": PANEL_COMMAND, "env": env, "label": PANEL_LABEL}
     if root:
         first["cwd"] = root
     second = {"type": "pane"}
