@@ -47,7 +47,7 @@ above.
 - **The first Rust win can ship early.** The inbox hooks and the rewake watcher are small, already
   isolated, and the most frequently started processes. Porting them first proves the kit and the
   release path (fresh installs included) at the lowest risk.
-- **Effort, rough:** about 52–78 agent-days of building plus review rounds over 10 phases. On top
+- **Effort, rough:** about 53–80 agent-days of building plus review rounds over 10 phases. On top
   of that come three week-long daily-use gates that you run. That is about 12–19 calendar weeks on
   one track, or about 9–13 with the two plugin tracks in parallel after phase 1 (§7.3).
 
@@ -61,7 +61,7 @@ above.
 | D4 | Migration style | Strangler, inbox hooks first (§5.1) | this PR |
 | D5 | UI toolkit | ratatui 0.30 + crossterm 0.29 (§2.6) | this PR |
 | D6 | One continuation rule for both plugins | panorama's rule, pinned by captured fixtures (§1.3, item 3). It ships **first in Python** (the P0b bridge), then in Rust. | this PR |
-| D7 | Kit publication | All three repos are community open-source projects. The kit's API is **public from `v0.1.0`**: semver (0.x: a breaking change bumps the minor), a curated API, plugin-only parts such as `inbox_contract` in a clearly internal module or behind a feature, docs.rs-quality docs, a crates.io name check before the first publish, and the operator runs `cargo publish` himself (§2.3, "Kit publication") | Decided by you (2026-10-17) |
+| D7 | Kit publication | All three repos are community open-source projects. The kit's API is **public from `v0.1.0`**: semver (0.x: a breaking change bumps the minor), a curated API, plugin-only parts such as `inbox_contract` in a clearly internal module or behind a feature, docs.rs-quality docs, a crates.io name check before the first publish, and the operator runs `cargo publish` himself (§2.3, "Kit publication") | Operator direction, 2026-10-17 |
 
 D4–D6 are proposed in this PR and still need your decision.
 
@@ -243,17 +243,17 @@ They touch in four places today, and all four stay optional:
 
 | Option | Pros | Cons |
 |---|---|---|
-| **A. A third repo of library crates (`herdr-agent-kit`), used as a git dependency pinned by tag** (recommended) | One implementation of the parts that have already drifted (§1.3, rows 3–5). Each plugin moves to a new kit version when it chooses. No publishing step. Builds are reproducible from `Cargo.lock`. | A shared fix needs a kit tag and then a bump in each plugin. A plugin building from source needs network access to the kit repo, as for any crate. |
-| B. The same crates published on crates.io | Normal Rust dependency hygiene. Others can use the crates. | Semver and publishing work for crates with two users. Every change becomes a release. |
+| **A. A third repo of library crates (`herdr-agent-kit`), used as a git dependency pinned by tag** (recommended) | One implementation of the parts that have already drifted (§1.3, rows 3–5). Each plugin moves to a new kit version when it chooses. Builds are reproducible from `Cargo.lock`. `v0.1.0` is a git tag; the plugins depend on the kit by tag (D7). | A shared fix needs a kit tag and then a bump in each plugin. A plugin building from source needs network access to the kit repo, as for any crate. |
+| B. The same crates published on crates.io | Normal Rust dependency hygiene. Others can use the crates. | Every change becomes a release. Per D7 the kit still gets the API curation and semver of B, but publishing to crates.io is the operator's call, not scheduled. |
 | C. Deliberate copies in each repo | Fully independent repos | The copies drift. This is how rows 3–5 of §1.3 happened. |
 
 **Choice: A for anything with rules in it, C only for trivial glue.**
 
 The kit is **one crate with modules**, so there is one thing to tag and bump:
 
-- the features are `fake` (FakeHerdr), `tui`, `remote` and `sqlite` (the `questions` reader);
+- the features are `test-support` (FakeHerdr), `tui`, `remote` and `sqlite` (the `questions` reader);
 - each plugin enables only what it uses;
-- below, `herdr-api`, `agent_session::claude` and so on name **modules** of that crate.
+- below, `herdr-api`, `agent_session::claude` and so on name **modules** of that crate (hyphens in prose, underscores in Rust paths: `herdr-api` is `herdr_api`).
 
 | `herdr-agent-kit` module (shared, A) | Why it must not be copied |
 |---|---|
@@ -268,8 +268,9 @@ The kit is **one crate with modules**, so there is one thing to tag and bump:
 Trivial glue is copied (C): a few lines each, such as the `HERDR_PLUGIN_CONTEXT_JSON` focused-pane
 lookup inside each binary's CLI layer.
 
-A crates.io release (B) can come later, if someone outside wants the crates; nothing in the design
-blocks it.
+**Public from `v0.1.0` (D7).** The plugins keep depending on the kit by git tag. `v0.1.0` is a tag
+with a curated, documented, semver-governed API (§2.3, "Kit publication"). Publishing to crates.io
+happens when the operator decides and runs `cargo publish`; it is not scheduled.
 
 **Why one repo would still be simpler to build, honestly.**
 
@@ -397,7 +398,7 @@ pub enum AgentStatus { Idle, Working, Blocked, Done, Unknown }
 ```
 
 - `Sanitized` makes "every argument goes through `clean()`" a type rule rather than a convention.
-- The `fake` feature provides `FakeHerdr`: a Unix socket server that answers from a scripted state
+- The `test-support` feature provides `FakeHerdr`: a Unix socket server that answers from a scripted state
   and records every request as `(method, params)`. All integration tests use it in place of the
   argv-recording CLI stub.
 
@@ -439,44 +440,65 @@ impl Session {
 #### Harness-neutral seams
 
 **Design rule.** Claude Code is the first and only harness, but no layer above the harness
-boundary may assume it. herdr already reports other kinds in `AgentKind` (codex, opencode, gemini,
-droid, amp, cursor). Four seams sit between the plugins and any one harness:
+boundary may assume it. herdr's `AgentKind` already has other kinds (codex, opencode, gemini,
+droid, amp, cursor; operator direction 2026-10-17, to be checked against herdr's socket-api.mdx in
+P1). Three seams sit between the plugins and any one harness. They are module and type boundaries,
+not traits:
 
-| Seam | Neutral part (kit) | Claude Code implementation (the only one now) |
+| Seam | Neutral part | Claude Code implementation (the only one now) |
 |---|---|---|
-| An agent session and its records | `agent_session`: `SessionId`, a harness-neutral record view (who spoke, tool use, title, time), `Session::apply` / `status_of`, the `Liveness` trait, status, parent and children | `agent_session::claude` (today's `claude-session`): the transcript wire format, `Record` variants, `ContinuedIn`, compaction, the marker prefilter, `Continuation` (D6), `ProjectsRoot`, `Tailer` |
-| Which harness runs in a pane | `agent_procs`: `detect(pane) -> Option<AgentKind>` over the foreground process list | the `claude` matcher (`is_claude`, §1.3 row 5) |
-| Delivering text to an agent | `herdr_api`: `prompt(pane, &Sanitized)`, the typing path | Claude's extra paths (hooks, MCP, rewake), which stay in the plugin repos |
-| Harness integration | a `Harness` trait the binaries depend on: `kind()`, `sessions()`, `detect()`, `deliver()` | `ClaudeHarness`; `hooks/hooks.json`, `.claude-plugin/` and the `hook` and `mcp` subcommands |
+| An agent session | kit `agent_session`: neutral **outputs** only (below) | kit `agent_session::claude`: the `Session` fold and `status_of`, `Record`, the wire format, `ContinuedIn`, compaction, the marker prefilter, `Continuation` (D6), `ProjectsRoot`, `Tailer` |
+| Which harness runs in a pane | kit `agent_procs`: `detect(pane) -> Option<AgentKind>` over the foreground process list | the `claude` matcher (`is_claude`, §1.3 row 5) |
+| Delivering text | kit `herdr_api`: `prompt(pane, &Sanitized)`, the typing path | Claude's extra paths (hooks, MCP, rewake), plugin-side: hooks, `.claude-plugin/` and the `hook` and `mcp` subcommands |
 
-Mapped onto §2.3: `herdr-api`, `agent-procs`, `plugin-env`, `remote-machines`, `tui-kit` and
-`inbox-contract` are neutral. `panorama-core` and `inbox-core` consume only neutral types
-(`SessionId`, `AgentKind`, `AgentStatus`, `Liveness`) and must not import `agent_session::claude`.
-Claude specifics live only there, in the plugins' hook and MCP code, and in `.claude-plugin/`.
+**The neutral session view.** The IO side (`agent_session::claude`) reads the files and computes
+status, the continuation chain and liveness. It hands the cores neutral data only:
 
-**Rename.** The kit's `claude_session` module is named `agent_session` (with `claude` below it)
-**in P1, before the `v0.1.0` tag**, since nobody depends on it before the tag; afterwards a rename
-is a breaking change under the semver policy below. The plugin crates (`panorama-core`, `inbox-core`) keep their names; neither names
-a harness.
+```rust
+pub struct SessionView {                      // everything the cores may know about one agent's session
+    pub id: SessionId, pub status: AgentStatus,
+    pub parent: Option<SessionId>, pub children: Vec<SessionId>,
+    pub title: Option<String>,
+    pub successors: Vec<(SessionId, Ts)>,     // the continuation chain, oldest first (D6, computed Claude-side)
+}
+```
+
+D6, herdr-inbox#53's forward family (the asker plus its successors dated at or after
+`created_at`) and `live_session` are therefore **Claude-side producers of neutral data**: the IO
+side computes them and passes them in `Observation` (inbox) and the model input (panorama). The
+cores never call Claude code, so #53's guarantees are the same for every caller.
+
+Mapped onto §2.3: `herdr-api`, `agent-procs`, `plugin-env`, `remote-machines` and `tui-kit` are
+neutral. `panorama-core` and `inbox-core` consume only neutral types (`SessionView`, `SessionId`,
+`AgentKind`, `AgentStatus`, `Liveness`) and must not import `agent_session::claude`.
+
+**Naming.** There is no kit code yet, so P1 creates the module as `agent_session` with `claude`
+below it, before the `v0.1.0` tag; afterwards a rename is a semver break. The plugin crates
+(`panorama-core`, `inbox-core`) keep their names; neither names a harness.
 
 **YAGNI.** No second harness is implemented before the operator asks for one; only the seams are
-built. Reviews flag any new Claude-only assumption in a neutral layer (a Claude path, a transcript
-field or `claude` hard-coded in `panorama-core`, `inbox-core`, `herdr-api` or `agent-procs`).
+built. There is no `Harness` trait: a trait with one implementation would encode Claude's ladder.
+It is introduced when a second harness is actually built. Reviews flag any new Claude-only
+assumption in a neutral layer (a Claude path, a transcript field or `claude` hard-coded in
+`panorama-core`, `inbox-core`, `herdr-api` or `agent-procs`).
 
 **Open question: delivery to other harnesses.** The inbox's hook, MCP and rewake paths are Claude
-Code mechanisms; other harnesses have none. Whether typing through herdr alone is enough is **not
-designed now** (§7.2).
+Code mechanisms; other harnesses have none. Delivery stays plugin-side. Whether typing through
+herdr alone is enough is **not designed now** (§7.2).
 
-**Kit publication (decided, operator 2026-10-17).** All three repos (herdr-panorama, herdr-inbox,
-herdr-agent-kit) are community open-source projects, and the kit's API is **public now**, not after
-P4. From `v0.1.0`:
+**Kit publication (D7, decided by the operator 2026-10-17).** All three repos (herdr-panorama,
+herdr-inbox, herdr-agent-kit) are community open-source projects, and the kit's API is **public
+from `v0.1.0`**, a git tag that the plugins depend on. Publishing to crates.io is not scheduled.
 
-- a curated public API with semver (0.x: a breaking change bumps the minor); everything else is
-  `pub(crate)`;
-- plugin-only parts (e.g. `inbox_contract`) sit behind a clearly internal module or feature flag;
-- docs.rs-quality docs and examples;
-- a crates.io name check before the first publish;
-- the operator runs `cargo publish` himself.
+- A curated public API with semver (0.x: a breaking change bumps the minor). Everything else is
+  `pub(crate)`.
+- Plugin-only parts are **not** part of the public API and **outside semver**: `inbox_contract`
+  (including its sqlite reader) sits in an `internal` module, `#[doc(hidden)] pub` and behind the
+  `internal` feature. `FakeHerdr` sits behind the `test-support` feature.
+- docs.rs-quality docs and examples, checked in CI (`cargo doc` with warnings denied).
+- A crates.io name check before the first publish; the kit's `fixtures/` are excluded from the
+  package.
+- The operator runs `cargo publish` himself, when he decides.
 
 **`inbox-core`** holds the delivery policy as a pure function. It replaces the branch ladder in
 `service.py:388-567`.
@@ -843,10 +865,10 @@ Python bridge release per plugin. Rust starts sharing the database only after th
 |---|---|---|---|
 | **P0a Harness** | Create the `herdr-agent-kit` repo. Add a Cargo workspace beside the Python code in both plugin repos, CI (Linux and macOS, musl), the kit-bump automation, and the ledger. Capture the design-independent recordings: herdr socket recordings, hook payloads, MCP `tools/list`. | CI green on empty workspaces in all three repos. Recordings committed. | 3–5 d |
 | **P0b Python bridge releases** (bugfix-class, inside the freeze) | **inbox:** the session-family delivery fix (already under way, by its own author); continuation rule D6; `is_claude` as in panorama (§1.3, row 5); one session-id validator (row 4); the integer `MIGRATION_REVISION` stamp with forward-only migration, and no migration from hooks or MCP (§2.3); `start_successor` able to start a Rust worker; an uncached, herdr-first `plugin_root` lookup for `installed_version()` and `start_successor()`, and a worker that exits when its herdr server is gone (§4 item 5); hooks resolve the interpreter once instead of going through the pyenv shim (saves 60–75 ms per hook on this machine, §6). **panorama:** the same continuation rule, session-id validator and shim fix. Then capture items 2, 3 and 5 of §5.2 from the bridged code. | Both bridges released and in your daily use. Their test suites green with every `HERDR_*` unset. Behaviour goldens captured. | 3–5 d |
-| **P1 Kit** | `herdr-api` (socket plus the CLI path, `FakeHerdr`), `agent_session` with `agent_session::claude` under neutral seams (§2.3), `agent-procs`, `plugin-env`, `inbox-contract` | Scanner model goldens match. Differential replay shows 0 disagreements against the **bridged** Python on your transcripts. `[inbox]`-format goldens match in Rust and in the TS mod. Kit tagged `v0.1.0`, and both plugin repos build against the tag. | 6–8 d |
+| **P1 Kit** | `herdr-api` (socket plus the CLI path, `FakeHerdr`), `agent_session` with `agent_session::claude` under neutral seams (§2.3), `agent-procs`, `plugin-env`, `inbox-contract`. **API curation for D7:** the public surface, `internal` and `test-support` gating, docs.rs-quality docs with examples, `cargo doc` in CI, crate-name check. | Scanner model goldens match. Differential replay shows 0 disagreements against the **bridged** Python on your transcripts. `[inbox]`-format goldens match in Rust and in the TS mod. Kit tagged `v0.1.0`, and both plugin repos build against the tag. Docs build clean. | 7–10 d |
 | **P2 Inbox hooks and rewake watcher, plus the release path** | `herdr-inbox hook …`, the `store` module (claims and sessions, no migration), `inbox-core::decide` (hook and watcher paths). The full §4 path: release CI, `release.toml` bot, `install-bin.sh`, the Claude `launch` shim with contract matching, and the MCP-side download. | Ledger rows for `test_hook*`, `test_rewake`, `test_verified_delivery`, and the hook paths of `test_session_continuation`. **Fresh install**, then a `plugin update` to a newer commit (afterwards `plugin list --json` names the new `plugin_root`), of the herdr plugin on an isolated herdr 0.9.4+ (this workstation runs 0.9.3). The release PR raises the inbox's `min_herdr_version` to 0.9.4. A fresh install of the Claude plugin in a scratch `CLAUDE_CONFIG_DIR`, where hooks find the binary. The skew case is tested (Claude plugin newer than the binary: hooks degrade as §4 item 4 says). **Gate G1:** a week of your daily use with the Python worker, MCP and popup and the Rust hooks, followed by an audit query: no double delivery, no lost delivery, no exit-2 leak. | 4–6 d |
 | **P3 Panorama panel viewer** | `panorama panel` on protocol 1.1, `panorama-core::view::dock9e` | `design_9` and `design_10` goldens byte-identical. The isolated-herdr panel checks in DESIGN.md "As built" pass. 8 panels at under 5 MB each. | 3–5 d |
-| **P4 Panorama core and home view** | collector, core socket, panel manager, cockpit and home, `graph2a` and `narrow`, new-agent form (design 1C: harness picker with per-harness ASCII art, Claude the only entry now; Q179), mouse, arming, hooks, report_thread MCP: about 7k lines of Python | All design and app-screen goldens. The safety tests (identity cursors, arming, follow guards, never closing panes) are ported. Ledger complete for panorama. **Gate G2:** a week as your daily view. | 12–18 d |
+| **P4 Panorama core and home view** | collector, core socket, panel manager, cockpit and home, `graph2a` and `narrow`, new-agent form (design 1C: harness picker with per-harness ASCII art, Claude the only entry now; Q179), mouse, arming, hooks, report_thread MCP: about 7k lines of Python | All design and app-screen goldens. The safety tests (identity cursors, arming, follow guards, never closing panes) are ported. Ledger complete for panorama. **Approved deviation:** design 1C drops today's "First prompt (optional)" field (`tui.py:1475`, `home.py:324`) at the operator's request (2026-10-17), so its ledger rows and goldens change and the new-agent path no longer types into a pane. **Gate G2:** a week as your daily view. | 12–18 d |
 | **P5 Inbox worker, MCP and CLI** | **Precondition:** herdr-inbox#50 is fixed before any `MIGRATION_REVISION` bump (§5.4); Rust can first raise the revision here. worker (owns migration from here on), `mcp` (rmcp), `ask`, `export`/`apply`, the rest of the `store` module | The decision table is reproduced. MCP `tools/list` goldens are identical. Remote export and apply pass against a Python remote and a Rust remote. | 7–10 d |
 | **P6 Inbox popup** | `herdr-inbox tui`, including the empty-inbox design 2C (Q179) | App-screen goldens. The key-safety and arming tests are ported. **Gate G3:** a week of daily use. | 6–9 d |
 | **P7 Remote machines** | kit `remote-machines` (machine list through the CLI path, ssh options, the ControlPath scheme); panorama's rsync mirror and the inbox's pull and outbox in their own repos | Both plugins' remote tests pass against a saved VM, each with the other plugin uninstalled. With both running: one control master per host. | 4–6 d |
@@ -1028,9 +1050,9 @@ The estimate after the rewrite is 100–150 MB and about 2% of a core.
 
 | | Agent-days | Calendar |
 |---|---|---|
-| Build, including review rounds (sum of §5.3) | **52–78** | — |
+| Build, including review rounds (sum of §5.3) | **53–80** | — |
 | Gates G1, G2, G3: a week each of your daily use | 0 agent-days | 3 weeks, set by you, serial within their track |
-| **One track** | 52–78 | 52–78 d ÷ 5 per week ≈ 10.5–15.5 weeks, plus up to 3 gate weeks with nothing to work on ≈ **12–19 weeks** |
+| **One track** | 53–80 | 53–80 d ÷ 5 per week ≈ 10.5–16 weeks, plus up to 3 gate weeks with nothing to work on ≈ **12–19 weeks** |
 | **Two tracks after P1** (panorama: P3, P4; inbox: P2, P5, P6, P7) | same | P0a–P1 ≈ 2.5–3.5 weeks, then the longer track (inbox, about 4.5–6.5 weeks plus G1 and G3; panorama plus G2 runs alongside), then P8 ≈ **9–13 weeks** |
 
 - The biggest single item is P4 (12–18 d): `render.py`, `tui.py`, collect, scan, core and panels,
