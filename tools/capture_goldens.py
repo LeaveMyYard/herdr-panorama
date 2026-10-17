@@ -14,7 +14,8 @@ Every golden carries its inputs, so another implementation can replay it without
   file one or more ``runs`` (app, size, input, ``now``, environment) with an ordered list of
   ``steps``; every ``snap`` step's screen is under ``screens`` by its name, as runs of
   ``[text, fg, bg, bold]`` per row (the shape of ``design_*.json``; ``null`` is the
-  terminal's default colour).
+  terminal's default colour; a ``reverse`` cell has its fg and bg swapped, as the terminal
+  shows it; no other attribute occurs on these screens).
 
 The goldens are made from the input files (written first, then read back), so the inputs are
 known to be complete. Deterministic: fixed sizes, held clock and animation frame, TZ=UTC, no
@@ -58,8 +59,8 @@ FROZEN_SNAPSHOT = ("import sys, time\n"
                    "sys.exit(main(['snapshot', '--json']))\n")
 
 DROPPED_ENV = ("HERDR_", "PANORAMA_", "TEXTUAL_", "CLAUDE_")
-DROPPED_VARS = ("NO_COLOR", "FORCE_COLOR", "COLUMNS", "LINES")
-ENV_NOTE = ("TZ=UTC; no herdr config.toml (panorama's default theme); NO_COLOR, FORCE_COLOR and every "
+DROPPED_VARS = ("NO_COLOR", "FORCE_COLOR", "COLORTERM", "TERM", "COLUMNS", "LINES")
+ENV_NOTE = ("TZ=UTC; no herdr config.toml (panorama's default theme); NO_COLOR, FORCE_COLOR, COLORTERM, TERM and every "
             "HERDR_*/PANORAMA_*/TEXTUAL_*/CLAUDE_* variable unset except those a run names; "
             "tools/capture_goldens.py")
 
@@ -326,8 +327,10 @@ def dump(app) -> list[list]:
                 if seg.control or not seg.text:
                     continue
                 st = seg.style
-                attrs = (hexcolor(st.color) if st else None, hexcolor(st.bgcolor) if st else None,
-                         bool(st and st.bold))
+                fg, bg = (hexcolor(st.color), hexcolor(st.bgcolor)) if st else (None, None)
+                if st and st.reverse:  # what the terminal shows: a text cursor, a selection
+                    fg, bg = bg, fg
+                attrs = (fg, bg, bool(st and st.bold))
                 if row and tuple(row[-1][1:]) == attrs:
                     row[-1][0] += seg.text
                 else:

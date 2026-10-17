@@ -1,5 +1,5 @@
 {
- "source": "panorama snapshot --json over inputs/scenario-continued.json materialised under <root> (CLAUDE_CONFIG_DIR=<root>, HERDR_INBOX_DB=<root>/inbox.db from the inbox rows, PANORAMA_EVENTS_DIR=<root>/events, a fake herdr answering `api snapshot` with the input's snapshot and an empty `pane process-info`), time.time held at the scenario's now plus each key's minutes, the conditions' env added; TZ=UTC; no herdr config.toml (panorama's default theme); NO_COLOR, FORCE_COLOR and every HERDR_*/PANORAMA_*/TEXTUAL_*/CLAUDE_* variable unset except those a run names; tools/capture_goldens.py",
+ "source": "panorama snapshot --json over inputs/scenario-continued.json materialised under <root> (CLAUDE_CONFIG_DIR=<root>, HERDR_INBOX_DB=<root>/inbox.db from the inbox rows, PANORAMA_EVENTS_DIR=<root>/events, a fake herdr answering `api snapshot` with the input's snapshot and an empty `pane process-info`), time.time held at the scenario's now plus each key's minutes, the conditions' env added; TZ=UTC; no herdr config.toml (panorama's default theme); NO_COLOR, FORCE_COLOR, COLORTERM, TERM and every HERDR_*/PANORAMA_*/TEXTUAL_*/CLAUDE_* variable unset except those a run names; tools/capture_goldens.py",
  "input": "inputs/scenario-continued.json",
  "now": 1791969600.0,
  "conditions": {},

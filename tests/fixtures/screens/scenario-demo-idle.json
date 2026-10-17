@@ -1,5 +1,5 @@
 {
- "source": "Textual run_test(notifications=True) of each run's app; a scenario input is materialised as for model/ and read through the app's own source (herdr + the inbox) with the clock held; a swarm input through protocol.swarm_from_wire; <root> in env: that run's own directory; TZ=UTC; no herdr config.toml (panorama's default theme); NO_COLOR, FORCE_COLOR and every HERDR_*/PANORAMA_*/TEXTUAL_*/CLAUDE_* variable unset except those a run names; tools/capture_goldens.py",
+ "source": "Textual run_test(notifications=True) of each run's app; a scenario input is materialised as for model/ and read through the app's own source (herdr + the inbox) with the clock held; a swarm input through protocol.swarm_from_wire; <root> in env: that run's own directory; TZ=UTC; no herdr config.toml (panorama's default theme); NO_COLOR, FORCE_COLOR, COLORTERM, TERM and every HERDR_*/PANORAMA_*/TEXTUAL_*/CLAUDE_* variable unset except those a run names; tools/capture_goldens.py",
  "runs": [
   {
    "app": "swarm",

@@ -74,6 +74,11 @@ inputs, so another implementation can replay it without Python:
   - A screen is what Textual's compositor sends to the terminal, as runs of
     `[text, fg, bg, bold]` per row: the shape of `design_*.json`, with `null` for the
     terminal's default colour.
+  - Reverse video is resolved: a cell with Rich's `reverse` (the text cursor in the New agent
+    form) is stored with its fg and bg swapped, as the terminal shows it. No other attribute
+    (dim, italic, underline, strike, blink) occurs on these screens, checked over every
+    segment of every capture, so the format stays `[text, fg, bg, bold]`. herdr-inbox's
+    goldens use the same rule.
   - Fixed: TZ=UTC, panorama's default theme, animation frame 0 unless a screen's name says
     otherwise.
 
