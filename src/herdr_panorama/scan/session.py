@@ -171,6 +171,7 @@ class Session:
         self.titles: dict[str, str] = {}
         self.continued_in: str | None = None  # the session this one continued in (its last word)
         self.continued_at: float | None = None  # that record's time (a later conversation line: resumed)
+        self.continuations_accepted = 0  # continued-in records taken (an ignored one never moves the resume scan)
         self.qids: dict[str, set[int]] = {}
         self.bad_records = 0
         self._pending_ask: dict[str, str] = {}
@@ -277,11 +278,12 @@ class Session:
             when = wire.ts(rec.get("timestamp")) or f.last_ts
             if when is not None:
                 f.last_ts = when
+            accepted = self.continuations_accepted
             try:
                 self.apply(f.owner, rec, when)
             except Exception:  # noqa: BLE001 - one odd record never costs the rest of the batch
                 self.bad_records += 1
-            if rec.get("type") == "continued-in" and f.owner == MAIN:
+            if self.continuations_accepted != accepted:
                 last_continued = i
         if f.owner == MAIN and self.continued_in:
             self._resumed(lines[last_continued + 1:])
@@ -391,6 +393,7 @@ class Session:
             if owner == MAIN and rec.get("isSidechain") is not True and nxt is not None \
                     and nxt != discovery.canonical_session_id(self.session_id):
                 self.continued_in, self.continued_at = nxt, when
+                self.continuations_accepted += 1
             return
         if kind == "custom-title" and isinstance(rec.get("customTitle"), str):
             self.titles["custom"] = rec["customTitle"]

@@ -197,6 +197,23 @@ def test_a_sidechain_continuation_is_ignored(tmp_path):
     assert load(m).continued_in is None
 
 
+@pytest.mark.parametrize("ignored", ["sidechain", "own_id", "not_a_uuid"])
+def test_a_resume_before_an_ignored_continuation_in_the_same_batch_still_counts(tmp_path, ignored):
+    """continued-in, then the resume, then a continued-in that is ignored, all in one read: the
+    resume scan starts after the last ACCEPTED continued-in, so the resume still clears it."""
+    m = old_session(tmp_path)
+    continued(m, BASE + 10)
+    m.prompt(BASE + 20, "go on")
+    rec = tpl("continued_in")
+    rec.update(timestamp=iso(BASE + 30), sessionId=SID,
+               continuedInSessionId={"own_id": SID.upper(), "not_a_uuid": "../x"}.get(ignored, NEXT))
+    if ignored == "sidechain":
+        rec["isSidechain"] = True
+    m.raw(json.dumps(rec, separators=(",", ":")))
+    m.write()
+    assert load(m).continued_in is None
+
+
 def undated_continued(m, nxt: str = NEXT) -> None:
     """A continued-in record without a timestamp: it takes the time of the record before it."""
     rec = tpl("continued_in")
