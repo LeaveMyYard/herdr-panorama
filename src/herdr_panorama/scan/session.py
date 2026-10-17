@@ -48,7 +48,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 from dataclasses import dataclass, field
 
 from .. import hooks as hookmod
@@ -65,24 +64,22 @@ ASSISTANT = b'"type":"assistant"'
 USER = b'"type":"user"'
 TAIL_MAX = 8 * 1024 * 1024  # the tail window grows up to this when the last records are huge
 BG_MARK = b'"backgroundTaskId"'  # a Bash moved to the background (the result record)
-_LINE_TS = re.compile(rb'"timestamp":"([^"]{1,64})"')
+_TS_KEY = b'"timestamp":"'
 BG_CAP = 24 * 3600.0  # an open background task nobody can check (remote, no /proc) counts this long
 MONITOR_SLACK = 60.0  # a Monitor past its timeout by this much has expired even without its last event
 
 
 def _last_line_ts(lines: list[bytes], lo: int, hi: int) -> float | None:
-    """The record timestamp of the last line in ``lines[lo:hi]`` that has one, found from the end
-    without parsing; only a line with more than one ``timestamp`` key (a nested object has one
-    too) is parsed to tell the record's own."""
-    for raw in reversed(lines[lo:hi]):
-        if b'"timestamp":"' not in raw:
+    """The record's own (top-level) timestamp of the last line in ``lines[lo:hi]`` that has one,
+    searched from the end. Only a line carrying a ``timestamp`` key anywhere is parsed, and the
+    search stops at the first dated record. A nested timestamp alone (``file-history-snapshot``'s
+    ``snapshot.timestamp``) does not date a record."""
+    for i in range(hi - 1, lo - 1, -1):
+        raw = lines[i]
+        if _TS_KEY not in raw:
             continue
-        found = _LINE_TS.findall(raw)
-        if len(found) == 1:
-            when = wire.ts(found[0].decode("ascii", "replace"))
-        else:
-            rec = wire.parse_line(raw)
-            when = wire.ts(rec.get("timestamp")) if rec else None
+        rec = wire.parse_line(raw)
+        when = wire.ts(rec.get("timestamp")) if isinstance(rec, dict) else None
         if when is not None:
             return when
     return None
@@ -300,9 +297,10 @@ class Session:
             when = wire.ts(rec.get("timestamp")) or f.last_ts
             if when is not None:
                 f.last_ts = when
-            if rec.get("type") == "continued-in" and wire.ts(rec.get("timestamp")) is None:
-                # undated: the time of the last dated line of any kind before it (the prefilter skips most)
-                f.line_ts, done = _last_line_ts(lines, done, i) or f.line_ts, i
+            if f.owner == MAIN and rec.get("type") == "continued-in" and wire.ts(rec.get("timestamp")) is None:
+                # undated: the time of the last dated record of any kind before it (the prefilter skips most)
+                found = _last_line_ts(lines, done, i)
+                f.line_ts, done = (f.line_ts if found is None else found), i
                 when = f.line_ts
             accepted = self.continuations_accepted
             try:
@@ -311,7 +309,9 @@ class Session:
                 self.bad_records += 1
             if self.continuations_accepted != accepted:
                 last_continued = i
-        f.line_ts = _last_line_ts(lines, done, len(lines)) or f.line_ts
+        if f.owner == MAIN:
+            found = _last_line_ts(lines, done, len(lines))
+            f.line_ts = f.line_ts if found is None else found
         if f.owner == MAIN and self.continued_in:
             self._resumed(lines[last_continued + 1:])
         if f.tail.size != f.info_size and f.tail.size > 0:

@@ -18,7 +18,7 @@ from herdr_panorama import hooks, machines
 from herdr_panorama.scan import discovery
 from herdr_panorama.scan.session import MAIN, Session
 
-from .scenario import BASE, Project, iso, tpl
+from .scenario import BASE, Project, iso, stamp, tpl
 
 SID = "55555555-5555-4555-8555-555555555555"
 NEXT = "66666666-6666-4666-8666-666666666666"
@@ -93,6 +93,24 @@ def test_an_uppercase_id_finds_its_lowercase_transcript(tmp_path, sid):
     m.text(BASE, "hi")
     m.write()
     assert discovery.find_root(sid.upper(), None, str(proj.root)) == str(m.path)
+
+
+def test_the_remote_mirror_names_sessions_in_lowercase_once(monkeypatch, tmp_path):
+    """machines.sync: the rsync rules and the prune bookkeeping get each id canonical, once."""
+    monkeypatch.setenv("HERDR_PLUGIN_STATE_DIR", str(tmp_path / "state"))
+    got = {}
+    monkeypatch.setattr(machines, "mirror", lambda src, dest, sessions, ssh: got.update(mirror=sessions))
+    monkeypatch.setattr(machines, "prune", lambda dest, sessions, keep: got.update(prune=sessions))
+    machine = machines.Machine("m1", "devbox", "devbox")
+    assert machines.sync(machine, [HEX.upper(), HEX, "../x", SID]) is None
+    assert got["mirror"] == got["prune"] == [HEX, SID]
+
+
+def test_an_events_file_is_named_by_the_canonical_id(monkeypatch, tmp_path):
+    from herdr_panorama import events
+    monkeypatch.setenv("PANORAMA_EVENTS_DIR", str(tmp_path))
+    assert events.events_path(HEX.upper()) == events.events_path(HEX) == tmp_path / f"{HEX}.jsonl"
+    assert events.events_path("not/a-uuid") == tmp_path / "nota-uuid.jsonl"  # unchanged for other ids
 
 
 def test_a_continuation_named_in_uppercase_is_found_and_followed(tmp_path):
@@ -215,6 +233,18 @@ def test_a_continuation_to_its_own_id_in_another_case_is_ignored(tmp_path, own, 
     assert load(m).continued_in is None
 
 
+@pytest.mark.parametrize("kind", ["user", "assistant"])
+def test_an_undated_conversation_record_does_not_clear_a_dated_continuation(tmp_path, kind):
+    """A resume must be LATER than the continued-in: a record with no time is not."""
+    m = old_session(tmp_path)
+    continued(m, BASE + 10)
+    rec = stamp(tpl("user_prompt_human" if kind == "user" else "assistant_text"), BASE + 20, SID)
+    rec.pop("timestamp")
+    m.raw(json.dumps(rec, separators=(",", ":")))
+    m.write()
+    assert load(m).continued_in == NEXT
+
+
 def test_a_sidechain_continuation_is_ignored(tmp_path):
     """A continued-in record marked ``isSidechain: true`` is never the main conversation's, even
     in the main transcript."""
@@ -289,6 +319,38 @@ def test_an_undated_continuation_takes_a_dated_record_from_an_earlier_read(tmp_p
     assert (s.continued_in is None) == cleared
 
 
+@pytest.mark.parametrize("dt,cleared", [(+1, True), (0, False)])
+def test_a_nested_timestamp_does_not_date_a_record(tmp_path, dt, cleared):
+    """A captured file-history-snapshot: undated, with ``snapshot.timestamp`` inside. The undated
+    continued-in after it takes the prompt's time (BASE + 5), not the snapshot's."""
+    proj = Project(tmp_path / "projects")
+    m = proj.main(SID)
+    m.prompt(BASE + 5, "work")
+    snap = tpl("file_history_snapshot")
+    snap["snapshot"]["timestamp"] = iso(BASE + 100)
+    m.raw(json.dumps(snap, separators=(",", ":")))
+    undated_continued(m)
+    m.prompt(BASE + 5 + dt, "go on")
+    m.write()
+    assert (load(m).continued_in is None) == cleared
+
+
+@pytest.mark.parametrize("dt,cleared", [(+1, True), (0, False)])
+def test_a_record_with_two_timestamps_is_dated_by_its_own(tmp_path, dt, cleared):
+    """A captured queued_command attachment carries its own timestamp and one inside
+    ``attachment``; the record's own (BASE + 5) is the one that counts."""
+    proj = Project(tmp_path / "projects")
+    m = proj.main(SID)
+    m.prompt(BASE, "work")
+    att = stamp(tpl("attachment_queued_command"), BASE + 5, SID)
+    att["attachment"]["timestamp"] = iso(BASE + 100)
+    m.raw(json.dumps(att, separators=(",", ":")))
+    undated_continued(m)
+    m.prompt(BASE + 5 + dt, "go on")
+    m.write()
+    assert (load(m).continued_in is None) == cleared
+
+
 def test_an_undated_continuation_with_no_time_before_it_is_cleared_by_any_conversation(tmp_path):
     """Nothing dated before it: no time to compare with, so any later user/assistant record is a
     resume; bookkeeping still is not."""
@@ -359,6 +421,7 @@ NOT_CLAUDE = [
     ("node", ["node", "/home/u/src/claude-code/cli.js"]),  # some other claude-code checkout
     ("node", ["node", "/x/@anthropic-ai/claude-code/cli.js.map"]),
     ("node", ["node", "/x/@anthropic-ai/claude-code-router/cli.js"]),
+    ("node", ["node", "/x/foo@anthropic-ai/claude-code/cli.js"]),  # the scope is a whole path segment
     ("node", []),
     ("uv", ["uv", "run", "/x/@anthropic-ai/claude-code/cli.js"]),  # not node
     ("zsh", ["/home/u/.local/share/claude-versions/2.1.301"]),

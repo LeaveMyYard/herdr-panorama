@@ -179,6 +179,9 @@ def main() -> None:
         "last_prompt": lambda r: r.get("type") == "last-prompt",
         "cost_state": lambda r: r.get("type") == "cost-state",
         "mode": lambda r: r.get("type") == "mode",
+        # undated at the top, dated inside (snapshot.timestamp): an undated continued-in's time
+        "file_history_snapshot": lambda r: r.get("type") == "file-history-snapshot" and "timestamp" not in r
+        and isinstance((r.get("snapshot") or {}).get("timestamp"), str),
     }
     every = sorted(glob.glob(os.path.join(root, "*", "*.jsonl")), key=os.path.getmtime, reverse=True)
     for kind, pred in book.items():
