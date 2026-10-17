@@ -38,8 +38,9 @@ leaves a record. A pane is closed as a restored panel only when all of these hol
   fresh server that numbers panes anew never matches an old record);
 - herdr gave it a different terminal id. A crash restore does that, but so does a live
   handoff, where the panel keeps running: that case is told apart only by the next check;
-- it still has the panel's label, no agent, and is not focused (in the snapshot, or by a
-  focus event since the restore was first seen);
+- it still has the panel's label, no agent, and is not focused: not the focused pane, not the
+  pane its tab remembers as focused (``layouts[].focused_pane_id``: the operator was last in it,
+  before the crash or since), and no focus event for it since the restore was first seen;
 - ``pane process-info``: one foreground process, the pane's own ``shell_pid``, whose argv is
   a plain shell (an ``exec``-ed program keeps the pid but not the argv);
 - ``pgrep -P``: the shell has no child (no background job), and ``ps -o etime``: it is younger
@@ -48,8 +49,9 @@ leaves a record. A pane is closed as a restored panel only when all of these hol
 
 Any other answer (only "herdr cannot say yet" excepted) gives the pane up for good, and so does
 not deciding within ``RESTORE_PASSES`` passes of the first pass that saw the restore: leaving a
-shell is safe, closing a pane the operator used is not. A core that starts more than
-``RESTORED_SECONDS`` after herdr leaves the restored shells in place. Residual: herdr has no
+shell is safe, closing a pane the operator used is not. ``RESTORED_SECONDS`` is short (15 s)
+so that the operator has had no time to use the shell unseen before the core's first look; a
+core that starts later than that after herdr leaves the restored shells in place. Residual: herdr has no
 conditional close, so a command typed in the milliseconds between the last look and the
 close goes with the pane. The age and child checks assume herdr runs in this pid namespace;
 macOS computes ``etime`` from the wall clock.
@@ -74,7 +76,7 @@ NOT_PANEL_SECONDS = 30.0  # how long a "not a panel" answer for a pane is believ
 PANEL_SECONDS = 30.0  # how long a "runs our viewer" answer is believed (a pane never becomes another)
 CRASH_LIMIT = 3  # panels of one tab that died on their own before the manager stops making them
 LOCK_SECONDS = 2.0
-RESTORED_SECONDS = 60.0  # a restored panel's shell is at most this old when it is closed
+RESTORED_SECONDS = 15.0  # a restored panel's shell is at most this old when it is closed
 RESTORE_PASSES = 3  # passes, from the first that sees a restore, on which restored panels are judged
 
 
@@ -104,6 +106,12 @@ def _operator_moved(events: list[dict], expected: list[tuple[str, str]]) -> str 
             return key[1]
         i = j + 1
     return None
+
+
+def _tab_focus(snap: dict, pane_id: str) -> bool:
+    """The pane is the one its tab remembers as focused (``layouts[].focused_pane_id``): the
+    operator was last in it, before the crash or since the restore; either way, not closed."""
+    return any(isinstance(lay, dict) and lay.get("focused_pane_id") == pane_id for lay in snap.get("layouts") or [])
 
 
 def _crashed(pane_id: str) -> bool:
@@ -221,7 +229,8 @@ class Manager:
             return "relabelled"
         if p.get("agent"):
             return "an agent"
-        if p.get("focused") or snap.get("focused_pane_id") == pane_id or self._focused_since_restore(pane_id):
+        if p.get("focused") or snap.get("focused_pane_id") == pane_id or _tab_focus(snap, pane_id) \
+                or self._focused_since_restore(pane_id):
             return "focused"
         plain, shell = herdr.pane_shell(pane_id)
         if plain is None:

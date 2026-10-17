@@ -1743,18 +1743,21 @@ has proven itself (the operator, Q140).
       apart only by the next check, and its record then follows the new terminal;
     - `pane process-info`: one foreground process, the pane's own `shell_pid`, whose argv is a
       plain shell (`exec vim` keeps the pid but not the argv; a nested `bash` has another pid);
-    - it still has the label `Panorama panel`, no agent, and is not focused (in the snapshot,
-      or by a focus event since the restore was first seen);
+    - it still has the label `Panorama panel`, no agent, and is not focused: not the focused
+      pane, not the pane its tab remembers as focused (`layouts[].focused_pane_id`: the
+      operator was last in it, before the crash or since the restore), and no focus event for
+      it since the restore was first seen;
     - `pgrep -P`: the shell has no child (no background job), and `ps -o etime`: it is younger
-      than 60 s;
+      than 15 s, so the operator has had no time to use it unseen before the core's first look;
     - a second `pane process-info`, right before the close, still says the same.
 
     Any other answer, except "herdr cannot say yet", gives the pane up for good, even if it
     looks idle later. So does not deciding within the first 3 passes after the restore was
     first seen. Leaving a shell is safe; closing a pane the operator used is not. So a core
-    that starts more than 60 s after herdr (a slow or failed startup hook, panorama opened by
-    hand later) leaves the restored shells in place, as before this fix, and so does a restore
-    where herdr put the focus on the panel. A look-alike (a pane with that label that was never
+    that starts more than 15 s after herdr (a slow or failed startup hook, panorama opened by
+    hand later) leaves the restored shells in place, as before this fix, and so does a tab
+    whose remembered focus is its panel (the operator was last there, e.g. after an arrow
+    switch in the panels, which focuses the target tab's panel). A look-alike (a pane with that label that was never
     recorded) is never touched. The tab then gets a fresh panel by the usual rules (the start
     batch, or the operator's visit), on the left of its agent where the old one was.
   - **Limits.** herdr has no conditional close: a command typed in the few milliseconds

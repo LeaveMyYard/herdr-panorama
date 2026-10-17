@@ -28,6 +28,7 @@ class World:
         self.on_swap = None
         # pane -> (plain shell?, shell age, has children): default an idle shell herdr just started
         self.shell: dict[str, tuple] = {}
+        self.tab_focus: dict[str, str] = {}  # tab -> the pane it remembers as focused
         mp = monkeypatch
         mp.setattr(herdr, "snapshot", self.snapshot)
         mp.setattr(herdr, "open_panel", self.open_panel)
@@ -52,7 +53,10 @@ class World:
 
     def snapshot(self):
         panes = [dict(p, tab_id=t, workspace_id="w1") for t, ps in self.tabs.items() for p in ps]
-        return {"panes": panes, "focused_tab_id": self.focus[0], "focused_pane_id": self.focus[1]}
+        snap = {"panes": panes, "focused_tab_id": self.focus[0], "focused_pane_id": self.focus[1]}
+        if self.tab_focus:  # herdr's layouts: each tab's remembered focus
+            snap["layouts"] = [{"tab_id": t, "focused_pane_id": f} for t, f in self.tab_focus.items()]
+        return snap
 
     def open_panel(self, target):
         self.n += 1
@@ -546,7 +550,7 @@ def test_a_panel_herdr_restored_as_a_plain_shell_is_closed_and_made_again_in_its
     assert again.closed == set()  # closing a restored panel is not the operator closing it
 
 
-@pytest.mark.parametrize("case", ["never-recorded", "same-terminal", "relabelled", "agent", "focused",
+@pytest.mark.parametrize("case", ["never-recorded", "same-terminal", "relabelled", "agent", "focused", "tab-focus",
                                   "in-use", "background-job", "children-unknown", "old-shell",
                                   "age-unknown", "quit-cleanly"])
 def test_a_restored_pane_is_closed_only_when_provably_our_unused_panel(world, tmp_path, case):
@@ -574,13 +578,15 @@ def test_a_restored_pane_is_closed_only_when_provably_our_unused_panel(world, tm
         pane["agent"] = "claude"
     elif case == "focused":
         world.focus = ("w1:t2", panel)
+    elif case == "tab-focus":  # the operator was last in it (then went to another tab)
+        world.tab_focus = {"w1:t2": panel}
     elif case == "in-use":
         world.shell[panel] = (False, 3.0, False)
     elif case == "background-job":
         world.shell[panel] = (True, 3.0, True)
     elif case == "children-unknown":
         world.shell[panel] = (True, 3.0, None)
-    elif case == "old-shell":
+    elif case == "old-shell":  # e.g. a core that starts late: the operator may have used it unseen
         world.shell[panel] = (True, panels.RESTORED_SECONDS + 1, False)
     elif case == "age-unknown":
         world.shell[panel] = (True, None, False)
@@ -591,6 +597,7 @@ def test_a_restored_pane_is_closed_only_when_provably_our_unused_panel(world, tm
     pane["label"] = PANEL_LABEL
     world.shell.pop(panel, None)
     world.focus = ("w1:t1", "w1:p1")
+    world.tab_focus = {}
     again.reconcile(world.snapshot(), orch("w1:p2", "w1:p3"))  # idle now, still within the passes
     assert not closes(world)
 
@@ -716,14 +723,28 @@ EXECED = dict(RESTORED, foreground_processes=[{"argv": ["vim", "notes"], "name":
 WITH_CHILD = dict(RESTORED, foreground_processes=[{"argv": ["/usr/bin/zsh"], "name": "zsh", "pid": 73505},
                                                   {"argv": ["sleep", "9"], "name": "sleep", "pid": 73700}])
 NESTED = dict(RESTORED, foreground_processes=[{"argv": ["bash"], "name": "bash", "pid": 73800}])
+EXEC_SCRIPT = dict(RESTORED, foreground_processes=[{"argv": ["bash", "deploy.sh"], "name": "bash", "pid": 73505}])
+EXEC_C = dict(RESTORED, foreground_processes=[{"argv": ["zsh", "-c", "make"], "name": "zsh", "pid": 73505}])
 
 
 @pytest.mark.parametrize("info,expect", [(RESTORED, (True, 73505)), (LOGIN, (True, 73505)),
                                          (LIVE_PANEL, (False, 71225)), (BUSY, (False, 73505)),
                                          (EXECED, (False, 73505)), (WITH_CHILD, (False, 73505)),
-                                         (NESTED, (False, 73505)),
+                                         (NESTED, (False, 73505)), (EXEC_SCRIPT, (False, 73505)),
+                                         (EXEC_C, (False, 73505)),
                                          ({"pane_id": "w1:p2", "foreground_processes": []}, (None, None))],
-                         ids=["restored", "login", "live-panel", "busy", "execed", "with-child", "nested-shell", "unknown"])
+                         ids=["restored", "login", "live-panel", "busy", "execed", "with-child", "nested-shell",
+                              "exec-script", "exec-dash-c", "unknown"])
 def test_a_plain_shell_is_only_the_panes_own_shell(monkeypatch, info, expect):
     monkeypatch.setattr(herdr, "call", lambda *a, **k: ({"type": "pane_process_info", "process_info": info}, None))
     assert herdr.pane_shell("w1:p2") == expect
+
+
+def test_only_a_shell_seen_young_enough_is_closed(world, tmp_path):
+    """The age bound is inclusive and short: a shell at ``RESTORED_SECONDS`` is closed."""
+    _, panel = recorded_panel(world, tmp_path)
+    world.restart_herdr()
+    world.shell[panel] = (True, panels.RESTORED_SECONDS, False)
+    restarted(world, tmp_path)
+    assert ("close_pane", panel) in world.calls
+    assert panels.RESTORED_SECONDS <= 15
