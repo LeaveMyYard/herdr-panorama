@@ -1683,7 +1683,7 @@ has proven itself (the operator, Q140).
   example a broken environment) died on its own, and so did a viewer that left a crash marker
   (`panel-crash-<pane>` in the state dir, written when the viewer exits with an error). Either
   is logged as a warning and made again. The viewer also writes the error's traceback to
-  `panel-crash-<pane>.log` beside the marker (its last 16 KB). The core uses up the marker, but
+  `panel-crash-<pane>.log` beside the marker (its last 16 KB, UTF-8). The core uses up the marker, but
   the log stays as evidence for a report. After 3 such deaths in one tab, the manager stops
   making panels there for the rest of the core's life and says so in the log.
 - **No panel is left behind.**

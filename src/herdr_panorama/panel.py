@@ -38,7 +38,7 @@ def crash_marker(pane_id: str):
     return home.state_dir() / f"panel-crash-{pane_id}"
 
 
-CRASH_LOG_BYTES = 16384  # the crash log keeps this much of the traceback's end
+CRASH_LOG_BYTES = 16384  # the crash log keeps this many bytes of the traceback's end (UTF-8)
 
 
 def crash_log(pane_id: str):
@@ -48,16 +48,23 @@ def crash_log(pane_id: str):
 
 
 def mark_crash(pane_id: str | None, error: BaseException | None = None) -> None:
+    """Never raises: it runs while a crash is already on its way out (review of #47)."""
     if not pane_id:
         return
     try:
         crash_marker(pane_id).parent.mkdir(parents=True, exist_ok=True)
         crash_marker(pane_id).write_text(str(time.time()))
-        if error is not None:
-            text = "".join(traceback.format_exception(error))
-            stamp = time.strftime("%Y-%m-%d %H:%M:%S %z")
-            crash_log(pane_id).write_text(f"{stamp}\n{text[-CRASH_LOG_BYTES:]}")
     except OSError:
+        return
+    if error is None:
+        return
+    try:
+        text = "".join(traceback.format_exception(error))
+        data = text.encode("utf-8", errors="backslashreplace")[-CRASH_LOG_BYTES:]
+        data = data.decode("utf-8", errors="ignore").encode()  # no half character at the cut
+        stamp = time.strftime("%Y-%m-%d %H:%M:%S %z").encode()
+        crash_log(pane_id).write_bytes(stamp + b"\n" + data)
+    except Exception:  # noqa: BLE001, S110 - the log is evidence only; the marker is what counts
         pass
 
 
@@ -209,7 +216,7 @@ class PanelApp(SwarmApp):
         self.my_pane = pane_id if pane_id is not None else os.environ.get("HERDR_PANE_ID")
         self.my_tab = tab_id if tab_id is not None else os.environ.get("HERDR_TAB_ID")
         self.connected = False
-        self.visible = True
+        self.tab_shown = True  # this tab is the one herdr shows (not ``visible``: Textual's)
         self.client = PanelClient(sock_path or protocol.socket_path(), self.my_pane, self.my_tab,
                                   on_state=lambda st: self._to_ui(self._got_state, st),
                                   on_status=lambda on: self._to_ui(self._status, on),
@@ -246,7 +253,7 @@ class PanelApp(SwarmApp):
         mine = next((o.pane_id for o in swarm.orchestrators if o.tab_id and o.tab_id == self.my_tab), None)
         swarm.docked = mine  # this tab's orchestrator: the panel's docked entry
         vis = state.get("visible_tabs")
-        self.visible = True if not isinstance(vis, list) or not self.my_tab else self.my_tab in vis
+        self.tab_shown = True if not isinstance(vis, list) or not self.my_tab else self.my_tab in vis
         unseen = state.get("unseen") if isinstance(state.get("unseen"), dict) else {}
         got = state.get("panels")
         self.panes_of = {t: p for t, p in got.items() if isinstance(t, str) and isinstance(p, str)} \
@@ -298,7 +305,7 @@ class PanelApp(SwarmApp):
     # -- what the panel does ----------------------------------------------------------
 
     def animate(self) -> None:
-        if self.visible:  # a hidden tab's panel draws no frames
+        if self.tab_shown:  # a hidden tab's panel draws no frames
             super().animate()
 
     def _seen(self, ids) -> None:
@@ -443,5 +450,7 @@ def run() -> int:
         mark_crash(app.my_pane, exc)
         raise
     if app.return_code:  # Textual caught an error: a crash, not the operator closing the panel
+        # Textual keeps the error it handled in the private ``_exception`` (8.2.8; run_test
+        # re-raises it); without it the marker is still written, only the log is missing
         mark_crash(app.my_pane, getattr(app, "_exception", None))
     return app.return_code or 0

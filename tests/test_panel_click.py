@@ -4,9 +4,11 @@ shadowed SwarmApp's ``_shown(pane, tid, aid)``, which every card click calls: th
 a TypeError, Textual exited, the core made the panel again. And a viewer that dies of an error
 now leaves its traceback next to its crash marker, so the next report has evidence."""
 
+import ast
 import inspect
 
 import pytest
+from textual.app import App
 
 from herdr_panorama import herdr
 from herdr_panorama import panel as viewer
@@ -18,7 +20,7 @@ PANELS = {f"w1:t{i}": f"w1:p9{i}" for i in range(1, 10)}
 
 
 @pytest.mark.parametrize("connected", [True, False])
-async def test_a_click_anywhere_on_a_panel_keeps_it_open(paths, monkeypatch, connected):
+async def test_a_click_anywhere_on_a_panel_keeps_it_open(paths, monkeypatch, connected):  # noqa: F811
     snap = {"panes": [{"pane_id": f"w1:p{i}", "tab_id": f"w1:t{i}"} for i in range(1, 10)]
             + [{"pane_id": p, "tab_id": t} for t, p in PANELS.items()]}
     moves = []
@@ -67,6 +69,28 @@ def test_the_panel_overrides_no_method_with_another_signature():
     assert bad == []
 
 
+# Textual members SwarmApp overrides on purpose, with why that is safe.
+TEXTUAL_OVERRIDES = {
+    "BINDINGS", "CSS", "ENABLE_COMMAND_PALETTE", "compose", "check_action", "action_quit",
+    "animate",  # SwarmApp's frame tick; Textual never calls App.animate itself (Widget.animate only)
+}
+
+
+def test_no_attribute_shadows_a_textual_member():
+    """The review of #47 found the same class one level up: PanelApp's ``self.visible`` was
+    Textual's DOMNode.visible, whose setter hid the whole app (no clicks, no hover)."""
+    textual = set(dir(App))
+    bad = []
+    for cls in (SwarmApp, viewer.PanelApp):
+        own = {n for n in vars(cls) if not n.startswith("_")}
+        for node in ast.walk(ast.parse(inspect.getsource(cls))):
+            if (isinstance(node, ast.Attribute) and isinstance(node.ctx, ast.Store)
+                    and isinstance(node.value, ast.Name) and node.value.id == "self"):
+                own.add(node.attr)
+        bad += [f"{cls.__name__}.{n}" for n in sorted(own & textual - TEXTUAL_OVERRIDES)]
+    assert bad == []
+
+
 def test_a_crash_leaves_its_traceback_next_to_the_marker(tmp_path, monkeypatch):
     monkeypatch.setenv("HERDR_PLUGIN_STATE_DIR", str(tmp_path / "state"))
 
@@ -88,8 +112,15 @@ def test_a_crash_leaves_its_traceback_next_to_the_marker(tmp_path, monkeypatch):
     assert "TypeError: a click handler broke" in log and "on_mount" in log
 
 
-def test_the_crash_log_is_bounded(tmp_path, monkeypatch):
+def test_the_crash_log_is_bounded_in_bytes(tmp_path, monkeypatch):
     monkeypatch.setenv("HERDR_PLUGIN_STATE_DIR", str(tmp_path / "state"))
-    viewer.mark_crash("w1:p92", RuntimeError("x" * 100_000))
-    log = viewer.crash_log("w1:p92").read_text()
-    assert len(log) <= viewer.CRASH_LOG_BYTES + 64 and log.rstrip().endswith("x")
+    viewer.mark_crash("w1:p92", RuntimeError("я" * 100_000))  # two bytes a character
+    log = viewer.crash_log("w1:p92").read_bytes()
+    assert len(log) <= viewer.CRASH_LOG_BYTES + 64 and log.rstrip().endswith("я".encode())
+
+
+def test_mark_crash_never_raises_on_an_unencodable_message(tmp_path, monkeypatch):
+    monkeypatch.setenv("HERDR_PLUGIN_STATE_DIR", str(tmp_path / "state"))
+    viewer.mark_crash("w1:p92", RuntimeError("cwd /home/\udcff/x"))  # an os.fsdecode'd path
+    assert viewer.crash_marker("w1:p92").exists()
+    assert "\\udcff" in viewer.crash_log("w1:p92").read_text()

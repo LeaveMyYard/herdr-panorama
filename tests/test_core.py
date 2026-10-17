@@ -260,14 +260,14 @@ async def test_a_hidden_tabs_panel_draws_no_frames(paths):
     app = PanelApp(sock_path=paths[0], pane_id="w1:p9", tab_id="w1:t3", start_client=False)
     async with app.run_test(size=(46, 45)) as pilot:
         app._got_state(protocol.state_message(design_swarm(NINE["data"]), {}, None, ["w1:t1"])["state"])
-        assert not app.visible
+        assert not app.tab_shown
         f = app.view.frame
         for _ in range(10):
             app.animate()
         await pilot.pause()
         assert app.view.frame == f
         app._got_state(protocol.state_message(design_swarm(NINE["data"]), {}, None, None)["state"])
-        assert app.visible  # unknown counts as visible
+        assert app.tab_shown  # unknown counts as visible
 
 
 async def test_the_panels_focus_look_follows_the_cores_focused_pane(paths):
