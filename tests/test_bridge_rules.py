@@ -328,8 +328,23 @@ CLAUDE = [
     ("node", ["node", "/usr/lib/node_modules/@anthropic-ai/claude-code/cli.js"]),
     ("node", ["/usr/bin/node", "/home/u/.npm-global/lib/node_modules/@anthropic-ai/claude-code/cli.js", "-p"]),
     ("node", ["node", "--no-warnings", "/opt/x/@anthropic-ai/claude-code/cli.js"]),  # one option before it
-    ("node", ["/home/u/.nvm/versions/node/v22.0.0/bin/node", "/home/u/src/claude-code/cli.js"]),
     ("node22", ["node22", "/x/@anthropic-ai/claude-code/cli.mjs"]),
+    # under npx: the package's own entry script, below the launcher
+    ("node", ["/home/u/.nvm/versions/node/v24.12.0/bin/node",
+              "/home/u/.npm/_npx/0123456789abcdef/node_modules/@anthropic-ai/claude-code/cli.js"]),
+    # Claude Code sets its process title: captured as comm "claude", cmdline "claude"
+    ("claude", ["claude"]),
+]
+
+# The npx launcher: node running npm's npx-cli.js with the package NAME (the path is the real
+# one, `readlink -f $(which npx)`); after start-up npm retitles it, captured from a running
+# `npx <pkg>` as comm "npm exec @model" (15 bytes) and cmdline "npm exec <pkg>" plus empty
+# padding args. The package name here is substituted (derived, no claude-code npx run here).
+NPX = "/home/u/.nvm/versions/node/v24.12.0/lib/node_modules/npm/bin/npx-cli.js"
+NPX_LAUNCHER = [
+    ("node", ["/home/u/.nvm/versions/node/v24.12.0/bin/node", NPX, "@anthropic-ai/claude-code"]),
+    ("node", ["node", NPX, "-y", "@anthropic-ai/claude-code"]),
+    ("npm exec @anthr", ["npm exec @anthropic-ai/claude-code", "", "", ""]),
 ]
 
 NOT_CLAUDE = [
@@ -339,6 +354,11 @@ NOT_CLAUDE = [
     ("claudette", ["/usr/bin/claudette"]),
     ("node", ["node", "server.js"]),
     ("node", ["node", "a", "b", "/x/@anthropic-ai/claude-code/cli.js"]),  # only the first two args
+    ("node", ["node", "@anthropic-ai/claude-code"]),  # a bare package name is not the entry script
+    ("node", ["node", "/x/@anthropic-ai/claude-code"]),
+    ("node", ["node", "/home/u/src/claude-code/cli.js"]),  # some other claude-code checkout
+    ("node", ["node", "/x/@anthropic-ai/claude-code/cli.js.map"]),
+    ("node", ["node", "/x/@anthropic-ai/claude-code-router/cli.js"]),
     ("node", []),
     ("uv", ["uv", "run", "/x/@anthropic-ai/claude-code/cli.js"]),  # not node
     ("zsh", ["/home/u/.local/share/claude-versions/2.1.301"]),
@@ -351,6 +371,39 @@ def test_is_claude(comm, argv):
     assert hooks.is_claude(comm, argv)
 
 
-@pytest.mark.parametrize("comm,argv", NOT_CLAUDE)
+@pytest.mark.parametrize("comm,argv", NOT_CLAUDE + NPX_LAUNCHER)
 def test_is_not_claude(comm, argv):
     assert not hooks.is_claude(comm, argv)
+
+
+def test_a_launcher_above_claude_gives_exactly_one_claude(monkeypatch):
+    """npx above the real cli: walking up from a hook finds the cli, and the whole chain holds
+    one Claude (the launcher is not a second, outer one)."""
+    import os
+    tree = {100: (90, "python3", "s1", ["python3", "-I", "hooks.py"]),
+            90: (80, "sh", "s2", ["sh", "-c", "..."]),
+            80: (70, "node", "s3", ["/home/u/.nvm/versions/node/v24.12.0/bin/node",
+                                     "/home/u/.npm/_npx/0123456789abcdef/node_modules/@anthropic-ai/claude-code/cli.js"]),
+            70: (60, "sh", "s4", ["sh", "-c", "claude"]),
+            60: (50, "node", "s5", ["/home/u/.nvm/versions/node/v24.12.0/bin/node", NPX, "@anthropic-ai/claude-code"]),
+            50: (1, "zsh", "s6", ["-zsh"])}
+    monkeypatch.setattr(hooks, "_stat", lambda pid: tree[pid][:3] if pid in tree else None)
+    monkeypatch.setattr(hooks, "_cmdline", lambda pid: tree[pid][3] if pid in tree else [])
+    monkeypatch.setattr(os, "getppid", lambda: 100)
+    assert hooks.claude_process() == (80, "s3")
+    assert [pid for pid, (_, comm, _, argv) in tree.items() if hooks.is_claude(comm, argv)] == [80]
+    tree[60] = (50, "npm exec @anthr", "s5", ["npm exec @anthropic-ai/claude-code", "", ""])  # retitled
+    assert [pid for pid, (_, comm, _, argv) in tree.items() if hooks.is_claude(comm, argv)] == [80]
+    tree[80] = (70, "bash", "s3", ["bash"])  # no cli below the launcher: no Claude at all
+    assert hooks.claude_process() is None
+
+
+def test_herdr_claude_pid_skips_the_launcher(monkeypatch):
+    """herdr.claude_pid (pane process-info) applies the same rule to the pane's foreground."""
+    from herdr_panorama import herdr
+    procs = [{"pid": 60, "name": "node", "argv": ["node", NPX, "@anthropic-ai/claude-code"]},
+             {"pid": 80, "name": "node", "argv": ["node", "/x/node_modules/@anthropic-ai/claude-code/cli.js"]}]
+    monkeypatch.setattr(herdr, "call", lambda *a, **k: ({"process_info": {"foreground_processes": procs}}, None))
+    assert herdr.claude_pid("w1:p1") == 80
+    monkeypatch.setattr(herdr, "call", lambda *a, **k: ({"process_info": {"foreground_processes": procs[:1]}}, None))
+    assert herdr.claude_pid("w1:p1") is None
