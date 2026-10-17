@@ -27,6 +27,7 @@ from frame import frame  # noqa: E402
 from PIL import Image  # noqa: E402
 
 from herdr_panorama.tui import SwarmApp  # noqa: E402
+from tests.anim import at_frame  # noqa: E402
 from tests.demo import NOW, demo_swarm  # noqa: E402
 
 OUT = Path(__file__).resolve().parent / "hero.gif"
@@ -50,7 +51,7 @@ async def capture(tmp: Path) -> list[Path]:
         for f in range(FRAMES):
             if f in MOVES:
                 await pilot.press(MOVES[f])
-            app.view.frame = f
+            at_frame(app, f)  # the frame follows the anim clock: hold it at f
             app.repaint()
             await pilot.pause()
             svg = tmp / f"f{f:03d}.svg"

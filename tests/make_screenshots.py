@@ -13,6 +13,7 @@ from pathlib import Path
 
 from herdr_panorama.tui import SwarmApp
 
+from .anim import at_frame
 from .demo import NOW, demo_swarm
 
 OUT = Path(__file__).resolve().parent.parent / "docs" / "screenshots"
@@ -49,7 +50,7 @@ async def test_shots(fake_herdr):
                     break
             for k in keys:
                 await pilot.press(k)
-            app.view.frame = 0
+            at_frame(app, 0)
             app.repaint()
             await pilot.pause()
             shot(app, name, px)
@@ -105,7 +106,8 @@ async def test_dock_panel_shots(fake_herdr):
             await pilot.pause(0.02)
             if app.loaded:
                 break
-        app.view.frame, app.view.hover = 4, ("orch", ("w1:p4",))  # the design's frame and hover
+        app.view.hover = ("orch", ("w1:p4",))
+        at_frame(app, 4)  # the design's frame and hover
         app.repaint()
         await pilot.pause()
         shot(app, "dock-app", 600)
@@ -138,7 +140,7 @@ async def test_remote_group_shots(fake_herdr):
                 await pilot.pause(0.02)
                 if app.loaded:
                     break
-            app.view.frame = 0
+            at_frame(app, 0)
             app.repaint()
             await pilot.pause()
             shot(app, name, px)
@@ -155,7 +157,8 @@ async def test_deep_shots(fake_herdr):
                 await pilot.pause(0.02)
                 if app.loaded:
                     break
-            app.view.thread, app.view.agent, app.view.focus, app.view.frame = TID, sel, focus, 4
+            app.view.thread, app.view.agent, app.view.focus = TID, sel, focus
+            at_frame(app, 4)
             app.repaint()
             await pilot.pause()
             shot(app, f"deep-5d-{name}-app", 2000)
@@ -171,7 +174,7 @@ async def test_deep_shots(fake_herdr):
             await pilot.pause(0.02)
             if app.loaded:
                 break
-        app.view.frame = 4
+        at_frame(app, 4)
         app.repaint()
         await pilot.pause()
         shot(app, "deep-5d-dock-app", 600)
@@ -207,7 +210,8 @@ async def test_unseen_shots(fake_herdr):
                 v.orch, v.hover = "w1:p3", ("orch", ("w1:p4",))
             else:
                 v.orch, v.thread, v.agent, v.focus = "w1:p1", "t595", "a2", 2
-            v.unseen, v.frame = dict(marks), 6
+            v.unseen = dict(marks)
+            at_frame(app, 6)
             app.repaint()
             await pilot.pause()
             shot(app, name, px)
@@ -234,7 +238,8 @@ async def test_wide_shots(fake_herdr):
                 await pilot.pause(0.02)
                 if app.loaded:
                     break
-            app.view.thread, app.view.agent, app.view.focus, app.view.frame = TID, r1, 3, 4
+            app.view.thread, app.view.agent, app.view.focus = TID, r1, 3
+            at_frame(app, 4)
             app.repaint()
             await pilot.pause()
             shot(app, f"wide-{w}-app", px)

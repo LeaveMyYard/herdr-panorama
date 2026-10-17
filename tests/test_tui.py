@@ -6,15 +6,23 @@ import pytest
 
 from herdr_panorama import herdr, render
 from herdr_panorama.model import DONE, RUN
-from herdr_panorama.tui import ARM_SECONDS, Grid, SwarmApp
+from herdr_panorama.tui import ARM_SECONDS, FRAME_SECONDS, Grid, SwarmApp
 
+from .anim import AnimClock
 from .demo import NOW, demo_swarm
 
 
 def make_app(swarm=None, focus_pane="w1:p1"):
     holder = {"swarm": swarm or demo_swarm()}
     app = SwarmApp(source=lambda: holder["swarm"], live_refresh=False, clock=lambda: NOW, focus_pane=focus_pane)
+    app.anim_clock = AnimClock()  # frame 0 until a test moves it: deterministic screens
     return app, holder
+
+
+def next_frame(app) -> None:
+    """One design frame passes on the app's fake anim clock, then the animation tick runs."""
+    app.anim_clock.t += FRAME_SECONDS
+    app.animate()
 
 
 async def loaded(app, pilot):
@@ -238,7 +246,7 @@ async def test_spinner_frames_advance_without_changing_width(fake_herdr):
     async with app.run_test(size=(160, 45)) as pilot:
         await loaded(app, pilot)
         first = screen_text(app)
-        app.tick()
+        next_frame(app)
         second = screen_text(app)
         assert first != second
         assert [len(r) for r in first.split("\n")] == [len(r) for r in second.split("\n")]
@@ -352,13 +360,14 @@ async def test_frames_never_recollect_rearm_or_move_the_cursor(fake_herdr):
         return demo_swarm()
 
     app = SwarmApp(source=source, live_refresh=False, clock=lambda: NOW, focus_pane="w1:p1")
+    app.anim_clock = AnimClock()
     async with app.run_test(size=(160, 45)) as pilot:
         await loaded(app, pilot)
         await pilot.press("right")
         disarm(app)
         before, collects = sel(app), calls["n"]
         for _ in range(12):
-            app.tick()
+            next_frame(app)
         assert calls["n"] == collects and app.view.frame == 12  # animated from the cached model
         assert sel(app) == before and app.armed()  # not a background change
         await pilot.press("down")  # keys keep working instantly
@@ -382,15 +391,17 @@ async def test_frames_keep_running_unfocused_and_pause_when_nothing_moves(fake_h
         await pilot.pause()
         assert not app.app_focus  # the blur was delivered
         for _ in range(3):
-            app.tick()
+            next_frame(app)
         assert app.view.frame == 3
         app.post_message(events.AppFocus())
         await pilot.pause()
-        app.tick()
+        next_frame(app)
         assert app.view.frame == 4
         app.apply(Swarm(herdr_ok=True))  # nothing animated on screen
-        app.tick()
-        assert app.view.frame == 4
+        restyled = []
+        app.grid.restyle = restyled.append
+        next_frame(app)
+        assert app.view.frame == 4 and restyled == []  # the tick did nothing
 
 
 # -- home tab and + New agent ------------------------------------------------------------
@@ -477,13 +488,14 @@ def test_new_row_in_narrow_layout():
 async def test_refreshes_and_frames_keep_running_under_the_form(fake_herdr):
     from herdr_panorama.tui import NewAgentForm
     app = make_home_app(home_mode=True)
+    app.anim_clock = AnimClock()
     async with app.run_test(size=(160, 45)) as pilot:
         await loaded(app, pilot)
         await pilot.press("n")
         await pilot.pause()
         assert isinstance(app.screen, NewAgentForm)
         app.apply(demo_swarm())  # a background refresh while the form is open
-        app.tick()
+        next_frame(app)
         await pilot.pause()
         assert app.is_running and isinstance(app.screen, NewAgentForm) and app.view.frame == 1
 

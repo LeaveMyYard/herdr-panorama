@@ -305,7 +305,8 @@ class PanelApp(SwarmApp):
     # -- what the panel does ----------------------------------------------------------
 
     def animate(self) -> None:
-        if self.tab_shown:  # a hidden tab's panel draws no frames
+        if self.tab_shown:  # a hidden tab's panel draws no frames; shown again, the state's
+            # repaint (apply) draws the clock's frame at once, not where it paused
             super().animate()
 
     def _seen(self, ids) -> None:

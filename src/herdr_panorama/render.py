@@ -257,8 +257,9 @@ class View:
     # background and panorama's text colours mapped; None: panorama's own colours (design 9e)
     panel: tuple[str, dict] | None = None
     now: float = 0.0
-    # Animation time in design frames of 250 ms. Whole steps move spinners and sweeps; the colour
-    # tick sets the fraction in between, which only colours follow (pulses, blinks: Anim).
+    # Animation time in design frames of 250 ms, from the wall clock (tui.SwarmApp.anim_frame), so
+    # every window shows the same phase. Whole steps move spinners and sweeps; the fraction in
+    # between is what only colours follow (pulses, blinks: Anim).
     frame: float = 0
     stale_after: float = 12 * 3600.0  # the swarm's (config stale_after), set by render()
 

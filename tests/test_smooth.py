@@ -15,7 +15,8 @@ from herdr_panorama.render import FAINT, ST
 from .demo import demo_swarm
 from .design_deep import deep_swarm
 from .design_dock import FIX, design_swarm
-from .test_tui import loaded, make_app
+from .anim import AnimClock
+from .test_tui import loaded, make_app, next_frame
 from .test_states import NOW as STATES_NOW
 from .test_states import states_swarm
 from .test_unseen import MARKS, cells, grid
@@ -118,9 +119,9 @@ def test_a_still_view_has_nothing_to_restyle():
 async def test_the_animation_tick_restyles_only_animated_cells_never_renders(fake_herdr, monkeypatch):
     """Between frames the tick repaints only the animated cells, without a render; at a whole
     frame (every FRAME_SECONDS) spinners and sweeps step the same way."""
-    clock = {"t": 1000.0}
+    clock = AnimClock(1000.0)  # a whole frame (4000)
     app, _ = make_app(design_swarm(), focus_pane="w1:p1")
-    app.anim_clock = lambda: clock["t"]
+    app.anim_clock = clock
     async with app.run_test(size=(160, 45)) as pilot:
         await loaded(app, pilot)
         app.view.unseen = dict(MARKS)
@@ -135,10 +136,10 @@ async def test_the_animation_tick_restyles_only_animated_cells_never_renders(fak
         monkeypatch.setattr(tui.render, "render", counting)
         dirty: list = []
         monkeypatch.setattr(app.grid, "refresh", lambda *r, **k: dirty.append(r))
-        app._next_frame = clock["t"] + tui.FRAME_SECONDS
         frame0 = int(app.view.frame)
+        assert app.view.frame == frame0 == 4000  # the repaint drew the clock's frame
         for i in range(1, 5):  # four colour ticks inside one frame
-            clock["t"] += tui.COLOUR_SECONDS
+            clock.t += tui.COLOUR_SECONDS
             app.animate()
         assert renders["n"] == 0 and int(app.view.frame) == frame0 and app.view.frame > frame0
         cells = {(y, x) for y, x, _ in app.grid.screen_data.animated()}
@@ -149,7 +150,7 @@ async def test_the_animation_tick_restyles_only_animated_cells_never_renders(fak
                 assert {(r.y, x) for x in range(r.x, r.x + r.width)} & cells
         painted = sum(r.width for regions in dirty for r in regions) / len(dirty)
         assert painted < 160 * 45 / 10  # a small part of the screen per tick
-        clock["t"] = app._next_frame  # the next whole frame: spinners and sweeps step, still no render
+        clock.t = 1000.0 + tui.FRAME_SECONDS  # the next whole frame: spinners and sweeps step, still no render
         dirty.clear()
         app.animate()
         assert renders["n"] == 0 and app.view.frame == frame0 + 1 and dirty
@@ -163,7 +164,7 @@ async def test_a_frame_or_a_refresh_repaints_only_what_changed(fake_herdr, monke
         await loaded(app, pilot)
         dirty: list = []
         monkeypatch.setattr(app.grid, "refresh", lambda *r, **k: dirty.append(r))
-        app.tick()
+        next_frame(app)
         assert len(dirty) == 1 and dirty[0]  # regions only
         assert 0 < len({r.y for r in dirty[0]}) < 45
         dirty.clear()
@@ -245,17 +246,22 @@ async def test_a_low_animation_fps_keeps_spinners_at_their_speed(fake_herdr, tmp
     d.mkdir(exist_ok=True)
     (d / "config.toml").write_text("animation_fps = 2\n")
     assert tui.SwarmApp.colour_seconds() == 0.5
-    clock = {"t": 1000.0}
+    clock = AnimClock(1000.0)
     app, _ = make_app(design_swarm(), focus_pane="w1:p1")
-    app.anim_clock = lambda: clock["t"]
+    app.anim_clock = clock
     async with app.run_test(size=(160, 45)) as pilot:
         await loaded(app, pilot)
-        app._next_frame = clock["t"]
-        f0 = int(app.view.frame)
-        for _ in range(4):
+        f0 = app.view.frame
+        seen = []
+        for _ in range(3):
+            clock.t += 0.5
             app.animate()
-            clock["t"] += 0.5
-        assert int(app.view.frame) == f0 + 1 + 2 + 2 + 2  # 1.75 s of frames, minus the first tick's lead
+            seen.append(app.view.frame - f0)
+        assert seen == [2, 4, 6]  # two whole frames a tick: 1.5 s of frames in 1.5 s
+        assert dump(app.grid.screen_data) == dump(render.render(app.swarm, app.view, 160, 45))
+        clock.t += 3600 + 0.1  # a long stall (a suspended laptop): straight to the clock's frame
+        app.animate()
+        assert app.view.frame == clock.t / tui.FRAME_SECONDS
         assert dump(app.grid.screen_data) == dump(render.render(app.swarm, app.view, 160, 45))
 
 

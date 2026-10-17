@@ -279,8 +279,10 @@ class SwarmApp(App):
         self.panel_panes: dict[str, str] = {}  # tab -> its panel, published to the viewers
         self.focus_log: cockpit.FocusLog | None = None  # set while the event stream is up
         self.fit_total: int | None = None  # the shared split's width at the last fit
-        self._next_frame = 0.0  # animate(): when the next whole frame is due (anim_clock)
-        self.anim_clock = time.monotonic
+        # the animation's clock: the WALL clock, so the frame is a pure function of the time of
+        # day and every panorama window (the home view, each tab's panel) shows an animation in
+        # the same phase at the same moment, whenever it started and however long it was hidden
+        self.anim_clock = time.time
 
     def compose(self) -> ComposeResult:
         self.grid = Grid()  # kept: query_one would search a modal screen on top (the form)
@@ -493,15 +495,16 @@ class SwarmApp(App):
         if self.view.agent not in render.agent_ids(cols):
             self.view.agent = None
 
-    def tick(self) -> None:
-        """One animation frame (every FRAME_SECONDS, the design's 250 ms): repaint from the
-        cached model only, never a collect. A frame is not a background change: it touches
-        neither the selection nor the arming. Skipped only while nothing moves: app focus is
-        ignored, because herdr sends focus-out to a pane the operator merely typed past (the
-        docked panel next to an agent is unfocused nearly all the time), not only a hidden one."""
-        if not render.animated(self.swarm, self.view.unseen):
-            return
-        self._step(int(self.view.frame) + 1)
+    def anim_frame(self) -> float:
+        """The animation time now, in design frames of FRAME_SECONDS: ``anim_clock() /
+        FRAME_SECONDS``, nothing else. Not a counter: two windows started at different times (or
+        a panel that was hidden) read the same frame at the same instant, so switching tabs shows
+        no phase jump. Each animation keeps its own period and per-element offset (render: a
+        spinner's ``seq``, a sweep's ``seed``), so they are in sync between windows, not with
+        each other. Precision: the time of day / 0.25 is about 7e9, where a float64 resolves
+        about 1e-6 of a frame, so the colour glides (``frame % period`` into a sine) stay smooth;
+        whole-frame animations take ``int(frame)``, an exact Python int."""
+        return self.anim_clock() / FRAME_SECONDS
 
     def _step(self, frame: float) -> None:
         """Move the animation to ``frame`` from the cached screen: the cells that move (render.Anim:
@@ -528,25 +531,24 @@ class SwarmApp(App):
             return COLOUR_SECONDS
 
     def animate(self) -> None:
-        """The animation tick (every COLOUR_SECONDS): a whole frame every FRAME_SECONDS (spinners
-        and sweeps step, ``tick``), and in between the colours glide (pulses, blinks). Nothing to
-        do while nothing moves."""
-        now = self.anim_clock()
-        if now >= self._next_frame:
-            # at a low animation_fps (or a late timer) whole frames are skipped, so spinners and
-            # sweeps keep their speed; a long stall resumes from now instead of racing to catch up
-            steps = 1 + min(int((now - self._next_frame) / FRAME_SECONDS), 7)
-            self._next_frame += steps * FRAME_SECONDS
-            if self._next_frame <= now:
-                self._next_frame = now + FRAME_SECONDS
-            if render.animated(self.swarm, self.view.unseen):
-                self._step(int(self.view.frame) + steps)
+        """The animation tick (every COLOUR_SECONDS): move to the frame the clock says now
+        (``anim_frame``). At a new whole frame spinners and sweeps step; in between only the
+        colours glide (pulses, blinks), and only if the screen has any. A low animation_fps, a
+        late timer or a long stall needs no catching up: the next tick simply lands on the
+        current frame. Nothing to do while nothing moves.
+
+        It repaints from the cached model only, never a collect, and is not a background change:
+        it touches neither the selection nor the arming. App focus is ignored, because herdr
+        sends focus-out to a pane the operator merely typed past (the docked panel next to an
+        agent is unfocused nearly all the time), not only a hidden one."""
+        if not render.animated(self.swarm, self.view.unseen):
             return
-        scr = self.grid.screen_data
-        if scr is None or not scr.smooth() or not render.animated(self.swarm, self.view.unseen):
-            return
-        sub = 1 - (self._next_frame - now) / FRAME_SECONDS
-        self._step(int(self.view.frame) + min(max(sub, 0.0), 0.999))
+        frame = self.anim_frame()
+        if int(frame) == int(self.view.frame):
+            scr = self.grid.screen_data if hasattr(self, "grid") else None
+            if scr is None or not scr.smooth() or frame == self.view.frame:
+                return
+        self._step(frame)
 
     def repaint(self) -> None:
         grid = self.grid
@@ -554,6 +556,7 @@ class SwarmApp(App):
         if size.width <= 0 or size.height <= 0:
             return
         self.view.now = self.clock()
+        self.view.frame = self.anim_frame()  # a full paint draws the current phase, never a stale one
         self._update_dock()
         self.view.zoom_hint = self.home_mode and bool(self.swarm.docked) and self.can_zoom
         self.view.open_key = openkey.current()  # herdr's binding for the open key (#13)
