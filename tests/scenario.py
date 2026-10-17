@@ -8,6 +8,7 @@ times and text filled in. Nothing about the wire format is invented here.
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import sqlite3
 import time
@@ -81,8 +82,10 @@ class Transcript:
         self._n = 0
 
     def tid(self) -> str:
+        """A tool_use id, the same on every run (the model goldens name some)."""
         self._n += 1
-        return f"toolu_{abs(hash((str(self.path), self._n))) % 10**22:022d}"
+        key = f"{self.path.name}:{self.session}:{self._n}".encode()
+        return f"toolu_{int(hashlib.sha256(key).hexdigest(), 16) % 10**22:022d}"
 
     def add(self, rec: dict, t: float) -> None:
         self.lines.append(json.dumps(stamp(rec, t, self.session, self.agent_id), separators=(",", ":")))
@@ -510,6 +513,112 @@ def build_demo(tmp: Path) -> dict:
     return {"projects": proj.root, "snapshot": snap, "inbox": db, "events": events_dir, "now": NOW, "project": proj}
 
 
+# -- small scenarios for the model goldens (tools/capture_goldens.py) ------------------------
+
+S5, S6, S7, S8 = ("55555555-5555-4555-8555-555555555555", "66666666-6666-4666-8666-666666666666",
+                  "77777777-7777-4777-8777-777777777777", "88888888-8888-4888-8888-888888888888")
+
+
+def _continued_in(m: Transcript, t: float | None, nxt: str) -> None:
+    """The captured continued-in record (``t`` None: undated, taking the previous record's time)."""
+    rec = tpl("continued_in")
+    rec.update(sessionId=m.session, continuedInSessionId=nxt)
+    if t is None:
+        rec.pop("timestamp")
+    else:
+        rec["timestamp"] = iso(t)
+    m.raw(json.dumps(rec, separators=(",", ":")))
+
+
+def build_continued(tmp: Path) -> dict:
+    """The continuation rule (D6): herdr still reports the id a pane's Claude started with.
+    Tab "Payments": S5 continued in S6, with bookkeeping records after the continued-in line;
+    S6 runs an agent. Tab "Ledger": S7 continued in S8, which is not written yet."""
+    proj = Project(tmp / "projects")
+    old = proj.main(S5)
+    old.prompt(BASE, "Migrate the payments tables")
+    t_p1 = old.launch(BASE + 1 * M, "p1schema0000000001", "Write the schema migration")
+    p1 = proj.agent(S5, "p1schema0000000001", {"description": "Write the schema migration", "model": "opus",
+                                               "agentType": "general-purpose", "spawnDepth": 1})
+    p1.prompt(BASE + 1 * M, "brief")
+    p1.bash(BASE + 3 * M, "Run the migration tests")
+    p1.handback(BASE + 8 * M, "migration ready")
+    old.notify(BASE + 8 * M, "p1schema0000000001", t_p1, "completed", 11)
+    old.text(BASE + 9 * M, "The migration is ready.")
+    _continued_in(old, BASE + 10 * M, S6)
+    for kind in ("last_prompt", "cost_state", "mode"):
+        rec = tpl(kind)
+        rec["sessionId"] = S5
+        old.raw(json.dumps(rec, separators=(",", ":")))
+    new = proj.main(S6)
+    new.prompt(BASE + 11 * M, "Now backfill the ledger ids")
+    new.launch(BASE + 12 * M, "p2backfill00000001", "Backfill ledger ids", model="sonnet")
+    p2 = proj.agent(S6, "p2backfill00000001", {"description": "Backfill ledger ids", "model": "sonnet",
+                                               "agentType": "general-purpose", "spawnDepth": 1})
+    p2.prompt(BASE + 12 * M, "brief")
+    p2.bash(BASE + 18 * M, "Backfill batch 3 of 8", pending=True)
+    new.text(BASE + 13 * M, "Started the backfill agent.")
+    lone = proj.main(S7)
+    lone.prompt(BASE + 2 * M, "Summarise the ledger audit")
+    lone.text(BASE + 6 * M, "Summary written.")
+    _continued_in(lone, None, S8)
+    for t in (old, p1, new, p2, lone):
+        t.write()
+    snap = snapshot([
+        {"pane": "w1:p1", "tab": "w1:t1", "label": "Payments", "status": "working", "session": S5},
+        {"pane": "w1:p2", "tab": "w1:t2", "label": "Ledger", "status": "idle", "session": S7},
+    ])
+    db = inbox_db(tmp / "inbox.db", [
+        {"id": 7, "session": S6, "pane": "w1:p1", "question": "Backfill in one transaction or in batches?"},
+    ])
+    events_dir = tmp / "events"
+    events_dir.mkdir(exist_ok=True)
+    return {"projects": proj.root, "snapshot": snap, "inbox": db, "events": events_dir, "now": BASE + 20 * M,
+            "project": proj}
+
+
+def build_background(tmp: Path) -> dict:
+    """Background work (design turn 8): a background Bash, one a timeout moved there, a Monitor
+    with an event, a stopped task, the orphan notice of a resumed session, and an agent whose
+    turn ended with a background task still running."""
+    proj = Project(tmp / "projects")
+    m = proj.main(S5)
+    m.prompt(BASE, "Roll out the release and watch it")
+    m.bash_background(BASE + 1 * M, "bq1rollout", "Wait for the rollout")
+    m.bash_background(BASE + 2 * M, "bq2smoke", "Run the smoke suite", timed_out=True)
+    m.monitor(BASE + 3 * M, "mon1errors", "Watch the error rate")
+    m.monitor_event(BASE + 6 * M, "mon1errors", "error rate 0.4%")
+    m.bash_background(BASE + 4 * M, "bq3old", "Tail the old logs")
+    m.task_stop(BASE + 5 * M, "bq3old")
+    call = m.launch(BASE + 7 * M, "g1canary0000000001", "Check the canary metrics", model="sonnet")
+    g1 = proj.agent(S5, "g1canary0000000001", {"description": "Check the canary metrics", "model": "sonnet",
+                                               "agentType": "general-purpose", "spawnDepth": 1,
+                                               "toolUseId": call})
+    g1.prompt(BASE + 7 * M, "brief")
+    g1.bash_background(BASE + 8 * M, "gb1canary", "Wait for the canary window")
+    g1.text(BASE + 9 * M, "Waiting for the canary window.")
+    m.text(BASE + 10 * M, "Rollout under way; watching errors.")
+    r = proj.main(S6)
+    r.prompt(BASE, "Rebuild the cache")
+    r.bash_background(BASE + 1 * M, "bq9cache", "Rebuild the cache")
+    r.prompt(BASE + 12 * M, "continue", legacy=True)
+    r.orphan_notice(BASE + 12 * M, ["bq9cache"])
+    r.text(BASE + 13 * M, "The cache rebuild was left behind by the last process.")
+    for t in (m, g1, r):
+        t.write()
+    snap = snapshot([
+        {"pane": "w1:p1", "tab": "w1:t1", "label": "Release", "status": "idle", "session": S5},
+        {"pane": "w1:p2", "tab": "w1:t2", "label": "Cache", "status": "idle", "session": S6},
+    ])
+    events_dir = tmp / "events"
+    events_dir.mkdir(exist_ok=True)
+    return {"projects": proj.root, "snapshot": snap, "inbox": inbox_db(tmp / "inbox.db", []),
+            "events": events_dir, "now": BASE + 15 * M, "project": proj}
+
+
+SCENARIOS = {"demo": build_demo, "continued": build_continued, "background": build_background}
+
+
 def set_mtimes(root: Path, t: float) -> None:
     """Make every file look last written at ``t`` (the collector compares mtimes with its clock)."""
     import os
@@ -525,5 +634,5 @@ def touch_running(root: Path, names: list[str], t: float) -> None:
             os.utime(p, (t, t))
 
 
-__all__ = ["build_demo", "Project", "Transcript", "snapshot", "inbox_db", "BASE", "NOW", "S1", "S2", "S3", "S4",
+__all__ = ["build_demo", "build_continued", "build_background", "SCENARIOS", "Project", "Transcript", "snapshot", "inbox_db", "BASE", "NOW", "S1", "S2", "S3", "S4",
            "set_mtimes", "touch_running", "time"]

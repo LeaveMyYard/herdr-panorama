@@ -1,0 +1,282 @@
+{
+ "source": "panorama snapshot --json over tests/scenario.py build_background, at its now (1791969300.0) plus each key's minutes; TZ=UTC; tools/capture_goldens.py",
+ "now": 1791969300.0,
+ "snapshots": {
+  "+0m": {
+   "generated_at": 1791969300.0,
+   "herdr_ok": true,
+   "inbox_ok": true,
+   "errors": [],
+   "counts": {
+    "orchestrators": 2,
+    "threads": 1,
+    "active_threads": 1,
+    "agents": 1,
+    "running": 0,
+    "waiting": 2,
+    "questions": 0,
+    "blocked": 0,
+    "failed": 0
+   },
+   "orchestrators": [
+    {
+     "pane_id": "w1:p1",
+     "tab_id": "w1:t1",
+     "tab_label": "Release",
+     "session_id": "55555555-5555-4555-8555-555555555555",
+     "herdr_status": "idle",
+     "workspace_id": "w1",
+     "focused": false,
+     "cwd": "/home/user/project",
+     "flavour": "agents",
+     "transcript": "<root>/projects/-home-user-project/55555555-5555-4555-8555-555555555555.jsonl",
+     "pending": [],
+     "inbox": [],
+     "inbox_texts": [],
+     "threads": [
+      {
+       "id": "turn:0",
+       "name": "Check the canary metrics",
+       "source": "turn",
+       "phases": [
+        {
+         "name": "general-purpose",
+         "state": "now",
+         "start": 1791968820.0,
+         "end": null,
+         "note": null
+        }
+       ],
+       "agents": [
+        {
+         "id": "g1canary0000000001",
+         "description": "Check the canary metrics",
+         "role": "general-purpose",
+         "agent_type": "general-purpose",
+         "model": "sonnet",
+         "status": "bg",
+         "tool_use_id": "toolu_5481269883009233487816",
+         "started": 1791968820.0,
+         "ended": null,
+         "last_at": 1791968940.0,
+         "tool_calls": 1,
+         "activity": "turn ended · 1 task in background",
+         "last_message": "Waiting for the canary window.",
+         "questions": [],
+         "pending": [],
+         "question_ids": [],
+         "error": null,
+         "phases": [
+          0
+         ],
+         "parent": null,
+         "depth": 1,
+         "resumes": 0,
+         "inferred": false,
+         "transcript": "<root>/projects/-home-user-project/55555555-5555-4555-8555-555555555555/subagents/agent-g1canary0000000001.jsonl",
+         "seq": 0,
+         "bg": [
+          {
+           "id": "gb1canary",
+           "kind": "Bash",
+           "description": "Wait for the canary window",
+           "started": 1791968881.0
+          }
+         ]
+        }
+       ],
+       "status": "active",
+       "started": 1791968820.0,
+       "ended": null,
+       "worktree": null,
+       "pct": null,
+       "flavour": null
+      }
+     ],
+     "hidden_done": 0,
+     "tab_no": 1,
+     "machine": null,
+     "machine_id": null,
+     "bg": [
+      {
+       "id": "bq1rollout",
+       "kind": "Bash",
+       "description": "Wait for the rollout",
+       "started": 1791968461.0
+      },
+      {
+       "id": "bq2smoke",
+       "kind": "Bash",
+       "description": "Run the smoke suite",
+       "started": 1791968521.0
+      },
+      {
+       "id": "mon1errors",
+       "kind": "Monitor",
+       "description": "Watch the error rate",
+       "started": 1791968581.0
+      }
+     ],
+     "last_activity": 1791969000.0
+    },
+    {
+     "pane_id": "w1:p2",
+     "tab_id": "w1:t2",
+     "tab_label": "Cache",
+     "session_id": "66666666-6666-4666-8666-666666666666",
+     "herdr_status": "idle",
+     "workspace_id": "w1",
+     "focused": false,
+     "cwd": "/home/user/project",
+     "flavour": "agents",
+     "transcript": "<root>/projects/-home-user-project/66666666-6666-4666-8666-666666666666.jsonl",
+     "pending": [],
+     "inbox": [],
+     "inbox_texts": [],
+     "threads": [],
+     "hidden_done": 0,
+     "tab_no": 2,
+     "machine": null,
+     "machine_id": null,
+     "bg": [],
+     "last_activity": 1791969180.0
+    }
+   ]
+  },
+  "+60m": {
+   "generated_at": 1791972900.0,
+   "herdr_ok": true,
+   "inbox_ok": true,
+   "errors": [],
+   "counts": {
+    "orchestrators": 2,
+    "threads": 1,
+    "active_threads": 1,
+    "agents": 1,
+    "running": 0,
+    "waiting": 2,
+    "questions": 0,
+    "blocked": 0,
+    "failed": 0
+   },
+   "orchestrators": [
+    {
+     "pane_id": "w1:p1",
+     "tab_id": "w1:t1",
+     "tab_label": "Release",
+     "session_id": "55555555-5555-4555-8555-555555555555",
+     "herdr_status": "idle",
+     "workspace_id": "w1",
+     "focused": false,
+     "cwd": "/home/user/project",
+     "flavour": "agents",
+     "transcript": "<root>/projects/-home-user-project/55555555-5555-4555-8555-555555555555.jsonl",
+     "pending": [],
+     "inbox": [],
+     "inbox_texts": [],
+     "threads": [
+      {
+       "id": "turn:0",
+       "name": "Check the canary metrics",
+       "source": "turn",
+       "phases": [
+        {
+         "name": "general-purpose",
+         "state": "now",
+         "start": 1791968820.0,
+         "end": null,
+         "note": null
+        }
+       ],
+       "agents": [
+        {
+         "id": "g1canary0000000001",
+         "description": "Check the canary metrics",
+         "role": "general-purpose",
+         "agent_type": "general-purpose",
+         "model": "sonnet",
+         "status": "bg",
+         "tool_use_id": "toolu_5481269883009233487816",
+         "started": 1791968820.0,
+         "ended": null,
+         "last_at": 1791968940.0,
+         "tool_calls": 1,
+         "activity": "turn ended · 1 task in background",
+         "last_message": "Waiting for the canary window.",
+         "questions": [],
+         "pending": [],
+         "question_ids": [],
+         "error": null,
+         "phases": [
+          0
+         ],
+         "parent": null,
+         "depth": 1,
+         "resumes": 0,
+         "inferred": false,
+         "transcript": "<root>/projects/-home-user-project/55555555-5555-4555-8555-555555555555/subagents/agent-g1canary0000000001.jsonl",
+         "seq": 0,
+         "bg": [
+          {
+           "id": "gb1canary",
+           "kind": "Bash",
+           "description": "Wait for the canary window",
+           "started": 1791968881.0
+          }
+         ]
+        }
+       ],
+       "status": "active",
+       "started": 1791968820.0,
+       "ended": null,
+       "worktree": null,
+       "pct": null,
+       "flavour": null
+      }
+     ],
+     "hidden_done": 0,
+     "tab_no": 1,
+     "machine": null,
+     "machine_id": null,
+     "bg": [
+      {
+       "id": "bq1rollout",
+       "kind": "Bash",
+       "description": "Wait for the rollout",
+       "started": 1791968461.0
+      },
+      {
+       "id": "bq2smoke",
+       "kind": "Bash",
+       "description": "Run the smoke suite",
+       "started": 1791968521.0
+      }
+     ],
+     "last_activity": 1791969000.0
+    },
+    {
+     "pane_id": "w1:p2",
+     "tab_id": "w1:t2",
+     "tab_label": "Cache",
+     "session_id": "66666666-6666-4666-8666-666666666666",
+     "herdr_status": "idle",
+     "workspace_id": "w1",
+     "focused": false,
+     "cwd": "/home/user/project",
+     "flavour": "agents",
+     "transcript": "<root>/projects/-home-user-project/66666666-6666-4666-8666-666666666666.jsonl",
+     "pending": [],
+     "inbox": [],
+     "inbox_texts": [],
+     "threads": [],
+     "hidden_done": 0,
+     "tab_no": 2,
+     "machine": null,
+     "machine_id": null,
+     "bg": [],
+     "last_activity": 1791969180.0
+    }
+   ]
+  }
+ }
+}

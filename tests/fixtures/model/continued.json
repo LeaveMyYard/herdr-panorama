@@ -1,0 +1,303 @@
+{
+ "source": "panorama snapshot --json over tests/scenario.py build_continued, at its now (1791969600.0) plus each key's minutes; TZ=UTC; tools/capture_goldens.py",
+ "now": 1791969600.0,
+ "snapshots": {
+  "+0m": {
+   "generated_at": 1791969600.0,
+   "herdr_ok": true,
+   "inbox_ok": true,
+   "errors": [],
+   "counts": {
+    "orchestrators": 2,
+    "threads": 2,
+    "active_threads": 2,
+    "agents": 2,
+    "running": 1,
+    "waiting": 0,
+    "questions": 1,
+    "blocked": 0,
+    "failed": 0
+   },
+   "orchestrators": [
+    {
+     "pane_id": "w1:p1",
+     "tab_id": "w1:t1",
+     "tab_label": "Payments",
+     "session_id": "66666666-6666-4666-8666-666666666666",
+     "herdr_status": "working",
+     "workspace_id": "w1",
+     "focused": false,
+     "cwd": "/home/user/project",
+     "flavour": "agents",
+     "transcript": "<root>/projects/-home-user-project/66666666-6666-4666-8666-666666666666.jsonl",
+     "pending": [],
+     "inbox": [
+      7
+     ],
+     "inbox_texts": [
+      "Backfill in one transaction or in batches?"
+     ],
+     "threads": [
+      {
+       "id": "main:w1:p1",
+       "name": "Payments",
+       "source": "session",
+       "phases": [
+        {
+         "name": "waiting on you",
+         "state": "now",
+         "start": 1791969060.0,
+         "end": null,
+         "note": null
+        }
+       ],
+       "agents": [
+        {
+         "id": "main:w1:p1",
+         "description": "main session",
+         "role": "orchestrator",
+         "agent_type": null,
+         "model": null,
+         "status": "wait",
+         "tool_use_id": null,
+         "started": 1791969060.0,
+         "ended": null,
+         "last_at": null,
+         "tool_calls": 0,
+         "activity": "",
+         "last_message": "",
+         "questions": [
+          "Backfill in one transaction or in batches?"
+         ],
+         "pending": [],
+         "question_ids": [
+          7
+         ],
+         "error": null,
+         "phases": [
+          0
+         ],
+         "parent": null,
+         "depth": 1,
+         "resumes": 0,
+         "inferred": false,
+         "transcript": null,
+         "seq": 0,
+         "bg": []
+        }
+       ],
+       "status": "active",
+       "started": 1791969060.0,
+       "ended": null,
+       "worktree": null,
+       "pct": null,
+       "flavour": null
+      },
+      {
+       "id": "turn:0",
+       "name": "Backfill ledger ids",
+       "source": "turn",
+       "phases": [
+        {
+         "name": "general-purpose",
+         "state": "now",
+         "start": 1791969120.0,
+         "end": null,
+         "note": null
+        }
+       ],
+       "agents": [
+        {
+         "id": "p2backfill00000001",
+         "description": "Backfill ledger ids",
+         "role": "general-purpose",
+         "agent_type": "general-purpose",
+         "model": "sonnet",
+         "status": "run",
+         "tool_use_id": "toolu_6303440778924639896580",
+         "started": 1791969120.0,
+         "ended": null,
+         "last_at": 1791969480.0,
+         "tool_calls": 1,
+         "activity": "Bash(Backfill batch 3 of 8)",
+         "last_message": "",
+         "questions": [],
+         "pending": [],
+         "question_ids": [],
+         "error": null,
+         "phases": [
+          0
+         ],
+         "parent": null,
+         "depth": 1,
+         "resumes": 0,
+         "inferred": false,
+         "transcript": "<root>/projects/-home-user-project/66666666-6666-4666-8666-666666666666/subagents/agent-p2backfill00000001.jsonl",
+         "seq": 0,
+         "bg": []
+        }
+       ],
+       "status": "active",
+       "started": 1791969120.0,
+       "ended": null,
+       "worktree": null,
+       "pct": null,
+       "flavour": null
+      }
+     ],
+     "hidden_done": 0,
+     "tab_no": 1,
+     "machine": null,
+     "machine_id": null,
+     "bg": [],
+     "last_activity": 1791969480.0
+    },
+    {
+     "pane_id": "w1:p2",
+     "tab_id": "w1:t2",
+     "tab_label": "Ledger",
+     "session_id": "77777777-7777-4777-8777-777777777777",
+     "herdr_status": "idle",
+     "workspace_id": "w1",
+     "focused": false,
+     "cwd": "/home/user/project",
+     "flavour": "agents",
+     "transcript": "<root>/projects/-home-user-project/77777777-7777-4777-8777-777777777777.jsonl",
+     "pending": [],
+     "inbox": [],
+     "inbox_texts": [],
+     "threads": [],
+     "hidden_done": 0,
+     "tab_no": 2,
+     "machine": null,
+     "machine_id": null,
+     "bg": [],
+     "last_activity": 1791968760.0
+    }
+   ]
+  },
+  "+120m": {
+   "generated_at": 1791976800.0,
+   "herdr_ok": true,
+   "inbox_ok": true,
+   "errors": [],
+   "counts": {
+    "orchestrators": 2,
+    "threads": 1,
+    "active_threads": 1,
+    "agents": 1,
+    "running": 0,
+    "waiting": 0,
+    "questions": 1,
+    "blocked": 0,
+    "failed": 0
+   },
+   "orchestrators": [
+    {
+     "pane_id": "w1:p1",
+     "tab_id": "w1:t1",
+     "tab_label": "Payments",
+     "session_id": "66666666-6666-4666-8666-666666666666",
+     "herdr_status": "working",
+     "workspace_id": "w1",
+     "focused": false,
+     "cwd": "/home/user/project",
+     "flavour": "agents",
+     "transcript": "<root>/projects/-home-user-project/66666666-6666-4666-8666-666666666666.jsonl",
+     "pending": [],
+     "inbox": [
+      7
+     ],
+     "inbox_texts": [
+      "Backfill in one transaction or in batches?"
+     ],
+     "threads": [
+      {
+       "id": "main:w1:p1",
+       "name": "Payments",
+       "source": "session",
+       "phases": [
+        {
+         "name": "waiting on you",
+         "state": "now",
+         "start": 1791969060.0,
+         "end": null,
+         "note": null
+        }
+       ],
+       "agents": [
+        {
+         "id": "main:w1:p1",
+         "description": "main session",
+         "role": "orchestrator",
+         "agent_type": null,
+         "model": null,
+         "status": "wait",
+         "tool_use_id": null,
+         "started": 1791969060.0,
+         "ended": null,
+         "last_at": null,
+         "tool_calls": 0,
+         "activity": "",
+         "last_message": "",
+         "questions": [
+          "Backfill in one transaction or in batches?"
+         ],
+         "pending": [],
+         "question_ids": [
+          7
+         ],
+         "error": null,
+         "phases": [
+          0
+         ],
+         "parent": null,
+         "depth": 1,
+         "resumes": 0,
+         "inferred": false,
+         "transcript": null,
+         "seq": 0,
+         "bg": []
+        }
+       ],
+       "status": "active",
+       "started": 1791969060.0,
+       "ended": null,
+       "worktree": null,
+       "pct": null,
+       "flavour": null
+      }
+     ],
+     "hidden_done": 0,
+     "tab_no": 1,
+     "machine": null,
+     "machine_id": null,
+     "bg": [],
+     "last_activity": 1791969180.0
+    },
+    {
+     "pane_id": "w1:p2",
+     "tab_id": "w1:t2",
+     "tab_label": "Ledger",
+     "session_id": "77777777-7777-4777-8777-777777777777",
+     "herdr_status": "idle",
+     "workspace_id": "w1",
+     "focused": false,
+     "cwd": "/home/user/project",
+     "flavour": "agents",
+     "transcript": "<root>/projects/-home-user-project/77777777-7777-4777-8777-777777777777.jsonl",
+     "pending": [],
+     "inbox": [],
+     "inbox_texts": [],
+     "threads": [],
+     "hidden_done": 0,
+     "tab_no": 2,
+     "machine": null,
+     "machine_id": null,
+     "bg": [],
+     "last_activity": 1791968760.0
+    }
+   ]
+  }
+ }
+}

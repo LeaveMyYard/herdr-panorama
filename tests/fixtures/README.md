@@ -41,3 +41,23 @@ Design references (not wire formats), both captured from the design's own code i
 - `design_10.json`: turn 10, the 9e panel focused and not in two herdr themes (`render-10.mjs`,
   four frames) and the theme tokens used; the golden for `tests/test_focus_theme.py`.
 Regenerate with `uv run python tests/fixtures/capture_design.py` (needs node).
+
+Behaviour goldens (`docs/plans/rust-rewrite.md` §5.2, items 2 and 3), captured from the running
+Python code after the P0b bridge by `tools/capture_goldens.py`, never written by hand:
+
+- `screens/*.json` (app-screen goldens): the Textual apps (`SwarmApp` as the popup, the home tab
+  and the docked panel; `NewAgentApp`; `PanelApp`) run headless with `run_test` over the test
+  scenarios (`tests/demo.py`, the design datasets, `tests/scenario.py` through the real
+  collector). Each screen is what Textual's compositor sends to the terminal, as runs of
+  `[text, fg, bg, bold]` per row, the shape of `design_*.json` (`null`: the terminal's
+  default colour). Fixed sizes, a held clock and animation frame (0 unless a screen's name
+  says otherwise), TZ=UTC.
+- `model/*.json` (model goldens): `panorama snapshot --json`, the real command in its own
+  process with `time.time` held, over every `tests/scenario.py` scenario (`SCENARIOS`) at the
+  scenario's `now` plus each key's minutes. The herdr binary is a fake serving the scenario's
+  snapshot; each transcript's mtime is its newest record's time; paths read `<root>`.
+
+`tests/test_goldens.py` captures them again into a temporary directory and compares, so a
+behaviour change fails it. After a deliberate change, regenerate and say why in the PR:
+
+    uv run python tools/capture_goldens.py
