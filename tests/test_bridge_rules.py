@@ -224,19 +224,40 @@ def undated_continued(m, nxt: str = NEXT) -> None:
 
 @pytest.mark.parametrize("kind", ["user", "assistant"])
 @pytest.mark.parametrize("dt,cleared", [(+1, True), (0, False), (-1, False)])
-def test_an_undated_continuation_takes_the_previous_records_time(tmp_path, kind, dt, cleared):
-    """Its time is the last one the scanner read before it: here the prompt at BASE + 1 (plain
-    assistant text is not a record the scanner parses, so it never sets that time)."""
+def test_an_undated_continuation_takes_the_previous_dated_records_time(tmp_path, kind, dt, cleared):
+    """Its time is that of the last DATED record of any type before it (here the assistant text
+    at BASE + 5, a record the scanner's prefilter does not parse); undated bookkeeping between
+    them does not move it."""
     proj = Project(tmp_path / "projects")
     m = proj.main(SID)
     m.prompt(BASE, "work")
     m.prompt(BASE + 1, "more")
-    m.text(BASE + 5, "working")  # not parsed: does not move the time
+    m.text(BASE + 5, "working")
+    bookkeeping(m, "mode")
     undated_continued(m)
     bookkeeping(m, "cost_state")
-    (m.prompt if kind == "user" else m.text)(BASE + 1 + dt, "go on")
+    (m.prompt if kind == "user" else m.text)(BASE + 5 + dt, "go on")
     m.write()
     assert (load(m).continued_in is None) == cleared
+
+
+@pytest.mark.parametrize("dt,cleared", [(+1, True), (0, False)])
+def test_an_undated_continuation_takes_a_dated_record_from_an_earlier_read(tmp_path, dt, cleared):
+    """The dated record was read in an earlier batch than the undated continued-in."""
+    proj = Project(tmp_path / "projects")
+    m = proj.main(SID)
+    m.prompt(BASE, "work")
+    m.text(BASE + 5, "working")
+    m.write()
+    s = load(m)
+    undated_continued(m)
+    m.write()
+    s.update()
+    assert s.continued_in == NEXT
+    m.text(BASE + 5 + dt, "go on")
+    m.write()
+    s.update()
+    assert (s.continued_in is None) == cleared
 
 
 def test_an_undated_continuation_with_no_time_before_it_is_cleared_by_any_conversation(tmp_path):

@@ -48,6 +48,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from dataclasses import dataclass, field
 
 from .. import hooks as hookmod
@@ -64,8 +65,27 @@ ASSISTANT = b'"type":"assistant"'
 USER = b'"type":"user"'
 TAIL_MAX = 8 * 1024 * 1024  # the tail window grows up to this when the last records are huge
 BG_MARK = b'"backgroundTaskId"'  # a Bash moved to the background (the result record)
+_LINE_TS = re.compile(rb'"timestamp":"([^"]{1,64})"')
 BG_CAP = 24 * 3600.0  # an open background task nobody can check (remote, no /proc) counts this long
 MONITOR_SLACK = 60.0  # a Monitor past its timeout by this much has expired even without its last event
+
+
+def _last_line_ts(lines: list[bytes], lo: int, hi: int) -> float | None:
+    """The record timestamp of the last line in ``lines[lo:hi]`` that has one, found from the end
+    without parsing; only a line with more than one ``timestamp`` key (a nested object has one
+    too) is parsed to tell the record's own."""
+    for raw in reversed(lines[lo:hi]):
+        if b'"timestamp":"' not in raw:
+            continue
+        found = _LINE_TS.findall(raw)
+        if len(found) == 1:
+            when = wire.ts(found[0].decode("ascii", "replace"))
+        else:
+            rec = wire.parse_line(raw)
+            when = wire.ts(rec.get("timestamp")) if rec else None
+        if when is not None:
+            return when
+    return None
 
 
 @dataclass
@@ -128,6 +148,7 @@ class FileState:
     owner: str
     tail: tail.TailState = field(default_factory=tail.TailState)
     last_ts: float | None = None  # stream timestamp for undated records
+    line_ts: float | None = None  # the last timestamp on ANY line read (an undated continued-in's time)
     tool_calls: int = 0
     info: TailInfo = field(default_factory=TailInfo)
     info_size: int = -1
@@ -189,7 +210,7 @@ class Session:
             self.hook_file.tail = tail.TailState()
         for f in getattr(self, "files", {}).values():
             f.tail = tail.TailState()
-            f.tool_calls, f.last_ts, f.info_size = 0, None, -1
+            f.tool_calls, f.last_ts, f.line_ts, f.info_size = 0, None, None, -1
         for j in getattr(self, "journals", {}).values():
             j.tail = tail.TailState()
 
@@ -271,6 +292,7 @@ class Session:
         if f.owner != MAIN:  # the agent's own calls: tool_use blocks in assistant records
             f.tool_calls += sum(raw.count(TOOL_USE) for raw in lines if ASSISTANT in raw)
         last_continued = -1
+        done = 0  # f.line_ts holds the last timestamp of lines[:done]
         for i in wire.wanted_lines(lines):
             rec = wire.parse_line(lines[i])
             if rec is None:
@@ -278,6 +300,10 @@ class Session:
             when = wire.ts(rec.get("timestamp")) or f.last_ts
             if when is not None:
                 f.last_ts = when
+            if rec.get("type") == "continued-in" and wire.ts(rec.get("timestamp")) is None:
+                # undated: the time of the last dated line of any kind before it (the prefilter skips most)
+                f.line_ts, done = _last_line_ts(lines, done, i) or f.line_ts, i
+                when = f.line_ts
             accepted = self.continuations_accepted
             try:
                 self.apply(f.owner, rec, when)
@@ -285,6 +311,7 @@ class Session:
                 self.bad_records += 1
             if self.continuations_accepted != accepted:
                 last_continued = i
+        f.line_ts = _last_line_ts(lines, done, len(lines)) or f.line_ts
         if f.owner == MAIN and self.continued_in:
             self._resumed(lines[last_continued + 1:])
         if f.tail.size != f.info_size and f.tail.size > 0:
