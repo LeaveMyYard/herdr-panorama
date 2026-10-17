@@ -387,8 +387,9 @@ class Session:
                     self.notices.setdefault(note["task"], set()).add((when, note["status"], note["tool_uses"]))
             return
         if kind == "continued-in":
-            nxt = rec.get("continuedInSessionId")
-            if owner == MAIN and discovery.is_uuid(nxt) and nxt != self.session_id:  # never a path
+            nxt = discovery.canonical_session_id(rec.get("continuedInSessionId"))  # never a path
+            if owner == MAIN and rec.get("isSidechain") is not True and nxt is not None \
+                    and nxt != discovery.canonical_session_id(self.session_id):
                 self.continued_in, self.continued_at = nxt, when
             return
         if kind == "custom-title" and isinstance(rec.get("customTitle"), str):

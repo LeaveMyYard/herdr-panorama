@@ -30,7 +30,16 @@ def sanitize_cwd(cwd: str) -> str:
 
 
 def is_uuid(stem: str) -> bool:
+    """A Claude Code session id: a UUID (8-4-4-4-12 hex, any case), the whole string. The one
+    validator: anything else (empty, ``..``, a separator, a glob, whitespace) never becomes a
+    path, an rsync rule or a followed continuation."""
     return isinstance(stem, str) and bool(_UUID.fullmatch(stem))
+
+
+def canonical_session_id(sid) -> str | None:
+    """The canonical form of a session id (lowercase, as Claude Code names its files), or None
+    when it is not one. Used wherever an id becomes a file name or is compared."""
+    return sid.lower() if is_uuid(sid) else None
 
 
 def find_root(session_id: str, cwd: str | None, root: str | None = None) -> str | None:
@@ -38,10 +47,11 @@ def find_root(session_id: str, cwd: str | None, root: str | None = None) -> str 
     dir. Only a UUID is looked up: an id comes from herdr or from a transcript (a remote
     machine's, too), and anything else (``..``, a separator, a glob) could name a file outside
     the transcripts folder."""
-    if not is_uuid(session_id):
+    sid = canonical_session_id(session_id)
+    if sid is None:
         return None
     root = root or projects_root()
-    name = f"{session_id}.jsonl"
+    name = f"{sid}.jsonl"
     if cwd:
         path = os.path.join(root, sanitize_cwd(cwd), name)
         if os.path.isfile(path):

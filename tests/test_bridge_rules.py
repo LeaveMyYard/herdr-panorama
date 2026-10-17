@@ -2,8 +2,9 @@
 as tables so the inbox and the Rust port can copy them case for case:
 
 - one session-id validator (``discovery.is_uuid``) and its canonical form;
-- the continuation rule (D6): a ``continued-in`` record is cleared only by a later ``user`` or
-  ``assistant`` record, never by bookkeeping records, known or new;
+- the continuation rule (D6): a ``continued-in`` record of the main transcript (not a sidechain)
+  naming another session id (compared in canonical lowercase) is cleared only by a later
+  ``user`` or ``assistant`` record, never by bookkeeping records, known or new;
 - "is this process Claude Code?" (``hooks.is_claude``).
 
 Every transcript record is a captured template (tests/fixtures/templates.json, scenario.py).
@@ -183,6 +184,59 @@ def test_a_continuation_in_another_case_is_kept_canonical(tmp_path):
     continued(m, BASE + 10, NEXT.upper())
     m.write()
     assert load(m).continued_in == NEXT
+
+
+def test_a_sidechain_continuation_is_ignored(tmp_path):
+    """A continued-in record marked ``isSidechain: true`` is never the main conversation's, even
+    in the main transcript."""
+    m = old_session(tmp_path)
+    rec = tpl("continued_in")
+    rec.update(timestamp=iso(BASE + 10), sessionId=SID, isSidechain=True, continuedInSessionId=NEXT)
+    m.raw(json.dumps(rec, separators=(",", ":")))
+    m.write()
+    assert load(m).continued_in is None
+
+
+def undated_continued(m, nxt: str = NEXT) -> None:
+    """A continued-in record without a timestamp: it takes the time of the record before it."""
+    rec = tpl("continued_in")
+    rec.pop("timestamp")
+    rec.update(sessionId=m.session, continuedInSessionId=nxt)
+    m.raw(json.dumps(rec, separators=(",", ":")))
+
+
+@pytest.mark.parametrize("kind", ["user", "assistant"])
+@pytest.mark.parametrize("dt,cleared", [(+1, True), (0, False), (-1, False)])
+def test_an_undated_continuation_takes_the_previous_records_time(tmp_path, kind, dt, cleared):
+    """Its time is the last one the scanner read before it: here the prompt at BASE + 1 (plain
+    assistant text is not a record the scanner parses, so it never sets that time)."""
+    proj = Project(tmp_path / "projects")
+    m = proj.main(SID)
+    m.prompt(BASE, "work")
+    m.prompt(BASE + 1, "more")
+    m.text(BASE + 5, "working")  # not parsed: does not move the time
+    undated_continued(m)
+    bookkeeping(m, "cost_state")
+    (m.prompt if kind == "user" else m.text)(BASE + 1 + dt, "go on")
+    m.write()
+    assert (load(m).continued_in is None) == cleared
+
+
+def test_an_undated_continuation_with_no_time_before_it_is_cleared_by_any_conversation(tmp_path):
+    """Nothing dated before it: no time to compare with, so any later user/assistant record is a
+    resume; bookkeeping still is not."""
+    proj = Project(tmp_path / "projects")
+    m = proj.main(SID)
+    undated_continued(m)
+    bookkeeping(m, "last_prompt")
+    bookkeeping(m, UNKNOWN)
+    m.write()
+    s = load(m)
+    assert s.continued_in == NEXT
+    m.text(BASE, "go on")
+    m.write()
+    s.update()
+    assert s.continued_in is None
 
 
 def test_a_continuation_from_a_subagent_file_is_ignored(tmp_path):
