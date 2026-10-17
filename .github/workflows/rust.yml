@@ -127,7 +127,7 @@ jobs:
           bin=target/${{ matrix.target }}/release/panorama
           file "$bin"
           case "${{ matrix.target }}" in
-            *-linux-musl) file "$bin" | grep -Eq 'static(-pie)? linked' ;;
+            *-linux-musl) file "$bin" | grep -Eq 'statically linked|static-pie linked' ;;
             x86_64-apple-darwin) file "$bin" | grep -q 'x86_64' ;;
             aarch64-apple-darwin) file "$bin" | grep -q 'arm64' ;;
           esac
