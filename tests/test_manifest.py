@@ -41,10 +41,11 @@ def test_claude_plugin_manifests():
     assert server["env"] == {"UV_PROJECT_ENVIRONMENT": "${CLAUDE_PLUGIN_DATA}/venv-" + plugin["version"]}
     assert server["args"][-1] == "mcp" and "${CLAUDE_PLUGIN_ROOT}" in server["args"]
     hooks = json.loads((ROOT / "hooks/hooks.json").read_text())["hooks"]
-    kinds = {e: h[0]["hooks"][0]["args"][1].split('"$0" ')[1].split()[0] for e, h in hooks.items()}
+    kinds = {e: h[0]["hooks"][0]["args"][1].split('"$1" ')[1].split()[0] for e, h in hooks.items()}
     assert kinds == {"SessionStart": "session-start", "SubagentStart": "subagent-start", "SubagentStop": "subagent-stop"}
     for h in hooks.values():
         spec = h[0]["hooks"][0]
         assert spec["command"] == "sh" and spec["args"][1].rstrip().endswith("exit 0")
-        assert spec["args"][2] == "${CLAUDE_PLUGIN_ROOT}/src/herdr_panorama/hooks.py"
+        assert spec["args"][2] == "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.sh"
+        assert spec["args"][3] == "${CLAUDE_PLUGIN_ROOT}/src/herdr_panorama/hooks.py"
         assert spec["timeout"] <= 10

@@ -1,5 +1,5 @@
 {
-  "description": "herdr-panorama: record subagent start/stop for the swarm view; SessionStart: one line about report_thread (inside herdr, once per session). Runs stdlib Python directly and always exits 0.",
+  "description": "herdr-panorama: record subagent start/stop for the swarm view; SessionStart: one line about report_thread (inside herdr, once per session). Runs stdlib Python directly (the interpreter behind python3 is resolved once and cached in CLAUDE_PLUGIN_DATA, skipping version-manager shims) and always exits 0.",
   "hooks": {
     "SessionStart": [
       {
@@ -10,7 +10,8 @@
             "command": "sh",
             "args": [
               "-c",
-              "python3 -I \"$0\" session-start 2>/dev/null; exit 0",
+              "sh \"$0\" \"$1\" session-start 2>/dev/null; exit 0",
+              "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.sh",
               "${CLAUDE_PLUGIN_ROOT}/src/herdr_panorama/hooks.py"
             ],
             "timeout": 10
@@ -27,7 +28,8 @@
             "command": "sh",
             "args": [
               "-c",
-              "python3 -I \"$0\" subagent-start >/dev/null 2>&1; exit 0",
+              "sh \"$0\" \"$1\" subagent-start >/dev/null 2>&1; exit 0",
+              "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.sh",
               "${CLAUDE_PLUGIN_ROOT}/src/herdr_panorama/hooks.py"
             ],
             "timeout": 10
@@ -44,7 +46,8 @@
             "command": "sh",
             "args": [
               "-c",
-              "python3 -I \"$0\" subagent-stop >/dev/null 2>&1; exit 0",
+              "sh \"$0\" \"$1\" subagent-stop >/dev/null 2>&1; exit 0",
+              "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.sh",
               "${CLAUDE_PLUGIN_ROOT}/src/herdr_panorama/hooks.py"
             ],
             "timeout": 10
