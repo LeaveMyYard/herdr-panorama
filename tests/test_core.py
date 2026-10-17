@@ -255,19 +255,37 @@ async def test_a_panel_without_a_core_acts_on_nothing(paths, fake_herdr):
 
 
 async def test_a_hidden_tabs_panel_draws_no_frames(paths):
-    """M5: the core says which tab is shown; a panel elsewhere stops animating."""
+    """M5: the core says which tab is shown; a panel elsewhere stops animating. Shown again, it
+    jumps straight to the clock's phase (the other windows' phase), not to where it paused."""
     from herdr_panorama.panel import PanelApp
+    from herdr_panorama.tui import FRAME_SECONDS
+
+    from .test_tui import AnimClock
+    clock = AnimClock(1_792_000_000.0)  # a wall-clock-sized time
     app = PanelApp(sock_path=paths[0], pane_id="w1:p9", tab_id="w1:t3", start_client=False)
+    app.anim_clock = clock
     async with app.run_test(size=(46, 45)) as pilot:
-        app._got_state(protocol.state_message(design_swarm(NINE["data"]), {}, None, ["w1:t1"])["state"])
-        assert not app.tab_shown
-        f = app.view.frame
-        for _ in range(10):
-            app.animate()
         await pilot.pause()
-        assert app.view.frame == f
+        app.connected = True  # undimmed: the picture is the plain render
+        app._got_state(protocol.state_message(design_swarm(NINE["data"]), {}, None, ["w1:t1"])["state"])
+        assert not app.tab_shown and render.animated(app.swarm, app.view.unseen)  # it would move
+        f = app.view.frame
+        steps: list = []
+        app.grid.restyle = steps.append
+        for _ in range(10):
+            clock.t += 0.3
+            app.animate()
+        assert app.view.frame == f and steps == []  # hidden: nothing drawn
+        del app.grid.restyle
+        clock.t += 0.07  # mid-frame: the colours' phase counts too
         app._got_state(protocol.state_message(design_swarm(NINE["data"]), {}, None, None)["state"])
         assert app.tab_shown  # unknown counts as visible
+        assert app.view.frame == clock.t / FRAME_SECONDS != f  # the clock's phase, not f + a few
+        got = app.grid.screen_data
+        assert got.animated()
+        want = render.render(app.swarm, app.view, 46, 45)
+        assert [[(x.ch, str(x.fg), str(x.bg)) for x in r] for r in got.c] == \
+            [[(x.ch, str(x.fg), str(x.bg)) for x in r] for r in want.c]
 
 
 async def test_the_panels_focus_look_follows_the_cores_focused_pane(paths):

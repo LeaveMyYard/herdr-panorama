@@ -8,7 +8,7 @@ from herdr_panorama.model import Orchestrator
 from herdr_panorama.tui import NewAgentForm
 
 from .demo import demo_swarm
-from .test_tui import loaded, make_app, sel
+from .test_tui import loaded, make_app, next_frame, sel
 
 WIDE, NARROW = (160, 45), (70, 45)
 
@@ -239,7 +239,7 @@ async def test_animation_frames_do_not_count_as_arrivals(fake_herdr):
         settle(app)
         stamps = dict(app.arrived)
         for _ in range(5):
-            app.tick()
+            next_frame(app)
         app.hover(("orch", ("w1:p2",)))
         assert app.arrived == stamps
         await click(app, pilot, "orch", ("w1:p2",))

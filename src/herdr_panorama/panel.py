@@ -253,6 +253,7 @@ class PanelApp(SwarmApp):
         mine = next((o.pane_id for o in swarm.orchestrators if o.tab_id and o.tab_id == self.my_tab), None)
         swarm.docked = mine  # this tab's orchestrator: the panel's docked entry
         vis = state.get("visible_tabs")
+        was_shown = self.tab_shown
         self.tab_shown = True if not isinstance(vis, list) or not self.my_tab else self.my_tab in vis
         unseen = state.get("unseen") if isinstance(state.get("unseen"), dict) else {}
         got = state.get("panels")
@@ -273,6 +274,8 @@ class PanelApp(SwarmApp):
                 self.view.orch, self.view.focus = active, 0
                 self._default_children()
                 self.repaint()
+        if self.tab_shown and not was_shown:
+            self.animate()  # shown again: straight to the current phase, not where it paused
         if isinstance(focused, str):
             self.herdr_focus(focused)
             if focused == self._awaiting:
@@ -305,7 +308,7 @@ class PanelApp(SwarmApp):
     # -- what the panel does ----------------------------------------------------------
 
     def animate(self) -> None:
-        if self.tab_shown:  # a hidden tab's panel draws no frames
+        if self.tab_shown:  # a hidden tab's panel draws no frames (and resumes at the clock's frame)
             super().animate()
 
     def _seen(self, ids) -> None:
