@@ -489,13 +489,28 @@ the `report_thread` tool and one line of session instructions.
 
 For `SubagentStop`, exit code 2 "prevents the subagent from stopping" and its
 stderr is fed back to the subagent. So the hooks do not go through uv or a
-virtualenv at all. `hooks.py` is stdlib-only and runs directly:
+virtualenv at all. `hooks.py` is stdlib-only and runs directly, through the
+small POSIX sh helper `hooks/run-hook.sh`:
 
 ```json
 {"type": "command", "command": "sh",
- "args": ["-c", "python3 -I \"$0\" subagent-stop >/dev/null 2>&1; exit 0",
+ "args": ["-c", "sh \"$0\" \"$1\" subagent-stop >/dev/null 2>&1; exit 0",
+          "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.sh",
           "${CLAUDE_PLUGIN_ROOT}/src/herdr_panorama/hooks.py"], "timeout": 10}
 ```
+
+- **Interpreter:** `python3` is often a version-manager shim (pyenv's is a
+  bash script costing 60–75 ms per call). The helper asks `python3` once for
+  `sys.executable` (only for Python 3.10+), caches it in `${CLAUDE_PLUGIN_DATA}/python-interpreter`
+  (temp file + rename, so concurrent hooks see a whole file) and `exec`s it
+  directly afterwards. A cache that is not an absolute path to an executable
+  file is re-resolved and rewritten; an unwritable directory, or no
+  `CLAUDE_PLUGIN_DATA`, means plain `python3`. The cached interpreter is
+  whatever `python3` resolved to in the first hook's cwd (a project's pyenv
+  `.python-version` or an active venv included), and it stays until that file
+  disappears or stops being executable; delete the cache file to re-resolve.
+  The 3.10 floor keeps an old project interpreter from becoming every
+  session's (an older `python3` still runs the hooks, uncached, as before).
 
 - **Exit code:** the shell forces exit 0, and the script also ends with
   `os._exit(0)`. A missing or broken `python3`, an unknown kind, a bad
@@ -504,7 +519,8 @@ virtualenv at all. `hooks.py` is stdlib-only and runs directly:
   versions, so a plugin update during a running session cannot break a hook.
   Tested with a fake `uv` and `python3` that exit 2, and with 16 concurrent
   hooks from two plugin versions.
-- **Speed:** about 20 ms.
+- **Speed:** about 20–25 ms with the cached interpreter (about 95 ms through the
+  pyenv shim under load).
 - **MCP server:** it still runs through uv, with one environment per plugin
   version (`${CLAUDE_PLUGIN_DATA}/venv-<version>`).
 

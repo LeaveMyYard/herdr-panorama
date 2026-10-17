@@ -81,7 +81,7 @@ def run_hook(event, payload, root=ROOT, env=None):
     spec = hook_spec(event)["hooks"][0]
     argv = [spec["command"], *(a.replace("${CLAUDE_PLUGIN_ROOT}", str(root)) for a in spec["args"])]
     return subprocess.run(argv, input=json.dumps(payload), capture_output=True, text=True, timeout=30,
-                          env={**os.environ, **(env or {})})
+                          env={**{k: v for k, v in os.environ.items() if k != "CLAUDE_PLUGIN_DATA"}, **(env or {})})
 
 
 def test_b1_hooks_never_use_uv_and_always_exit_0(tmp_path):
@@ -106,6 +106,8 @@ def test_b1_concurrent_hooks_from_two_plugin_versions(tmp_path):
         r = tmp_path / v
         (r / "src" / "herdr_panorama").mkdir(parents=True)
         shutil.copy(ROOT / "src/herdr_panorama/hooks.py", r / "src/herdr_panorama/hooks.py")
+        (r / "hooks").mkdir()
+        shutil.copy(ROOT / "hooks/run-hook.sh", r / "hooks/run-hook.sh")
         roots.append(r)
     env = {"PANORAMA_HOOKS_DIR": str(tmp_path / "h")}
     codes = []
