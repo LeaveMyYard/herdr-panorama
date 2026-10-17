@@ -22,6 +22,7 @@ from .scenario import BASE, Project, iso, tpl
 
 SID = "55555555-5555-4555-8555-555555555555"
 NEXT = "66666666-6666-4666-8666-666666666666"
+HEX = "abcdef01-2345-4abc-8def-0123456789ab"  # has letters: HEX.upper() != HEX
 
 # -- one session-id validator --------------------------------------------------------------
 
@@ -82,14 +83,32 @@ def test_machines_has_no_validator_of_its_own():
     assert not hasattr(machines, "_SESSION")
 
 
-def test_an_uppercase_id_finds_its_lowercase_transcript(tmp_path):
+@pytest.mark.parametrize("sid", [SID, HEX])
+def test_an_uppercase_id_finds_its_lowercase_transcript(tmp_path, sid):
     """Claude Code names transcripts by the lowercase id; an id handed over in another case is
     the same session."""
+    assert HEX.upper() != HEX
     proj = Project(tmp_path / "projects")
-    m = proj.main(SID)
+    m = proj.main(sid)
     m.text(BASE, "hi")
     m.write()
-    assert discovery.find_root(SID.upper(), None, str(proj.root)) == str(m.path)
+    assert discovery.find_root(sid.upper(), None, str(proj.root)) == str(m.path)
+
+
+def test_a_continuation_named_in_uppercase_is_found_and_followed(tmp_path):
+    from herdr_panorama.collect import Collector
+    proj = Project(tmp_path / "projects")
+    old = old_session(tmp_path)
+    continued(old, BASE + 10, HEX.upper())
+    old.write()
+    new = proj.main(HEX)
+    new.prompt(BASE + 11, "next")
+    new.write()
+    c = Collector(root=str(proj.root), now=lambda: BASE + 60, done_window=6 * 3600, procs=False)
+    ids, sess = c.live_session(SID, None)
+    assert ids == [SID, HEX] and sess is not None and sess.root == str(new.path)
+    ids, sess = c.live_session(HEX.upper(), None)  # herdr naming the new session in uppercase
+    assert sess is not None and sess.root == str(new.path)
 
 
 # -- the continuation rule (D6) ------------------------------------------------------------
@@ -181,9 +200,19 @@ def test_a_continuation_that_is_not_another_session_id_is_ignored(tmp_path, nxt)
 
 def test_a_continuation_in_another_case_is_kept_canonical(tmp_path):
     m = old_session(tmp_path)
-    continued(m, BASE + 10, NEXT.upper())
+    continued(m, BASE + 10, HEX.upper())
     m.write()
-    assert load(m).continued_in == NEXT
+    assert load(m).continued_in == HEX
+
+
+@pytest.mark.parametrize("own,nxt", [(HEX, HEX.upper()), (HEX.upper(), HEX), (HEX, HEX.title())])
+def test_a_continuation_to_its_own_id_in_another_case_is_ignored(tmp_path, own, nxt):
+    proj = Project(tmp_path / "projects")
+    m = proj.main(own)
+    m.prompt(BASE, "work")
+    continued(m, BASE + 10, nxt)
+    m.write()
+    assert load(m).continued_in is None
 
 
 def test_a_sidechain_continuation_is_ignored(tmp_path):
