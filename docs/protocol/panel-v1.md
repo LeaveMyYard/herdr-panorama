@@ -35,13 +35,20 @@ in another language, such as Rust or ratatui, can speak it.
 
 ### Viewer → core
 
-- `{"hello": {"protocol": "1.1", "role": "panel", "pane_id": "<herdr pane>", "tab_id": "<herdr tab>"}}`.
+- `{"hello": {"protocol": "1.2", "role": "panel", "pane_id": "<herdr pane>", "tab_id": "<herdr tab>"}}`.
   This is the first message. `pane_id` is a claim. The core trusts it only when herdr reports
   that pane's foreground process as the connecting process itself (its pid), running
   `panorama panel`. It never uses it as authority to close anything.
 - `{"seen": ["<agent id>", ...]}`: the operator looked at these agents. A viewer queues these
   while disconnected and sends them again after the next `welcome`.
 - `{"bye": {}}`: the viewer is closing.
+- `{"focusing": {"pane_id": "<herdr pane>"}}` (1.2): a panel is about to switch tabs and put the
+  keyboard on that pane (the target tab's panel). The core takes it only from a panel whose
+  `hello` was verified, and publishes it at once as `state.focused_pane`, so the target panel
+  paints its focused look while still hidden. herdr's own focus event follows.
+  - A panel whose switch then fails announces its own pane again.
+  - If herdr reports no focus within 0.75 s of an announcement, the core reads herdr's real
+    focus and publishes that instead.
 - `{"open": {}}` (1.1): from the open key, which says `hello` with `"role": "key"`. The core
   focuses this tab's panel, makes one, or shows the home tab, and answers with `opened`. A key
   connection gets no `state`.
@@ -50,9 +57,9 @@ Any message before `hello` closes the connection.
 
 ### Core → viewer
 
-- `{"welcome": {"protocol": "1.1"}}`: the answer to a compatible `hello`. The last `state`
+- `{"welcome": {"protocol": "1.2"}}`: the answer to a compatible `hello`. The last `state`
   follows at once, if there is one.
-- `{"error": {"message": "protocol", "protocol": "1.1"}}`: an incompatible `hello`. The
+- `{"error": {"message": "protocol", "protocol": "1.2"}}`: an incompatible `hello`. The
   connection then closes.
 - `{"state": {...}}`: always a full snapshot (no deltas in v1). It is sent after every collect
   (~1.5 s), on focus and tab changes, and right after `welcome`.
@@ -66,7 +73,7 @@ Any message before `hello` closes the connection.
 
 | field | meaning |
 |---|---|
-| `protocol` | `"1.1"` |
+| `protocol` | `"1.2"` |
 | `swarm.generated_at`, `swarm.herdr_ok`, `swarm.inbox_ok`, `swarm.errors`, `swarm.stale_after` | as `model.Swarm` |
 | `swarm.orchestrators[]` | `model.Orchestrator` fields, with `threads[]` (`model.Thread`, with `phases[]` and `agents[]`) and `bg[]`, field for field. `model.py` documents each field. |
 | `unseen` | `{agent id: "fail" \| "wait" \| "done"}`, the unseen marks |

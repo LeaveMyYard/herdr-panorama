@@ -7,6 +7,7 @@ template in fixtures/herdr_snapshot.json via $FAKE_HERDR_SNAPSHOT).
 
 from __future__ import annotations
 
+import os
 import json
 import sys
 from pathlib import Path
@@ -58,7 +59,12 @@ def fake_herdr(tmp_path, monkeypatch):
 
 @pytest.fixture(autouse=True)
 def no_real_state(tmp_path, monkeypatch):
-    """Tests never read the operator's inbox or event files."""
+    """Tests never read the operator's inbox or event files, and never reach a live herdr: run
+    from a herdr pane they inherit its HERDR_* environment, and HERDR_SOCKET_PATH would send
+    every socket call (pane.focus, plugin.pane.open, ...) to the operator's own server. A test
+    that needs a socket sets its own fake one."""
+    for key in [k for k in os.environ if k.startswith("HERDR_")]:
+        monkeypatch.delenv(key)
     monkeypatch.setenv("HERDR_INBOX_DB", str(tmp_path / "no-inbox.db"))
     monkeypatch.setenv("PANORAMA_EVENTS_DIR", str(tmp_path / "no-events"))
     monkeypatch.setenv("HERDR_BIN_PATH", str(tmp_path / "no-herdr"))

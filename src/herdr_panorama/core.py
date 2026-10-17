@@ -110,12 +110,13 @@ class Core:
     socket cannot be made). ``publish(msg)`` sends a message to every viewer."""
 
     def __init__(self, sock_path: Path, lock_path: Path, on_seen=None, verify_pane=None,
-                 uid: int | None = None, on_open=None):
+                 uid: int | None = None, on_open=None, on_focusing=None):
         self.sock_path = Path(sock_path)
         self.lock_path = Path(lock_path)
         self.on_seen = on_seen or (lambda ids: None)
         self.verify_pane = verify_pane or (lambda pane_id, pid: False)
         self.on_open = on_open or (lambda req: "home")  # the open key (role "key"): what it did
+        self.on_focusing = on_focusing or (lambda pane_id: None)  # a panel's switch announces the focus
         self.uid = os.getuid() if uid is None else uid
         self.viewers: list[Viewer] = []
         self._lock_fd: int | None = None
@@ -356,6 +357,12 @@ class Core:
         if "seen" in msg:
             ids = [i for i in msg["seen"] if isinstance(i, str)] if isinstance(msg["seen"], list) else []
             seen += ids
+            return True
+        if "focusing" in msg:  # a panel is about to put the keyboard on this pane (1.2)
+            req = msg["focusing"] if isinstance(msg["focusing"], dict) else {}
+            pane = req.get("pane_id")
+            if v.pane_id and isinstance(pane, str) and pane:  # only a verified panel's word counts
+                self.on_focusing(pane)
             return True
         if "open" in msg:  # the open key: answered on this connection, which then closes
             req = msg["open"] if isinstance(msg["open"], dict) else {}
