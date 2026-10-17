@@ -1,7 +1,7 @@
 {
   "name": "herdr-panorama",
   "displayName": "herdr panorama",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Opt-in companion for the herdr-panorama swarm view: records subagent start/stop and gives orchestrators a report_thread MCP tool",
   "author": {
     "name": "LeaveMyYard"
@@ -28,7 +28,7 @@
         "mcp"
       ],
       "env": {
-        "UV_PROJECT_ENVIRONMENT": "${CLAUDE_PLUGIN_DATA}/venv-0.1.0"
+        "UV_PROJECT_ENVIRONMENT": "${CLAUDE_PLUGIN_DATA}/venv-0.1.1"
       }
     }
   }

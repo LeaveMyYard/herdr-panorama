@@ -1,9 +1,10 @@
 """The Claude Code plugin must work from the installed copy (herdr-inbox's lesson).
 
 Claude Code installs a plugin as a copy in ~/.claude/plugins/cache/..., git-ignored
-files included but with a ``.venv`` whose interpreter links are gone. Every plugin
-command therefore runs ``uv run --project ${CLAUDE_PLUGIN_ROOT}`` with
-``UV_PROJECT_ENVIRONMENT=${CLAUDE_PLUGIN_DATA}/venv``. These tests build such a copy
+files included but with a ``.venv`` whose interpreter links are gone. The MCP server
+therefore runs ``uv run --project ${CLAUDE_PLUGIN_ROOT}`` with
+``UV_PROJECT_ENVIRONMENT=${CLAUDE_PLUGIN_DATA}/venv-<version>``, and the hooks run
+``hooks/run-hook.sh`` with an interpreter cached in ``${CLAUDE_PLUGIN_DATA}``. These tests build such a copy
 and run the hooks and the MCP server exactly as the manifests declare them.
 """
 
@@ -21,7 +22,7 @@ pytestmark = pytest.mark.skipif(shutil.which("uv") is None, reason="needs uv")
 
 @pytest.fixture
 def installed(tmp_path):
-    copy = tmp_path / "cache" / "herdr-panorama" / "herdr-panorama" / "0.1.0"
+    copy = tmp_path / "cache" / "herdr-panorama" / "herdr-panorama" / "0.1.1"
     files = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard"], cwd=ROOT,
                            capture_output=True, text=True, check=True).stdout.split()
     for rel in files:

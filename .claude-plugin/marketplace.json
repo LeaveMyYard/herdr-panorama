@@ -8,7 +8,7 @@
     {
       "name": "herdr-panorama",
       "description": "Opt-in companion for the herdr-panorama swarm view: records subagent start/stop and gives orchestrators a report_thread MCP tool",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "source": "./",
       "license": "MIT",
       "repository": "https://github.com/LeaveMyYard/herdr-panorama"
