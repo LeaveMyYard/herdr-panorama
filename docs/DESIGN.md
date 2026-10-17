@@ -1731,29 +1731,42 @@ has proven itself (the operator, Q140).
   - **Why not start the panel again in that pane.** herdr has no call that runs a command in an
     existing pane: `pane run` types the command into the shell, and on the isolated herdr a
     fresh zsh's first-run menu ate the first key of it. panorama never types into a pane.
-  - **So the core closes it and makes a new one.** The manager records each panel of its own
-    (opened by the core, or adopted after a verified hello) with herdr's terminal id, in
-    `panels-<session>.json`. Quitting and switching per-tab off empty the record, so only an
-    unclean end leaves one. A pane is closed (`pane close`) as a restored panel only when all of
-    these hold:
-    - its pane id is in the record;
-    - herdr gave it a different terminal (a live panel keeps its terminal, so a core restart
-      alone changes nothing);
-    - it still has the label `Panorama panel` and no agent;
-    - its foreground is nothing but the shell herdr started for it (`pane process-info`: one
-      process, the pane's `shell_pid`, not panorama);
-    - that shell is younger than 2 minutes (`ps -o etime`).
+  - **So the core closes it and makes a new one, only while it is provably ours and unused.**
+    The manager records each panel of its own (opened by the core, or adopted after a verified
+    hello) with herdr's terminal id, in `panels-<session>.json`. Quitting and switching per-tab
+    off empty the record, so only an unclean end leaves one. A pane is closed (`pane close`) as
+    a restored panel only when all of these hold:
+    - its pane id is in the record. A recorded pane missing from a pass is forgotten at once,
+      so a fresh server that numbers panes anew never matches an old record;
+    - herdr gave it a different terminal id. A crash restore does that, and so does a live
+      handoff (`herdr update --handoff`), where the panel goes on running: that case is told
+      apart only by the next check, and its record then follows the new terminal;
+    - `pane process-info`: one foreground process, the pane's own `shell_pid`, whose argv is a
+      plain shell (`exec vim` keeps the pid but not the argv; a nested `bash` has another pid);
+    - it still has the label `Panorama panel`, no agent, and is not focused (in the snapshot,
+      or by a focus event since the restore was first seen);
+    - `pgrep -P`: the shell has no child (no background job), and `ps -o etime`: it is younger
+      than 60 s;
+    - a second `pane process-info`, right before the close, still says the same.
 
-    While something runs in that shell (its rc, or a command the operator typed) it is looked at
-    again on the next pass. A shell older than that, another label or an agent drops the record
-    for good. A look-alike (a pane with that label that was never recorded) is never touched. The
-    tab then gets a fresh panel by the usual rules (the start batch, or the operator's visit), on
-    the left of its agent where the old one was.
+    Any other answer, except "herdr cannot say yet", gives the pane up for good, even if it
+    looks idle later. So does not deciding within the first 3 passes after the restore was
+    first seen. Leaving a shell is safe; closing a pane the operator used is not. So a core
+    that starts more than 60 s after herdr (a slow or failed startup hook, panorama opened by
+    hand later) leaves the restored shells in place, as before this fix, and so does a restore
+    where herdr put the focus on the panel. A look-alike (a pane with that label that was never
+    recorded) is never touched. The tab then gets a fresh panel by the usual rules (the start
+    batch, or the operator's visit), on the left of its agent where the old one was.
+  - **Limits.** herdr has no conditional close: a command typed in the few milliseconds
+    between the last look and the close goes with the pane. The age and child checks assume
+    herdr runs in panorama's pid namespace (not in a container), and macOS computes `etime`
+    from the wall clock, so a clock step can make an old shell look young; the record, the
+    terminal, the label and the process checks do not depend on either.
   - **Checked on an isolated herdr 0.9.3**, with `cockpit_panels = "per-tab"`, two orchestrator
     tabs and an extra pane labelled `Panorama panel` by hand: after `kill -9` of the server and
-    of every panorama process, and a restart, the core closed both restored panels within half a
-    second of herdr starting and made new panels on the left of the agents (one in the start
-    batch, one on the first visit). The hand-labelled pane was left alone.
+    of every panorama process, and a restart, the core closed both restored panels 2 to 3 s
+    after herdr started and made new panels on the left of the agents. The hand-labelled pane
+    was left alone, and the record then held only the new panels.
 - **Viewers start from the venv.** The plugin build ran `uv sync`, so a panel runs
   `.venv/bin/panorama panel` and falls back to `uv run` only when there is no venv. Measured
   on the isolated herdr: one process of about 41 MB RSS per panel, with no ~31 MB `uv`

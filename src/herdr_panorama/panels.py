@@ -28,16 +28,31 @@ asks for it there again. A tab whose orchestrator went away loses its panel afte
 
 After herdr itself stops unexpectedly, its session restore brings every pane back with its pane
 id and label but as a plain login shell: it does not start a pane's command again (only a live
-handoff keeps it). The manager records each panel of ours (pane id and herdr's terminal id) in
-the state dir, and the record outlives only an unclean end (quitting and switching off clear
-it). A pane is such a restored panel, and is closed so that a fresh panel is made in its place,
-only when all of these hold: its pane id is recorded; herdr gave it a different terminal (a
-live panel keeps its terminal); it still has the panel's label and no agent; its foreground is
-nothing but the shell herdr started for it; and that shell is younger than ``RESTORED_SECONDS``.
-While something runs in that shell (its rc, or a command) it is looked at again on the next
-pass; a shell older than that, a new label or an agent drops the record for good. herdr
-0.9.3-0.9.5 has no way to start a command again in an existing pane short of typing into its
-shell, which panorama never does.
+handoff keeps the process). herdr 0.9.3-0.9.5 has no way to run a command in an existing pane
+short of typing into its shell, which panorama never does, so such a pane is closed and the
+usual rules make a new panel. The manager records each panel of ours (pane id and herdr's
+terminal id) in the state dir; quitting and switching off clear it, so only an unclean end
+leaves a record. A pane is closed as a restored panel only when all of these hold:
+
+- its pane id is recorded (a recorded pane missing from a pass is forgotten at once, so a
+  fresh server that numbers panes anew never matches an old record);
+- herdr gave it a different terminal id. A crash restore does that, but so does a live
+  handoff, where the panel keeps running: that case is told apart only by the next check;
+- it still has the panel's label, no agent, and is not focused (in the snapshot, or by a
+  focus event since the restore was first seen);
+- ``pane process-info``: one foreground process, the pane's own ``shell_pid``, whose argv is
+  a plain shell (an ``exec``-ed program keeps the pid but not the argv);
+- ``pgrep -P``: the shell has no child (no background job), and ``ps -o etime``: it is younger
+  than ``RESTORED_SECONDS``;
+- a second ``pane process-info`` right before the close still says the same.
+
+Any other answer (only "herdr cannot say yet" excepted) gives the pane up for good, and so does
+not deciding within ``RESTORE_PASSES`` passes of the first pass that saw the restore: leaving a
+shell is safe, closing a pane the operator used is not. A core that starts more than
+``RESTORED_SECONDS`` after herdr leaves the restored shells in place. Residual: herdr has no
+conditional close, so a command typed in the milliseconds between the last look and the
+close goes with the pane. The age and child checks assume herdr runs in this pid namespace;
+macOS computes ``etime`` from the wall clock.
 """
 
 from __future__ import annotations
@@ -59,7 +74,8 @@ NOT_PANEL_SECONDS = 30.0  # how long a "not a panel" answer for a pane is believ
 PANEL_SECONDS = 30.0  # how long a "runs our viewer" answer is believed (a pane never becomes another)
 CRASH_LIMIT = 3  # panels of one tab that died on their own before the manager stops making them
 LOCK_SECONDS = 2.0
-RESTORED_SECONDS = 120.0  # a restored panel's shell is at most this old when it is closed
+RESTORED_SECONDS = 60.0  # a restored panel's shell is at most this old when it is closed
+RESTORE_PASSES = 3  # passes, from the first that sees a restore, on which restored panels are judged
 
 
 @dataclass
@@ -131,6 +147,8 @@ class Manager:
         self.broken: set[str] = set()  # tabs given up on (CRASH_LIMIT), for this core's life
         self._mu = threading.Lock()
         self.started = False  # the start batch ran
+        self._passes = 0  # reconcile passes so far
+        self._restore_seen: tuple[int, float, float] | None = None  # (pass, clock, monotonic) of the first
 
     # -- state -----------------------------------------------------------------------------
 
@@ -157,45 +175,36 @@ class Manager:
 
     def _restored(self, snap: dict) -> dict:
         """Close the recorded panels that herdr's session restore brought back as plain shells
-        (the proof is in the module docstring); the snapshot without them."""
+        (the proof is in the module docstring); the snapshot without them. Judged only on the
+        first ``RESTORE_PASSES`` passes after the restore is first seen; then given up on."""
         by_id = {p.get("pane_id"): p for p in snap.get("panes") or [] if isinstance(p, dict)}
         gone: set[str] = set()
         changed = False
+        candidates = []
         for pane_id, rec in list(self.record.items()):
             p = by_id.get(pane_id)
             if p is None:
-                del self.record[pane_id]  # the pane is gone
+                del self.record[pane_id]  # the pane is gone (or a fresh server numbers panes anew)
                 changed = True
                 continue
             was, now = rec.get("terminal"), p.get("terminal_id")
-            if not was or not now or was == now:
-                continue  # the same terminal: a live panel, or not known yet
-            if p.get("label") != herdr.PANEL_LABEL or p.get("agent"):
-                log.info("%s was a panel before herdr restarted and now is not; left alone", pane_id)
-                del self.record[pane_id]
-                changed = True
+            if was and now and was != now:  # a restore, or a live handoff (the panel still runs)
+                candidates.append((pane_id, p))
+        if candidates and self._restore_seen is None:
+            self._restore_seen = (self._passes, self.clock(), time.monotonic())
+        passes_since = self._passes - self._restore_seen[0] if self._restore_seen else 0
+        for pane_id, p in candidates:
+            verdict = self._judge(pane_id, p, snap) if passes_since < RESTORE_PASSES else "late"
+            if verdict == "again":
                 continue
-            bare, age = herdr.bare_shell(pane_id)
-            if bare is None:
-                continue  # herdr cannot say yet (mid-restore): the next pass looks again
-            if age is None or age > RESTORED_SECONDS:
-                log.info("%s was a panel before herdr restarted; its shell is not a fresh restore, left alone",
-                         pane_id)
-                del self.record[pane_id]
-                changed = True
-                continue
-            if not bare:
-                continue  # something runs there (the shell's rc, or a command): looked at again next pass
             del self.record[pane_id]
             changed = True
-            err = herdr.close_pane(pane_id)
-            if err:
-                log.warning("could not close %s, a panel herdr restored as a shell: %s", pane_id, err)
-                continue
-            log.warning("closed %s: a panel herdr restored as a plain shell; a new one is made", pane_id)
-            gone.add(pane_id)
-            self.created.pop(pane_id, None)
-            self.connected_once.discard(pane_id)
+            if verdict == "close":
+                gone.add(pane_id)
+                self.created.pop(pane_id, None)
+                self.connected_once.discard(pane_id)
+            else:
+                log.info("%s was a panel before herdr restarted; left alone (%s)", pane_id, verdict)
         if changed:
             self._save_closed()
         if not gone:
@@ -203,13 +212,50 @@ class Manager:
         return dict(snap, panes=[p for p in snap.get("panes") or [] if not (isinstance(p, dict)
                                                                             and p.get("pane_id") in gone)])
 
+    def _judge(self, pane_id: str, p: dict, snap: dict) -> str:
+        """One recorded pane with a new terminal: "close" (closed now), "again" (herdr could
+        not say yet), or why it is left alone for good. Any sign that the operator used the
+        pane is final. A panel that still runs after a live handoff is "in use" here, and
+        ``_remember`` records it again under its new terminal."""
+        if p.get("label") != herdr.PANEL_LABEL:
+            return "relabelled"
+        if p.get("agent"):
+            return "an agent"
+        if p.get("focused") or snap.get("focused_pane_id") == pane_id or self._focused_since_restore(pane_id):
+            return "focused"
+        plain, shell = herdr.pane_shell(pane_id)
+        if plain is None:
+            return "again"
+        if not plain:
+            return "in use"  # a command, an exec'ed program or the rc: never looked at again
+        age, children = herdr.shell_state(shell)
+        if children is not False:
+            return "in use"  # a background job, or unknown
+        if age is None or age > RESTORED_SECONDS:
+            return "not a fresh restore"
+        # the last look right before the close: herdr has no conditional close, so a command
+        # typed in the few ms between this look and the close would still go with the pane
+        if herdr.pane_shell(pane_id) != (True, shell):
+            return "in use"
+        err = herdr.close_pane(pane_id)
+        if err:
+            return f"could not close: {err}"
+        log.warning("closed %s: a panel herdr restored as a plain shell; a new one is made", pane_id)
+        return "close"
+
+    def _focused_since_restore(self, pane_id: str) -> bool:
+        if self.focus_log is None or self._restore_seen is None:
+            return False
+        return any(d.get("type") == "pane_focused" and d.get("pane_id") == pane_id
+                   for d in self.focus_log.since(self._restore_seen[2]))
+
     def _remember(self, snap: dict, sv: Survey) -> None:
         """Record our running panels (pane id, tab, herdr's terminal id) for after a herdr
         restart. Only panes this core opened or adopted, while herdr shows them running our
         viewer."""
         by_id = {p.get("pane_id"): p for p in snap.get("panes") or [] if isinstance(p, dict)}
         running = {p for ps in sv.panels.values() for p in ps}
-        record = {pid: rec for pid, rec in self.record.items() if pid in by_id}
+        record = dict(self.record)  # a gone pane was dropped by _restored, at the start of the pass
         for pane_id, tab in self.created.items():
             term = (by_id.get(pane_id) or {}).get("terminal_id")
             if pane_id in running and term:
@@ -361,6 +407,7 @@ class Manager:
 
     def _reconcile(self, snap: dict, swarm, start: bool) -> Survey:
         now = self.clock()
+        self._passes += 1
         snap = self._restored(snap)
         sv = self.survey(snap, swarm)
         present = {p.get("pane_id") for p in snap.get("panes") or [] if isinstance(p, dict)}

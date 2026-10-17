@@ -273,21 +273,38 @@ def _etime_seconds(text: str) -> float | None:
     return float(((d * 24 + h) * 60 + m) * 60 + s)
 
 
-def process_age(pid: int) -> float | None:
-    """How long the process has run, in seconds (``ps -o etime=``, Linux and macOS), or None."""
+def _ps(*args: str) -> subprocess.CompletedProcess | None:
     try:
-        proc = subprocess.run(["ps", "-o", "etime=", "-p", str(int(pid))], capture_output=True, text=True,
-                              timeout=TIMEOUT)
-    except (OSError, subprocess.SubprocessError, ValueError):
+        return subprocess.run(list(args), capture_output=True, text=True, timeout=TIMEOUT)
+    except (OSError, subprocess.SubprocessError):
         return None
-    return _etime_seconds(proc.stdout) if proc.returncode == 0 else None
 
 
-def bare_shell(pane_id: str) -> tuple[bool | None, float | None]:
-    """Whether the pane's foreground is nothing but the pane's own shell (one foreground
-    process, the pane's ``shell_pid``, not panorama): what herdr's session restore leaves in a
-    pane whose command it does not start again. With the age in seconds of the pane's shell
-    (None when unknown). (None, None) when herdr cannot say. Read-only ``pane process-info``."""
+def shell_state(pid: int) -> tuple[float | None, bool | None]:
+    """A local process's age in seconds (``ps -o etime=``) and whether it has any child
+    process (``pgrep -P``), each None when unknown. Linux and macOS. Assumes herdr runs in this
+    pid namespace; macOS computes ``etime`` from the wall clock, so a clock step skews it."""
+    try:
+        pid = int(pid)
+    except (TypeError, ValueError):
+        return None, None
+    proc = _ps("ps", "-o", "etime=", "-p", str(pid))
+    age = _etime_seconds(proc.stdout) if proc is not None and proc.returncode == 0 else None
+    kids = _ps("pgrep", "-P", str(pid))
+    # pgrep: 0 = some child, 1 = none, anything else = it could not say
+    children = None if kids is None or kids.returncode not in (0, 1) else kids.returncode == 0
+    return age, children
+
+
+SHELLS = frozenset({"sh", "bash", "zsh", "fish", "dash", "ksh", "mksh", "tcsh", "csh", "nu", "xonsh", "elvish"})
+
+
+def pane_shell(pane_id: str) -> tuple[bool | None, int | None]:
+    """Whether the pane's foreground is nothing but a plain shell that is the pane's own
+    (one foreground process, the pane's ``shell_pid``, whose argv is a shell and nothing
+    else): what herdr's session restore leaves in a pane whose command it does not start
+    again. With that ``shell_pid``. (None, None) when herdr cannot say. A process ``exec``-ed
+    in the shell keeps its pid, so the argv is checked too. Read-only ``pane process-info``."""
     res, _ = call("pane", "process-info", "--pane", pane_id)
     info = (res or {}).get("process_info")
     if not isinstance(info, dict):
@@ -296,11 +313,12 @@ def bare_shell(pane_id: str) -> tuple[bool | None, float | None]:
     shell = info.get("shell_pid")
     if not isinstance(procs, list) or not procs or not isinstance(shell, int):
         return None, None  # mid-exec or mid-restore: unknown
-    procs = [p for p in procs if isinstance(p, dict)]
-    if any(os.path.basename(str(a)) == "panorama" for p in procs for a in p.get("argv") or []):
-        return False, process_age(shell)  # a live panel: its sh -c execs panorama as the shell's pid
-    bare = len(procs) == 1 and procs[0].get("pid") == shell
-    return bare, process_age(shell)  # not bare: something runs in it (a command, or the rc's own)
+    if len(procs) != 1 or not isinstance(procs[0], dict) or procs[0].get("pid") != shell:
+        return False, shell  # something runs in it
+    argv = [str(a) for a in procs[0].get("argv") or []]
+    plain = bool(argv) and os.path.basename(argv[0]).lstrip("-") in SHELLS \
+        and all(a in ("-l", "--login", "-i") for a in argv[1:])
+    return plain, shell
 
 
 def apply_panel_layout(label: str, cwd: str | None, ratio: float) -> tuple[dict | None, str | None]:
