@@ -16,6 +16,7 @@ Safety rules (from herdr-inbox's reviews, see docs/DESIGN.md):
 
 from __future__ import annotations
 
+import concurrent.futures
 import dataclasses
 import os
 import threading
@@ -272,6 +273,7 @@ class SwarmApp(App):
         self._follow_timer = None
         self._arrow_timer = None  # docked panel: the pending dock after the arrows settle
         self._arrow_again = False  # an arrow dock came due while a dock ran: look again after it
+        self._parked_orch: str | None = None  # the orchestrator a parked cursor was last on
         self._stopping = False
         self.core: core.Core | None = None  # per-tab panels: this panorama publishes its state
         self.visible_tab: str | None = None  # the tab herdr last reported focused (per-tab panels)
@@ -293,7 +295,8 @@ class SwarmApp(App):
             self.core = core.Core.start(protocol.socket_path(), protocol.lock_path(),
                                         on_seen=lambda ids: self._to_ui(self._seen, ids),
                                         verify_pane=self._owned_pane, on_open=self._open_key,
-                                        on_focusing=lambda pane: self._to_ui(self.focusing, pane))
+                                        on_focusing=lambda pane: self._to_ui(self.focusing, pane),
+                                        on_filter=lambda name: self._to_ui(self._filter_from_panel, name))
             if self.core is not None:
                 self.panels = panels.Manager(
                     verified=self.core.verified_panes,
@@ -387,7 +390,7 @@ class SwarmApp(App):
         try:
             self.core.publish(protocol.state_message(
                 self.swarm, self.view.unseen, self.herdr_focused_pane,
-                [self.visible_tab] if self.visible_tab else None, self.panel_panes))
+                [self.visible_tab] if self.visible_tab else None, self.panel_panes, self.view.filter))
         except protocol.TooLong as exc:
             self.log.warning(f"state not published: {exc}")
 
@@ -487,6 +490,8 @@ class SwarmApp(App):
         """After a refresh: keep every selection that still exists, park the ones that vanished."""
         cols = render.nav(self.swarm, self.view)
         if self.view.orch not in cols[0]:
+            if self.view.orch is not None:
+                self._parked_orch = self.view.orch  # where the arrows resume from (_resume)
             self.view.orch = None
         cols = render.nav(self.swarm, self.view)
         if self.view.thread not in cols[1]:
@@ -720,10 +725,25 @@ class SwarmApp(App):
         if cur in items:
             idx = max(0, min(len(items) - 1, items.index(cur) + delta))
         else:
-            idx = 0  # parked: arrows resume from the top
+            idx = self._resume(col, items, delta)
         self._select(col, items[idx])
         if col == 0 and self._arrows_mode():
             self._arrow_dock_later()
+
+    def _resume(self, col: int, items: list[str], delta: int) -> int:
+        """A parked cursor: an orchestrator the filter hides (or the cursor parked off one)
+        resumes from where it sits in the full list, to the next shown one in the arrow's
+        direction; anything else resumes from the top."""
+        anchor = self.view.orch if col == 0 and self.view.orch is not None else self._parked_orch
+        order = [o.pane_id for o in self.swarm.orchestrators]
+        if col != 0 or anchor not in order:
+            return 0
+        rank = {p: i for i, p in enumerate(order)}
+        rank[render.NEW_ROW] = len(order)  # always last
+        pos = rank[anchor]
+        if delta > 0:
+            return next((i for i, x in enumerate(items) if rank.get(x, -1) > pos), len(items) - 1)
+        return next((i for i in range(len(items) - 1, -1, -1) if rank.get(items[i], len(order)) < pos), 0)
 
     def _arrows_mode(self) -> bool:
         """The docked panel with ``dock_on_arrows``: ↑/↓ switch the chats, Enter goes into one."""
@@ -1059,8 +1079,8 @@ class SwarmApp(App):
         """A worker's result back to the UI thread; nothing if the view has closed meanwhile."""
         try:
             self.call_from_thread(fn, *args)
-        except RuntimeError:
-            pass  # the app is shutting down
+        except (RuntimeError, concurrent.futures.CancelledError):
+            pass  # the app is shutting down (a panel's client thread can call in as it closes)
 
     class DockedNow(Message):
         def __init__(self, agent: str) -> None:
@@ -1343,9 +1363,28 @@ class SwarmApp(App):
         self._set_filter(f[(f.index(self.view.filter) + 1) % len(f)])
 
     def _set_filter(self, name: str) -> None:
+        """The operator chose a filter here. Per-tab panels: every view shows it (the core
+        publishes it; a panel sends it to the core, panel.py)."""
+        self._apply_filter(name)
+        self.publish()
+
+    def _filter_from_panel(self, name: str) -> None:
+        """A per-tab panel chose a filter (the core's reader): this view takes it, and the
+        state published with it tells every other panel."""
+        if name not in render.FILTERS:
+            return
+        if name != self.view.filter:
+            self._apply_filter(name)
+        self.publish()
+
+    def _filter_to(self, name: str) -> None:
+        """The filter changes: a selection it hides is parked (resolve)."""
         self.view.filter = name
         self.view.wheel.clear()
         self.resolve()
+
+    def _apply_filter(self, name: str) -> None:
+        self._filter_to(name)
         cols = render.nav(self.swarm, self.view)
         if self.view.orch is None and cols[0]:
             self.view.orch = cols[0][0]
