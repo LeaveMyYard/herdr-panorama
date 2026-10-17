@@ -18,7 +18,7 @@ from pathlib import Path
 
 from .model import Agent, BgTask, Orchestrator, Phase, Swarm, Thread
 
-PROTOCOL = "1.2"  # 1.1: state.panels, the open request; 1.2: focusing
+PROTOCOL = "1.3"  # 1.1: state.panels, the open request; 1.2: focusing; 1.3: the shared filter
 MAX_LINE = 4 * 1024 * 1024  # a longer line is refused and the connection closed
 
 
@@ -130,13 +130,17 @@ def swarm_from_wire(d: dict) -> Swarm:
 
 
 def state_message(swarm: Swarm, unseen: dict[str, str], focused_pane: str | None,
-                  visible_tabs: list[str] | None, panels: dict[str, str] | None = None) -> dict:
+                  visible_tabs: list[str] | None, panels: dict[str, str] | None = None,
+                  view_filter: str | None = None) -> dict:
     """The core's full snapshot for the panels (v1 is always a full snapshot, never a delta).
     ``visible_tabs`` None: unknown (a viewer then counts itself visible). ``panels``: tab ->
-    its panel's pane (1.1), where a switch to that tab puts the keyboard."""
-    return {"state": {"protocol": PROTOCOL, "swarm": swarm_to_wire(swarm), "unseen": dict(unseen),
-                      "focused_pane": focused_pane, "visible_tabs": visible_tabs,
-                      "panels": dict(panels or {})}}
+    its panel's pane (1.1), where a switch to that tab puts the keyboard. ``view_filter``: the
+    filter every view shows (1.3; None leaves the field out)."""
+    st = {"protocol": PROTOCOL, "swarm": swarm_to_wire(swarm), "unseen": dict(unseen),
+          "focused_pane": focused_pane, "visible_tabs": visible_tabs, "panels": dict(panels or {})}
+    if view_filter is not None:
+        st["filter"] = view_filter
+    return {"state": st}
 
 
 # -- where the socket lives ----------------------------------------------------------------

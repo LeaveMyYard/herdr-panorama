@@ -29,6 +29,7 @@ NO_CORE_SECONDS = 600.0  # no core this long: the viewer exits, and herdr closes
 NO_CORE_CHECK = 10.0  # how often that is looked at
 PREPAINT_WAIT = 0.15  # a switch waits at most this long for the core to echo its focus announcement
 PREPAINT_SECONDS = 0.02  # then this long for the target panel to paint (a frame of herdr is ~20 ms)
+FILTER_ECHO_SECONDS = 1.0  # a filter chosen here wins over the core's older word for this long
 
 
 def crash_marker(pane_id: str):
@@ -113,6 +114,19 @@ class PanelClient:
             return False
         try:
             s.sendall(protocol.encode({"focusing": {"pane_id": pane_id}}))
+            return True
+        except OSError:
+            return False
+
+    def filter(self, name: str) -> bool:
+        """Tell the core the filter chosen here (1.3), so every view shows it. False without a
+        core: the choice stays this panel's until the next core's state."""
+        with self._mu:
+            s = self._sock if self.connected else None
+        if s is None:
+            return False
+        try:
+            s.sendall(protocol.encode({"filter": {"name": name}}))
             return True
         except OSError:
             return False
@@ -213,6 +227,7 @@ class PanelApp(SwarmApp):
         self._active: str | None = None  # the orchestrator herdr shows, as last applied to the cursor
         self._awaiting: str | None = None  # a switch's announced focus, until the core echoes it
         self._echo = threading.Event()
+        self._filter_sent: tuple[str, float] | None = None  # a filter chosen here, until the core echoes it
         self.my_pane = pane_id if pane_id is not None else os.environ.get("HERDR_PANE_ID")
         self.my_tab = tab_id if tab_id is not None else os.environ.get("HERDR_TAB_ID")
         self.connected = False
@@ -264,12 +279,17 @@ class PanelApp(SwarmApp):
         if not self.loaded:
             self.focus_pane = active or mine
         self.apply(swarm, marks=unseen)
+        self._core_filter(state.get("filter"))
         if active and active != self._active:
             # the operator's report: one selected row in every tab's panel, the orchestrator
             # herdr shows; a cursor moved by an arrow (its switch still pending) is left alone
             # until the shown one changes
             self._active = active
-            if self.view.orch != active:
+            if active not in render.nav(swarm, self.view)[0]:
+                # the filter hides it: no row is selected, and the arrows resume from it (_resume)
+                self.view.orch, self.view.focus, self._parked_orch = None, 0, active
+                self.repaint()
+            elif self.view.orch != active:
                 self.view.orch, self.view.focus = active, 0
                 self._default_children()
                 self.repaint()
@@ -277,6 +297,43 @@ class PanelApp(SwarmApp):
             self.herdr_focus(focused)
             if focused == self._awaiting:
                 self._echo.set()
+
+    def _core_filter(self, name) -> None:
+        """The filter every view shows (1.3; an older core sends none: this panel's own stays).
+        A filter chosen here is kept against the core's older word until the core echoes it
+        or FILTER_ECHO_SECONDS pass."""
+        if name not in render.FILTERS:
+            return
+        if self._filter_sent is not None:
+            sent, at = self._filter_sent
+            if name == sent or time.monotonic() - at >= FILTER_ECHO_SECONDS:
+                self._filter_sent = None
+            else:
+                return
+        if name != self.view.filter:
+            self._apply_filter(name)
+
+    def _set_filter(self, name: str) -> None:
+        """f or a click on a filter: shown here at once, and sent to the core for the others."""
+        self._apply_filter(name)
+        self._filter_sent = (name, time.monotonic()) if self.client.filter(name) else None
+
+    def _apply_filter(self, name: str) -> None:
+        """The panel's selected row is the orchestrator herdr shows: kept when the filter shows
+        it, none when it hides it (the arrows then resume from it); a cursor an arrow moved
+        stays while it is shown."""
+        v = self.view
+        v.filter = name
+        v.wheel.clear()
+        back = v.orch is None and self._active is not None
+        if back:
+            v.orch = self._active
+        self.resolve()
+        if v.orch is None:
+            v.focus = 0
+        elif back:
+            self._default_children()
+        self.repaint()
 
     @staticmethod
     def _herdr_shows(swarm, visible, focused) -> str | None:
@@ -299,6 +356,8 @@ class PanelApp(SwarmApp):
 
     def _status(self, connected: bool) -> None:
         self.connected = connected
+        if not connected:
+            self._filter_sent = None  # the next core's state decides
         self.no_core_since = None if connected else (self.no_core_since or time.monotonic())
         self.repaint()
 
