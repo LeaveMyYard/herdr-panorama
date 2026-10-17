@@ -473,8 +473,19 @@ pub fn decide(qs: &[Question], obs: &Observation, mode: Mode /* first | retry | 
   - A Rust stamp would either copy a hash of Python source or differ from it. If it differs, Python
     and Rust keep re-migrating over each other's stamp and take the write lock on every tool batch.
 - **Fix: the P0b bridge release** replaces the source hash with an explicit integer
-  `MIGRATION_REVISION` (the fallback that already exists at `store.py:374`) as `user_version`. Rust
-  shares the number.
+  `MIGRATION_REVISION` (the fallback that already exists at `store.py:374` on 0.10.5). Rust
+  shares both the number and its encoding.
+  - **The encoding.** `user_version` is not the bare revision. It is
+    `REVISION_BASE + MIGRATION_REVISION`, with `REVISION_BASE = -(1 << 31)`
+    (`src/herdr_inbox/store.py` in herdr-inbox #48: `revision_stamp()` writes it,
+    `stamped_revision()` reads it back).
+  - The sign bit marks a revision. A legacy crc32 stamp (`& 0x7FFFFFFF`, always 0..2^31-1) or 0
+    can then never read as a revision, let alone a higher one. Any non-negative value is
+    "unknown", and a migrating process migrates forward from it.
+  - Rust must stamp the same value. A plain `1` would read as a legacy stamp to Python, and the two
+    would re-migrate over each other's stamp.
+  - Rust reads it the same way: `user_version < 0` means revision `user_version + 2^31`, anything
+    else is unknown. `user_version` stays a signed 32-bit value (`i32` or `i64`, never `u32`).
   - Only the worker and the popup migrate, and only *forward*: a process never lowers a revision
     higher than its own.
   - **Hooks, the rewake watcher and MCP calls never migrate.** They check that the columns they use
@@ -789,7 +800,7 @@ Python bridge release per plugin. Rust starts sharing the database only after th
 | **P2 Inbox hooks and rewake watcher, plus the release path** | `herdr-inbox hook …`, the `store` module (claims and sessions, no migration), `inbox-core::decide` (hook and watcher paths). The full §4 path: release CI, `release.toml` bot, `install-bin.sh`, the Claude `launch` shim with contract matching, and the MCP-side download. | Ledger rows for `test_hook*`, `test_rewake`, `test_verified_delivery`, and the hook paths of `test_session_continuation`. **Fresh install**, then a `plugin update` to a newer commit (afterwards `plugin list --json` names the new `plugin_root`), of the herdr plugin on an isolated herdr 0.9.4+ (this workstation runs 0.9.3). The release PR raises the inbox's `min_herdr_version` to 0.9.4. A fresh install of the Claude plugin in a scratch `CLAUDE_CONFIG_DIR`, where hooks find the binary. The skew case is tested (Claude plugin newer than the binary: hooks degrade as §4 item 4 says). **Gate G1:** a week of your daily use with the Python worker, MCP and popup and the Rust hooks, followed by an audit query: no double delivery, no lost delivery, no exit-2 leak. | 4–6 d |
 | **P3 Panorama panel viewer** | `panorama panel` on protocol 1.1, `panorama-core::view::dock9e` | `design_9` and `design_10` goldens byte-identical. The isolated-herdr panel checks in DESIGN.md "As built" pass. 8 panels at under 5 MB each. | 3–5 d |
 | **P4 Panorama core and home view** | collector, core socket, panel manager, cockpit and home, `graph2a` and `narrow`, new-agent form, mouse, arming, hooks, report_thread MCP: about 7k lines of Python | All design and app-screen goldens. The safety tests (identity cursors, arming, follow guards, never closing panes) are ported. Ledger complete for panorama. **Gate G2:** a week as your daily view. | 12–18 d |
-| **P5 Inbox worker, MCP and CLI** | worker (owns migration from here on), `mcp` (rmcp), `ask`, `export`/`apply`, the rest of the `store` module | The decision table is reproduced. MCP `tools/list` goldens are identical. Remote export and apply pass against a Python remote and a Rust remote. | 7–10 d |
+| **P5 Inbox worker, MCP and CLI** | **Precondition:** herdr-inbox#50 is fixed before any `MIGRATION_REVISION` bump (§5.4); Rust can first raise the revision here. worker (owns migration from here on), `mcp` (rmcp), `ask`, `export`/`apply`, the rest of the `store` module | The decision table is reproduced. MCP `tools/list` goldens are identical. Remote export and apply pass against a Python remote and a Rust remote. | 7–10 d |
 | **P6 Inbox popup** | `herdr-inbox tui` | App-screen goldens. The key-safety and arming tests are ported. **Gate G3:** a week of daily use. | 6–9 d |
 | **P7 Remote machines** | kit `remote-machines` (machine list through the CLI path, ssh options, the ControlPath scheme); panorama's rsync mirror and the inbox's pull and outbox in their own repos | Both plugins' remote tests pass against a saved VM, each with the other plugin uninstalled. With both running: one control master per host. | 4–6 d |
 | **P8 Cutover, per repo** | Each repo: manifests switch to the binary for good, final release, Python deleted. Repos, ids and install commands unchanged. | A fresh `herdr plugin install` on Linux x86_64 and aarch64 and on macOS, **with only that plugin installed** (the independence check). The ledger is 100%. | 3–5 d |
@@ -812,14 +823,15 @@ Why this order:
 - **Mixed versions are already normal for the inbox.** Old MCP servers keep running until their
   sessions restart, which is why there is a versioned view, a never-drop-columns rule, and claims.
   Rust joins as one more version under the same rules, plus the P0b stamp rule:
-  - the integer revision;
+  - the integer revision, stored as `user_version = -2^31 + MIGRATION_REVISION` (§2.3);
   - only the worker and the popup migrate, and only forward;
   - hooks and MCP never migrate;
   - new fields in side tables only;
   - the same claim format and stale-claim timeout (60 s).
 
   Old pre-bridge MCP servers still re-stamp the database with their crc32 when they open it. The
-  bridge's worker treats any stamp that is not an integer revision it knows as "migrate forward".
+  bridge's worker treats a non-negative stamp (a crc32 or 0) or a lower revision as "migrate
+  forward", and leaves a higher one alone.
   The cost is a few idempotent migrations until those sessions restart, the same as an upgrade
   today. It is never a fight between Python and Rust, because Rust's hooks never write the stamp.
 - **Exactly once across the switch rests on two things.**
@@ -846,6 +858,15 @@ Why this order:
   The Rust worker takes the same `worker-<key>.lock`, so the two are never both live. On a herdr
   install (not a linked checkout) the bridge finds the newer version through the current
   `plugin_root` from herdr, not its own directory (§4 item 5).
+- **Before any `MIGRATION_REVISION` bump** (Python or Rust; revision 1 is the P0b bridge, whose
+  schema equals 0.10.5's), herdr-inbox#50 is fixed:
+  - Only the worker and the popup migrate, and `worker.ensure()` does nothing while any worker
+    holds the lock.
+  - An old-revision worker that never hands over (`handover_failed`, or a per-version plugin root
+    it never re-reads) keeps newer hooks and MCP "not ready" until the popup is opened.
+  - The fix is either a newer process telling a lower-revision worker to hand over or exit, or a
+    worker that re-checks the code revision on disk every tick. It is covered by a test with an r1
+    worker holding the lock and r2 hooks.
 - **Rollback.** Switch the manifest line back. Rust never changes the meaning of an existing column
   and never raises the revision beyond what the bridge knows before P5, so Python reads everything
   Rust wrote.
