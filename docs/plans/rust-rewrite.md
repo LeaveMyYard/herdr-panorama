@@ -473,8 +473,8 @@ pub fn decide(qs: &[Question], obs: &Observation, mode: Mode /* first | retry | 
   - A Rust stamp would either copy a hash of Python source or differ from it. If it differs, Python
     and Rust keep re-migrating over each other's stamp and take the write lock on every tool batch.
 - **Fix: the P0b bridge release** replaces the source hash with an explicit integer
-  `MIGRATION_REVISION` (the fallback that already exists at `store.py:374` on 0.10.5). Rust shares both the
-  number and its encoding.
+  `MIGRATION_REVISION` (the fallback that already exists at `store.py:374` on 0.10.5). Rust
+  shares both the number and its encoding.
   - **The encoding.** `user_version` is not the bare revision. It is
     `REVISION_BASE + MIGRATION_REVISION`, with `REVISION_BASE = -(1 << 31)`
     (`src/herdr_inbox/store.py` in herdr-inbox #48: `revision_stamp()` writes it,
