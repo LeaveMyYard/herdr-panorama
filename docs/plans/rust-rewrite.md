@@ -61,6 +61,7 @@ above.
 | D4 | Migration style | Strangler, inbox hooks first (§5.1) | this PR |
 | D5 | UI toolkit | ratatui 0.30 + crossterm 0.29 (§2.6) | this PR |
 | D6 | One continuation rule for both plugins | panorama's rule, pinned by captured fixtures (§1.3, item 3). It ships **first in Python** (the P0b bridge), then in Rust. | this PR |
+| D7 | Kit publication | All three repos are community open-source projects. The kit's API is **public from `v0.1.0`**: semver (0.x: a breaking change bumps the minor), a curated API, plugin-only parts such as `inbox_contract` in a clearly internal module or behind a feature, docs.rs-quality docs, a crates.io name check before the first publish, and the operator runs `cargo publish` himself (§2.3, "Kit publication") | Decided by you (2026-10-17) |
 
 D4–D6 are proposed in this PR and still need your decision.
 
@@ -252,12 +253,12 @@ The kit is **one crate with modules**, so there is one thing to tag and bump:
 
 - the features are `fake` (FakeHerdr), `tui`, `remote` and `sqlite` (the `questions` reader);
 - each plugin enables only what it uses;
-- below, `herdr-api`, `claude-session` and so on name **modules** of that crate.
+- below, `herdr-api`, `agent_session::claude` and so on name **modules** of that crate.
 
 | `herdr-agent-kit` module (shared, A) | Why it must not be copied |
 |---|---|
 | `herdr-api` (with `FakeHerdr`) | Both plugins need the whole herdr API and the same error model and sanitising |
-| `claude-session` | Discovery, tailing, the wire format, **continuation (D6)** and session-id validation: rows 2–4 have already drifted |
+| `agent_session::claude` | Discovery, tailing, the wire format, **continuation (D6)** and session-id validation: rows 2–4 have already drifted |
 | `agent-procs` | "Is this Claude Code", nested Claude, liveness: row 5 has already drifted |
 | `plugin-env` | The plugin environment, config.toml with reload, state dirs, flock, private socket dirs |
 | `remote-machines` | Machine list, ssh options and the ControlPath scheme. Each plugin keeps its own pull logic (an rsync mirror in panorama, `export`/`apply` in the inbox). |
@@ -323,7 +324,7 @@ is not needed.
 ### 2.3 Crates: responsibilities, main types and boundaries
 
 The rule throughout: **pure crates take data and the current time, and return data.** They do no
-IO, start no threads and read no environment. IO lives in the kit's `herdr-api`, `claude-session::io`,
+IO, start no threads and read no environment. IO lives in the kit's `herdr-api`, `agent_session::claude::io`,
 `agent-procs`, `plugin-env` and `remote-machines` modules, the `inbox-contract` `sqlite` reader, and
 the two binaries (including their `store` and `proto` modules).
 
@@ -333,11 +334,11 @@ graph LR
     PC[panorama-core: model + view]
     IC[inbox-core]
     IF[kit inbox-contract: formats]
-    CSf[kit claude-session::fold]
+    CSf[kit agent_session::claude::fold]
   end
   subgraph io
     HA[kit herdr-api]
-    CSio[kit claude-session::io]
+    CSio[kit agent_session::claude::io]
     AP[kit agent-procs]
     RM[kit remote-machines]
     PE[kit plugin-env]
@@ -400,7 +401,7 @@ pub enum AgentStatus { Idle, Working, Blocked, Done, Unknown }
   and records every request as `(method, params)`. All integration tests use it in place of the
   argv-recording CLI stub.
 
-**`claude-session`** is one implementation of everything about Claude Code's files. It replaces
+**`agent_session::claude`** is one implementation of everything about Claude Code's files. It replaces
 `scan/` and `collect.py`'s continuation code in panorama, and `transcript.py` in the inbox.
 
 ```rust
@@ -455,8 +456,7 @@ Claude specifics live only there, in the plugins' hook and MCP code, and in `.cl
 
 **Rename.** The kit's `claude_session` module is named `agent_session` (with `claude` below it)
 **in P1, before the `v0.1.0` tag**, since nobody depends on it before the tag; afterwards a rename
-is a breaking change under the semver policy below. The text below still says `claude-session` for
-the Claude part. The plugin crates (`panorama-core`, `inbox-core`) keep their names; neither names
+is a breaking change under the semver policy below. The plugin crates (`panorama-core`, `inbox-core`) keep their names; neither names
 a harness.
 
 **YAGNI.** No second harness is implemented before the operator asks for one; only the seams are
@@ -813,7 +813,7 @@ real herdr and Claude Code runs (the rule from `tests/fixtures/README.md`).
    scenarios, and dump each screen as `[text, fg, bg, bold]` runs. This is new, and it is the inbox
    popup's spec, since the inbox has no JS design goldens.
 3. **Model goldens.** `panorama snapshot --json` over every `tests/scenario.py` scenario, at fixed
-   `now` values. `claude-session` plus `panorama-core::model` must emit the same JSON.
+   `now` values. `agent_session::claude` plus `panorama-core::model` must emit the same JSON.
 4. **Differential replay.** Run the Python and Rust scanners side by side over your real transcripts
    at past instants (the replay oracle's method). Only counts and disagreements are printed, never
    content. Exit criterion: zero status or parent disagreements.
@@ -843,7 +843,7 @@ Python bridge release per plugin. Rust starts sharing the database only after th
 |---|---|---|---|
 | **P0a Harness** | Create the `herdr-agent-kit` repo. Add a Cargo workspace beside the Python code in both plugin repos, CI (Linux and macOS, musl), the kit-bump automation, and the ledger. Capture the design-independent recordings: herdr socket recordings, hook payloads, MCP `tools/list`. | CI green on empty workspaces in all three repos. Recordings committed. | 3–5 d |
 | **P0b Python bridge releases** (bugfix-class, inside the freeze) | **inbox:** the session-family delivery fix (already under way, by its own author); continuation rule D6; `is_claude` as in panorama (§1.3, row 5); one session-id validator (row 4); the integer `MIGRATION_REVISION` stamp with forward-only migration, and no migration from hooks or MCP (§2.3); `start_successor` able to start a Rust worker; an uncached, herdr-first `plugin_root` lookup for `installed_version()` and `start_successor()`, and a worker that exits when its herdr server is gone (§4 item 5); hooks resolve the interpreter once instead of going through the pyenv shim (saves 60–75 ms per hook on this machine, §6). **panorama:** the same continuation rule, session-id validator and shim fix. Then capture items 2, 3 and 5 of §5.2 from the bridged code. | Both bridges released and in your daily use. Their test suites green with every `HERDR_*` unset. Behaviour goldens captured. | 3–5 d |
-| **P1 Kit** | `herdr-api` (socket plus the CLI path, `FakeHerdr`), `claude-session` as `agent_session::claude` under neutral seams (§2.3), `agent-procs`, `plugin-env`, `inbox-contract` | Scanner model goldens match. Differential replay shows 0 disagreements against the **bridged** Python on your transcripts. `[inbox]`-format goldens match in Rust and in the TS mod. Kit tagged `v0.1.0`, and both plugin repos build against the tag. | 6–8 d |
+| **P1 Kit** | `herdr-api` (socket plus the CLI path, `FakeHerdr`), `agent_session` with `agent_session::claude` under neutral seams (§2.3), `agent-procs`, `plugin-env`, `inbox-contract` | Scanner model goldens match. Differential replay shows 0 disagreements against the **bridged** Python on your transcripts. `[inbox]`-format goldens match in Rust and in the TS mod. Kit tagged `v0.1.0`, and both plugin repos build against the tag. | 6–8 d |
 | **P2 Inbox hooks and rewake watcher, plus the release path** | `herdr-inbox hook …`, the `store` module (claims and sessions, no migration), `inbox-core::decide` (hook and watcher paths). The full §4 path: release CI, `release.toml` bot, `install-bin.sh`, the Claude `launch` shim with contract matching, and the MCP-side download. | Ledger rows for `test_hook*`, `test_rewake`, `test_verified_delivery`, and the hook paths of `test_session_continuation`. **Fresh install**, then a `plugin update` to a newer commit (afterwards `plugin list --json` names the new `plugin_root`), of the herdr plugin on an isolated herdr 0.9.4+ (this workstation runs 0.9.3). The release PR raises the inbox's `min_herdr_version` to 0.9.4. A fresh install of the Claude plugin in a scratch `CLAUDE_CONFIG_DIR`, where hooks find the binary. The skew case is tested (Claude plugin newer than the binary: hooks degrade as §4 item 4 says). **Gate G1:** a week of your daily use with the Python worker, MCP and popup and the Rust hooks, followed by an audit query: no double delivery, no lost delivery, no exit-2 leak. | 4–6 d |
 | **P3 Panorama panel viewer** | `panorama panel` on protocol 1.1, `panorama-core::view::dock9e` | `design_9` and `design_10` goldens byte-identical. The isolated-herdr panel checks in DESIGN.md "As built" pass. 8 panels at under 5 MB each. | 3–5 d |
 | **P4 Panorama core and home view** | collector, core socket, panel manager, cockpit and home, `graph2a` and `narrow`, new-agent form (design 1C: harness picker with per-harness ASCII art, Claude the only entry now; Q179), mouse, arming, hooks, report_thread MCP: about 7k lines of Python | All design and app-screen goldens. The safety tests (identity cursors, arming, follow guards, never closing panes) are ported. Ledger complete for panorama. **Gate G2:** a week as your daily view. | 12–18 d |
@@ -855,7 +855,7 @@ Python bridge release per plugin. Rust starts sharing the database only after th
 Why this order:
 
 - P2 comes first after the kit because it is small, it is the hottest path (§6), and it proves
-  `claude-session`, the `store` module and **the whole release and install path** against real
+  `agent_session::claude`, the `store` module and **the whole release and install path** against real
   traffic.
 - P3 comes next because its protocol is already language-neutral.
 - After P1, the panorama track (P3, P4) and the inbox track (P2, P5, P6) can run in parallel.
@@ -997,7 +997,7 @@ The estimate after the rewrite is 100–150 MB and about 2% of a core.
 | Risk | Mitigation |
 |---|---|
 | Parity drift: subtle behaviour lost in translation (arming, follow guards, delivery rules) | Captured goldens, the decision table, differential replay, the ledger (§5.2). A week of daily use per phase. |
-| The target moves while porting (Python features, Claude Code transcript changes) | Per-component freeze (D2). One `claude-session` crate, so a format change is fixed once, not 2–3 times. |
+| The target moves while porting (Python features, Claude Code transcript changes) | Per-component freeze (D2). One `agent_session::claude` module, so a format change is fixed once, not 2–3 times. |
 | rmcp API churn | Pin it, use a thin adapter, and keep the hand-written JSON-RPC fallback (§3) |
 | Terminal behaviour differs from Textual's (focus reports, mouse modes, ghostty quirks) | App-screen goldens plus manual checks on the isolated herdr with ghostty. crossterm and Textual emit the same DEC modes. |
 | herdr API changes (0.9.3 → 0.9.5 already) | One `herdr-api` crate with recorded fixtures. `min_herdr_version` is kept honest. |
