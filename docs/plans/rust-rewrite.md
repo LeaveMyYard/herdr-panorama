@@ -484,6 +484,8 @@ pub fn decide(qs: &[Question], obs: &Observation, mode: Mode /* first | retry | 
     "unknown", and a migrating process migrates forward from it.
   - Rust must stamp the same value. A plain `1` would read as a legacy stamp to Python, and the two
     would re-migrate over each other's stamp.
+  - Rust reads it the same way: `user_version < 0` means revision `user_version + 2^31`, anything
+    else is unknown. `user_version` stays a signed 32-bit value (`i32` or `i64`, never `u32`).
   - Only the worker and the popup migrate, and only *forward*: a process never lowers a revision
     higher than its own.
   - **Hooks, the rewake watcher and MCP calls never migrate.** They check that the columns they use
@@ -828,7 +830,8 @@ Why this order:
   - the same claim format and stale-claim timeout (60 s).
 
   Old pre-bridge MCP servers still re-stamp the database with their crc32 when they open it. The
-  bridge's worker treats any stamp that is not an integer revision it knows as "migrate forward".
+  bridge's worker treats a non-negative stamp (a crc32 or 0) or a lower revision as "migrate
+  forward", and leaves a higher one alone.
   The cost is a few idempotent migrations until those sessions restart, the same as an upgrade
   today. It is never a fight between Python and Rust, because Rust's hooks never write the stamp.
 - **Exactly once across the switch rests on two things.**
