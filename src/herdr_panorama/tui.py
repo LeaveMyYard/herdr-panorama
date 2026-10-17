@@ -289,7 +289,8 @@ class SwarmApp(App):
         if self.live_refresh and self.home_mode and cockpit.per_tab():
             self.core = core.Core.start(protocol.socket_path(), protocol.lock_path(),
                                         on_seen=lambda ids: self._to_ui(self._seen, ids),
-                                        verify_pane=self._owned_pane, on_open=self._open_key)
+                                        verify_pane=self._owned_pane, on_open=self._open_key,
+                                        on_focusing=lambda pane: self._to_ui(self.focusing, pane))
             if self.core is not None:
                 self.panels = panels.Manager(
                     verified=self.core.verified_panes,
@@ -580,6 +581,12 @@ class SwarmApp(App):
         if focused != self.pane_focused:
             self.pane_focused = focused
             self.repaint()
+
+    def focusing(self, pane_id: str) -> None:
+        """A per-tab panel is about to switch tabs and put the keyboard on ``pane_id``: published
+        now, so that panel paints its focused look while still hidden and is shown with it (the
+        operator's report: the wrong focus colour for a frame). herdr's own event follows."""
+        self.herdr_focus(pane_id)
 
     def _refocus(self) -> None:
         """Panorama's pane id just changed (a dock or follow across workspaces gives it a new

@@ -1694,6 +1694,35 @@ has proven itself (the operator, Q140).
   1.1). Going into an agent (Enter on the docked entry, or `g`) is `agent.focus`. The home
   panorama no longer docks or follows in per-tab mode, and `home.ensure` brings it back to
   its own tab.
+- **One selected row in every panel** (the operator's report, after #43).
+  - **The selected row** is the local orchestrator in the tab herdr shows (`state.visible_tabs`;
+    else the one whose pane has the focus). It is the same in every tab's panel, hidden ones
+    included, because each applies it from the core's state, not from its own cursor.
+  - **Arrows:** ↑/↓ move from it, and the switch follows. A state that still shows the same tab
+    doesn't pull a pending move back.
+  - **Hover:** the keyboard cursor no longer wears the hover look in a panel
+    (`View.cursor_look`). The hover look is the mouse's alone and clears when the mouse leaves.
+    The shown orchestrator is the docked entry, so it already has the docked bar.
+- **The focus colour on the first frame** (the operator's report).
+  - **The cause:** a panel switch (keep focus) showed the target panel's last frame, painted
+    while hidden and unfocused (`#101215`). Its focus-in came about a frame later. A state still
+    naming the old focused pane could then flip it back once more before herdr's event caught
+    up.
+  - **The fix:**
+    - before `tab.focus`, the switching panel announces the target pane (`focusing`, protocol
+      1.2). The core publishes it as the focused pane, and the target paints focused while
+      still hidden;
+    - the switcher waits for the core's echo (at most 150 ms), then 20 ms for the target to
+      paint, then shows the tab;
+    - the switching panel keeps its own look until the switch has finished.
+  - **Measured** with an attached client on an isolated herdr 0.9.3, arrow switches between two
+    tabs' panels:
+    - before, 4 of 4 switches showed the target panel unfocused for 85–90 ms, and 2 of those
+      flipped focused/unfocused once more;
+    - after, 8 of 8 went straight to the focused colour in one frame, about 20 ms later than
+      before, which is the paint wait.
+  - **Not covered:** switches herdr does by itself (its tab bar or keys) aren't announced, so
+    they keep herdr's own timing.
 - **+ New agent.** In per-tab mode the tab is built with `layout.apply`: the panel's command
   (`herdr.PANEL_COMMAND`, the same as the manifest's, with the plugin's environment) on the
   left, a plain pane on the right for the agent. No swap ever happens there.

@@ -250,6 +250,9 @@ class View:
     dock: bool = False  # cockpit: panorama is docked next to an agent -> the 3a panel
     zoom_hint: bool = False  # docked next to an agent: z zooms between the panel and the graph
     open_key: tuple[str, str] = ("pfx+spc", "pfx+spc")  # the open key, (full, short): openkey.py
+    # the keyboard cursor wears the hover look (design 3a has no "selected" look). A per-tab panel
+    # turns that off: its selected row is the shown orchestrator, docked there; hover is the mouse's
+    cursor_look: bool = True
     # the docked panel's look from herdr's theme, focused or not (theme.panel_colors): its
     # background and panorama's text colours mapped; None: panorama's own colours (design 9e)
     panel: tuple[str, dict] | None = None
@@ -1958,7 +1961,7 @@ def dock_row(cv: Screen, y: int, o: Orchestrator, view: View, docked: bool, curs
         items.append((t, None))
         if t is not None:
             items += [(t, r) for r in _spawn_rows(t)]
-    hov = not docked and (cursor or view.hover == ("orch", (o.pane_id,)))
+    hov = not docked and ((cursor and view.cursor_look) or view.hover == ("orch", (o.pane_id,)))
     h = 2 + len(items)
     xr = w - 1  # right-aligned fields end at the real right edge (the design's 45 at 46 columns)
     cv.area(0, w, y, y + h, "orch", (o.pane_id,))
@@ -2081,7 +2084,7 @@ def dock_panel(swarm: Swarm, view: View, w: int, h: int, stale: str | None = Non
         if cursor:
             sel = (y, y + ch)
         y += ch + 1
-    hov = view.orch == NEW_ROW or view.hover == ("new", ())
+    hov = (view.orch == NEW_ROW and view.cursor_look) or view.hover == ("new", ())
     cv.area(1, w - 1, y, y + 1, "new", ())
     if hov:
         cv.bg(1, y, w - 2, 1, DOCK_HOV)

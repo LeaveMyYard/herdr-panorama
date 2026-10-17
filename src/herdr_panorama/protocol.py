@@ -18,7 +18,7 @@ from pathlib import Path
 
 from .model import Agent, BgTask, Orchestrator, Phase, Swarm, Thread
 
-PROTOCOL = "1.1"  # 1.1: state.panels, the open request
+PROTOCOL = "1.2"  # 1.1: state.panels, the open request; 1.2: focusing
 MAX_LINE = 4 * 1024 * 1024  # a longer line is refused and the connection closed
 
 

@@ -26,6 +26,8 @@ DIM = 0.5  # how far a disconnected panel's colours go toward the background
 BACKOFF = (0.25, 0.5, 1.0, 2.0, 5.0)  # reconnect waits, the last one repeats
 NO_CORE_SECONDS = 600.0  # no core this long: the viewer exits, and herdr closes its pane
 NO_CORE_CHECK = 10.0  # how often that is looked at
+PREPAINT_WAIT = 0.15  # a switch waits at most this long for the core to echo its focus announcement
+PREPAINT_SECONDS = 0.02  # then this long for the target panel to paint (a frame of herdr is ~20 ms)
 
 
 def crash_marker(pane_id: str):
@@ -80,6 +82,19 @@ class PanelClient:
                 s.close()
             except OSError:
                 pass
+
+    def focusing(self, pane_id: str) -> bool:
+        """Announce a switch's focus to the core (it publishes it before the tab is shown).
+        False without a core."""
+        with self._mu:
+            s = self._sock if self.connected else None
+        if s is None:
+            return False
+        try:
+            s.sendall(protocol.encode({"focusing": {"pane_id": pane_id}}))
+            return True
+        except OSError:
+            return False
 
     def seen(self, ids: list[str]) -> None:
         """Report seen agents; queued while there is no core, sent again after the welcome."""
@@ -173,6 +188,10 @@ class PanelApp(SwarmApp):
         super().__init__(source=lambda: self._latest, clock=clock, live_refresh=False, home_mode=True,
                          cockpit_mode=True)  # Enter, a click and the arrows switch chats (_dock below)
         self.panes_of: dict[str, str] = {}  # tab -> its panel, from the core's state
+        self.view.cursor_look = False  # the selected row is the shown orchestrator; hover is the mouse's
+        self._active: str | None = None  # the orchestrator herdr shows, as last applied to the cursor
+        self._awaiting: str | None = None  # a switch's announced focus, until the core echoes it
+        self._echo = threading.Event()
         self.my_pane = pane_id if pane_id is not None else os.environ.get("HERDR_PANE_ID")
         self.my_tab = tab_id if tab_id is not None else os.environ.get("HERDR_TAB_ID")
         self.connected = False
@@ -219,12 +238,42 @@ class PanelApp(SwarmApp):
         self.panes_of = {t: p for t, p in got.items() if isinstance(t, str) and isinstance(p, str)} \
             if isinstance(got, dict) else {}
         self._latest = swarm
-        if not self.loaded:
-            self.focus_pane = mine
-        self.apply(swarm, marks=unseen)
         focused = state.get("focused_pane")
+        active = self._shown(swarm, vis, focused)
+        if not self.loaded:
+            self.focus_pane = active or mine
+        self.apply(swarm, marks=unseen)
+        if active and active != self._active:
+            # the operator's report: one selected row in every tab's panel, the orchestrator
+            # herdr shows; a cursor moved by an arrow (its switch still pending) is left alone
+            # until the shown one changes
+            self._active = active
+            if self.view.orch != active:
+                self.view.orch, self.view.focus = active, 0
+                self._default_children()
+                self.repaint()
         if isinstance(focused, str):
             self.herdr_focus(focused)
+            if focused == self._awaiting:
+                self._echo.set()
+
+    @staticmethod
+    def _shown(swarm, visible, focused) -> str | None:
+        """The local orchestrator in the tab herdr shows, else the one whose pane has the focus."""
+        local = [o for o in swarm.orchestrators if not o.machine]
+        if isinstance(visible, list):
+            hit = next((o.pane_id for o in local if o.tab_id and o.tab_id in visible), None)
+            if hit:
+                return hit
+        return next((o.pane_id for o in local if focused and o.pane_id == focused), None)
+
+    def herdr_focus(self, pane_id: str) -> None:
+        """While this panel's own switch runs it keeps its look (it is still on screen until the
+        tab changes); the focus is judged again when the switch ends (_docked -> _refocus)."""
+        if self.docking and pane_id and pane_id != self.my_pane:
+            self.herdr_focused_pane = pane_id
+            return
+        super().herdr_focus(pane_id)
 
     def _status(self, connected: bool) -> None:
         self.connected = connected
@@ -286,12 +335,24 @@ class PanelApp(SwarmApp):
                 panel = self.panes_of.get(tab)
                 here = {p.get("pane_id") for p in snap.get("panes") or [] if isinstance(p, dict) and p.get("tab_id") == tab}
                 if keep_focus and panel in here:
+                    self._prepaint(panel)
                     err = herdr.focus_tab(tab) or herdr.focus_pane(panel)
                 else:  # into the agent; a tab without a panel yet gets one there (the core)
                     err = herdr.focus_agent(pane_id)
         except Exception as exc:  # noqa: BLE001 - never kill the view
             err = f"{type(exc).__name__}: {exc}"
         self._to_ui(self._docked, err)
+
+    def _prepaint(self, panel: str) -> None:
+        """Before showing the target's tab: the core announces the focus, so the target panel
+        paints its focused look while hidden and herdr shows it with it on the first frame."""
+        self._echo.clear()
+        self._awaiting = panel
+        try:
+            if self.client.focusing(panel) and self._echo.wait(PREPAINT_WAIT):
+                time.sleep(PREPAINT_SECONDS)
+        finally:
+            self._awaiting = None
 
     def action_answer(self) -> None:
         if self._usable():
