@@ -48,8 +48,8 @@ above.
   isolated, and the most frequently started processes. Porting them first proves the kit and the
   release path (fresh installs included) at the lowest risk.
 - **Effort, rough:** about 53–80 agent-days of building plus review rounds over 10 phases. On top
-  of that come three week-long daily-use gates that you run. That is about 12–19 calendar weeks on
-  one track, or about 9–13 with the two plugin tracks in parallel after phase 1 (§7.3).
+  of that come three week-long daily-use gates that you run. That is about 12–20 calendar weeks on
+  one track, or about 9–14 with the two plugin tracks in parallel after phase 1 (§7.3).
 
 ### Decisions
 
@@ -1052,8 +1052,8 @@ The estimate after the rewrite is 100–150 MB and about 2% of a core.
 |---|---|---|
 | Build, including review rounds (sum of §5.3) | **53–80** | — |
 | Gates G1, G2, G3: a week each of your daily use | 0 agent-days | 3 weeks, set by you, serial within their track |
-| **One track** | 53–80 | 53–80 d ÷ 5 per week ≈ 10.5–16 weeks, plus up to 3 gate weeks with nothing to work on ≈ **12–19 weeks** |
-| **Two tracks after P1** (panorama: P3, P4; inbox: P2, P5, P6, P7) | same | P0a–P1 ≈ 2.5–3.5 weeks, then the longer track (inbox, about 4.5–6.5 weeks plus G1 and G3; panorama plus G2 runs alongside), then P8 ≈ **9–13 weeks** |
+| **One track** | 53–80 | 53–80 d ÷ 5 per week ≈ 10.5–16 weeks, plus up to 3 gate weeks with nothing to work on ≈ **12–20 weeks** |
+| **Two tracks after P1** (panorama: P3, P4; inbox: P2, P5, P6, P7) | same | P0a–P1 ≈ 2.7–3.9 weeks, then the longer track (inbox, about 4.5–6.5 weeks plus G1 and G3; panorama plus G2 runs alongside), then P8 ≈ **9–14 weeks** |
 
 - The biggest single item is P4 (12–18 d): `render.py`, `tui.py`, collect, scan, core and panels,
   about 7k lines, plus the panorama ledger.
