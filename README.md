@@ -154,7 +154,8 @@ herdr-inbox popup (`a`, `i`) when that plugin is installed.
 - **Claude Code**, any version that writes transcripts under `~/.claude/projects`
   (`CLAUDE_CONFIG_DIR` is honoured). The optional Claude Code plugin below needs plugin support.
 - **[uv](https://docs.astral.sh/uv/)** on herdr's `PATH`; it brings its own Python 3.11+. The
-  optional plugin's hooks use the system `python3`.
+  optional plugin's hooks use the system `python3`, resolved once and then run directly (no
+  version-manager shim on every hook).
 
 ## Install (herdr plugin)
 
@@ -265,7 +266,9 @@ The view works without it. The plugin adds, for the sessions where it is install
 ```
 
 or `claude plugin marketplace add LeaveMyYard/herdr-panorama` then
-`claude plugin install herdr-panorama@herdr-panorama`. The hooks need `python3` on `PATH` (stdlib only); the MCP server needs `uv`.
+`claude plugin install herdr-panorama@herdr-panorama`. The hooks need `python3` on `PATH` (stdlib only): the interpreter it resolves to is cached in the plugin's
+data directory (`${CLAUDE_PLUGIN_DATA}/python-interpreter`) and run directly afterwards, so a pyenv-style shim
+costs its 60–75 ms once, not on every hook. The MCP server needs `uv`.
 
 ## Configure
 

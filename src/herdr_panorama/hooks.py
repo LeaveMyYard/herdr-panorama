@@ -1,6 +1,7 @@
 """Opt-in Claude Code hooks (the Claude Code plugin in .claude-plugin/).
 
-Run directly by ``hooks/hooks.json`` as ``sh -c 'python3 -I "$0" <kind> …; exit 0' hooks.py``:
+Run directly by ``hooks/hooks.json`` as ``sh -c 'sh "$0" "$1" <kind> …; exit 0' run-hook.sh hooks.py``
+(``hooks/run-hook.sh`` execs ``python3 -I hooks.py <kind>`` with the interpreter cached in ``$CLAUDE_PLUGIN_DATA``):
 stdlib only, no uv and no virtualenv on the hook path, and the shell forces exit 0.
 For SubagentStop, exit code 2 "prevents the subagent from stopping" and its stderr
 is fed back to the agent, so nothing on this path may ever exit 2 (review B1).
