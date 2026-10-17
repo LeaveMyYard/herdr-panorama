@@ -805,9 +805,9 @@ def mark_of(agents, unseen: dict[str, str], roll: bool = False) -> tuple[str, bo
     return (evs[0], roll and evs[0] == "done") if evs else None
 
 
-def _pulse(frame: float, ev: str, quiet: bool, base: str) -> str:
+def _pulse(frame: float, ev: str, quiet: bool, base: str, cap: float = 1.0) -> str:
     k = 0.15 + 0.3 * wave(frame) if quiet else 0.35 + 0.65 * wave(frame)
-    return mix(base, ST[{"fail": FAIL, "wait": WAIT, "done": DONE}[ev]], k)
+    return mix(base, ST[{"fail": FAIL, "wait": WAIT, "done": DONE}[ev]], k * cap)
 
 
 def _tint(frame: float, ev: str, quiet: bool, base: str) -> str:
@@ -815,10 +815,10 @@ def _tint(frame: float, ev: str, quiet: bool, base: str) -> str:
     return mix(base, ST[{"fail": FAIL, "wait": WAIT, "done": DONE}[ev]], k)
 
 
-def pulse_col(m: tuple[str, bool], base: str, frame: float) -> str:
+def pulse_col(m: tuple[str, bool], base: str, frame: float, cap: float = 1.0) -> str:
     """Never fully off, so a still frame shows it too: full 35..100 %, quiet 15..45 % of the
-    event colour over ``base``."""
-    return Anim(_pulse, (m[0], m[1], base), frame)
+    event colour over ``base`` (times ``cap``: the selected card's share, SELECTED_PULSE)."""
+    return Anim(_pulse, (m[0], m[1], base, cap) if cap != 1.0 else (m[0], m[1], base), frame)
 
 
 def pulse_tint(m: tuple[str, bool], base: str, frame: float) -> str:
@@ -860,6 +860,9 @@ def restyle(scr: Screen, frame: float) -> list[tuple[int, int, int]]:
     return spans
 
 
+SELECTED_PULSE = 0.6  # the selected card's largest share of the event colour (others: 100 %)
+
+
 def pulse_box(cv: Screen, x: int, y: int, w: int, h: int, m: tuple[str, bool] | None, frame: float,
               base: str = LINE) -> None:
     """The whole border (corners, sides, the animated edge and its sweep) in the pulse colour.
@@ -868,7 +871,10 @@ def pulse_box(cv: Screen, x: int, y: int, w: int, h: int, m: tuple[str, bool] | 
     lost under its animation)."""
     if m is None:
         return
-    c = pulse_col(m, base, frame)
+    # the selected card (base: its selection colour) takes at most SELECTED_PULSE of the event
+    # colour, so even a failed or question pulse at its peak never matches an unselected
+    # card's (which reaches the full event colour): review of #46
+    c = pulse_col(m, base, frame, SELECTED_PULSE if base in (HI, DIM) else 1.0)
     for i in range(w):
         for yy in (y, y + h - 1):
             if 0 <= yy < cv.h and 0 <= x + i < cv.w:

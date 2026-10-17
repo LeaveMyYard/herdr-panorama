@@ -698,7 +698,9 @@ compares cell for cell (the whole 3a panel; every pulsed cell of 2a).
     whole border over the line colour, the selection's white included, so a selected
     pulsing card looked exactly like any other pulsing card. Now the pulse runs over the
     card's own border colour: white when focused, grey when selected in another column. The
-    current card stays the brightest at every point of the pulse.
+    current card takes at most 60 % of the event colour (`SELECTED_PULSE`), the others up to
+    100 % (review of #46). So even a failed or question pulse at its peak (`#ff6b6b`,
+    `#ffb547`) stays apart from an unselected card's: the selected one is a paler shade.
   - This is a deliberate difference from the design. The design comparisons
     (`test_unseen`, `test_smooth`) set it aside with the `design_pulse` fixture, and
     `test_current_card` covers it. The working sweep and the state edge were already drawn
