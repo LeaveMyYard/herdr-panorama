@@ -1746,7 +1746,9 @@ has proven itself (the operator, Q140).
     - it still has the label `Panorama panel`, no agent, and is not focused: not the focused
       pane, not the pane its tab remembers as focused (`layouts[].focused_pane_id`: the
       operator was last in it, before the crash or since the restore), and no focus event for
-      it since the restore was first seen;
+      it in the core's whole focus log, which after a crash holds only events since the
+      restore (checked again right before the close). Without a live focus stream the core
+      decides nothing;
     - `pgrep -P`: the shell has no child (no background job), and `ps -o etime`: it is younger
       than 15 s, so the operator has had no time to use it unseen before the core's first look;
     - a second `pane process-info`, right before the close, still says the same.

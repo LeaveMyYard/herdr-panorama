@@ -550,7 +550,8 @@ def test_a_panel_herdr_restored_as_a_plain_shell_is_closed_and_made_again_in_its
     assert again.closed == set()  # closing a restored panel is not the operator closing it
 
 
-@pytest.mark.parametrize("case", ["never-recorded", "same-terminal", "relabelled", "agent", "focused", "tab-focus",
+@pytest.mark.parametrize("case", ["never-recorded", "same-terminal", "no-terminal-recorded", "pane-without-terminal",
+                                  "relabelled", "agent", "focused", "focused-flag", "tab-focus",
                                   "in-use", "background-job", "children-unknown", "old-shell",
                                   "age-unknown", "quit-cleanly"])
 def test_a_restored_pane_is_closed_only_when_provably_our_unused_panel(world, tmp_path, case):
@@ -572,12 +573,20 @@ def test_a_restored_pane_is_closed_only_when_provably_our_unused_panel(world, tm
     pane = world.pane(panel)
     if case == "same-terminal":
         pane["terminal_id"] = m.record[panel]["terminal"]
+    elif case == "no-terminal-recorded":
+        again_rec = json.loads((tmp_path / "panels.json").read_text())
+        again_rec["panes"][panel].pop("terminal")
+        (tmp_path / "panels.json").write_text(json.dumps(again_rec))
+    elif case == "pane-without-terminal":
+        pane.pop("terminal_id")
     elif case == "relabelled":
         pane["label"] = "notes"
     elif case == "agent":
         pane["agent"] = "claude"
     elif case == "focused":
         world.focus = ("w1:t2", panel)
+    elif case == "focused-flag":  # herdr's per-pane flag
+        pane["focused"] = True
     elif case == "tab-focus":  # the operator was last in it (then went to another tab)
         world.tab_focus = {"w1:t2": panel}
     elif case == "in-use":
@@ -594,6 +603,7 @@ def test_a_restored_pane_is_closed_only_when_provably_our_unused_panel(world, tm
     assert not closes(world)
     assert panel in world.order("w1:t2") and "w1:p60" in world.order("w1:t4")
     pane.pop("agent", None)
+    pane.pop("focused", None)
     pane["label"] = PANEL_LABEL
     world.shell.pop(panel, None)
     world.focus = ("w1:t1", "w1:p1")
@@ -748,3 +758,65 @@ def test_only_a_shell_seen_young_enough_is_closed(world, tmp_path):
     restarted(world, tmp_path)
     assert ("close_pane", panel) in world.calls
     assert panels.RESTORED_SECONDS <= 15
+
+
+def test_a_pane_used_before_the_cores_first_pass_is_never_closed(world, tmp_path):
+    """The final review's scenario: right after the restart, before the core's first pass, the
+    operator clicks into the restored panel, runs a command that finishes, and clicks the
+    agent. The snapshot and the tab's focus now say "agent", the shell is idle and young, but
+    the core's focus log (live from its start) saw the click: never closed."""
+    _, panel = recorded_panel(world, tmp_path)
+    world.restart_herdr()
+    world.log = cockpit.FocusLog()  # the new core's stream, connected at its start
+    world.log.live = True
+    world.log.record({"type": "pane_focused", "pane_id": panel})
+    world.log.record({"type": "pane_focused", "pane_id": "w1:p2"})
+    world.focus = ("w1:t2", "w1:p2")
+    world.tab_focus = {"w1:t2": "w1:p2"}
+    again = restarted(world, tmp_path)
+    assert not closes(world) and panel not in again.record
+
+
+@pytest.mark.parametrize("stream", ["none", "not-live"])
+def test_without_a_live_focus_stream_nothing_is_closed(world, tmp_path, stream):
+    """Use of the pane could not be seen: the core decides nothing, and after its passes the
+    pane is given up on (left as a shell)."""
+    _, panel = recorded_panel(world, tmp_path)
+    world.restart_herdr()
+    if stream == "none":
+        world.log = None
+    else:
+        world.log = cockpit.FocusLog()  # live stays False
+    again = restarted(world, tmp_path, passes=panels.RESTORE_PASSES + 1)
+    assert not closes(world) and panel not in again.record and panel in world.order("w1:t2")
+
+
+def test_a_click_during_the_looks_stops_the_close(world, tmp_path, monkeypatch):
+    """Focus is read again right before ``pane close``: a click into the pane while the core
+    was asking about its processes leaves it alone."""
+    _, panel = recorded_panel(world, tmp_path)
+    world.restart_herdr()
+    looks = []
+
+    def pane_shell(pid):
+        looks.append(pid)
+        if len(looks) == 2:  # the operator clicks in while the core looks the second time
+            world.log.record({"type": "pane_focused", "pane_id": panel})
+        return True, 7000
+    monkeypatch.setattr(herdr, "pane_shell", pane_shell)
+    monkeypatch.setattr(herdr, "shell_state", lambda pid: (3.0, False))
+    restarted(world, tmp_path, swarm=orch("w1:p2"))
+    assert len(looks) == 2 and ("close_pane", panel) not in world.calls
+
+
+def test_a_focus_stream_that_connects_within_the_passes_lets_the_core_decide(world, tmp_path):
+    """No live stream yet is "ask again", not a verdict: once the stream is up (with no click on
+    the pane), the restored panel is closed within the passes."""
+    _, panel = recorded_panel(world, tmp_path)
+    world.restart_herdr()
+    world.log = cockpit.FocusLog()
+    again = restarted(world, tmp_path)
+    assert not closes(world) and panel in again.record
+    world.log.live = True
+    again.reconcile(world.snapshot(), orch("w1:p2", "w1:p3"))
+    assert ("close_pane", panel) in world.calls

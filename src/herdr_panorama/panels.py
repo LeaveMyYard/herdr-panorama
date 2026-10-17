@@ -40,7 +40,8 @@ leaves a record. A pane is closed as a restored panel only when all of these hol
   handoff, where the panel keeps running: that case is told apart only by the next check;
 - it still has the panel's label, no agent, and is not focused: not the focused pane, not the
   pane its tab remembers as focused (``layouts[].focused_pane_id``: the operator was last in it,
-  before the crash or since), and no focus event for it since the restore was first seen;
+  before the crash or since), and no focus event for it in this core's whole focus log (checked
+  again right before the close). Without a live focus stream nothing is decided;
 - ``pane process-info``: one foreground process, the pane's own ``shell_pid``, whose argv is
   a plain shell (an ``exec``-ed program keeps the pid but not the argv);
 - ``pgrep -P``: the shell has no child (no background job), and ``ps -o etime``: it is younger
@@ -156,7 +157,7 @@ class Manager:
         self._mu = threading.Lock()
         self.started = False  # the start batch ran
         self._passes = 0  # reconcile passes so far
-        self._restore_seen: tuple[int, float, float] | None = None  # (pass, clock, monotonic) of the first
+        self._restore_seen: int | None = None  # the pass that first saw a restore
 
     # -- state -----------------------------------------------------------------------------
 
@@ -199,8 +200,8 @@ class Manager:
             if was and now and was != now:  # a restore, or a live handoff (the panel still runs)
                 candidates.append((pane_id, p))
         if candidates and self._restore_seen is None:
-            self._restore_seen = (self._passes, self.clock(), time.monotonic())
-        passes_since = self._passes - self._restore_seen[0] if self._restore_seen else 0
+            self._restore_seen = self._passes
+        passes_since = self._passes - self._restore_seen if self._restore_seen is not None else 0
         for pane_id, p in candidates:
             verdict = self._judge(pane_id, p, snap) if passes_since < RESTORE_PASSES else "late"
             if verdict == "again":
@@ -229,8 +230,12 @@ class Manager:
             return "relabelled"
         if p.get("agent"):
             return "an agent"
-        if p.get("focused") or snap.get("focused_pane_id") == pane_id or _tab_focus(snap, pane_id) \
-                or self._focused_since_restore(pane_id):
+        if p.get("focused") or snap.get("focused_pane_id") == pane_id or _tab_focus(snap, pane_id):
+            return "focused"
+        seen = self._focused_ever(pane_id)
+        if seen is None:
+            return "again"  # no live focus stream: never decide without it
+        if seen:
             return "focused"
         plain, shell = herdr.pane_shell(pane_id)
         if plain is None:
@@ -246,17 +251,22 @@ class Manager:
         # typed in the few ms between this look and the close would still go with the pane
         if herdr.pane_shell(pane_id) != (True, shell):
             return "in use"
+        if self._focused_ever(pane_id) is not False:  # a click during the looks above
+            return "focused"
         err = herdr.close_pane(pane_id)
         if err:
             return f"could not close: {err}"
         log.warning("closed %s: a panel herdr restored as a plain shell; a new one is made", pane_id)
         return "close"
 
-    def _focused_since_restore(self, pane_id: str) -> bool:
-        if self.focus_log is None or self._restore_seen is None:
-            return False
+    def _focused_ever(self, pane_id: str) -> bool | None:
+        """Whether this core's focus stream has seen the pane focused, ever (its whole log: a
+        core started after a crash only saw events after the restore); None when there is no
+        live stream to ask."""
+        if self.focus_log is None or not getattr(self.focus_log, "live", False):
+            return None
         return any(d.get("type") == "pane_focused" and d.get("pane_id") == pane_id
-                   for d in self.focus_log.since(self._restore_seen[2]))
+                   for d in self.focus_log.since(float("-inf")))
 
     def _remember(self, snap: dict, sv: Survey) -> None:
         """Record our running panels (pane id, tab, herdr's terminal id) for after a herdr
