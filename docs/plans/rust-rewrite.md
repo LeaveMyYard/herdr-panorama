@@ -820,8 +820,8 @@ Why this order:
   - panorama's state files keep their formats and places: `unseen.json`, `home-*.json`,
     `panels-*.json`, `hooks/`, `events/`, and the core socket and lock.
   - The plugin ids are unchanged, so herdr's config and state dirs are unchanged.
-  - Rust parses `config.toml` as TOML 1.0 (matching Python `tomllib`) until Python is gone (P8); relax
-    to 1.1 after.
+  - Rust parses `config.toml` as TOML 1.0 (matching Python `tomllib`) until Python is gone (P8),
+    then accepts TOML 1.1.
 - **Mixed versions are already normal for the inbox.** Old MCP servers keep running until their
   sessions restart, which is why there is a versioned view, a never-drop-columns rule, and claims.
   Rust joins as one more version under the same rules, plus the P0b stamp rule:
