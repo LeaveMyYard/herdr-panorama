@@ -64,6 +64,14 @@ above.
 
 D4–D6 are proposed in this PR and still need your decision.
 
+**Amendments (2026-10-17).**
+- **Q177:** `min_herdr_version` becomes **0.9.4** for the Rust releases (it is 0.9.0 today). Each
+  plugin's first Rust release PR raises it (§4 item 7).
+  §4 now assumes herdr 0.9.4+ `plugin update`, which builds every update in a fresh directory.
+  The 0.9.3 reinstall-in-place branch is gone.
+- **Q176:** the shared-crates repo is **`herdr-agent-kit`**
+  (`github.com/LeaveMyYard/herdr-agent-kit`): final, public, MIT like the two plugins.
+
 ---
 
 ## 1. Current state
@@ -578,21 +586,26 @@ The inbox popup also needs a text input (free answers and notes).
 
 ## 4. Distribution
 
-**What the hosts offer** (checked in herdr's `plugins.mdx` at the v0.9.3 and v0.9.5 tags, herdr
-0.9.5 `marketplace.mdx`, and the Claude Code plugin docs; this workstation runs **herdr 0.9.3**):
+**What the hosts offer** (checked in herdr's `plugins.mdx` at the v0.9.3 and v0.9.5 tags, the
+`docs/next` `plugins.mdx` and the release notes at the v0.9.4 tag, herdr 0.9.5 `marketplace.mdx`,
+and the Claude Code plugin docs). The plugins require **herdr 0.9.4+** (`min_herdr_version`,
+Q177). This workstation still runs **herdr 0.9.3**, so release-path tests use an isolated 0.9.4+
+herdr.
 
 - **herdr**
   - `plugin install owner/repo[/subdir]` clones the repo, then runs the `[[build]]` commands in the
     new install directory. They run as the user, without the runtime environment.
   - Builds can be split per platform (`platforms = ["linux"]` on an item), but not per CPU.
   - There is no download or binary hook. The build command is the hook.
-  - Updates differ by version:
-    - **0.9.3** (installed here) has no `plugin update`, and "reinstalling a GitHub-managed plugin
-      replaces that managed checkout" *in place*.
-    - **0.9.4+** adds `plugin update`, which installs into a new directory, and running panes keep
-      their old files.
-
-    The design below works with both.
+  - **Updates (0.9.4+).** `plugin update` refetches the recorded ref and builds it in a new
+    managed directory. "Updates and reinstalls leave the previous installation in place: running
+    commands and panes keep their original files, while new invocations use the new installation
+    without a config reload."
+    - Old installations are removed by a later successful install or update, or at server start,
+      once the servers using them have exited. "Processes surviving server exit are not protected
+      from cleanup."
+    - So `HERDR_PLUGIN_ROOT` differs per installation (each update or reinstall), like `${CLAUDE_PLUGIN_ROOT}`. A running process's
+      own directory never shows that an update happened.
   - Runtime commands run with the plugin directory as their working directory.
   - `plugin link` runs no build.
 - **Claude Code**
@@ -630,15 +643,18 @@ The inbox popup also needs a text input (free answers and notes).
    - maps `uname -s`/`-m` to a target and downloads that tarball with `curl`;
    - **checks it against the sha256 in `release.toml`**. That file was committed after the release,
      so an asset replaced later fails the install;
-   - unpacks it to a temporary name in `./bin/` and moves it into place with `mv`, an atomic
-     rename. On herdr 0.9.3 a reinstall replaces the checkout in place, and processes still running
-     the old binary keep its inode, so a running worker, panel or MCP server is never rewritten
-     under itself. 0.9.4+ installs into a fresh directory anyway.
+   - unpacks it to a temporary name in `./bin/` and moves it into place with `mv`. herdr 0.9.4+
+     builds in a fresh directory that nothing runs from yet, so no running binary is ever
+     rewritten. The rename is kept only as defence in depth, because it costs one line: a hand
+     run of the script in a linked checkout, where the binary may be running, still cannot
+     corrupt it.
    - With no matching asset (an unsupported target, or a checkout between steps 1 and 3), it runs
      `cargo build --release --locked` if `cargo` exists. Otherwise it fails with a clear message, as
      zoetrope does.
    - It also records the binary for the Claude side (item 4) at
      `$XDG_STATE_HOME/<plugin>/bin/<name>-<version>`, a hard copy outside any install directory.
+     The copy is required, not a convenience: herdr deletes old install directories after an
+     update.
 
    Runtime commands become `["sh", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/panorama\" tui"]`, or a
    relative `bin/panorama`: herdr runs runtime commands from the plugin directory. `uv`, the venvs
@@ -668,14 +684,34 @@ The inbox popup also needs a text input (free answers and notes).
 5. **Updates and the worker.** The inbox worker's version handover (`worker.py:233-275`) is kept. A
    worker that sees a newer installed version hands over to that version's binary, under the same
    `worker-<key>.lock`.
+   - On 0.9.4+ the worker cannot detect an update by re-reading its own directory, because an
+     update lands in a new one. It asks herdr for the current `plugin_root` on every check, with a
+     new uncached lookup through `herdr plugin list --json`, and compares versions there. (Today's
+     `herdr.plugin_root()` cannot do this: it resolves from `__file__` first and is cached for the
+     life of the process. The bridge adds the new lookup in P0b.)
+   - The successor is started from the new root's `bin/`. The old directory may be deleted once
+     its server exits, and a running binary keeps its inode, so the old worker exits after the
+     handover and never re-executes its own path.
+   - **The worker exits when its herdr server is gone.** It is started detached, so it holds no
+     herdr install lease, and herdr says "plugins must stop detached background processes before
+     their parent command or pane exits". Without this rule, an old worker that outlives a server
+     restart keeps the lock while startup cleanup deletes its directory. The Rust worker follows
+     the rule from P5, and the bridge from P0b. It needs no lease: nothing can be delivered
+     without the server.
+   - A linked checkout keeps one directory, so there the version on disk changes in place, as
+     today.
 6. **Listing.** No change: two herdr.dev cards and two Claude marketplaces, as today. Install
    commands stay `herdr plugin install LeaveMyYard/herdr-panorama` and `…/herdr-inbox`. Each card
    shows Rust as the primary language after cutover. `platforms` stays `["linux", "macos"]`.
    Windows is out of scope: the plugins use flock, Unix sockets and `/proc`.
 7. **When it is proven.** This whole path ships in **P2**, not at cutover (§5.3):
    - the first release built by this flow is the inbox hook binary;
-   - P2's exit criteria include a fresh install on an isolated herdr 0.9.3 and a scratch
-     `CLAUDE_CONFIG_DIR`.
+   - P2's exit criteria include a fresh install and a `plugin update` on an isolated herdr 0.9.4+,
+     and a fresh install in a scratch `CLAUDE_CONFIG_DIR`. The update test needs a newer commit on
+     the recorded ref, because `plugin update` skips unchanged commits. Afterwards it checks that
+     `herdr plugin list --json` reports the new `plugin_root`;
+   - the release PR of P2's first release raises `min_herdr_version` to 0.9.4 in the inbox's
+     `herdr-plugin.toml`, and panorama's first Rust release does the same for panorama.
 
 ---
 
@@ -748,9 +784,9 @@ Python bridge release per plugin. Rust starts sharing the database only after th
 | Phase | Builds | Milestone and exit criteria | Rough effort |
 |---|---|---|---|
 | **P0a Harness** | Create the `herdr-agent-kit` repo. Add a Cargo workspace beside the Python code in both plugin repos, CI (Linux and macOS, musl), the kit-bump automation, and the ledger. Capture the design-independent recordings: herdr socket recordings, hook payloads, MCP `tools/list`. | CI green on empty workspaces in all three repos. Recordings committed. | 3–5 d |
-| **P0b Python bridge releases** (bugfix-class, inside the freeze) | **inbox:** the session-family delivery fix (already under way, by its own author); continuation rule D6; `is_claude` as in panorama (§1.3, row 5); one session-id validator (row 4); the integer `MIGRATION_REVISION` stamp with forward-only migration, and no migration from hooks or MCP (§2.3); `start_successor` able to start a Rust worker; hooks resolve the interpreter once instead of going through the pyenv shim (saves 60–75 ms per hook on this machine, §6). **panorama:** the same continuation rule, session-id validator and shim fix. Then capture items 2, 3 and 5 of §5.2 from the bridged code. | Both bridges released and in your daily use. Their test suites green with every `HERDR_*` unset. Behaviour goldens captured. | 3–5 d |
+| **P0b Python bridge releases** (bugfix-class, inside the freeze) | **inbox:** the session-family delivery fix (already under way, by its own author); continuation rule D6; `is_claude` as in panorama (§1.3, row 5); one session-id validator (row 4); the integer `MIGRATION_REVISION` stamp with forward-only migration, and no migration from hooks or MCP (§2.3); `start_successor` able to start a Rust worker; an uncached, herdr-first `plugin_root` lookup for `installed_version()` and `start_successor()`, and a worker that exits when its herdr server is gone (§4 item 5); hooks resolve the interpreter once instead of going through the pyenv shim (saves 60–75 ms per hook on this machine, §6). **panorama:** the same continuation rule, session-id validator and shim fix. Then capture items 2, 3 and 5 of §5.2 from the bridged code. | Both bridges released and in your daily use. Their test suites green with every `HERDR_*` unset. Behaviour goldens captured. | 3–5 d |
 | **P1 Kit** | `herdr-api` (socket plus the CLI path, `FakeHerdr`), `claude-session`, `agent-procs`, `plugin-env`, `inbox-contract` | Scanner model goldens match. Differential replay shows 0 disagreements against the **bridged** Python on your transcripts. `[inbox]`-format goldens match in Rust and in the TS mod. Kit tagged `v0.1.0`, and both plugin repos build against the tag. | 6–8 d |
-| **P2 Inbox hooks and rewake watcher, plus the release path** | `herdr-inbox hook …`, the `store` module (claims and sessions, no migration), `inbox-core::decide` (hook and watcher paths). The full §4 path: release CI, `release.toml` bot, `install-bin.sh`, the Claude `launch` shim with contract matching, and the MCP-side download. | Ledger rows for `test_hook*`, `test_rewake`, `test_verified_delivery`, and the hook paths of `test_session_continuation`. **Fresh install** of the herdr plugin on an isolated herdr 0.9.3, and of the Claude plugin in a scratch `CLAUDE_CONFIG_DIR`, where hooks find the binary. The skew case is tested (Claude plugin newer than the binary: hooks degrade as §4 item 4 says). **Gate G1:** a week of your daily use with the Python worker, MCP and popup and the Rust hooks, followed by an audit query: no double delivery, no lost delivery, no exit-2 leak. | 4–6 d |
+| **P2 Inbox hooks and rewake watcher, plus the release path** | `herdr-inbox hook …`, the `store` module (claims and sessions, no migration), `inbox-core::decide` (hook and watcher paths). The full §4 path: release CI, `release.toml` bot, `install-bin.sh`, the Claude `launch` shim with contract matching, and the MCP-side download. | Ledger rows for `test_hook*`, `test_rewake`, `test_verified_delivery`, and the hook paths of `test_session_continuation`. **Fresh install**, then a `plugin update` to a newer commit (afterwards `plugin list --json` names the new `plugin_root`), of the herdr plugin on an isolated herdr 0.9.4+ (this workstation runs 0.9.3). The release PR raises the inbox's `min_herdr_version` to 0.9.4. A fresh install of the Claude plugin in a scratch `CLAUDE_CONFIG_DIR`, where hooks find the binary. The skew case is tested (Claude plugin newer than the binary: hooks degrade as §4 item 4 says). **Gate G1:** a week of your daily use with the Python worker, MCP and popup and the Rust hooks, followed by an audit query: no double delivery, no lost delivery, no exit-2 leak. | 4–6 d |
 | **P3 Panorama panel viewer** | `panorama panel` on protocol 1.1, `panorama-core::view::dock9e` | `design_9` and `design_10` goldens byte-identical. The isolated-herdr panel checks in DESIGN.md "As built" pass. 8 panels at under 5 MB each. | 3–5 d |
 | **P4 Panorama core and home view** | collector, core socket, panel manager, cockpit and home, `graph2a` and `narrow`, new-agent form, mouse, arming, hooks, report_thread MCP: about 7k lines of Python | All design and app-screen goldens. The safety tests (identity cursors, arming, follow guards, never closing panes) are ported. Ledger complete for panorama. **Gate G2:** a week as your daily view. | 12–18 d |
 | **P5 Inbox worker, MCP and CLI** | worker (owns migration from here on), `mcp` (rmcp), `ask`, `export`/`apply`, the rest of the `store` module | The decision table is reproduced. MCP `tools/list` goldens are identical. Remote export and apply pass against a Python remote and a Rust remote. | 7–10 d |
@@ -807,7 +843,9 @@ Why this order:
 
   The G1 audit checks this in practice.
 - **Worker handover.** The bridge's `start_successor` starts the Rust binary when one is installed.
-  The Rust worker takes the same `worker-<key>.lock`, so the two are never both live.
+  The Rust worker takes the same `worker-<key>.lock`, so the two are never both live. On a herdr
+  install (not a linked checkout) the bridge finds the newer version through the current
+  `plugin_root` from herdr, not its own directory (§4 item 5).
 - **Rollback.** Switch the manifest line back. Rust never changes the meaning of an existing column
   and never raises the revision beyond what the bridge knows before P5, so Python reads everything
   Rust wrote.
@@ -816,7 +854,10 @@ Why this order:
   - During P2–P7, a ported entrypoint's manifest line runs `./target/release/<bin>` when it exists,
     and the Python command otherwise.
   - A linked plugin runs no build step, so you run `cargo build --release` after pulling.
-  - The fresh-install path is proven separately, on an isolated herdr (P2).
+  - The fresh-install path is proven separately, on an isolated herdr 0.9.4+ (P2).
+  - herdr "refuses to link or install a plugin when its minimum version is newer than the current
+    binary", so this workstation's herdr moves from 0.9.3 to 0.9.4+ before a manifest naming
+    0.9.4 reaches main (Q177).
 
 ### 5.5 The feature freeze (D2, decided)
 
@@ -894,7 +935,8 @@ The estimate after the rewrite is 100–150 MB and about 2% of a core.
 | macOS coverage (no Mac here) | CI on `macos-latest` for both architectures. `agent-procs` has a `ps` fallback as today. |
 | Two implementations during the migration double the bug surface | The phases are short. Each one deletes the Python code it replaces when it exits. |
 | Mixed Python and Rust operation with different rules (double delivery) | Rule fixes land in Python first (P0b). Afterwards a rule changes on both sides in one release window (§5.4). |
-| herdr 0.9.3 replaces the checkout in place on reinstall | The binary is moved into place with an atomic rename; running processes keep the old inode (§4 item 3) |
+| herdr deletes an old install directory after an update, once its server exits | The Claude side uses the copy in `$XDG_STATE_HOME` (§4 item 3). The worker hands over to the new `plugin_root`, and the detached worker exits when its server is gone, so it never outlives a cleanup (§4 item 5; Python in P0b, Rust in P5) |
+| Users on herdr older than 0.9.4 | `min_herdr_version = "0.9.4"` (Q177): herdr refuses the install instead of running a plugin whose update path it lacks |
 | A Claude plugin and a binary of different versions | Contract-number matching, plus a stated degradation to typed delivery (§4 item 4) |
 | Kit version skew across the two plugin repos (D1) | Each plugin pins a kit tag and moves when it chooses. Bump PRs are automated. Kit CI runs both plugins' test suites against a kit PR before it is tagged. |
 | One plugin quietly coming to depend on the other | P8's independence check (fresh install of each plugin alone). Every cross-plugin call is optional and tested with the other plugin absent (§2.1). |
@@ -903,9 +945,8 @@ The estimate after the rewrite is 100–150 MB and about 2% of a core.
 ### 7.2 Open questions
 
 - D1–D3 are decided (Q168–Q170). D4–D6 are proposed in this PR.
-- Whether `min_herdr_version` stays at 0.9.0 (the design in §4 works on 0.9.3 and on 0.9.4+), or
-  moves to 0.9.4 for `plugin update`. Staying is recommended: no herdr upgrade is forced on users.
-- The name of the shared-crates repo. `herdr-agent-kit` is a placeholder.
+- `min_herdr_version`: decided, 0.9.4 (Q177, see the Amendments under Decisions).
+- The shared-crates repo name: decided, `herdr-agent-kit`, public, MIT (Q176).
 - Whether the cockpit (experimental, `cockpit = true`) is ported at all, or dropped in favour of
   per-tab panels. I recommend asking at P4 with usage data.
 - Whether `panorama` and `herdr-inbox` should merge into one binary later. Not now: they install
