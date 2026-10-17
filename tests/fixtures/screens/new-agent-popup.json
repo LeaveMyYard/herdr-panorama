@@ -1,4 +1,43 @@
-{"source": "SwarmApp's NewAgentApp (panorama new-agent, the form as its own popup); TZ=UTC, frame 0 unless the screen's name says; tools/capture_goldens.py", "size": [84, 26], "screens": {
+{
+ "source": "Textual run_test(notifications=True) of each run's app; a scenario input is materialised as for model/ and read through the app's own source (herdr + the inbox) with the clock held; a swarm input through protocol.swarm_from_wire; <root> in env: that run's own directory; TZ=UTC; no herdr config.toml (panorama's default theme); NO_COLOR, FORCE_COLOR and every HERDR_*/PANORAMA_*/TEXTUAL_*/CLAUDE_* variable unset except those a run names; tools/capture_goldens.py",
+ "runs": [
+  {
+   "app": "new_agent",
+   "size": [
+    84,
+    26
+   ],
+   "env": {
+    "PANORAMA_NEW_AGENT_CWD": "/home/user/work/billing"
+   },
+   "steps": [
+    {
+     "do": "snap",
+     "name": "empty"
+    },
+    {
+     "do": "type",
+     "text": "Billing export"
+    },
+    {
+     "do": "press",
+     "keys": [
+      "tab",
+      "tab"
+     ]
+    },
+    {
+     "do": "type",
+     "text": "Add CSV export to the invoices page"
+    },
+    {
+     "do": "snap",
+     "name": "typed"
+    }
+   ]
+  }
+ ],
+ "screens": {
   "empty": [
     [["    ",null,"#101215",false],["╭──────────────────────────────────────────────────────────────────────────╮","#80868f","#171a1f",false],["    ",null,"#101215",false]],
     [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["                                                                          ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
@@ -55,4 +94,5 @@
     [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["                                                                          ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
     [["    ",null,"#101215",false],["╰──────────────────────────────────────────────────────────────────────────╯","#80868f","#171a1f",false],["    ",null,"#101215",false]]
   ]
-}}
+ }
+}

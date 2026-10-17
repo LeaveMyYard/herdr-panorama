@@ -88,7 +88,10 @@ class Transcript:
         return f"toolu_{int(hashlib.sha256(key).hexdigest(), 16) % 10**22:022d}"
 
     def add(self, rec: dict, t: float) -> None:
-        self.lines.append(json.dumps(stamp(rec, t, self.session, self.agent_id), separators=(",", ":")))
+        rec = stamp(rec, t, self.session, self.agent_id)
+        key = f"{self.path.name}:{self.session}:{len(self.lines)}".encode()
+        rec["uuid"] = str(uuid.UUID(hashlib.sha256(key).hexdigest()[:32], version=4))  # the same on every run
+        self.lines.append(json.dumps(rec, separators=(",", ":")))
 
     def raw(self, line: str) -> None:
         self.lines.append(line)

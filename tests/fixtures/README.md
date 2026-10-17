@@ -42,22 +42,55 @@ Design references (not wire formats), both captured from the design's own code i
   four frames) and the theme tokens used; the golden for `tests/test_focus_theme.py`.
 Regenerate with `uv run python tests/fixtures/capture_design.py` (needs node).
 
-Behaviour goldens (`docs/plans/rust-rewrite.md` §5.2, items 2 and 3), captured from the running
-Python code after the P0b bridge by `tools/capture_goldens.py`, never written by hand:
+Behaviour goldens (`docs/plans/rust-rewrite.md` §5.2, items 2 and 3). They were captured from the
+running Python code by `tools/capture_goldens.py`, and none of them is written by hand.
+Anchor: the Python bridge release on main at merge commit `b142c7b` (0.1.1, PR #56), plus the
+merge commit of PR #57, which added them. This repo uses no git tags. Every golden carries its
+inputs, so another implementation can replay it without Python:
 
-- `screens/*.json` (app-screen goldens): the Textual apps (`SwarmApp` as the popup, the home tab
-  and the docked panel; `NewAgentApp`; `PanelApp`) run headless with `run_test` over the test
-  scenarios (`tests/demo.py`, the design datasets, `tests/scenario.py` through the real
-  collector). Each screen is what Textual's compositor sends to the terminal, as runs of
-  `[text, fg, bg, bold]` per row, the shape of `design_*.json` (`null`: the terminal's
-  default colour). Fixed sizes, a held clock and animation frame (0 unless a screen's name
-  says otherwise), TZ=UTC.
-- `model/*.json` (model goldens): `panorama snapshot --json`, the real command in its own
-  process with `time.time` held, over every `tests/scenario.py` scenario (`SCENARIOS`) at the
-  scenario's `now` plus each key's minutes. The herdr binary is a fake serving the scenario's
-  snapshot; each transcript's mtime is its newest record's time; paths read `<root>`.
+- `inputs/scenario-*.json`: each `tests/scenario.py` scenario (`SCENARIOS`) as data:
+  - the files, each with its path relative to the scenario root, its mtime (a transcript's
+    newest record time) and its text;
+  - herdr's snapshot;
+  - the inbox rows (herdr-inbox's 0.1 `questions` table).
+  Record uuids and tool ids are derived from the record's position, so they are the same on
+  every run.
+- `inputs/swarm-*.json`: the model-built swarms (`tests/demo.py`, the design datasets) in their
+  wire form (`protocol.swarm_to_wire`), with the clock their tests use.
+- `model/*.json` (model goldens): `panorama snapshot --json`, run as the real command in its own
+  process with `time.time` held.
+  - Inputs: the scenario materialised under `<root>`: `CLAUDE_CONFIG_DIR=<root>`, the inbox
+    database, the events dir, and a fake herdr whose `api snapshot` is the input's snapshot and
+    whose other calls answer `ok`.
+  - Times: the scenario's `now` plus each key's minutes.
+  - Conditions: herdr down and no inbox, as named in `conditions`.
+  - Paths under the root read `<root>`.
+- `screens/*.json` (app-screen goldens): the Textual apps run headless (`run_test`,
+  `notifications=True`): `SwarmApp` as the popup, the home tab and the docked panel;
+  `NewAgentApp`; `PanelApp`.
+  - Each file has its `runs`: the app, size, input, held `now`, modes and env.
+  - Each run has an ordered `steps` list, explained in `screen_files`' docstring. Each `snap`
+    step names a screen in `screens`.
+  - A screen is what Textual's compositor sends to the terminal, as runs of
+    `[text, fg, bg, bold]` per row: the shape of `design_*.json`, with `null` for the
+    terminal's default colour.
+  - Fixed: TZ=UTC, panorama's default theme, animation frame 0 unless a screen's name says
+    otherwise.
 
-`tests/test_goldens.py` captures them again into a temporary directory and compares, so a
+How to compare, for a port:
+
+- **Model files**: compare as JSON values. Key order and float formatting (`1791972600.0`) are
+  not part of the contract.
+- **Screens**: compare cell by cell. Split each run into one cell per character, with `null`
+  for the default colour. Where one run ends and the next begins comes from Rich's segments,
+  so run boundaries are not part of the contract.
+
+`tests/test_goldens.py` captures everything again into a temporary directory and compares, so a
 behaviour change fails it. After a deliberate change, regenerate and say why in the PR:
 
     uv run python tools/capture_goldens.py
+
+Not covered yet (#58): a non-empty `errors` list, scrolling, mouse targets, the answer/inbox
+flows, `is_stale` exactly at `stale_after`, a hidden per-tab panel (by design it keeps its last
+picture), and remote machines in the model (`panorama snapshot` reads only this machine). The
+inbox popup's screens (§5.2 item 2) belong to the herdr-inbox repo.

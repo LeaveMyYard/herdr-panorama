@@ -1,4 +1,31 @@
-{"source": "tests/scenario.py build_background through Collector (now 1791969300.0, procs off), SwarmApp; TZ=UTC, frame 0 unless the screen's name says; tools/capture_goldens.py", "size": [70, 45], "screens": {
+{
+ "source": "Textual run_test(notifications=True) of each run's app; a scenario input is materialised as for model/ and read through the app's own source (herdr + the inbox) with the clock held; a swarm input through protocol.swarm_from_wire; <root> in env: that run's own directory; TZ=UTC; no herdr config.toml (panorama's default theme); NO_COLOR, FORCE_COLOR and every HERDR_*/PANORAMA_*/TEXTUAL_*/CLAUDE_* variable unset except those a run names; tools/capture_goldens.py",
+ "runs": [
+  {
+   "app": "swarm",
+   "focus_pane": "w1:p1",
+   "home_mode": false,
+   "cockpit_mode": false,
+   "docked": null,
+   "input": "inputs/scenario-background.json",
+   "now": 1791969300.0,
+   "size": [
+    70,
+    45
+   ],
+   "steps": [
+    {
+     "do": "frame",
+     "n": 0
+    },
+    {
+     "do": "snap",
+     "name": "initial"
+    }
+   ]
+  }
+ ],
+ "screens": {
   "initial": [
     [[" ","#c3c7cd","#171a1f",false],["herdr","#eceef1","#171a1f",true],[" panorama","#80868f","#171a1f",false],["    ","#c3c7cd","#171a1f",false],["all","#eceef1","#171a1f",true],["   ","#c3c7cd","#171a1f",false],["running","#4d535c","#171a1f",false],["   ","#c3c7cd","#171a1f",false],["needs me","#4d535c","#171a1f",false],["    ","#c3c7cd","#171a1f",false],["? 0","#ffb547","#171a1f",true],["  ","#c3c7cd","#171a1f",false],["! 0","#ffb547","#171a1f",true],["  ","#c3c7cd","#171a1f",false],["✗ 0","#ff6b6b","#171a1f",true],["    ","#c3c7cd","#171a1f",false],["09:15","#80868f","#171a1f",false],[" ","#c3c7cd","#171a1f",false]],
     [["                                                                      ","#c3c7cd","#101215",false]],
@@ -46,4 +73,5 @@
     [["                                                                      ","#c3c7cd","#101215",false]],
     [[" ","#c3c7cd","#101215",false],["↑↓","#c3c7cd","#101215",true],[" move","#4d535c","#101215",false],["   ","#c3c7cd","#101215",false],["→","#c3c7cd","#101215",true],[" open","#4d535c","#101215",false],["   ","#c3c7cd","#101215",false],["g","#c3c7cd","#101215",true],[" pane","#4d535c","#101215",false],["   ","#c3c7cd","#101215",false],["a","#c3c7cd","#101215",true],[" answer","#4d535c","#101215",false],["   ","#c3c7cd","#101215",false],["f","#c3c7cd","#101215",true],[" filter","#4d535c","#101215",false],["   ","#c3c7cd","#101215",false],["?","#c3c7cd","#101215",true],[" help","#4d535c","#101215",false],["             ","#c3c7cd","#101215",false]]
   ]
-}}
+ }
+}

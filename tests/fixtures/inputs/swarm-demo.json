@@ -1,0 +1,980 @@
+{
+ "source": "tests/demo.py demo_swarm in protocol.swarm_to_wire form; now: the clock its tests use",
+ "now": 1791972240.0,
+ "swarm": {
+  "generated_at": 1791972240.0,
+  "herdr_ok": true,
+  "inbox_ok": true,
+  "errors": [],
+  "stale_after": 43200.0,
+  "orchestrators": [
+   {
+    "pane_id": "w1:p1",
+    "tab_id": "w1:t1",
+    "tab_label": "Billing API",
+    "session_id": "s1",
+    "herdr_status": "working",
+    "workspace_id": null,
+    "focused": false,
+    "cwd": null,
+    "flavour": "pr-review",
+    "transcript": "/home/user/.claude/projects/-home-user-project/s1.jsonl",
+    "pending": [],
+    "inbox": [
+     2
+    ],
+    "inbox_texts": [
+     "Use \"Retrying…\" or \"Reconnecting…\" for the banner? The design doc and the i18n keys disagree."
+    ],
+    "threads": [
+     {
+      "id": "ref:#42",
+      "name": "PR #42 invoice export",
+      "source": "ref",
+      "phases": [
+       {
+        "name": "author",
+        "state": "done",
+        "start": 1791968520.0,
+        "end": 1791969600.0,
+        "note": null
+       },
+       {
+        "name": "review r1",
+        "state": "done",
+        "start": 1791969840.0,
+        "end": 1791970680.0,
+        "note": "1B 2H 3M"
+       },
+       {
+        "name": "fix r1",
+        "state": "done",
+        "start": 1791970860.0,
+        "end": 1791970980.0,
+        "note": null
+       },
+       {
+        "name": "review r2",
+        "state": "now",
+        "start": 1791970980.0,
+        "end": null,
+        "note": "0B 1H 2M so far"
+       },
+       {
+        "name": "CI",
+        "state": "next",
+        "start": null,
+        "end": null,
+        "note": null
+       },
+       {
+        "name": "merge",
+        "state": "next",
+        "start": null,
+        "end": null,
+        "note": null
+       }
+      ],
+      "agents": [
+       {
+        "id": "a2f81c0",
+        "description": "reviewer a2f81c0",
+        "role": "reviewer",
+        "agent_type": null,
+        "model": "opus",
+        "status": "rev",
+        "tool_use_id": null,
+        "started": 1791970980.0,
+        "ended": null,
+        "last_at": null,
+        "tool_calls": 52,
+        "activity": "Bash(Diff totals.py against round 1 fixes)",
+        "last_message": "Round 1 Blocker (double charge on retry) is fixed. Checking the High on stale TTL next.",
+        "questions": [],
+        "pending": [],
+        "question_ids": [],
+        "error": null,
+        "phases": [
+         1,
+         3
+        ],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": "/home/user/.claude/projects/-home-user-project/s/subagents/agent-a2f81c0.jsonl",
+        "seq": 1,
+        "bg": []
+       },
+       {
+        "id": "a1c3d90",
+        "description": "author a1c3d90",
+        "role": "author",
+        "agent_type": null,
+        "model": "opus",
+        "status": "q",
+        "tool_use_id": null,
+        "started": 1791968520.0,
+        "ended": null,
+        "last_at": null,
+        "tool_calls": 131,
+        "activity": "idle · waits for r2 findings",
+        "last_message": "Pushed fix r1 (3 commits).",
+        "questions": [],
+        "pending": [],
+        "question_ids": [],
+        "error": null,
+        "phases": [
+         0,
+         2
+        ],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": "/home/user/.claude/projects/-home-user-project/s/subagents/agent-a1c3d90.jsonl",
+        "seq": 2,
+        "bg": []
+       },
+       {
+        "id": "a3e1b22",
+        "description": "explorer a3e1b22",
+        "role": "explorer",
+        "agent_type": null,
+        "model": "haiku",
+        "status": "done",
+        "tool_use_id": null,
+        "started": 1791968760.0,
+        "ended": 1791969360.0,
+        "last_at": null,
+        "tool_calls": 18,
+        "activity": "mapped invoice call sites",
+        "last_message": "",
+        "questions": [],
+        "pending": [],
+        "question_ids": [],
+        "error": null,
+        "phases": [
+         0
+        ],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": "/home/user/.claude/projects/-home-user-project/s/subagents/agent-a3e1b22.jsonl",
+        "seq": 3,
+        "bg": []
+       },
+       {
+        "id": "a4d0e11",
+        "description": "explorer a4d0e11",
+        "role": "explorer",
+        "agent_type": null,
+        "model": "haiku",
+        "status": "done",
+        "tool_use_id": null,
+        "started": 1791968820.0,
+        "ended": 1791969420.0,
+        "last_at": null,
+        "tool_calls": 11,
+        "activity": "read docs/invoices.md",
+        "last_message": "",
+        "questions": [],
+        "pending": [],
+        "question_ids": [],
+        "error": null,
+        "phases": [
+         0
+        ],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": "/home/user/.claude/projects/-home-user-project/s/subagents/agent-a4d0e11.jsonl",
+        "seq": 4,
+        "bg": []
+       },
+       {
+        "id": "a5b7f02",
+        "description": "explorer a5b7f02",
+        "role": "explorer",
+        "agent_type": null,
+        "model": "haiku",
+        "status": "done",
+        "tool_use_id": null,
+        "started": 1791969960.0,
+        "ended": 1791970560.0,
+        "last_at": null,
+        "tool_calls": 9,
+        "activity": "pulled PR #41 context",
+        "last_message": "",
+        "questions": [],
+        "pending": [],
+        "question_ids": [],
+        "error": null,
+        "phases": [
+         1
+        ],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": "/home/user/.claude/projects/-home-user-project/s/subagents/agent-a5b7f02.jsonl",
+        "seq": 5,
+        "bg": []
+       }
+      ],
+      "status": "active",
+      "started": 1791968520.0,
+      "ended": null,
+      "worktree": null,
+      "pct": null,
+      "flavour": null
+     },
+     {
+      "id": "ref:#44",
+      "name": "PR #44 health badge",
+      "source": "ref",
+      "phases": [
+       {
+        "name": "author",
+        "state": "done",
+        "start": 1791965400.0,
+        "end": 1791966660.0,
+        "note": null
+       },
+       {
+        "name": "review r1",
+        "state": "done",
+        "start": 1791966900.0,
+        "end": 1791967920.0,
+        "note": "0B 1H 1M"
+       },
+       {
+        "name": "fix r1",
+        "state": "done",
+        "start": 1791968280.0,
+        "end": 1791971640.0,
+        "note": null
+       },
+       {
+        "name": "CI",
+        "state": "failed",
+        "start": 1791971700.0,
+        "end": 1791972180.0,
+        "note": "3 failing"
+       },
+       {
+        "name": "merge",
+        "state": "next",
+        "start": null,
+        "end": null,
+        "note": null
+       }
+      ],
+      "agents": [
+       {
+        "id": "b3a9c41",
+        "description": "fixer b3a9c41",
+        "role": "fixer",
+        "agent_type": null,
+        "model": "sonnet",
+        "status": "fail",
+        "tool_use_id": null,
+        "started": 1791971700.0,
+        "ended": 1791972300.0,
+        "last_at": null,
+        "tool_calls": 23,
+        "activity": "stopped after CI failure",
+        "last_message": "Badge snapshot changed and 3 tests fail on a missing aria-label.",
+        "questions": [],
+        "pending": [],
+        "question_ids": [],
+        "error": "npm test exited 1 · 3 failing in badge.spec.ts",
+        "phases": [
+         3
+        ],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": "/home/user/.claude/projects/-home-user-project/s/subagents/agent-b3a9c41.jsonl",
+        "seq": 6,
+        "bg": []
+       },
+       {
+        "id": "b1f0d33",
+        "description": "author b1f0d33",
+        "role": "author",
+        "agent_type": null,
+        "model": "sonnet",
+        "status": "done",
+        "tool_use_id": null,
+        "started": 1791965400.0,
+        "ended": 1791966000.0,
+        "last_at": null,
+        "tool_calls": 88,
+        "activity": "pushed fix r1",
+        "last_message": "",
+        "questions": [],
+        "pending": [],
+        "question_ids": [],
+        "error": null,
+        "phases": [
+         0,
+         2
+        ],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": "/home/user/.claude/projects/-home-user-project/s/subagents/agent-b1f0d33.jsonl",
+        "seq": 7,
+        "bg": []
+       },
+       {
+        "id": "b2c4e55",
+        "description": "reviewer b2c4e55",
+        "role": "reviewer",
+        "agent_type": null,
+        "model": "sonnet",
+        "status": "done",
+        "tool_use_id": null,
+        "started": 1791966900.0,
+        "ended": 1791967500.0,
+        "last_at": null,
+        "tool_calls": 29,
+        "activity": "posted 0B 1H 1M",
+        "last_message": "",
+        "questions": [],
+        "pending": [],
+        "question_ids": [],
+        "error": null,
+        "phases": [
+         1
+        ],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": "/home/user/.claude/projects/-home-user-project/s/subagents/agent-b2c4e55.jsonl",
+        "seq": 8,
+        "bg": []
+       },
+       {
+        "id": "b4e6a77",
+        "description": "explorer b4e6a77",
+        "role": "explorer",
+        "agent_type": null,
+        "model": "haiku",
+        "status": "done",
+        "tool_use_id": null,
+        "started": 1791971760.0,
+        "ended": 1791972360.0,
+        "last_at": null,
+        "tool_calls": 6,
+        "activity": "fetched CI log",
+        "last_message": "",
+        "questions": [],
+        "pending": [],
+        "question_ids": [],
+        "error": null,
+        "phases": [
+         3
+        ],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": "/home/user/.claude/projects/-home-user-project/s/subagents/agent-b4e6a77.jsonl",
+        "seq": 9,
+        "bg": []
+       }
+      ],
+      "status": "active",
+      "started": 1791965400.0,
+      "ended": null,
+      "worktree": null,
+      "pct": null,
+      "flavour": null
+     },
+     {
+      "id": "ref:#48",
+      "name": "PR #48 retry banner copy",
+      "source": "ref",
+      "phases": [
+       {
+        "name": "author",
+        "state": "now",
+        "start": 1791971880.0,
+        "end": null,
+        "note": null
+       },
+       {
+        "name": "review r1",
+        "state": "next",
+        "start": null,
+        "end": null,
+        "note": null
+       },
+       {
+        "name": "CI",
+        "state": "next",
+        "start": null,
+        "end": null,
+        "note": null
+       },
+       {
+        "name": "merge",
+        "state": "next",
+        "start": null,
+        "end": null,
+        "note": null
+       }
+      ],
+      "agents": [
+       {
+        "id": "c1d2e3f",
+        "description": "author c1d2e3f",
+        "role": "author",
+        "agent_type": null,
+        "model": "sonnet",
+        "status": "wait",
+        "tool_use_id": null,
+        "started": 1791971880.0,
+        "ended": null,
+        "last_at": null,
+        "tool_calls": 14,
+        "activity": "Bash(Grep i18n keys for retry)",
+        "last_message": "Banner component drafted; copy is blocked on wording.",
+        "questions": [
+         "Use \"Retrying…\" or \"Reconnecting…\" for the banner? The design doc and the i18n keys disagree."
+        ],
+        "pending": [],
+        "question_ids": [
+         2
+        ],
+        "error": null,
+        "phases": [
+         0
+        ],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": "/home/user/.claude/projects/-home-user-project/s/subagents/agent-c1d2e3f.jsonl",
+        "seq": 10,
+        "bg": []
+       },
+       {
+        "id": "c2b3a4d",
+        "description": "explorer c2b3a4d",
+        "role": "explorer",
+        "agent_type": null,
+        "model": "haiku",
+        "status": "done",
+        "tool_use_id": null,
+        "started": 1791971940.0,
+        "ended": 1791972540.0,
+        "last_at": null,
+        "tool_calls": 7,
+        "activity": "grepped i18n keys",
+        "last_message": "",
+        "questions": [],
+        "pending": [],
+        "question_ids": [],
+        "error": null,
+        "phases": [
+         0
+        ],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": "/home/user/.claude/projects/-home-user-project/s/subagents/agent-c2b3a4d.jsonl",
+        "seq": 11,
+        "bg": []
+       }
+      ],
+      "status": "active",
+      "started": 1791971880.0,
+      "ended": null,
+      "worktree": null,
+      "pct": null,
+      "flavour": null
+     },
+     {
+      "id": "ref:#40",
+      "name": "PR #40 currency codes",
+      "source": "ref",
+      "phases": [
+       {
+        "name": "author",
+        "state": "done",
+        "start": 1791961800.0,
+        "end": 1791964800.0,
+        "note": null
+       },
+       {
+        "name": "review r1",
+        "state": "done",
+        "start": 1791964920.0,
+        "end": 1791967200.0,
+        "note": null
+       }
+      ],
+      "agents": [
+       {
+        "id": "e1a2b3c",
+        "description": "author e1a2b3c",
+        "role": "author",
+        "agent_type": null,
+        "model": "sonnet",
+        "status": "done",
+        "tool_use_id": null,
+        "started": 1791961800.0,
+        "ended": 1791962400.0,
+        "last_at": null,
+        "tool_calls": 40,
+        "activity": "merged",
+        "last_message": "",
+        "questions": [],
+        "pending": [],
+        "question_ids": [],
+        "error": null,
+        "phases": [
+         0
+        ],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": "/home/user/.claude/projects/-home-user-project/s/subagents/agent-e1a2b3c.jsonl",
+        "seq": 12,
+        "bg": []
+       }
+      ],
+      "status": "done",
+      "started": 1791961800.0,
+      "ended": 1791967200.0,
+      "worktree": null,
+      "pct": null,
+      "flavour": null
+     }
+    ],
+    "hidden_done": 0,
+    "tab_no": null,
+    "machine": null,
+    "machine_id": null,
+    "bg": [],
+    "last_activity": null
+   },
+   {
+    "pane_id": "w1:p2",
+    "tab_id": "w1:t2",
+    "tab_label": "Search refactor",
+    "session_id": "s2",
+    "herdr_status": "working",
+    "workspace_id": null,
+    "focused": false,
+    "cwd": null,
+    "flavour": "workflow",
+    "transcript": null,
+    "pending": [],
+    "inbox": [],
+    "inbox_texts": [],
+    "threads": [
+     {
+      "id": "wf:wf_search",
+      "name": "search-index-rebuild",
+      "source": "workflow",
+      "phases": [
+       {
+        "name": "Plan",
+        "state": "done",
+        "start": 1791969600.0,
+        "end": 1791970860.0,
+        "note": null
+       },
+       {
+        "name": "Build",
+        "state": "now",
+        "start": 1791970920.0,
+        "end": null,
+        "note": "tokenizer, ranker"
+       },
+       {
+        "name": "Verify",
+        "state": "next",
+        "start": null,
+        "end": null,
+        "note": null
+       },
+       {
+        "name": "Merge",
+        "state": "next",
+        "start": null,
+        "end": null,
+        "note": null
+       }
+      ],
+      "agents": [
+       {
+        "id": "j1a2b3c",
+        "description": "author j1a2b3c",
+        "role": "author",
+        "agent_type": null,
+        "model": "sonnet",
+        "status": "run",
+        "tool_use_id": null,
+        "started": 1791970920.0,
+        "ended": null,
+        "last_at": null,
+        "tool_calls": 97,
+        "activity": "Read(src/search/tokenize.rs)",
+        "last_message": "Splitting on Unicode word boundaries; wiring the ranker next.",
+        "questions": [],
+        "pending": [],
+        "question_ids": [],
+        "error": null,
+        "phases": [
+         1
+        ],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": "/home/user/.claude/projects/-home-user-project/s/subagents/agent-j1a2b3c.jsonl",
+        "seq": 13,
+        "bg": []
+       },
+       {
+        "id": "j4d5e6f",
+        "description": "author j4d5e6f",
+        "role": "author",
+        "agent_type": null,
+        "model": "opus",
+        "status": "run",
+        "tool_use_id": null,
+        "started": 1791971040.0,
+        "ended": null,
+        "last_at": null,
+        "tool_calls": 41,
+        "activity": "Bash(cargo test -p ranker)",
+        "last_message": "",
+        "questions": [],
+        "pending": [],
+        "question_ids": [],
+        "error": null,
+        "phases": [
+         1
+        ],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": "/home/user/.claude/projects/-home-user-project/s/subagents/agent-j4d5e6f.jsonl",
+        "seq": 14,
+        "bg": []
+       },
+       {
+        "id": "j2b3c4d",
+        "description": "planner j2b3c4d",
+        "role": "planner",
+        "agent_type": null,
+        "model": "haiku",
+        "status": "done",
+        "tool_use_id": null,
+        "started": 1791969600.0,
+        "ended": 1791970200.0,
+        "last_at": null,
+        "tool_calls": 14,
+        "activity": "plan written",
+        "last_message": "",
+        "questions": [],
+        "pending": [],
+        "question_ids": [],
+        "error": null,
+        "phases": [
+         0
+        ],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": "/home/user/.claude/projects/-home-user-project/s/subagents/agent-j2b3c4d.jsonl",
+        "seq": 15,
+        "bg": []
+       },
+       {
+        "id": "j3c4d5e",
+        "description": "explorer j3c4d5e",
+        "role": "explorer",
+        "agent_type": null,
+        "model": "haiku",
+        "status": "cxl",
+        "tool_use_id": null,
+        "started": 1791969660.0,
+        "ended": 1791970260.0,
+        "last_at": null,
+        "tool_calls": 3,
+        "activity": "cancelled · duplicate",
+        "last_message": "",
+        "questions": [],
+        "pending": [],
+        "question_ids": [],
+        "error": null,
+        "phases": [
+         0
+        ],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": "/home/user/.claude/projects/-home-user-project/s/subagents/agent-j3c4d5e.jsonl",
+        "seq": 16,
+        "bg": []
+       }
+      ],
+      "status": "active",
+      "started": 1791969600.0,
+      "ended": null,
+      "worktree": null,
+      "pct": null,
+      "flavour": null
+     }
+    ],
+    "hidden_done": 0,
+    "tab_no": null,
+    "machine": null,
+    "machine_id": null,
+    "bg": [],
+    "last_activity": null
+   },
+   {
+    "pane_id": "w1:p3",
+    "tab_id": "w1:t3",
+    "tab_label": "Docs site",
+    "session_id": "s3",
+    "herdr_status": "blocked",
+    "workspace_id": null,
+    "focused": false,
+    "cwd": null,
+    "flavour": "docs",
+    "transcript": null,
+    "pending": [
+     "Publish the v2 docs now or after the release?"
+    ],
+    "inbox": [],
+    "inbox_texts": [],
+    "threads": [
+     {
+      "id": "main:w1:p3",
+      "name": "Docs site",
+      "source": "session",
+      "phases": [
+       {
+        "name": "waiting on you",
+        "state": "now",
+        "start": 1791971940.0,
+        "end": null,
+        "note": null
+       }
+      ],
+      "agents": [
+       {
+        "id": "main:w1:p3",
+        "description": "main session",
+        "role": "orchestrator",
+        "agent_type": null,
+        "model": null,
+        "status": "blk",
+        "tool_use_id": null,
+        "started": 1791971940.0,
+        "ended": null,
+        "last_at": null,
+        "tool_calls": 0,
+        "activity": "waiting for you in the pane",
+        "last_message": "",
+        "questions": [],
+        "pending": [
+         "Publish the v2 docs now or after the release?"
+        ],
+        "question_ids": [],
+        "error": null,
+        "phases": [
+         0
+        ],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": null,
+        "seq": 99,
+        "bg": []
+       }
+      ],
+      "status": "active",
+      "started": 1791971940.0,
+      "ended": null,
+      "worktree": null,
+      "pct": null,
+      "flavour": null
+     },
+     {
+      "id": "x:docs-v2",
+      "name": "Docs v2 release",
+      "source": "explicit",
+      "phases": [
+       {
+        "name": "outline",
+        "state": "done",
+        "start": 1791970200.0,
+        "end": 1791970260.0,
+        "note": null
+       },
+       {
+        "name": "write",
+        "state": "now",
+        "start": 1791970260.0,
+        "end": null,
+        "note": null
+       },
+       {
+        "name": "review",
+        "state": "next",
+        "start": null,
+        "end": null,
+        "note": null
+       },
+       {
+        "name": "publish",
+        "state": "next",
+        "start": null,
+        "end": null,
+        "note": null
+       }
+      ],
+      "agents": [
+       {
+        "id": "d1e2f3a",
+        "description": "writer d1e2f3a",
+        "role": "writer",
+        "agent_type": null,
+        "model": "sonnet",
+        "status": "run",
+        "tool_use_id": null,
+        "started": 1791970260.0,
+        "ended": null,
+        "last_at": null,
+        "tool_calls": 33,
+        "activity": "Bash(Build the docs site)",
+        "last_message": "",
+        "questions": [],
+        "pending": [],
+        "question_ids": [],
+        "error": null,
+        "phases": [
+         1
+        ],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": "/home/user/.claude/projects/-home-user-project/s/subagents/agent-d1e2f3a.jsonl",
+        "seq": 17,
+        "bg": []
+       }
+      ],
+      "status": "active",
+      "started": 1791970200.0,
+      "ended": null,
+      "worktree": "wt/docs-v2",
+      "pct": 60,
+      "flavour": "docs"
+     }
+    ],
+    "hidden_done": 0,
+    "tab_no": null,
+    "machine": null,
+    "machine_id": null,
+    "bg": [],
+    "last_activity": null
+   },
+   {
+    "pane_id": "w1:p4",
+    "tab_id": "w1:t4",
+    "tab_label": "Release notes",
+    "session_id": "s4",
+    "herdr_status": "idle",
+    "workspace_id": null,
+    "focused": false,
+    "cwd": null,
+    "flavour": "agents",
+    "transcript": null,
+    "pending": [],
+    "inbox": [],
+    "inbox_texts": [],
+    "threads": [
+     {
+      "id": "turn:0",
+      "name": "Collect merged PR titles",
+      "source": "turn",
+      "phases": [
+       {
+        "name": "explore",
+        "state": "done",
+        "start": 1791965100.0,
+        "end": 1791965700.0,
+        "note": null
+       }
+      ],
+      "agents": [
+       {
+        "id": "r1a2b3c",
+        "description": "explorer r1a2b3c",
+        "role": "explorer",
+        "agent_type": null,
+        "model": "haiku",
+        "status": "done",
+        "tool_use_id": null,
+        "started": 1791965100.0,
+        "ended": 1791965700.0,
+        "last_at": null,
+        "tool_calls": 12,
+        "activity": "listed merged PRs",
+        "last_message": "",
+        "questions": [],
+        "pending": [],
+        "question_ids": [],
+        "error": null,
+        "phases": [
+         0
+        ],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": "/home/user/.claude/projects/-home-user-project/s/subagents/agent-r1a2b3c.jsonl",
+        "seq": 18,
+        "bg": []
+       }
+      ],
+      "status": "done",
+      "started": 1791965100.0,
+      "ended": 1791965700.0,
+      "worktree": null,
+      "pct": null,
+      "flavour": null
+     }
+    ],
+    "hidden_done": 0,
+    "tab_no": null,
+    "machine": null,
+    "machine_id": null,
+    "bg": [],
+    "last_activity": null
+   }
+  ]
+ }
+}

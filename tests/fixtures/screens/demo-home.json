@@ -1,4 +1,61 @@
-{"source": "tests/demo.py demo_swarm, SwarmApp home_mode (the home tab); TZ=UTC, frame 0 unless the screen's name says; tools/capture_goldens.py", "size": [160, 45], "screens": {
+{
+ "source": "Textual run_test(notifications=True) of each run's app; a scenario input is materialised as for model/ and read through the app's own source (herdr + the inbox) with the clock held; a swarm input through protocol.swarm_from_wire; <root> in env: that run's own directory; TZ=UTC; no herdr config.toml (panorama's default theme); NO_COLOR, FORCE_COLOR and every HERDR_*/PANORAMA_*/TEXTUAL_*/CLAUDE_* variable unset except those a run names; tools/capture_goldens.py",
+ "runs": [
+  {
+   "app": "swarm",
+   "focus_pane": "w1:p1",
+   "home_mode": true,
+   "cockpit_mode": false,
+   "docked": null,
+   "size": [
+    160,
+    45
+   ],
+   "input": "inputs/swarm-demo.json",
+   "now": 1791972240.0,
+   "steps": [
+    {
+     "do": "frame",
+     "n": 0
+    },
+    {
+     "do": "snap",
+     "name": "home"
+    },
+    {
+     "do": "press",
+     "keys": [
+      "n"
+     ]
+    },
+    {
+     "do": "set",
+     "selector": "#cwd",
+     "value": "/home/user/work/billing"
+    },
+    {
+     "do": "type",
+     "text": "Billing export"
+    },
+    {
+     "do": "press",
+     "keys": [
+      "tab",
+      "tab"
+     ]
+    },
+    {
+     "do": "type",
+     "text": "Add CSV export to the invoices page"
+    },
+    {
+     "do": "snap",
+     "name": "new agent form"
+    }
+   ]
+  }
+ ],
+ "screens": {
   "home": [
     [[" ","#c3c7cd","#171a1f",false],["herdr","#eceef1","#171a1f",true],[" panorama","#80868f","#171a1f",false],["    ","#c3c7cd","#171a1f",false],["all","#eceef1","#171a1f",true],["   ","#c3c7cd","#171a1f",false],["running","#4d535c","#171a1f",false],["   ","#c3c7cd","#171a1f",false],["needs me","#4d535c","#171a1f",false],["                                                                                              ","#c3c7cd","#171a1f",false],["? 1","#ffb547","#171a1f",true],["  ","#c3c7cd","#171a1f",false],["! 1","#ffb547","#171a1f",true],["  ","#c3c7cd","#171a1f",false],["✗ 1","#ff6b6b","#171a1f",true],["    ","#c3c7cd","#171a1f",false],["10:04","#80868f","#171a1f",false],[" ","#c3c7cd","#171a1f",false]],
     [["                                                                                                                                                                ","#c3c7cd","#101215",false]],
@@ -93,4 +150,5 @@
     [["                                                                                                                                                                ","#606367","#101215",false]],
     [[" ","#606367","#101215",false],["↑↓","#606367","#101215",true],[" move","#2b2f34","#101215",false],["   ","#606367","#101215",false],["→","#606367","#101215",true],[" open","#2b2f34","#101215",false],["   ","#606367","#101215",false],["←","#606367","#101215",true],[" back","#2b2f34","#101215",false],["   ","#606367","#101215",false],["enter","#606367","#101215",true],[" details","#2b2f34","#101215",false],["   ","#606367","#101215",false],["g","#606367","#101215",true],[" go to pane","#2b2f34","#101215",false],["   ","#606367","#101215",false],["a","#606367","#101215",true],[" answer","#2b2f34","#101215",false],["   ","#606367","#101215",false],["i","#606367","#101215",true],[" inbox","#2b2f34","#101215",false],["   ","#606367","#101215",false],["f","#606367","#101215",true],[" filter","#2b2f34","#101215",false],["   ","#606367","#101215",false],["?","#606367","#101215",true],[" help","#2b2f34","#101215",false],["                                                              ","#606367","#101215",false]]
   ]
-}}
+ }
+}

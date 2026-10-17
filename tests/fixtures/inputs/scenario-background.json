@@ -1,0 +1,228 @@
+{
+ "source": "tests/scenario.py build_background; mtimes: a transcript's newest record, undated files the scenario's newest; tools/capture_goldens.py",
+ "now": 1791969300.0,
+ "projects": "projects",
+ "events": "events",
+ "files": {
+  "projects/-home-user-project/55555555-5555-4555-8555-555555555555/subagents/agent-g1canary0000000001.jsonl": {
+   "mtime": 1791968940.0,
+   "text": "{\"parentUuid\":null,\"isSidechain\":true,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"agentId\":\"g1canary0000000001\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":\"brief\"},\"uuid\":\"6f7179ee-1ba4-4973-bb10-cc134cc03d61\",\"timestamp\":\"2026-10-14T09:07:00.000Z\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"message\":{\"model\":\"claude-model\",\"id\":\"\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_5077215306010306834380\",\"name\":\"Bash\",\"input\":{\"command\":\"sleep 60\",\"description\":\"Wait for the canary window\",\"run_in_background\":true},\"caller\":{\"type\":\"direct\"}}],\"container\":null,\"stop_reason\":\"tool_use\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":{\"thinking_tokens\":0},\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":0,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"global\",\"iterations\":[{\"input_tokens\":0,\"output_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"message\"}],\"speed\":\"\",\"fallback_credit\":null},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"wireToolInputs\":{\"toolu_KEY\":{\"command\":\"\",\"description\":\"\",\"run_in_background\":true}},\"wireIngestContext\":{\"toolu_KEY\":{\"cwd\":\"\"}},\"serverClassifierRequest\":\"00000000-0000-4000-8000-000000000000\",\"apiBlockIndex\":2,\"requestId\":\"\",\"requestedModel\":\"claude-model\",\"type\":\"assistant\",\"uuid\":\"196c7c71-83d0-4a97-9765-5d52bffc4bdd\",\"timestamp\":\"2026-10-14T09:08:00.000Z\",\"advisorModel\":\"\",\"effort\":\"medium\",\"perTurnEffort\":\"medium\",\"session_id\":\"55555555-5555-4555-8555-555555555555\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\",\"agentId\":\"g1canary0000000001\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":true,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"agentId\":\"g1canary0000000001\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":[{\"tool_use_id\":\"toolu_5077215306010306834380\",\"type\":\"tool_result\",\"content\":[{\"type\":\"text\",\"text\":\"Command running in background with ID: gb1canary.\"}],\"is_error\":false}]},\"uuid\":\"46599092-1c86-4889-a15a-feade410a716\",\"timestamp\":\"2026-10-14T09:08:01.000Z\",\"toolUseResult\":{\"stdout\":\"\",\"stderr\":\"\",\"interrupted\":false,\"isImage\":false,\"noOutputExpected\":false,\"backgroundTaskId\":\"gb1canary\",\"backgroundCwdHint\":\"\"},\"sourceToolAssistantUUID\":\"00000000-0000-4000-8000-000000000000\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\",\"slug\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":true,\"agentId\":\"g1canary0000000001\",\"message\":{\"model\":\"claude-model\",\"id\":\"\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"Waiting for the canary window.\"}],\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":0,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"},\"diagnostics\":null},\"requestId\":\"\",\"attributionAgent\":\"\",\"type\":\"assistant\",\"uuid\":\"b9de16a1-55b5-4c82-863b-ed5666492693\",\"timestamp\":\"2026-10-14T09:09:00.000Z\",\"effort\":\"high\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n"
+  },
+  "projects/-home-user-project/55555555-5555-4555-8555-555555555555/subagents/agent-g1canary0000000001.meta.json": {
+   "mtime": 1791969180.0,
+   "text": "{\"agentType\": \"general-purpose\", \"description\": \"Check the canary metrics\", \"toolUseId\": \"toolu_5481269883009233487816\", \"spawnDepth\": 1, \"requestShape\": \"background\", \"requestNonInteractive\": true, \"model\": \"sonnet\"}"
+  },
+  "projects/-home-user-project/55555555-5555-4555-8555-555555555555.jsonl": {
+   "mtime": 1791969000.0,
+   "text": "{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":\"Roll out the release and watch it\"},\"uuid\":\"4a76e1d1-b345-4d4a-a87d-7b6980222458\",\"timestamp\":\"2026-10-14T09:00:00.000Z\",\"permissionMode\":\"auto\",\"origin\":{\"kind\":\"human\"},\"promptSource\":\"typed\",\"turnOrigin\":\"human\",\"turnPosition\":{\"promptIndex\":1,\"turnIndex\":1},\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"message\":{\"model\":\"claude-model\",\"id\":\"\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_7517889722938246673709\",\"name\":\"Bash\",\"input\":{\"command\":\"sleep 60\",\"description\":\"Wait for the rollout\",\"run_in_background\":true},\"caller\":{\"type\":\"direct\"}}],\"container\":null,\"stop_reason\":\"tool_use\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":{\"thinking_tokens\":0},\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":0,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"global\",\"iterations\":[{\"input_tokens\":0,\"output_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"message\"}],\"speed\":\"\",\"fallback_credit\":null},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"wireToolInputs\":{\"toolu_KEY\":{\"command\":\"\",\"description\":\"\",\"run_in_background\":true}},\"wireIngestContext\":{\"toolu_KEY\":{\"cwd\":\"\"}},\"serverClassifierRequest\":\"00000000-0000-4000-8000-000000000000\",\"apiBlockIndex\":2,\"requestId\":\"\",\"requestedModel\":\"claude-model\",\"type\":\"assistant\",\"uuid\":\"8ab1f58a-6add-4b02-bcf0-dcea1b252bae\",\"timestamp\":\"2026-10-14T09:01:00.000Z\",\"advisorModel\":\"\",\"effort\":\"medium\",\"perTurnEffort\":\"medium\",\"session_id\":\"55555555-5555-4555-8555-555555555555\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":[{\"tool_use_id\":\"toolu_7517889722938246673709\",\"type\":\"tool_result\",\"content\":[{\"type\":\"text\",\"text\":\"Command running in background with ID: bq1rollout.\"}],\"is_error\":false}]},\"uuid\":\"96c3e48b-1670-4cd8-b950-9716548994bf\",\"timestamp\":\"2026-10-14T09:01:01.000Z\",\"toolUseResult\":{\"stdout\":\"\",\"stderr\":\"\",\"interrupted\":false,\"isImage\":false,\"noOutputExpected\":false,\"backgroundTaskId\":\"bq1rollout\"},\"serverClassifierContext\":{\"request\":\"00000000-0000-4000-8000-000000000000\",\"context\":{\"git_state\":{\"cwd\":\"\",\"root\":\"\",\"branch\":\"\",\"default_branch\":\"\",\"status\":{\"clean\":false,\"counts\":{\"staged\":0,\"modified\":2,\"untracked\":null,\"untracked_normal\":0},\"porcelain\":null,\"truncated\":false},\"visibility\":{\"origin\":{\"host\":\"\",\"remote\":\"\",\"visibility\":\"\"},\"push_remote\":\"\",\"remotes\":[{\"name\":\"\",\"host\":\"\",\"remote\":\"\",\"visibility\":\"\"}],\"visibility_cache\":[{\"host\":\"\",\"remote\":\"\",\"visibility\":\"\"}]}},\"live_cwd\":\"\",\"platform\":\"\"}},\"sourceToolAssistantUUID\":\"00000000-0000-4000-8000-000000000000\",\"permissionDecision\":{\"decision\":\"accept\",\"source\":\"config\",\"reasonType\":\"classifier\"},\"session_id\":\"55555555-5555-4555-8555-555555555555\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"message\":{\"model\":\"claude-model\",\"id\":\"\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_5362659624936261967553\",\"name\":\"Bash\",\"input\":{\"command\":\"sleep 60\",\"description\":\"Run the smoke suite\"},\"caller\":{\"type\":\"direct\"}}],\"container\":null,\"stop_reason\":\"tool_use\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":{\"thinking_tokens\":0},\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":0,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"global\",\"iterations\":[{\"input_tokens\":0,\"output_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"message\"}],\"speed\":\"\",\"fallback_credit\":null},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"wireToolInputs\":{\"toolu_KEY\":{\"command\":\"\",\"description\":\"\",\"run_in_background\":true}},\"wireIngestContext\":{\"toolu_KEY\":{\"cwd\":\"\"}},\"serverClassifierRequest\":\"00000000-0000-4000-8000-000000000000\",\"apiBlockIndex\":2,\"requestId\":\"\",\"requestedModel\":\"claude-model\",\"type\":\"assistant\",\"uuid\":\"6e4a5f4e-fa41-4876-8c0f-bc3057a2cf76\",\"timestamp\":\"2026-10-14T09:02:00.000Z\",\"advisorModel\":\"\",\"effort\":\"medium\",\"perTurnEffort\":\"medium\",\"session_id\":\"55555555-5555-4555-8555-555555555555\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":[{\"tool_use_id\":\"toolu_5362659624936261967553\",\"type\":\"tool_result\",\"content\":[{\"type\":\"text\",\"text\":\"Command running in background with ID: bq2smoke.\"}],\"is_error\":false}]},\"uuid\":\"d2b7b288-c3f0-4da1-bb2c-5b4a8113aab5\",\"timestamp\":\"2026-10-14T09:02:01.000Z\",\"toolUseResult\":{\"stdout\":\"\",\"stderr\":\"\",\"interrupted\":false,\"isImage\":false,\"noOutputExpected\":false,\"backgroundTaskId\":\"bq2smoke\",\"timedOutAfterMs\":0,\"backgroundCwdHint\":\"\"},\"serverClassifierContext\":{\"request\":\"00000000-0000-4000-8000-000000000000\",\"context\":{\"git_state\":{\"cwd\":\"\",\"root\":\"\",\"branch\":null,\"default_branch\":null,\"status\":null,\"visibility\":{\"origin\":null,\"push_remote\":\"\",\"remotes\":[],\"visibility_cache\":[{\"host\":\"\",\"remote\":\"\",\"visibility\":\"\"}]},\"error\":\"\"},\"live_cwd\":\"\",\"platform\":\"\"}},\"sourceToolAssistantUUID\":\"00000000-0000-4000-8000-000000000000\",\"session_id\":\"55555555-5555-4555-8555-555555555555\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"message\":{\"model\":\"claude-model\",\"id\":\"\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_6908688230594746053199\",\"name\":\"Monitor\",\"input\":{\"description\":\"Watch the error rate\",\"timeout_ms\":1800000,\"command\":\"true\"},\"caller\":{\"type\":\"direct\"}}],\"container\":null,\"stop_reason\":\"tool_use\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":{\"thinking_tokens\":0},\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":0,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"not_available\",\"iterations\":[{\"input_tokens\":0,\"output_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"message\"}],\"speed\":\"\"},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"wireToolInputs\":{\"toolu_KEY\":{\"description\":\"\",\"timeout_ms\":0,\"command\":\"\"}},\"serverClassifierRequest\":\"00000000-0000-4000-8000-000000000000\",\"apiBlockIndex\":0,\"requestId\":\"\",\"type\":\"assistant\",\"uuid\":\"f7330262-f1a8-4800-b207-c45bfe728ba7\",\"timestamp\":\"2026-10-14T09:03:00.000Z\",\"advisorModel\":\"\",\"effort\":\"medium\",\"perTurnEffort\":null,\"session_id\":\"55555555-5555-4555-8555-555555555555\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\",\"slug\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":[{\"tool_use_id\":\"toolu_6908688230594746053199\",\"type\":\"tool_result\",\"content\":[{\"type\":\"text\",\"text\":\"Monitor started (task mon1errors).\"}]}]},\"uuid\":\"84a2f592-762c-48f0-83d8-9e81761eb206\",\"timestamp\":\"2026-10-14T09:03:01.000Z\",\"toolUseResult\":{\"taskId\":\"mon1errors\",\"timeoutMs\":1800000,\"persistent\":false},\"serverClassifierContext\":{\"request\":\"00000000-0000-4000-8000-000000000000\",\"context\":{\"git_state\":{\"cwd\":\"\",\"root\":\"\",\"branch\":\"\",\"default_branch\":\"\",\"status\":{\"clean\":true,\"counts\":{\"staged\":0,\"modified\":0,\"untracked\":null,\"untracked_normal\":0},\"porcelain\":null,\"truncated\":false},\"visibility\":{\"origin\":{\"host\":\"\",\"remote\":\"\",\"visibility\":\"\"},\"push_remote\":\"\",\"remotes\":[{\"name\":\"\",\"host\":\"\",\"remote\":\"\",\"visibility\":\"\"}],\"visibility_cache\":[{\"host\":\"\",\"remote\":\"\",\"visibility\":\"\"}]}},\"live_cwd\":\"\",\"platform\":\"\"}},\"sourceToolAssistantUUID\":\"00000000-0000-4000-8000-000000000000\",\"session_id\":\"55555555-5555-4555-8555-555555555555\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\",\"slug\":\"\"}\n{\"type\":\"queue-operation\",\"operation\":\"enqueue\",\"timestamp\":\"2026-10-14T09:06:00.000Z\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"content\":\"<task-notification>\\n<task-id>mon1errors</task-id>\\n<summary>Monitor event</summary>\\n<event>error rate 0.4%</event>\\n</task-notification>\",\"uuid\":\"2799c382-39e1-4ff1-8dd8-5d118230e4dd\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"message\":{\"model\":\"claude-model\",\"id\":\"\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_0433352897367246202029\",\"name\":\"Bash\",\"input\":{\"command\":\"sleep 60\",\"description\":\"Tail the old logs\",\"run_in_background\":true},\"caller\":{\"type\":\"direct\"}}],\"container\":null,\"stop_reason\":\"tool_use\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":{\"thinking_tokens\":0},\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":0,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"global\",\"iterations\":[{\"input_tokens\":0,\"output_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"message\"}],\"speed\":\"\",\"fallback_credit\":null},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"wireToolInputs\":{\"toolu_KEY\":{\"command\":\"\",\"description\":\"\",\"run_in_background\":true}},\"wireIngestContext\":{\"toolu_KEY\":{\"cwd\":\"\"}},\"serverClassifierRequest\":\"00000000-0000-4000-8000-000000000000\",\"apiBlockIndex\":2,\"requestId\":\"\",\"requestedModel\":\"claude-model\",\"type\":\"assistant\",\"uuid\":\"c75919d4-1dfc-4ecb-a47d-58b0929fc8ad\",\"timestamp\":\"2026-10-14T09:04:00.000Z\",\"advisorModel\":\"\",\"effort\":\"medium\",\"perTurnEffort\":\"medium\",\"session_id\":\"55555555-5555-4555-8555-555555555555\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":[{\"tool_use_id\":\"toolu_0433352897367246202029\",\"type\":\"tool_result\",\"content\":[{\"type\":\"text\",\"text\":\"Command running in background with ID: bq3old.\"}],\"is_error\":false}]},\"uuid\":\"db5371e4-9955-46bb-96e1-dbb05bc1372b\",\"timestamp\":\"2026-10-14T09:04:01.000Z\",\"toolUseResult\":{\"stdout\":\"\",\"stderr\":\"\",\"interrupted\":false,\"isImage\":false,\"noOutputExpected\":false,\"backgroundTaskId\":\"bq3old\"},\"serverClassifierContext\":{\"request\":\"00000000-0000-4000-8000-000000000000\",\"context\":{\"git_state\":{\"cwd\":\"\",\"root\":\"\",\"branch\":\"\",\"default_branch\":\"\",\"status\":{\"clean\":false,\"counts\":{\"staged\":0,\"modified\":2,\"untracked\":null,\"untracked_normal\":0},\"porcelain\":null,\"truncated\":false},\"visibility\":{\"origin\":{\"host\":\"\",\"remote\":\"\",\"visibility\":\"\"},\"push_remote\":\"\",\"remotes\":[{\"name\":\"\",\"host\":\"\",\"remote\":\"\",\"visibility\":\"\"}],\"visibility_cache\":[{\"host\":\"\",\"remote\":\"\",\"visibility\":\"\"}]}},\"live_cwd\":\"\",\"platform\":\"\"}},\"sourceToolAssistantUUID\":\"00000000-0000-4000-8000-000000000000\",\"permissionDecision\":{\"decision\":\"accept\",\"source\":\"config\",\"reasonType\":\"classifier\"},\"session_id\":\"55555555-5555-4555-8555-555555555555\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"message\":{\"model\":\"claude-model\",\"id\":\"\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_5571383311153823136154\",\"name\":\"TaskStop\",\"input\":{\"task_id\":\"bq3old\"},\"caller\":{\"type\":\"direct\"}}],\"container\":null,\"stop_reason\":\"tool_use\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":{\"thinking_tokens\":0},\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":0,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"global\",\"iterations\":[{\"input_tokens\":0,\"output_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"message\"}],\"speed\":\"\",\"fallback_credit\":null},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"wireToolInputs\":{\"toolu_KEY\":{\"task_id\":\"\"}},\"serverClassifierRequest\":\"00000000-0000-4000-8000-000000000000\",\"apiBlockIndex\":0,\"requestId\":\"\",\"requestedModel\":\"claude-model\",\"type\":\"assistant\",\"uuid\":\"a81591fc-14f9-4e58-8255-7cf8e11b2dfd\",\"timestamp\":\"2026-10-14T09:05:00.000Z\",\"advisorModel\":\"\",\"effort\":\"medium\",\"perTurnEffort\":\"medium\",\"session_id\":\"55555555-5555-4555-8555-555555555555\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":[{\"tool_use_id\":\"toolu_5571383311153823136154\",\"type\":\"tool_result\",\"content\":[{\"type\":\"text\",\"text\":\"Successfully stopped task: bq3old\"}],\"is_error\":false}]},\"uuid\":\"94317805-9983-4266-8f9e-b16761567126\",\"timestamp\":\"2026-10-14T09:05:01.000Z\",\"toolUseResult\":{\"message\":\"Successfully stopped task: bq3old\",\"task_id\":\"bq3old\",\"task_type\":\"local_bash\",\"command\":\"\"},\"sourceToolAssistantUUID\":\"00000000-0000-4000-8000-000000000000\",\"permissionDecision\":{\"decision\":\"accept\",\"source\":\"config\"},\"session_id\":\"55555555-5555-4555-8555-555555555555\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"message\":{\"model\":\"claude-model\",\"id\":\"\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_5481269883009233487816\",\"name\":\"Agent\",\"input\":{\"description\":\"Check the canary metrics\",\"subagent_type\":\"general-purpose\",\"model\":\"sonnet\",\"prompt\":\"brief\",\"run_in_background\":true},\"caller\":{\"type\":\"direct\"}}],\"container\":null,\"stop_reason\":\"tool_use\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":{\"thinking_tokens\":0},\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":0,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"global\",\"iterations\":[{\"input_tokens\":0,\"output_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"message\"}],\"speed\":\"\",\"fallback_credit\":null},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"wireToolInputs\":{\"toolu_KEY\":{\"description\":\"\",\"subagent_type\":\"\",\"prompt\":\"\"}},\"serverClassifierRequest\":\"00000000-0000-4000-8000-000000000000\",\"apiBlockIndex\":2,\"requestId\":\"\",\"requestedModel\":\"claude-model\",\"type\":\"assistant\",\"uuid\":\"959171a9-17de-46ff-84a2-14f81f878364\",\"timestamp\":\"2026-10-14T09:07:00.000Z\",\"advisorModel\":\"\",\"effort\":\"medium\",\"perTurnEffort\":\"medium\",\"session_id\":\"55555555-5555-4555-8555-555555555555\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":[{\"tool_use_id\":\"toolu_5481269883009233487816\",\"type\":\"tool_result\",\"content\":[{\"type\":\"text\",\"text\":\"Async agent launched successfully.\\nagentId: g1canary0000000001\"}]}]},\"uuid\":\"4ad3a009-9114-4f55-9c61-b754d52eb80d\",\"timestamp\":\"2026-10-14T09:07:01.000Z\",\"toolUseResult\":{\"isAsync\":true,\"status\":\"async_launched\",\"agentId\":\"g1canary0000000001\",\"description\":\"Check the canary metrics\",\"resolvedModel\":\"claude-model\",\"prompt\":\"\",\"outputFile\":\"\",\"canReadOutputFile\":true,\"canContinueAgent\":true},\"serverClassifierContext\":{\"request\":\"00000000-0000-4000-8000-000000000000\",\"context\":{\"git_state\":{\"cwd\":\"\",\"root\":\"\",\"branch\":null,\"default_branch\":null,\"status\":null,\"visibility\":{\"origin\":null,\"push_remote\":\"\",\"remotes\":[],\"visibility_cache\":[{\"host\":\"\",\"remote\":\"\",\"visibility\":\"\"}]},\"error\":\"\"},\"live_cwd\":\"\",\"platform\":\"\"}},\"sourceToolAssistantUUID\":\"00000000-0000-4000-8000-000000000000\",\"permissionDecision\":{\"decision\":\"accept\",\"source\":\"config\",\"reasonType\":\"classifier\"},\"session_id\":\"55555555-5555-4555-8555-555555555555\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"message\":{\"model\":\"claude-model\",\"id\":\"\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"Rollout under way; watching errors.\"}],\"container\":null,\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":{\"thinking_tokens\":0},\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":0,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"global\",\"iterations\":[{\"input_tokens\":0,\"output_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"message\"}],\"speed\":\"\",\"fallback_credit\":null},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"serverClassifierRequest\":\"00000000-0000-4000-8000-000000000000\",\"apiBlockIndex\":1,\"requestId\":\"\",\"requestedModel\":\"claude-model\",\"attributionMcpServer\":\"\",\"attributionMcpTool\":\"\",\"type\":\"assistant\",\"uuid\":\"5e86ee62-7f3f-4a46-b0c5-8bd9fe6056f1\",\"timestamp\":\"2026-10-14T09:10:00.000Z\",\"advisorModel\":\"\",\"effort\":\"medium\",\"perTurnEffort\":\"medium\",\"session_id\":\"55555555-5555-4555-8555-555555555555\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n"
+  },
+  "projects/-home-user-project/66666666-6666-4666-8666-666666666666.jsonl": {
+   "mtime": 1791969180.0,
+   "text": "{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":\"Rebuild the cache\"},\"uuid\":\"e8959d0e-899b-4557-bf8f-db2f6b039f45\",\"timestamp\":\"2026-10-14T09:00:00.000Z\",\"permissionMode\":\"auto\",\"origin\":{\"kind\":\"human\"},\"promptSource\":\"typed\",\"turnOrigin\":\"human\",\"turnPosition\":{\"promptIndex\":1,\"turnIndex\":1},\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"66666666-6666-4666-8666-666666666666\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"message\":{\"model\":\"claude-model\",\"id\":\"\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_6303440778924639896580\",\"name\":\"Bash\",\"input\":{\"command\":\"sleep 60\",\"description\":\"Rebuild the cache\",\"run_in_background\":true},\"caller\":{\"type\":\"direct\"}}],\"container\":null,\"stop_reason\":\"tool_use\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":{\"thinking_tokens\":0},\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":0,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"global\",\"iterations\":[{\"input_tokens\":0,\"output_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"message\"}],\"speed\":\"\",\"fallback_credit\":null},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"wireToolInputs\":{\"toolu_KEY\":{\"command\":\"\",\"description\":\"\",\"run_in_background\":true}},\"wireIngestContext\":{\"toolu_KEY\":{\"cwd\":\"\"}},\"serverClassifierRequest\":\"00000000-0000-4000-8000-000000000000\",\"apiBlockIndex\":2,\"requestId\":\"\",\"requestedModel\":\"claude-model\",\"type\":\"assistant\",\"uuid\":\"fbb8ac25-3937-4f62-bba1-2d4633c9814a\",\"timestamp\":\"2026-10-14T09:01:00.000Z\",\"advisorModel\":\"\",\"effort\":\"medium\",\"perTurnEffort\":\"medium\",\"session_id\":\"66666666-6666-4666-8666-666666666666\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"66666666-6666-4666-8666-666666666666\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":[{\"tool_use_id\":\"toolu_6303440778924639896580\",\"type\":\"tool_result\",\"content\":[{\"type\":\"text\",\"text\":\"Command running in background with ID: bq9cache.\"}],\"is_error\":false}]},\"uuid\":\"b378c57a-461b-4957-b70f-b603e72a6210\",\"timestamp\":\"2026-10-14T09:01:01.000Z\",\"toolUseResult\":{\"stdout\":\"\",\"stderr\":\"\",\"interrupted\":false,\"isImage\":false,\"noOutputExpected\":false,\"backgroundTaskId\":\"bq9cache\"},\"serverClassifierContext\":{\"request\":\"00000000-0000-4000-8000-000000000000\",\"context\":{\"git_state\":{\"cwd\":\"\",\"root\":\"\",\"branch\":\"\",\"default_branch\":\"\",\"status\":{\"clean\":false,\"counts\":{\"staged\":0,\"modified\":2,\"untracked\":null,\"untracked_normal\":0},\"porcelain\":null,\"truncated\":false},\"visibility\":{\"origin\":{\"host\":\"\",\"remote\":\"\",\"visibility\":\"\"},\"push_remote\":\"\",\"remotes\":[{\"name\":\"\",\"host\":\"\",\"remote\":\"\",\"visibility\":\"\"}],\"visibility_cache\":[{\"host\":\"\",\"remote\":\"\",\"visibility\":\"\"}]}},\"live_cwd\":\"\",\"platform\":\"\"}},\"sourceToolAssistantUUID\":\"00000000-0000-4000-8000-000000000000\",\"permissionDecision\":{\"decision\":\"accept\",\"source\":\"config\",\"reasonType\":\"classifier\"},\"session_id\":\"66666666-6666-4666-8666-666666666666\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"66666666-6666-4666-8666-666666666666\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":\"continue\"},\"isVisibleInTranscriptOnly\":true,\"isCompactSummary\":true,\"uuid\":\"f1d0d495-b7b4-411a-b578-ab98b34ed051\",\"timestamp\":\"2026-10-14T09:12:00.000Z\",\"turnPosition\":{\"promptIndex\":24,\"turnIndex\":170},\"turnOrigin\":\"peer\",\"session_id\":\"66666666-6666-4666-8666-666666666666\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"66666666-6666-4666-8666-666666666666\",\"version\":\"\",\"gitBranch\":\"\",\"slug\":\"\"}\n{\"type\":\"queue-operation\",\"operation\":\"enqueue\",\"timestamp\":\"2026-10-14T09:12:00.000Z\",\"sessionId\":\"66666666-6666-4666-8666-666666666666\",\"content\":\"<task-notification>\\n<task-id>bq9cache</task-id>\\n<task-id>__orphan_summary__:shell</task-id>\\n<status>stopped</status>\\n<summary>orphaned</summary>\\n<note>n</note>\\n</task-notification>\",\"uuid\":\"e3a9b510-7245-4755-bd0e-148a05ace174\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"message\":{\"model\":\"claude-model\",\"id\":\"\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"The cache rebuild was left behind by the last process.\"}],\"container\":null,\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":{\"thinking_tokens\":0},\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":0,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"global\",\"iterations\":[{\"input_tokens\":0,\"output_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"message\"}],\"speed\":\"\",\"fallback_credit\":null},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"serverClassifierRequest\":\"00000000-0000-4000-8000-000000000000\",\"apiBlockIndex\":1,\"requestId\":\"\",\"requestedModel\":\"claude-model\",\"attributionMcpServer\":\"\",\"attributionMcpTool\":\"\",\"type\":\"assistant\",\"uuid\":\"ccf11652-2aa1-448e-ac0b-11386798fbf4\",\"timestamp\":\"2026-10-14T09:13:00.000Z\",\"advisorModel\":\"\",\"effort\":\"medium\",\"perTurnEffort\":\"medium\",\"session_id\":\"66666666-6666-4666-8666-666666666666\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"66666666-6666-4666-8666-666666666666\",\"version\":\"\",\"gitBranch\":\"\"}\n"
+  }
+ },
+ "snapshot": {
+  "agents": [
+   {
+    "agent": "claude",
+    "agent_session": {
+     "agent": "claude",
+     "kind": "id",
+     "source": "herdr:claude",
+     "value": "55555555-5555-4555-8555-555555555555"
+    },
+    "agent_status": "idle",
+    "cwd": "/home/user/project",
+    "focused": false,
+    "foreground_cwd": "",
+    "pane_id": "w1:p1",
+    "revision": 77387,
+    "state_change_seq": 81,
+    "tab_id": "w1:t1",
+    "terminal_id": "",
+    "terminal_title": "",
+    "terminal_title_stripped": "",
+    "tokens": {
+     "harness_logo": "",
+     "logo_working": "",
+     "sort_key": "",
+     "state_working": "",
+     "tab_key": "",
+     "title_working": "",
+     "ws_key": ""
+    },
+    "workspace_id": "w1"
+   },
+   {
+    "agent": "claude",
+    "agent_session": {
+     "agent": "claude",
+     "kind": "id",
+     "source": "herdr:claude",
+     "value": "66666666-6666-4666-8666-666666666666"
+    },
+    "agent_status": "idle",
+    "cwd": "/home/user/project",
+    "focused": false,
+    "foreground_cwd": "",
+    "pane_id": "w1:p2",
+    "revision": 77387,
+    "state_change_seq": 81,
+    "tab_id": "w1:t2",
+    "terminal_id": "",
+    "terminal_title": "",
+    "terminal_title_stripped": "",
+    "tokens": {
+     "harness_logo": "",
+     "logo_working": "",
+     "sort_key": "",
+     "state_working": "",
+     "tab_key": "",
+     "title_working": "",
+     "ws_key": ""
+    },
+    "workspace_id": "w1"
+   }
+  ],
+  "focused_pane_id": "",
+  "focused_tab_id": "",
+  "focused_workspace_id": "",
+  "layouts": [
+   {
+    "area": {
+     "height": 77,
+     "width": 296,
+     "x": 0,
+     "y": 0
+    },
+    "focused_pane_id": "",
+    "panes": [
+     {
+      "focused": true,
+      "pane_id": "",
+      "rect": {
+       "height": 77,
+       "width": 296,
+       "x": 0,
+       "y": 0
+      }
+     }
+    ],
+    "splits": [],
+    "tab_id": "",
+    "workspace_id": "",
+    "zoomed": false
+   }
+  ],
+  "panes": [
+   {
+    "agent": "claude",
+    "agent_session": {
+     "agent": "claude",
+     "kind": "",
+     "source": "",
+     "value": ""
+    },
+    "agent_status": "working",
+    "cwd": "",
+    "focused": false,
+    "foreground_cwd": "",
+    "pane_id": "w1:p1",
+    "revision": 77387,
+    "scroll": {
+     "max_offset_from_bottom": 0,
+     "offset_from_bottom": 0,
+     "viewport_rows": 77
+    },
+    "tab_id": "w1:t1",
+    "terminal_id": "",
+    "terminal_title": "",
+    "terminal_title_stripped": "",
+    "tokens": {
+     "harness_logo": "",
+     "logo_working": "",
+     "sort_key": "",
+     "state_working": "",
+     "tab_key": "",
+     "title_working": "",
+     "ws_key": ""
+    },
+    "workspace_id": "w1"
+   },
+   {
+    "agent": "claude",
+    "agent_session": {
+     "agent": "claude",
+     "kind": "",
+     "source": "",
+     "value": ""
+    },
+    "agent_status": "working",
+    "cwd": "",
+    "focused": false,
+    "foreground_cwd": "",
+    "pane_id": "w1:p2",
+    "revision": 77387,
+    "scroll": {
+     "max_offset_from_bottom": 0,
+     "offset_from_bottom": 0,
+     "viewport_rows": 77
+    },
+    "tab_id": "w1:t2",
+    "terminal_id": "",
+    "terminal_title": "",
+    "terminal_title_stripped": "",
+    "tokens": {
+     "harness_logo": "",
+     "logo_working": "",
+     "sort_key": "",
+     "state_working": "",
+     "tab_key": "",
+     "title_working": "",
+     "ws_key": ""
+    },
+    "workspace_id": "w1"
+   }
+  ],
+  "protocol": 22,
+  "tabs": [
+   {
+    "agent_status": "working",
+    "focused": false,
+    "label": "Release",
+    "number": 98,
+    "pane_count": 1,
+    "tab_id": "w1:t1",
+    "workspace_id": "w1"
+   },
+   {
+    "agent_status": "working",
+    "focused": false,
+    "label": "Cache",
+    "number": 98,
+    "pane_count": 1,
+    "tab_id": "w1:t2",
+    "workspace_id": "w1"
+   }
+  ],
+  "version": "0.9.3",
+  "workspaces": [
+   {
+    "active_tab_id": "",
+    "agent_status": "working",
+    "focused": true,
+    "label": "",
+    "number": 1,
+    "pane_count": 10,
+    "tab_count": 8,
+    "tokens": {
+     "space_label": "",
+     "space_logo_claude": "",
+     "space_working_claude": ""
+    },
+    "workspace_id": ""
+   }
+  ]
+ },
+ "inbox": []
+}
