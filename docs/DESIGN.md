@@ -1749,9 +1749,11 @@ has proven itself (the operator, Q140).
   - **Shared:** `f` or a click on a filter in a panel sends `filter` (protocol 1.3) to the
     core. The home panorama takes it and publishes it as `state.filter`, and its own `f` does
     the same, so every panel and the home view show one filter. The choosing panel keeps its
-    choice against older states until the core echoes it, or for 1 s.
+    choice against older states until the core echoes it, or for 1 s. Nothing saves it: after
+    a home restart every view starts at `all` again (no filter was ever saved).
   - **Navigation:** only among what the filter shows. When it hides the shown orchestrator, no
-    row is selected and no key acts on it; ↑/↓ resume from where it sits in the full list, to
+    row is selected and no key acts on it; it is the selected row again as soon as the filter
+    shows it (a refresh or a filter change). ↑/↓ resume from where it sits in the full list, to
     the next shown row in their direction (they used to jump to the top). The same holds in
     the home view for a selected row a refresh hides.
 - **The focus colour on the first frame** (the operator's report).

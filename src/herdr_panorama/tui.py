@@ -898,8 +898,6 @@ class SwarmApp(App):
         if self._cur(v.focus) is None or v.orch == render.NEW_ROW:
             return None, None, None
         o = render.find_orch(self.swarm, v.orch)
-        if o is not None and o not in render.visible_orchs(self.swarm, v):
-            return None, None, None  # the filter hides it: no key acts on what is not shown
         t = render.find_thread(o, v.thread)
         a = render.find_agent(t, v.agent) if v.focus >= 2 or t is not None else None
         return o, t, a
@@ -1379,10 +1377,14 @@ class SwarmApp(App):
             self._apply_filter(name)
         self.publish()
 
-    def _apply_filter(self, name: str) -> None:
+    def _filter_to(self, name: str) -> None:
+        """The filter changes: a selection it hides is parked (resolve)."""
         self.view.filter = name
         self.view.wheel.clear()
         self.resolve()
+
+    def _apply_filter(self, name: str) -> None:
+        self._filter_to(name)
         cols = render.nav(self.swarm, self.view)
         if self.view.orch is None and cols[0]:
             self.view.orch = cols[0][0]

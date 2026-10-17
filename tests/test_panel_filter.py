@@ -23,8 +23,8 @@ NINE = json.loads((FIX / "design_9.json").read_text())
 # the fixture under "needs": w1:p1, w1:p2, w1:p3 shown; w1:p4 and w1:p5 hidden
 
 
-def state(visible=None, view_filter=None):
-    st = protocol.state_message(design_swarm(NINE["data"]), {}, None, visible, None)["state"]
+def state(visible=None, view_filter=None, sw=None):
+    st = protocol.state_message(sw or design_swarm(NINE["data"]), {}, None, visible, None)["state"]
     if view_filter is not None:
         st["filter"] = view_filter  # 1.3's field, as the core sends it
     return st
@@ -93,14 +93,13 @@ async def test_a_filter_chosen_in_one_panel_shows_in_every_panel(paths):
         c.publish(protocol.state_message(sw, {}, None, ["w1:t2"], None, "all"))
         a = panel(paths, "w1:t2", "w1:p92", start_client=True)
         b = panel(paths, "w1:t4", "w1:p94", start_client=True)
-        async with a.run_test(size=(46, 45)) as pa:
-            async with b.run_test(size=(46, 45)) as pb:
-                assert await settle(pa, lambda: a.connected and b.connected and a.loaded and b.loaded)
-                await pa.press("f")  # all -> running
-                await pa.press("f")  # running -> needs
-                assert a.view.filter == "needs"
-                assert await settle(pb, lambda: b.view.filter == "needs"), b.view.filter
-                assert a.view.filter == "needs"
+        async with a.run_test(size=(46, 45)) as pa, b.run_test(size=(46, 45)) as pb:
+            assert await settle(pa, lambda: a.connected and b.connected and a.loaded and b.loaded)
+            await pa.press("f")  # all -> running
+            await pa.press("f")  # running -> needs
+            assert a.view.filter == "needs"
+            assert await settle(pb, lambda: b.view.filter == "needs"), b.view.filter
+            assert a.view.filter == "needs"
     finally:
         c.stop()
 
@@ -153,6 +152,21 @@ async def test_an_unechoed_choice_gives_way_to_the_core_after_a_moment(paths, mo
         await pilot.pause(0.1)
         a._got_state(state(visible=["w1:t2"], view_filter="running"))
         assert a.view.filter == "running"
+
+
+async def test_after_a_lost_core_the_next_cores_filter_wins_at_once(paths, monkeypatch):
+    """A choice still waiting for its echo when the core goes: the next core's state decides
+    (a home restart starts at "all"), not this panel's unconfirmed choice."""
+    a = panel(paths, "w1:t2", "w1:p92")
+    async with a.run_test(size=(46, 45)) as pilot:
+        a._got_state(state(visible=["w1:t2"], view_filter="all"))
+        await pilot.pause()
+        monkeypatch.setattr(a.client, "filter", lambda name: True)
+        a._set_filter("needs")
+        a._status(False)
+        a._status(True)
+        a._got_state(state(visible=["w1:t2"], view_filter="all"))
+        assert a.view.filter == "all"
 
 
 # -- 2. navigation among what the filter shows -------------------------------------------
@@ -210,3 +224,21 @@ async def test_arrows_in_the_home_view_step_from_a_row_the_filter_just_hid(fake_
         assert app.view.orch is None
         await pilot.press("up")
         assert app.view.orch == "w1:p2"
+
+
+async def test_the_shown_orchestrator_is_selected_again_when_the_filter_shows_it_again(paths):
+    """Review of #54 (M1): tab 3's panel under "needs"; w1:p3's questions are answered (hidden,
+    no selected row), then a new one arrives: w1:p3 is the selected row again, without waiting
+    for a tab switch."""
+    b = panel(paths, "w1:t3", "w1:p93")
+    sw = design_swarm(NINE["data"])
+    async with b.run_test(size=(46, 45)) as pilot:
+        b._got_state(state(visible=["w1:t3"], view_filter="needs", sw=sw))
+        await pilot.pause()
+        assert b.view.orch == "w1:p3"
+        sw2 = copy.deepcopy(sw)
+        render.find_orch(sw2, "w1:p3").inbox = []
+        b._got_state(state(visible=["w1:t3"], view_filter="needs", sw=sw2))
+        assert b.view.orch is None
+        b._got_state(state(visible=["w1:t3"], view_filter="needs", sw=sw))  # needs the operator again
+        assert b.view.orch == "w1:p3"

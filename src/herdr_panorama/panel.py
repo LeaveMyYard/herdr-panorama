@@ -293,6 +293,8 @@ class PanelApp(SwarmApp):
                 self.view.orch, self.view.focus = active, 0
                 self._default_children()
                 self.repaint()
+        elif self._back_to_shown():  # a refresh made the filter show it again (review of #54)
+            self.repaint()
         if isinstance(focused, str):
             self.herdr_focus(focused)
             if focused == self._awaiting:
@@ -323,17 +325,22 @@ class PanelApp(SwarmApp):
         it, none when it hides it (the arrows then resume from it); a cursor an arrow moved
         stays while it is shown."""
         v = self.view
-        v.filter = name
-        v.wheel.clear()
-        back = v.orch is None and self._active is not None
-        if back:
-            v.orch = self._active
-        self.resolve()
-        if v.orch is None:
+        self._filter_to(name)
+        if v.orch is None and not self._back_to_shown():
             v.focus = 0
-        elif back:
-            self._default_children()
+            if self._active:
+                self._parked_orch = self._active  # the arrows resume from it (_resume)
         self.repaint()
+
+    def _back_to_shown(self) -> bool:
+        """No selected row while the filter shows the orchestrator herdr shows: it is the
+        selected row again. Whether it changed anything."""
+        v = self.view
+        if v.orch is not None or not self._active or self._active not in render.nav(self.swarm, v)[0]:
+            return False
+        v.orch, v.focus = self._active, 0
+        self._default_children()
+        return True
 
     @staticmethod
     def _herdr_shows(swarm, visible, focused) -> str | None:

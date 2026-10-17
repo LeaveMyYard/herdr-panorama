@@ -83,7 +83,7 @@ Any message before `hello` closes the connection.
 | `unseen` | `{agent id: "fail" \| "wait" \| "done"}`, the unseen marks |
 | `focused_pane` | the pane herdr last reported focused, or `null` |
 | `panels` | (1.1) `{tab id: pane id}` of the per-tab panels: where a switch to that tab puts the keyboard |
-| `filter` | (1.3) the filter every view shows: `"all"`, `"running"` or `"needs"`. A viewer moves its cursor only among what it shows; a 1.2 core sends none, and each panel then keeps its own. |
+| `filter` | (1.3) the filter every view shows: `"all"`, `"running"` or `"needs"`. A viewer moves its cursor only among what it shows; a 1.2 core sends none, and each panel then keeps its own. It is the home panorama's filter, not saved: `all` after a home restart. |
 | `visible_tabs` | the tabs herdr shows, or `null` if unknown. A viewer whose tab is not listed stops animating; unknown counts as visible. In v1 this is herdr's one focused tab. herdr 0.9.3 does not say how many clients are attached, or which tab each shows, so with two clients the second client's panel can pause until its tab is focused. |
 
 The viewer picks its own tab's orchestrator (`tab_id` equals its own) as the panel's docked
