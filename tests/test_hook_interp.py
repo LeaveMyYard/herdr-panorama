@@ -193,3 +193,122 @@ def test_concurrent_cold_hooks_agree_on_one_whole_cache(tmp_path):
     assert len(recorded(tmp_path)) == 16
     assert [x.name for x in data.iterdir()] == ["python-interpreter"]
     assert os.path.realpath((data / "python-interpreter").read_text().strip()) == REAL_PY
+
+
+# -- review round 1 ---------------------------------------------------------------------
+
+def old_python(tmp_path, version="(3, 9, 18, 'final', 0)"):
+    """A ``python3`` that answers the resolver as an older Python would, and runs hooks normally."""
+    log = tmp_path / "old.log"
+    return tool_bin(tmp_path, f'''#!/bin/sh
+echo call >> "{log}"
+if [ "$2" = -c ]; then
+    exec "{REAL_PY}" -I -c "import sys; sys.version_info = {version}; exec(sys.argv[1])" "$3"
+fi
+exec "{REAL_PY}" "$@"
+'''), log
+
+
+def test_an_interpreter_too_old_for_the_hooks_is_never_cached(tmp_path):
+    path, log = old_python(tmp_path)
+    data = tmp_path / "data"
+    env = base_env(tmp_path, path, data)
+    for event in ("SubagentStart", "SubagentStop"):
+        p = run(env, event)
+        assert (p.returncode, p.stdout, p.stderr) == (0, "", "")
+    assert not (data / "python-interpreter").exists()
+    assert [r["event"] for r in recorded(tmp_path)] == ["start", "stop"]  # still ran, through plain python3
+    assert calls(log) == 4  # resolver + hook, each time: nothing pinned
+
+
+def test_python_3_10_is_new_enough_to_cache(tmp_path):
+    path, _ = old_python(tmp_path, "(3, 10, 0, 'final', 0)")
+    data = tmp_path / "data"
+    assert run(base_env(tmp_path, path, data)).returncode == 0
+    assert os.path.realpath((data / "python-interpreter").read_text().strip()) == REAL_PY
+
+
+def session_start_env(tmp_path, data):
+    path, log = shim(tmp_path)
+    env = base_env(tmp_path, path, data)
+    env["HERDR_PANE_ID"] = "w1:p1"
+    return env
+
+
+def assert_only_the_session_json(p):
+    assert p.returncode == 0 and p.stderr == ""
+    assert len(p.stdout.splitlines()) == 1  # nothing but hooks.py's one JSON object reaches the model
+    assert json.loads(p.stdout)["hookSpecificOutput"]["hookEventName"] == "SessionStart"
+
+
+def test_cold_session_start_prints_only_its_json(tmp_path):
+    data = tmp_path / "data" / "nested"
+    p = run(session_start_env(tmp_path, data), "SessionStart", {"session_id": "s", "source": "startup"})
+    assert_only_the_session_json(p)
+    assert (data / "python-interpreter").exists()
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="root ignores directory permissions")
+def test_session_start_on_an_unwritable_dir_prints_only_its_json(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    data.chmod(0o500)
+    try:
+        p = run(session_start_env(tmp_path, data), "SessionStart", {"session_id": "s", "source": "startup"})
+    finally:
+        data.chmod(0o700)
+    assert_only_the_session_json(p)
+
+
+def test_session_start_with_data_path_a_file_prints_only_its_json(tmp_path):
+    data = tmp_path / "data"
+    data.write_text("x")
+    p = run(session_start_env(tmp_path, data), "SessionStart", {"session_id": "s", "source": "startup"})
+    assert_only_the_session_json(p)
+
+
+@pytest.mark.parametrize("warm", [False, True])
+def test_hooks_run_isolated_from_pythonpath(tmp_path, warm):
+    poison = tmp_path / "poison"
+    poison.mkdir()
+    (poison / "json.py").write_text("raise SystemExit(3)\n")
+    path, _ = shim(tmp_path)
+    data = tmp_path / "data"
+    env = base_env(tmp_path, path, data)
+    if warm:
+        run(env)
+    env["PYTHONPATH"] = str(poison)
+    p = run(env, "SubagentStop")
+    assert (p.returncode, p.stdout, p.stderr) == (0, "", "")
+    assert recorded(tmp_path)[-1]["event"] == "stop"  # -I: the poisoned json was never imported
+
+
+def test_a_relative_cache_entry_is_never_run_even_if_it_exists_in_the_cwd(tmp_path):
+    path, log = shim(tmp_path)
+    cwd = tmp_path / "cwd"
+    cwd.mkdir()
+    trap = cwd / "python3"
+    trap_log = tmp_path / "trap.log"
+    trap.write_text(f'#!/bin/sh\necho call >> "{trap_log}"\nexit 0\n')
+    trap.chmod(0o755)
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "python-interpreter").write_text("python3\n")
+    p = subprocess.run(hook_argv("SubagentStart"), input=json.dumps(PAYLOAD), capture_output=True, text=True,
+                       timeout=30, env=base_env(tmp_path, path, data), cwd=cwd)
+    assert (p.returncode, p.stdout, p.stderr) == (0, "", "")
+    assert not trap_log.exists()
+    assert [r["event"] for r in recorded(tmp_path)] == ["start"]
+    assert os.path.realpath((data / "python-interpreter").read_text().strip()) == REAL_PY
+
+
+def test_a_directory_in_the_cache_place_collects_no_temp_files(tmp_path):
+    path, _ = shim(tmp_path)
+    data = tmp_path / "data"
+    (data / "python-interpreter").mkdir(parents=True)
+    for event in ("SubagentStart", "SubagentStop"):
+        p = run(base_env(tmp_path, path, data), event)
+        assert (p.returncode, p.stdout, p.stderr) == (0, "", "")
+    assert list((data / "python-interpreter").iterdir()) == []
+    assert [x.name for x in data.iterdir()] == ["python-interpreter"]
+    assert len(recorded(tmp_path)) == 2

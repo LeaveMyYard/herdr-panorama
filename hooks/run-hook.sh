@@ -6,6 +6,10 @@
 # call). The interpreter it resolves to is cached in Claude Code's per-plugin data directory
 # ($CLAUDE_PLUGIN_DATA/python-interpreter) and executed directly afterwards.
 #
+# Only an interpreter new enough for the hook scripts (3.10+) is cached: python3 is resolved in
+# the first hook's cwd, so a project's pyenv `.python-version` or an active venv decides what
+# gets cached, and an older one must not become every session's interpreter.
+#
 # Safe by construction: a cache that is unreadable, not an absolute path or no longer an
 # executable file is ignored and re-resolved; the cache is written to a per-process temp
 # file and renamed into place (concurrent hooks only ever see a whole file, and all write
@@ -29,10 +33,13 @@ if [ -n "${CLAUDE_PLUGIN_DATA:-}" ]; then
 	if usable "$py"; then
 		exec "$py" -I "$hook" "$@"
 	fi
-	py=$(python3 -I -c 'import sys; print(sys.executable or "")' 2>/dev/null </dev/null)
+	py=$(python3 -I -c 'import sys; print(sys.executable or "" if sys.version_info >= (3, 10) else "")' \
+		2>/dev/null </dev/null)
 	if usable "$py"; then
 		tmp=$cache.$$.tmp
-		if mkdir -p "$CLAUDE_PLUGIN_DATA" 2>/dev/null && printf '%s\n' "$py" >"$tmp" 2>/dev/null; then
+		if [ -d "$cache" ]; then
+			: # a directory in the cache's place: never write into it
+		elif mkdir -p "$CLAUDE_PLUGIN_DATA" 2>/dev/null && printf '%s\n' "$py" >"$tmp" 2>/dev/null; then
 			mv -f "$tmp" "$cache" 2>/dev/null || rm -f "$tmp" 2>/dev/null
 		else
 			rm -f "$tmp" 2>/dev/null

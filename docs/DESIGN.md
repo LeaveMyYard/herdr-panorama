@@ -501,12 +501,16 @@ small POSIX sh helper `hooks/run-hook.sh`:
 
 - **Interpreter:** `python3` is often a version-manager shim (pyenv's is a
   bash script costing 60–75 ms per call). The helper asks `python3` once for
-  `sys.executable`, caches it in `${CLAUDE_PLUGIN_DATA}/python-interpreter`
+  `sys.executable` (only for Python 3.10+), caches it in `${CLAUDE_PLUGIN_DATA}/python-interpreter`
   (temp file + rename, so concurrent hooks see a whole file) and `exec`s it
   directly afterwards. A cache that is not an absolute path to an executable
   file is re-resolved and rewritten; an unwritable directory, or no
-  `CLAUDE_PLUGIN_DATA`, means plain `python3`. A changed global pyenv version
-  is picked up only when the cached interpreter disappears.
+  `CLAUDE_PLUGIN_DATA`, means plain `python3`. The cached interpreter is
+  whatever `python3` resolved to in the first hook's cwd (a project's pyenv
+  `.python-version` or an active venv included), and it stays until that file
+  disappears or stops being executable; delete the cache file to re-resolve.
+  The 3.10 floor keeps an old project interpreter from becoming every
+  session's (an older `python3` still runs the hooks, uncached, as before).
 
 - **Exit code:** the shell forces exit 0, and the script also ends with
   `os._exit(0)`. A missing or broken `python3`, an unknown kind, a bad
