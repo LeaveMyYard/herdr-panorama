@@ -491,6 +491,8 @@ tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 160 f3-],t
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 240 f3-],tests/test_glyph_spacing.py,,todo,,
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 240 f3-],tests/test_glyph_spacing.py,,todo,,
 tests/test_glyph_spacing.py::test_the_spinner_is_the_ten_frame_braille_cycle,tests/test_glyph_spacing.py,,todo,,
+tests/test_goldens.py::test_the_goldens_are_what_the_code_does[model],tests/test_goldens.py,,todo,,
+tests/test_goldens.py::test_the_goldens_are_what_the_code_does[screens],tests/test_goldens.py,,todo,,
 tests/test_herdr.py::test_clean_strips_controls_and_caps,tests/test_herdr.py,,todo,,
 tests/test_herdr.py::test_missing_binary_is_an_error_not_an_exception,tests/test_herdr.py,,todo,,
 tests/test_herdr.py::test_snapshot_and_focus_through_the_fake,tests/test_herdr.py,,todo,,
