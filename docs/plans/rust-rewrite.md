@@ -455,7 +455,7 @@ Claude specifics live only there, in the plugins' hook and MCP code, and in `.cl
 
 **Rename.** The kit's `claude_session` module is named `agent_session` (with `claude` below it)
 **in P1, before the `v0.1.0` tag**, since nobody depends on it before the tag; afterwards a rename
-is a breaking change under the semver policy above. The text below still says `claude-session` for
+is a breaking change under the semver policy below. The text below still says `claude-session` for
 the Claude part. The plugin crates (`panorama-core`, `inbox-core`) keep their names; neither names
 a harness.
 
