@@ -284,7 +284,7 @@ def test_9e_glides_exactly_like_the_design_between_frames(frame, key, marks):
 
 
 @pytest.mark.parametrize("frame", sorted(SMOOTH, key=float))
-def test_2a_glides_like_the_design_between_frames(frame):
+def test_2a_glides_like_the_design_between_frames(frame, design_pulse):
     """The pulsed cells (unseen vs none) and the blinking edges at a fractional frame match the
     design's colours, where the design and the app draw the same character."""
     f = float(frame)

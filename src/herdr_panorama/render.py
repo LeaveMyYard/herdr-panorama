@@ -805,9 +805,9 @@ def mark_of(agents, unseen: dict[str, str], roll: bool = False) -> tuple[str, bo
     return (evs[0], roll and evs[0] == "done") if evs else None
 
 
-def _pulse(frame: float, ev: str, quiet: bool, base: str) -> str:
+def _pulse(frame: float, ev: str, quiet: bool, base: str, cap: float = 1.0) -> str:
     k = 0.15 + 0.3 * wave(frame) if quiet else 0.35 + 0.65 * wave(frame)
-    return mix(base, ST[{"fail": FAIL, "wait": WAIT, "done": DONE}[ev]], k)
+    return mix(base, ST[{"fail": FAIL, "wait": WAIT, "done": DONE}[ev]], k * cap)
 
 
 def _tint(frame: float, ev: str, quiet: bool, base: str) -> str:
@@ -815,10 +815,10 @@ def _tint(frame: float, ev: str, quiet: bool, base: str) -> str:
     return mix(base, ST[{"fail": FAIL, "wait": WAIT, "done": DONE}[ev]], k)
 
 
-def pulse_col(m: tuple[str, bool], base: str, frame: float) -> str:
+def pulse_col(m: tuple[str, bool], base: str, frame: float, cap: float = 1.0) -> str:
     """Never fully off, so a still frame shows it too: full 35..100 %, quiet 15..45 % of the
-    event colour over ``base``."""
-    return Anim(_pulse, (m[0], m[1], base), frame)
+    event colour over ``base`` (times ``cap``: the selected card's share, SELECTED_PULSE)."""
+    return Anim(_pulse, (m[0], m[1], base, cap) if cap != 1.0 else (m[0], m[1], base), frame)
 
 
 def pulse_tint(m: tuple[str, bool], base: str, frame: float) -> str:
@@ -860,11 +860,21 @@ def restyle(scr: Screen, frame: float) -> list[tuple[int, int, int]]:
     return spans
 
 
-def pulse_box(cv: Screen, x: int, y: int, w: int, h: int, m: tuple[str, bool] | None, frame: float) -> None:
-    """The whole border (corners, sides, the animated edge and its sweep) in the pulse colour."""
+SELECTED_PULSE = 0.6  # the selected card's largest share of the event colour (others: 100 %)
+
+
+def pulse_box(cv: Screen, x: int, y: int, w: int, h: int, m: tuple[str, bool] | None, frame: float,
+              base: str = LINE) -> None:
+    """The whole border (corners, sides, the animated edge and its sweep) in the pulse colour.
+    ``base``: the card's own border colour, which the pulse runs over: the selected card's
+    stays readable as selected while it pulses (the operator's report: the current card was
+    lost under its animation)."""
     if m is None:
         return
-    c = pulse_col(m, LINE, frame)
+    # the selected card (base: its selection colour) takes at most SELECTED_PULSE of the event
+    # colour, so even a failed or question pulse at its peak never matches an unselected
+    # card's (which reaches the full event colour): review of #46
+    c = pulse_col(m, base, frame, SELECTED_PULSE if base in (HI, DIM) else 1.0)
     for i in range(w):
         for yy in (y, y + h - 1):
             if 0 <= yy < cv.h and 0 <= x + i < cv.w:
@@ -1164,9 +1174,10 @@ def orch_column(swarm: Swarm, view: View, w: int) -> tuple[Column, int]:
         focus = is_sel and view.focus == 0
         os_ = orch_state(o, view.frame, view)
         cv.area(0, w, y, y + 4, "orch", (o.pane_id,))
-        rbox(cv, 0, y, w, 4, border(view, "orch", (o.pane_id,), focus, is_sel))
+        bc = border(view, "orch", (o.pane_id,), focus, is_sel)
+        rbox(cv, 0, y, w, 4, bc)
         edge(cv, 0, y, w, 4, os_, view.frame, 0)
-        pulse_box(cv, 0, y, w, 4, mark_of(o.agents(), view.unseen, True), view.frame)
+        pulse_box(cv, 0, y, w, 4, mark_of(o.agents(), view.unseen, True), view.frame, bc)
         pod(cv, 2, y + 1, os_.st, os_.glyph)
         attributed = {i for a in o.agents() for i in a.question_ids}
         loose = sum(1 for q in o.inbox if q not in attributed)
@@ -1204,9 +1215,10 @@ def thread_card(cv: Screen, x: int, y: int, w: int, t: Thread, view: View, is_se
                 seed: int = 1, orch: str = "") -> int:
     hh = 6 + len(t.phases) if is_sel and t.phases else 5
     cv.area(x, x + w, y, y + hh, "thread", (orch, t.id))
-    rbox(cv, x, y, w, hh, border(view, "thread", (orch, t.id), focus, is_sel))
+    bc = border(view, "thread", (orch, t.id), focus, is_sel)
+    rbox(cv, x, y, w, hh, bc)
     edge(cv, x, y, w, hh, thread_state(t, view.frame), view.frame, seed)
-    pulse_box(cv, x, y, w, hh, mark_of(t.agents, view.unseen, True), view.frame)
+    pulse_box(cv, x, y, w, hh, mark_of(t.agents, view.unseen, True), view.frame, bc)
     mw = marks_right(cv, x + w - 2, y + 1, marks_of(t.agents))
     g, gc = thread_glyph(t, view)
     cv.P(x + 2, y + 1, [(g, gc, True), " ", (trunc(clean(t.name), w - 7 - mw), HI if is_sel else FG, True)])
@@ -1260,8 +1272,9 @@ def thread_column(o: Orchestrator, view: View, w: int) -> tuple[Column, int]:
         card = DONE_CARD + o.pane_id
         is_sel = view.thread == card
         cv.area(0, w, y, y + 3, "done", (o.pane_id,))
-        rbox(cv, 0, y, w, 3, border(view, "done", (o.pane_id,), is_sel and view.focus == 1, is_sel))
-        pulse_box(cv, 0, y, w, 3, mark_of([a for t in done for a in t.agents], view.unseen, True), view.frame)
+        bc = border(view, "done", (o.pane_id,), is_sel and view.focus == 1, is_sel)
+        rbox(cv, 0, y, w, 3, bc)
+        pulse_box(cv, 0, y, w, 3, mark_of([a for t in done for a in t.agents], view.unseen, True), view.frame, bc)
         names = ", ".join(clean(t.name) for t in done)
         fold = "▾" if o.pane_id in view.done_open else "▸"
         cv.P(2, y + 1, [("✓", ST[DONE], True), (f" {len(done)} complete", FG), ("  " + trunc(names, w - 21), FAINT)])
@@ -1311,9 +1324,10 @@ def agent_card(cv: Screen, x: int, y: int, w: int, a: Agent, t: Thread, view: Vi
     ident = (view.orch or "", t.id, a.id)
     if not is_sel:
         cv.area(x, x + w, y, y + 3, "agent", ident)
-        rbox(cv, x, y, w, 3, border(view, "agent", ident, False, on_path))
+        bc = border(view, "agent", ident, False, on_path)
+        rbox(cv, x, y, w, 3, bc)
         edge(cv, x, y, w, 3, agent_state(a), view.frame, a.seq)
-        pulse_box(cv, x, y, w, 3, mark_of([a], view.unseen), view.frame)
+        pulse_box(cv, x, y, w, 3, mark_of([a], view.unseen), view.frame, bc)
         apod(cv, x + 2, y + 1, a, view)
         right = f"› {kids_off}" if kids_off else ""
         title = [(clean(role_label(a)), HI if on_path else FG, True), (" " + short_id(a), FAINT),
@@ -1328,9 +1342,10 @@ def agent_card(cv: Screen, x: int, y: int, w: int, a: Agent, t: Thread, view: Vi
     lines = agent_detail_lines(a, w - 6, view.now, view.frame)
     hh = 6 + len(lines)
     cv.area(x, x + w, y, y + hh, "agent", ident)
-    rbox(cv, x, y, w, hh, border(view, "agent", ident, focus, True))
+    bc = border(view, "agent", ident, focus, True)
+    rbox(cv, x, y, w, hh, bc)
     edge(cv, x, y, w, hh, agent_state(a), view.frame, a.seq)
-    pulse_box(cv, x, y, w, hh, mark_of([a], view.unseen), view.frame)
+    pulse_box(cv, x, y, w, hh, mark_of([a], view.unseen), view.frame, bc)
     apod(cv, x + 2, y + 1, a, view)
     st = LABEL.get(a.status, a.status) + (" " + dur(view.now - a.ended) + " ago" if a.ended and not live(a.status) else "")
     if a.status == BGW and any(b.started for b in a.bg):
@@ -1352,8 +1367,9 @@ def fin_card(cv: Screen, x: int, y: int, w: int, e: Entry, t: Thread, view: View
     is_sel = view.agent == e.ident
     ident = (view.orch or "", t.id) if e.key == t.id else (view.orch or "", t.id, e.key)
     cv.area(x, x + w, y, y + 3, "fin", ident)
-    rbox(cv, x, y, w, 3, border(view, "fin", ident, is_sel and view.focus == col, is_sel))
-    pulse_box(cv, x, y, w, 3, mark_of(fin, view.unseen), view.frame)
+    bc = border(view, "fin", ident, is_sel and view.focus == col, is_sel)
+    rbox(cv, x, y, w, 3, bc)
+    pulse_box(cv, x, y, w, 3, mark_of(fin, view.unseen), view.frame, bc)
     xx = x + 2
     for a in fin[:5]:
         apod(cv, xx, y + 1, a, view)

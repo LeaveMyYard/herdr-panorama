@@ -57,6 +57,18 @@ def fake_herdr(tmp_path, monkeypatch):
     return fake
 
 
+@pytest.fixture
+def design_pulse(monkeypatch):
+    """The design's unseen pulse, over the plain border colour on every card. The app runs a
+    selected card's pulse over its selection colour instead (the operator's report: the current
+    card was lost under the pulse), a deliberate difference from swarm-unseen.js that the
+    design comparisons set aside; test_current_card covers it."""
+    from herdr_panorama import render
+    real = render.pulse_box
+    monkeypatch.setattr(render, "pulse_box", lambda cv, x, y, w, h, m, frame, base=render.LINE:
+                        real(cv, x, y, w, h, m, frame))
+
+
 @pytest.fixture(autouse=True)
 def no_real_state(tmp_path, monkeypatch):
     """Tests never read the operator's inbox or event files, and never reach a live herdr: run
