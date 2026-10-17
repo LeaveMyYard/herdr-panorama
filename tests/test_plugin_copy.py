@@ -1,9 +1,10 @@
 """The Claude Code plugin must work from the installed copy (herdr-inbox's lesson).
 
 Claude Code installs a plugin as a copy in ~/.claude/plugins/cache/..., git-ignored
-files included but with a ``.venv`` whose interpreter links are gone. Every plugin
-command therefore runs ``uv run --project ${CLAUDE_PLUGIN_ROOT}`` with
-``UV_PROJECT_ENVIRONMENT=${CLAUDE_PLUGIN_DATA}/venv``. These tests build such a copy
+files included but with a ``.venv`` whose interpreter links are gone. The MCP server
+therefore runs ``uv run --project ${CLAUDE_PLUGIN_ROOT}`` with
+``UV_PROJECT_ENVIRONMENT=${CLAUDE_PLUGIN_DATA}/venv-<version>``, and the hooks run
+``hooks/run-hook.sh`` with an interpreter cached in ``${CLAUDE_PLUGIN_DATA}``. These tests build such a copy
 and run the hooks and the MCP server exactly as the manifests declare them.
 """
 
