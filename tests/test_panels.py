@@ -2,12 +2,15 @@
 batch and its focus restore, the operator's tab only afterwards, ownership, closed stays
 closed, duplicates, orphans, the open key, the viewers' switching and + New agent."""
 
+import json
 import time
 from types import SimpleNamespace
 
 import pytest
 
 from herdr_panorama import cockpit, core, herdr, home, panels, protocol
+
+PANEL_LABEL = "Panorama panel"  # the manifest's title for the panel entrypoint (herdr labels the pane)
 
 
 class World:
@@ -23,11 +26,14 @@ class World:
         self.n = 100
         self.argv: dict[str, str] = {}  # pane -> "panel" for panes that run our viewer
         self.on_swap = None
+        self.shell: dict[str, tuple] = {}  # pane -> herdr.bare_shell's answer (default: an idle, young shell)
         mp = monkeypatch
         mp.setattr(herdr, "snapshot", self.snapshot)
         mp.setattr(herdr, "open_panel", self.open_panel)
         mp.setattr(herdr, "swap_panes", self.swap)
         mp.setattr(herdr, "close_plugin_pane", self.close)
+        mp.setattr(herdr, "close_pane", self.close_any, raising=False)
+        mp.setattr(herdr, "bare_shell", self.bare_shell, raising=False)
         mp.setattr(herdr, "focus_tab", self.focus_tab)
         mp.setattr(herdr, "focus_pane", self.focus_pane)
         mp.setattr(herdr, "focus_agent", self.focus_pane)
@@ -51,7 +57,7 @@ class World:
         pid = f"w1:p{self.n}"
         tab = self.tab_of(target)
         i = [p["pane_id"] for p in self.tabs[tab]].index(target)
-        self.tabs[tab].insert(i + 1, {"pane_id": pid})
+        self.tabs[tab].insert(i + 1, {"pane_id": pid, "label": PANEL_LABEL, "terminal_id": f"term_{self.n}"})
         self.argv[pid] = "panel"
         self.calls.append(("open", target))
         return {"pane_id": pid, "tab_id": tab}, None
@@ -74,6 +80,27 @@ class World:
         self.tabs[tab] = [p for p in self.tabs[tab] if p["pane_id"] != pid]
         self.calls.append(("close", pid))
         return None
+
+    def close_any(self, pid):
+        tab = self.tab_of(pid)
+        self.tabs[tab] = [p for p in self.tabs[tab] if p["pane_id"] != pid]
+        self.calls.append(("close_pane", pid))
+        return None
+
+    def bare_shell(self, pid):
+        if self.argv.get(pid):
+            return False, 3.0
+        return self.shell.get(pid, (True, 3.0))
+
+    def restart_herdr(self):
+        """herdr stopped unexpectedly and restored its session: every pane keeps its id and label
+        but gets a new terminal running a plain login shell (no pane's command is started again)."""
+        for ps in self.tabs.values():
+            for p in ps:
+                self.n += 1
+                p["terminal_id"] = f"term_{self.n}"
+        self.argv.clear()
+        self.calls.clear()
 
     def focus_tab(self, tab):
         self.calls.append(("focus_tab", tab))
@@ -463,3 +490,130 @@ def test_a_known_panel_is_not_asked_about_on_every_pass(world, tmp_path, monkeyp
     for _ in range(3):
         m.reconcile(world.snapshot(), orch("w1:p2"), start=not m.started)
     assert asked.count("w1:p50") == 1
+
+
+# -- after herdr stops unexpectedly (the operator's report, 2026-10-17) ---------------------------
+
+def test_a_panel_herdr_restored_as_a_plain_shell_is_closed_and_made_again_in_its_place(world, tmp_path):
+    """herdr's session restore brings a per-tab panel back as a plain shell with its old text
+    (same pane id and label, a new terminal, no command). The restarted core closes it, as its
+    record proves it was our panel, and the tab gets a fresh panel on the left of its agent."""
+    sw = orch("w1:p2", "w1:p3")
+    m = manager(world, tmp_path)
+    m.reconcile(world.snapshot(), sw, start=True)
+    m.reconcile(world.snapshot(), sw)  # herdr's snapshot now shows the new panels: recorded
+    old = {t: world.order(t)[0] for t in ("w1:t2", "w1:t3")}
+    world.restart_herdr()  # herdr crashed and restored; the core (a herdr pane) went with it
+    again = manager(world, tmp_path)
+    again.reconcile(world.snapshot(), sw, start=True)
+    assert ("close_pane", old["w1:t2"]) in world.calls and ("close_pane", old["w1:t3"]) in world.calls
+    for tab, ag in (("w1:t2", "w1:p2"), ("w1:t3", "w1:p3")):
+        order = world.order(tab)
+        assert len(order) == 2 and order[1] == ag and world.argv.get(order[0]) == "panel"
+        assert order[0] != old[tab]
+    assert again.closed == set()  # closing a restored panel is not the operator closing it
+
+
+@pytest.mark.parametrize("case", ["never-recorded", "same-terminal", "relabelled", "busy-old", "old-shell",
+                                  "unknown", "quit-cleanly"])
+def test_a_restored_pane_is_closed_only_when_provably_our_panel(world, tmp_path, case):
+    """Never close what is not provably ours: a look-alike shell labelled like a panel, a pane
+    whose terminal herdr did not replace, one the operator relabelled, used (something runs in
+    it) or kept for longer than a fresh restore, one herdr cannot describe yet, and anything
+    after a clean quit (no record survives one)."""
+    sw = orch("w1:p2")
+    m = manager(world, tmp_path)
+    m.reconcile(world.snapshot(), sw, start=True)
+    m.reconcile(world.snapshot(), sw)
+    panel = world.order("w1:t2")[0]
+    # the operator's own shell beside it, labelled like a panel: never recorded
+    world.tabs["w1:t3"].insert(0, {"pane_id": "w1:p60", "label": PANEL_LABEL, "terminal_id": "term_x"})
+    if case == "never-recorded":  # e.g. a panel from before this fix
+        m.record = {}
+        m._save_closed()
+    if case == "quit-cleanly":
+        m.remove_all(world.snapshot())
+        world.tabs["w1:t2"].insert(0, {"pane_id": panel, "label": PANEL_LABEL, "terminal_id": "term_y"})
+    world.restart_herdr()
+    if case == "same-terminal":
+        world.pane(panel)["terminal_id"] = m.record[panel]["terminal"]
+    elif case == "relabelled":
+        world.pane(panel)["label"] = "notes"
+    elif case == "busy-old":
+        world.shell[panel] = (False, panels.RESTORED_SECONDS + 1)
+    elif case == "old-shell":
+        world.shell[panel] = (True, panels.RESTORED_SECONDS + 1)
+    elif case == "unknown":
+        world.shell[panel] = (None, None)
+    again = manager(world, tmp_path)
+    again.started = True  # no batch: only the closing is under test
+    again.reconcile(world.snapshot(), orch("w1:p2", "w1:p3"))
+    again.reconcile(world.snapshot(), orch("w1:p2", "w1:p3"))
+    assert not [c for c in world.calls if c[0] in ("close", "close_pane")]
+    assert panel in world.order("w1:t2") and "w1:p60" in world.order("w1:t3")
+    if case in ("relabelled", "busy-old", "old-shell"):  # given up on for good: later answers don't count
+        world.shell.pop(panel, None)
+        world.pane(panel)["label"] = PANEL_LABEL
+        again.reconcile(world.snapshot(), orch("w1:p2"))
+        assert not [c for c in world.calls if c[0] in ("close", "close_pane")]
+
+
+def test_the_panel_record_is_kept_in_the_state_dir_with_herdrs_terminal(world, tmp_path):
+    """The record that proves a restored pane was ours: pane id, tab and terminal id, saved
+    next to the closed tabs, and emptied on a clean end."""
+    sw = orch("w1:p2")
+    m = manager(world, tmp_path)
+    m.reconcile(world.snapshot(), sw, start=True)
+    m.reconcile(world.snapshot(), sw)
+    panel = world.order("w1:t2")[0]
+    saved = json.loads((tmp_path / "panels.json").read_text())
+    assert saved["panes"] == {panel: {"tab": "w1:t2", "terminal": world.pane(panel)["terminal_id"]}}
+    m.remove_all(world.snapshot())
+    assert json.loads((tmp_path / "panels.json").read_text())["panes"] == {}
+
+
+@pytest.mark.parametrize("text,seconds", [("00:07", 7), ("01:02:03", 3723), ("2-00:00:01", 172801),
+                                          (" 59:59\n", 3599), ("", None), ("x:1", None)],
+                         ids=["mm:ss", "hh:mm:ss", "dd-hh:mm:ss", "padded", "empty", "garbage"])
+def test_ps_elapsed_time_parses(text, seconds):
+    assert herdr.PANEL_LABEL == PANEL_LABEL
+    assert herdr._etime_seconds(text) == seconds
+
+
+# process-info as herdr 0.9.3 answered it on an isolated server (paths shortened): a live panel,
+# whose ``sh -c`` execs panorama as the pane's shell pid, and the same pane after a crash and a
+# session restore, a plain login shell
+LIVE_PANEL = {"foreground_process_group_id": 71225, "pane_id": "w1:p2", "shell_pid": 71225, "foreground_processes": [
+    {"argv": ["/p/.venv/bin/python", "/p/.venv/bin/panorama", "panel"], "name": "panorama", "pid": 71225}]}
+RESTORED = {"foreground_process_group_id": 73505, "pane_id": "w1:p2", "shell_pid": 73505, "foreground_processes": [
+    {"argv": ["/usr/bin/zsh"], "name": "zsh", "pid": 73505}]}
+BUSY = {"foreground_process_group_id": 73600, "pane_id": "w1:p2", "shell_pid": 73505, "foreground_processes": [
+    {"argv": ["vim", "notes"], "name": "vim", "pid": 73600}]}
+
+
+@pytest.mark.parametrize("info,expect", [(RESTORED, (True, 4.0)), (LIVE_PANEL, (False, None)), (BUSY, (False, 4.0)),
+                                         ({"pane_id": "w1:p2", "foreground_processes": []}, (None, None))],
+                         ids=["restored", "live-panel", "busy", "unknown"])
+def test_a_bare_shell_is_only_the_panes_own_shell_and_not_panorama(monkeypatch, info, expect):
+    monkeypatch.setattr(herdr, "call", lambda *a, **k: ({"type": "pane_process_info", "process_info": info}, None))
+    monkeypatch.setattr(herdr, "process_age", lambda pid: 4.0 if pid == 73505 else None)
+    assert herdr.bare_shell("w1:p2") == expect
+
+
+def test_a_restored_panel_whose_shell_is_still_busy_is_looked_at_again(world, tmp_path):
+    """A fresh shell may still be running its rc (prompt helpers run in its foreground): not
+    closed while something runs, closed once only the shell is left, within the window."""
+    sw = orch("w1:p2")
+    m = manager(world, tmp_path)
+    m.reconcile(world.snapshot(), sw, start=True)
+    m.reconcile(world.snapshot(), sw)
+    panel = world.order("w1:t2")[0]
+    world.restart_herdr()
+    world.shell[panel] = (False, 1.0)
+    again = manager(world, tmp_path)
+    again.started = True
+    again.reconcile(world.snapshot(), sw)
+    assert ("close_pane", panel) not in world.calls and panel in again.record
+    world.shell[panel] = (True, 2.0)
+    again.reconcile(world.snapshot(), sw)
+    assert ("close_pane", panel) in world.calls and panel not in world.order("w1:t2")

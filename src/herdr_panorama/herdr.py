@@ -228,6 +228,7 @@ def open_tab_pane(focus: bool) -> tuple[dict | None, str | None]:
 # uv parent alive beside every panel. `uv run` only when there is no venv.
 PANEL_COMMAND = ["sh", "-c", 'R="${HERDR_PLUGIN_ROOT:-.}"; [ -x "$R/.venv/bin/panorama" ] && exec "$R/.venv/bin/panorama" panel; '
                  'exec uv run --quiet --frozen --no-dev --project "$R" panorama panel']
+PANEL_LABEL = "Panorama panel"  # the manifest's title for the panel entrypoint; herdr labels the pane with it
 PLUGIN_ENV = ("HERDR_PLUGIN_ID", "HERDR_PLUGIN_ROOT", "HERDR_PLUGIN_STATE_DIR", "HERDR_PLUGIN_CONFIG_DIR")
 
 
@@ -251,13 +252,64 @@ def close_plugin_pane(pane_id: str) -> str | None:
     return call("plugin", "pane", "close", pane_id)[1]
 
 
+def close_pane(pane_id: str) -> str | None:
+    """``pane close``: any pane, plugin or not. Used only for a per-tab panel that herdr's
+    session restore brought back as a plain shell (panels.Manager proves it is one first);
+    herdr no longer counts such a pane as a plugin pane, so ``plugin pane close`` refuses it."""
+    return call("pane", "close", pane_id)[1]
+
+
+def _etime_seconds(text: str) -> float | None:
+    """``ps -o etime`` (``[[dd-]hh:]mm:ss``) in seconds, or None."""
+    days, _, rest = text.strip().rpartition("-")
+    try:
+        parts = [int(x) for x in rest.split(":")]
+        d = int(days) if days else 0
+    except ValueError:
+        return None
+    if not 2 <= len(parts) <= 3:
+        return None
+    h, m, s = ([0] + parts)[-3:]
+    return float(((d * 24 + h) * 60 + m) * 60 + s)
+
+
+def process_age(pid: int) -> float | None:
+    """How long the process has run, in seconds (``ps -o etime=``, Linux and macOS), or None."""
+    try:
+        proc = subprocess.run(["ps", "-o", "etime=", "-p", str(int(pid))], capture_output=True, text=True,
+                              timeout=TIMEOUT)
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return None
+    return _etime_seconds(proc.stdout) if proc.returncode == 0 else None
+
+
+def bare_shell(pane_id: str) -> tuple[bool | None, float | None]:
+    """Whether the pane's foreground is nothing but the pane's own shell (one foreground
+    process, the pane's ``shell_pid``, not panorama): what herdr's session restore leaves in a
+    pane whose command it does not start again. With the age in seconds of the pane's shell
+    (None when unknown). (None, None) when herdr cannot say. Read-only ``pane process-info``."""
+    res, _ = call("pane", "process-info", "--pane", pane_id)
+    info = (res or {}).get("process_info")
+    if not isinstance(info, dict):
+        return None, None
+    procs = info.get("foreground_processes")
+    shell = info.get("shell_pid")
+    if not isinstance(procs, list) or not procs or not isinstance(shell, int):
+        return None, None  # mid-exec or mid-restore: unknown
+    procs = [p for p in procs if isinstance(p, dict)]
+    if any(os.path.basename(str(a)) == "panorama" for p in procs for a in p.get("argv") or []):
+        return False, process_age(shell)  # a live panel: its sh -c execs panorama as the shell's pid
+    bare = len(procs) == 1 and procs[0].get("pid") == shell
+    return bare, process_age(shell)  # not bare: something runs in it (a command, or the rc's own)
+
+
 def apply_panel_layout(label: str, cwd: str | None, ratio: float) -> tuple[dict | None, str | None]:
     """A new, unfocused tab with a per-tab panel on the left and a plain pane on the right (for
     + New agent: no panel ever has to be swapped in there). Returns the layout: its ``tab_id``
     and ``root.first`` / ``root.second`` pane ids."""
     root = os.environ.get("HERDR_PLUGIN_ROOT")
     env = {k: os.environ[k] for k in PLUGIN_ENV if os.environ.get(k)}
-    first = {"type": "pane", "command": PANEL_COMMAND, "env": env, "label": "Panorama panel"}
+    first = {"type": "pane", "command": PANEL_COMMAND, "env": env, "label": PANEL_LABEL}
     if root:
         first["cwd"] = root
     second = {"type": "pane"}

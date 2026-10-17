@@ -25,6 +25,19 @@ panel, so no second one is made.
 A panel the operator closes stays closed for its tab (kept in the state dir) until the open key
 asks for it there again. A tab whose orchestrator went away loses its panel after
 ``REMOVE_AFTER`` (Claude exiting and starting again keeps it).
+
+After herdr itself stops unexpectedly, its session restore brings every pane back with its pane
+id and label but as a plain login shell: it does not start a pane's command again (only a live
+handoff keeps it). The manager records each panel of ours (pane id and herdr's terminal id) in
+the state dir, and the record outlives only an unclean end (quitting and switching off clear
+it). A pane is such a restored panel, and is closed so that a fresh panel is made in its place,
+only when all of these hold: its pane id is recorded; herdr gave it a different terminal (a
+live panel keeps its terminal); it still has the panel's label and no agent; its foreground is
+nothing but the shell herdr started for it; and that shell is younger than ``RESTORED_SECONDS``.
+While something runs in that shell (its rc, or a command) it is looked at again on the next
+pass; a shell older than that, a new label or an agent drops the record for good. herdr
+0.9.3-0.9.5 has no way to start a command again in an existing pane short of typing into its
+shell, which panorama never does.
 """
 
 from __future__ import annotations
@@ -46,6 +59,7 @@ NOT_PANEL_SECONDS = 30.0  # how long a "not a panel" answer for a pane is believ
 PANEL_SECONDS = 30.0  # how long a "runs our viewer" answer is believed (a pane never becomes another)
 CRASH_LIMIT = 3  # panels of one tab that died on their own before the manager stops making them
 LOCK_SECONDS = 2.0
+RESTORED_SECONDS = 120.0  # a restored panel's shell is at most this old when it is closed
 
 
 @dataclass
@@ -104,7 +118,12 @@ class Manager:
         self.creating: dict[str, float] = {}  # tab -> until when a create counts as in flight
         self.right: set[str] = set()  # tabs whose new panel could not be swapped left yet
         self.orphaned: dict[str, float] = {}  # tab -> since when it has no orchestrator
-        self.closed: set[str] = self._load_closed()
+        saved = self._load()
+        self.closed: set[str] = {t for t in saved.get("closed") or [] if isinstance(t, str)}
+        # our panels as last seen running: pane -> {"tab", "terminal"} (herdr's terminal id)
+        self.record: dict[str, dict] = {p: r for p, r in (saved.get("panes") or {}).items()
+                                        if isinstance(p, str) and isinstance(r, dict)} \
+            if isinstance(saved.get("panes"), dict) else {}
         self._not_panel: dict[str, float] = {}  # pane -> until when "not a panel" is believed
         self._panel: dict[str, float] = {}  # pane -> until when "a panel" is believed
         self.connected_once: set[str] = set()  # our panels whose viewer said a verified hello
@@ -115,23 +134,89 @@ class Manager:
 
     # -- state -----------------------------------------------------------------------------
 
-    def _load_closed(self) -> set[str]:
+    def _load(self) -> dict:
         try:
             data = json.loads(self.state_path.read_text()) if self.state_path else {}
         except (OSError, ValueError):
             data = {}
-        return {t for t in data.get("closed") or [] if isinstance(t, str)} if isinstance(data, dict) else set()
+        return data if isinstance(data, dict) else {}
 
     def _save_closed(self) -> None:
+        """Saves the closed tabs and the panel record together."""
         if not self.state_path:
             return
         try:
             self.state_path.parent.mkdir(parents=True, exist_ok=True)
             tmp = self.state_path.with_suffix(".tmp")
-            tmp.write_text(json.dumps({"closed": sorted(self.closed)}))
+            tmp.write_text(json.dumps({"closed": sorted(self.closed), "panes": self.record}, sort_keys=True))
             tmp.replace(self.state_path)
         except OSError as exc:
-            log.warning("could not save the closed panels: %s", exc)
+            log.warning("could not save the panels' state: %s", exc)
+
+    # -- after a herdr restart -------------------------------------------------------------
+
+    def _restored(self, snap: dict) -> dict:
+        """Close the recorded panels that herdr's session restore brought back as plain shells
+        (the proof is in the module docstring); the snapshot without them."""
+        by_id = {p.get("pane_id"): p for p in snap.get("panes") or [] if isinstance(p, dict)}
+        gone: set[str] = set()
+        changed = False
+        for pane_id, rec in list(self.record.items()):
+            p = by_id.get(pane_id)
+            if p is None:
+                del self.record[pane_id]  # the pane is gone
+                changed = True
+                continue
+            was, now = rec.get("terminal"), p.get("terminal_id")
+            if not was or not now or was == now:
+                continue  # the same terminal: a live panel, or not known yet
+            if p.get("label") != herdr.PANEL_LABEL or p.get("agent"):
+                log.info("%s was a panel before herdr restarted and now is not; left alone", pane_id)
+                del self.record[pane_id]
+                changed = True
+                continue
+            bare, age = herdr.bare_shell(pane_id)
+            if bare is None:
+                continue  # herdr cannot say yet (mid-restore): the next pass looks again
+            if age is None or age > RESTORED_SECONDS:
+                log.info("%s was a panel before herdr restarted; its shell is not a fresh restore, left alone",
+                         pane_id)
+                del self.record[pane_id]
+                changed = True
+                continue
+            if not bare:
+                continue  # something runs there (the shell's rc, or a command): looked at again next pass
+            del self.record[pane_id]
+            changed = True
+            err = herdr.close_pane(pane_id)
+            if err:
+                log.warning("could not close %s, a panel herdr restored as a shell: %s", pane_id, err)
+                continue
+            log.warning("closed %s: a panel herdr restored as a plain shell; a new one is made", pane_id)
+            gone.add(pane_id)
+            self.created.pop(pane_id, None)
+            self.connected_once.discard(pane_id)
+        if changed:
+            self._save_closed()
+        if not gone:
+            return snap
+        return dict(snap, panes=[p for p in snap.get("panes") or [] if not (isinstance(p, dict)
+                                                                            and p.get("pane_id") in gone)])
+
+    def _remember(self, snap: dict, sv: Survey) -> None:
+        """Record our running panels (pane id, tab, herdr's terminal id) for after a herdr
+        restart. Only panes this core opened or adopted, while herdr shows them running our
+        viewer."""
+        by_id = {p.get("pane_id"): p for p in snap.get("panes") or [] if isinstance(p, dict)}
+        running = {p for ps in sv.panels.values() for p in ps}
+        record = {pid: rec for pid, rec in self.record.items() if pid in by_id}
+        for pane_id, tab in self.created.items():
+            term = (by_id.get(pane_id) or {}).get("terminal_id")
+            if pane_id in running and term:
+                record[pane_id] = {"tab": tab, "terminal": term}
+        if record != self.record:
+            self.record = record
+            self._save_closed()
 
     # -- looking ---------------------------------------------------------------------------
 
@@ -276,6 +361,7 @@ class Manager:
 
     def _reconcile(self, snap: dict, swarm, start: bool) -> Survey:
         now = self.clock()
+        snap = self._restored(snap)
         sv = self.survey(snap, swarm)
         present = {p.get("pane_id") for p in snap.get("panes") or [] if isinstance(p, dict)}
         live = self.verified()
@@ -348,6 +434,7 @@ class Manager:
                     sv.panels.setdefault(tab, []).append(panel)
             elif tab in self.right and tab in sv.targets and sv.panels.get(tab):
                 self._swap_left(tab, sv.targets[tab]["pane_id"], sv.panels[tab][0])
+        self._remember(snap, sv)
         return sv
 
     # -- the operator ----------------------------------------------------------------------
@@ -389,4 +476,7 @@ class Manager:
                     n += 1
             self.created.clear()
             self.right.clear()
+            if self.record:  # a clean end: nothing is left for a restore to bring back
+                self.record = {}
+                self._save_closed()
         return n
