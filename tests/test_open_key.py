@@ -42,19 +42,28 @@ def test_the_bound_key_is_read_and_re_read_on_change():
     assert openkey.current() == ("ctrl+alt+p", "c-a-p")
     herdr_config(BOUND.replace("ctrl+alt+p", "f12"))
     assert openkey.current() == ("f12", "f12")
+    herdr_config(BOUND.replace("ctrl+alt+p", "prefix+space"))  # the suggested binding: the design's text
+    assert openkey.current() == openkey.DEFAULT == ("pfx+spc", "pfx+spc")
     herdr_config("[[keys.command]]\nkey = \"ctrl+g\"\ntype = \"popup\"\ncommand = \"lazygit\"\n")  # someone else's
     assert openkey.current() == openkey.DEFAULT
     herdr_config("not toml [[[")
     assert openkey.current() == openkey.DEFAULT
 
 
-@pytest.mark.parametrize("key,shown", [(("ctrl+alt+p", "c-a-p"), "c-a-p"), (("f12", "f12"), "f12"),
-                                       (("ctrl+p", "c-p"), "ctrl+p")])
-def test_the_footer_shows_it_whole_when_it_fits_else_short(key, shown):
+@pytest.mark.parametrize("key,w,foot", [
+    # whole with every hint when it fits
+    (("ctrl+p", "c-p"), 46, "↑↓ move ret open a answer n new ctrl+p back"),
+    (("f12", "f12"), 46, "↑↓ move ret open a answer n new f12 back"),
+    # the operator's answer (Q157): too long with every hint, so "n new" goes and the key stays whole
+    (("ctrl+alt+p", "c-a-p"), 46, "↑↓ move ret open a answer ctrl+alt+p back"),
+    # still too long without "n new": only then the short form
+    (("ctrl+alt+p", "c-a-p"), 40, "↑↓ move ret open a answer c-a-p back"),
+    (("ctrl+alt+shift+enter", "c-a-s-ret"), 46, "↑↓ move ret open a answer c-a-s-ret back"),
+])
+def test_the_footer_keeps_the_key_whole_dropping_n_new_first(key, w, foot):
     v = design_view(4)
     v.open_key = key
-    foot = render.render(design_swarm(), v, 46, 45).text().splitlines()[-1].strip()
-    assert foot == f"↑↓ move ret open a answer n new {shown} back"
+    assert render.render(design_swarm(), v, w, 45).text().splitlines()[-1].strip() == foot
 
 
 def test_the_default_footer_is_unchanged():

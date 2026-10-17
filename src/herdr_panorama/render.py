@@ -249,7 +249,7 @@ class View:
     hover: tuple | None = None  # the (kind, identity) under the mouse
     dock: bool = False  # cockpit: panorama is docked next to an agent -> the 3a panel
     zoom_hint: bool = False  # docked next to an agent: z zooms between the panel and the graph
-    open_key: tuple[str, str] = ("prefix+space", "pfx+spc")  # the open key, (full, short): openkey.py
+    open_key: tuple[str, str] = ("pfx+spc", "pfx+spc")  # the open key, (full, short): openkey.py
     # the docked panel's look from herdr's theme, focused or not (theme.panel_colors): its
     # background and panorama's text colours mapped; None: panorama's own colours (design 9e)
     panel: tuple[str, dict] | None = None
@@ -2026,6 +2026,23 @@ def dock_row(cv: Screen, y: int, o: Orchestrator, view: View, docked: bool, curs
     return h
 
 
+def _open_key_hints(keys_: list, open_key: tuple[str, str], w: int) -> list:
+    """The footer's hints with the open key filled in (the operator's rule, Q157): the key whole
+    with every hint; else whole without ``n new``; only if it still does not fit, its short
+    form (narrow panes then drop hints as before). Hints start at x=1, the last column stays free."""
+    full, brief = open_key
+
+    def fill(ks, key):
+        return [(key if k == OPEN_KEY else k, lab) for k, lab in ks]
+
+    def fits(ks):
+        return 1 + sum(len(k) + len(lab) for k, lab in ks) <= w - 1
+    for ks in (fill(keys_, full), fill([kl for kl in keys_ if kl[0] != "n"], full)):
+        if fits(ks):
+            return ks
+    return fill(keys_, brief)
+
+
 def dock_panel(swarm: Swarm, view: View, w: int, h: int, stale: str | None = None) -> Screen:
     """The cockpit's docked panel (3a): header, one entry per orchestrator, + New agent,
     footer. Every entry is a click target for its orchestrator; ?N answers it."""
@@ -2043,10 +2060,7 @@ def dock_panel(swarm: Swarm, view: View, w: int, h: int, stale: str | None = Non
     if view.zoom_hint:  # extension: the design's footer has no room for it, so it sits in the rule
         _rp(s, w - 2, h - 2, [(" ", LINE), ("z", KEY), (" graph ", FAINT)])
     keys_ = [(k, lab) for k, lab in DOCK_KEYS if k != "a" or swarm.inbox_ok]
-    full, brief = view.open_key  # the bound key whole when every hint still fits, else its short form
-    # columns for the key itself: the hints start at x=1 and leave the last column free
-    room = w - 2 - sum(len(k) + len(lab) for k, lab in keys_) + len(OPEN_KEY)
-    keys_ = [((full if len(full) <= room else brief) if k == OPEN_KEY else k, lab) for k, lab in keys_]
+    keys_ = _open_key_hints(keys_, view.open_key, w)
     for drop in ("n", "a", "ret", "↑↓"):  # a narrow pane drops hints whole, never cuts one
         if 1 + sum(len(k) + len(lab) for k, lab in keys_) <= w:
             break
