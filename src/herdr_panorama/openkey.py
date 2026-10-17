@@ -2,9 +2,11 @@
 docked panel's footer: ``[[keys.command]]`` with ``type = "plugin_action"`` and
 ``command = "<plugin id>.open"``. Re-read when that file changes (theme.herdr_config).
 
-``current()`` is ``(full, short)``: the footer shows the full key when it fits, else the short
-form: a prefix binding reads ``pfx+`` then the rest, modifiers are letters joined with ``-``
-(``ctrl+alt+p`` -> ``c-a-p``, ``prefix+space`` -> ``pfx+spc``, today's default)."""
+``current()`` is ``(full, short)``. The footer (render._open_key_hints, the operator's rule,
+Q157) shows the key whole, dropping the ``n new`` hint if that makes it fit, and the short form
+only when even that is not enough: a prefix binding reads ``pfx+`` then the rest, modifiers are
+letters joined with ``-`` (``ctrl+alt+p`` -> ``c-a-p``). The suggested ``prefix+space``, and no
+binding at all, show the design's own ``pfx+spc``."""
 
 from __future__ import annotations
 
@@ -12,7 +14,10 @@ import os
 
 from . import herdr, theme
 
-DEFAULT = ("prefix+space", "pfx+spc")  # the suggested binding (README), shown when none is read
+# The suggested binding (README) is the design's footer text, `pfx+spc`, whole: shown for it, and
+# when no binding is read (the design keeps every hint; the full "prefix+space" would drop n new)
+DEFAULT = ("pfx+spc", "pfx+spc")
+SUGGESTED = "prefix+space"
 WORDS = {"space": "spc", "ctrl": "c", "alt": "a", "shift": "s", "super": "d", "cmd": "d", "enter": "ret",
          "escape": "esc", "backspace": "bs"}
 
@@ -38,4 +43,4 @@ def binding(cfg: dict) -> str | None:
 
 def current() -> tuple[str, str]:
     key = binding(theme.herdr_config())
-    return (key, short(key)) if key else DEFAULT
+    return (key, short(key)) if key and key.lower() != SUGGESTED else DEFAULT

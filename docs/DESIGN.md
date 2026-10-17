@@ -1277,10 +1277,16 @@ tile in its off phase.
     bound in herdr's config.toml: the `[[keys.command]]` whose `command` is
     `leavemyyard.herdr-panorama.open` (issue #13, `openkey.py`). It is re-read when that file
     changes.
-  - The key is shown whole when every hint still fits. Otherwise it gets a short form:
-    `prefix+` becomes `pfx+`, and modifiers become letters joined with `-` (`ctrl+alt+p` →
-    `c-a-p`; the style is pending the operator, Q157).
-  - With no binding read, the footer shows `pfx+spc`.
+  - The key is always shown whole if it can be (the operator, Q157: "ctrl+alt+p, dropping
+    'n new'"):
+    - with every hint when it fits;
+    - else without the `n new` hint (`↑↓ move ret open a answer ctrl+alt+p back` at 46
+      columns);
+    - only when it still doesn't fit is it shortened: `prefix+` becomes `pfx+`, and modifiers
+      become letters joined with `-` (`ctrl+alt+p` → `c-a-p`). A narrow pane then drops hints
+      as before.
+  - The suggested binding `prefix+space`, and no binding read at all, show the design's own
+    `pfx+spc` with every hint.
 - **State.** Computed like the design's `oState`, with the same extensions as 2a: herdr
   reporting the main session working counts as working, blocked counts as blocked, and the
   session's open inbox questions are its `?N`. The main session's own thread and agent are
