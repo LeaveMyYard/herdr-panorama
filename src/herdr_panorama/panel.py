@@ -335,22 +335,30 @@ class PanelApp(SwarmApp):
                 panel = self.panes_of.get(tab)
                 here = {p.get("pane_id") for p in snap.get("panes") or [] if isinstance(p, dict) and p.get("tab_id") == tab}
                 if keep_focus and panel in here:
-                    self._prepaint(panel)
+                    announced = self._prepaint(panel)
                     err = herdr.focus_tab(tab) or herdr.focus_pane(panel)
+                    if err and announced:
+                        # nothing moved: take the announcement back, so the core stops naming the
+                        # target and this panel, still the focused one, keeps its look (review)
+                        self.herdr_focused_pane = self.my_pane
+                        self.client.focusing(self.my_pane)
                 else:  # into the agent; a tab without a panel yet gets one there (the core)
                     err = herdr.focus_agent(pane_id)
         except Exception as exc:  # noqa: BLE001 - never kill the view
             err = f"{type(exc).__name__}: {exc}"
         self._to_ui(self._docked, err)
 
-    def _prepaint(self, panel: str) -> None:
+    def _prepaint(self, panel: str) -> bool:
         """Before showing the target's tab: the core announces the focus, so the target panel
-        paints its focused look while hidden and herdr shows it with it on the first frame."""
+        paints its focused look while hidden and herdr shows it with it on the first frame.
+        Whether the announcement went out (a failed switch takes it back)."""
         self._echo.clear()
         self._awaiting = panel
         try:
-            if self.client.focusing(panel) and self._echo.wait(PREPAINT_WAIT):
+            sent = self.client.focusing(panel)
+            if sent and self._echo.wait(PREPAINT_WAIT):
                 time.sleep(PREPAINT_SECONDS)
+            return sent
         finally:
             self._awaiting = None
 

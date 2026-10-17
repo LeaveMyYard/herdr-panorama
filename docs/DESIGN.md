@@ -1714,7 +1714,11 @@ has proven itself (the operator, Q140).
       still hidden;
     - the switcher waits for the core's echo (at most 150 ms), then 20 ms for the target to
       paint, then shows the tab;
-    - the switching panel keeps its own look until the switch has finished.
+    - the switching panel keeps its own look until the switch has finished;
+    - the announcement is provisional (review of #44). A switch that fails afterwards
+      announces the switching panel again. If herdr reports no focus within 0.75 s of an
+      announcement, because the switch failed or the panel died, the core reads herdr's real
+      focus and publishes that.
   - **Measured** with an attached client on an isolated herdr 0.9.3, arrow switches between two
     tabs' panels:
     - before, 4 of 4 switches showed the target panel unfocused for 85–90 ms, and 2 of those

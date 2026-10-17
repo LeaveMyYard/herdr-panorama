@@ -46,6 +46,9 @@ in another language, such as Rust or ratatui, can speak it.
   keyboard on that pane (the target tab's panel). The core takes it only from a panel whose
   `hello` was verified, and publishes it at once as `state.focused_pane`, so the target panel
   paints its focused look while still hidden. herdr's own focus event follows.
+  - A panel whose switch then fails announces its own pane again.
+  - If herdr reports no focus within 0.75 s of an announcement, the core reads herdr's real
+    focus and publishes that instead.
 - `{"open": {}}` (1.1): from the open key, which says `hello` with `"role": "key"`. The core
   focuses this tab's panel, makes one, or shows the home tab, and answers with `opened`. A key
   connection gets no `state`.

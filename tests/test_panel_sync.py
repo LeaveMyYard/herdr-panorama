@@ -168,3 +168,69 @@ def test_tests_never_reach_a_live_herdr():
     import os
     assert not os.environ.get("HERDR_SOCKET_PATH") and not os.environ.get("HERDR_PANE_ID")
     assert herdr.socket_call("pane.focus", {"pane_id": "x"}) == (None, "HERDR_SOCKET_PATH is not set")
+
+
+# -- review of #44: the announcement is provisional ------------------------------------------
+
+async def test_a_failed_switch_takes_its_announcement_back(paths, monkeypatch):
+    """focus_tab fails after the announcement: the panel announces itself again, so the core
+    stops naming the target and the panel the operator is still in looks focused."""
+    calls = []
+    snap = {"panes": [{"pane_id": "w1:p4", "tab_id": "w1:t4"}, {"pane_id": "w1:p94", "tab_id": "w1:t4"}]}
+    monkeypatch.setattr(herdr, "snapshot", lambda: snap)
+    monkeypatch.setattr(herdr, "focus_tab", lambda t: calls.append(("tab", t)) or "tab_not_found")
+    monkeypatch.setattr(herdr, "focus_pane", lambda p: calls.append(("pane", p)))
+    a = panel(paths, "w1:t2", "w1:p92")
+    async with a.run_test(size=(46, 45)) as pilot:
+        a.connected = True
+        a._got_state(state(focused="w1:p92", visible=["w1:t2"], panels={"w1:t4": "w1:p94"}))
+
+        def focusing(pane):  # the core: echoes every announcement as the focused pane
+            calls.append(("focusing", pane))
+            threading.Timer(0.01, lambda: a.call_from_thread(
+                a._got_state, state(focused=pane, visible=["w1:t2"], panels={"w1:t4": "w1:p94"}))).start()
+            return True
+        monkeypatch.setattr(a.client, "focusing", focusing)
+        a._dock("w1:p4", keep_focus=True)
+        for _ in range(60):
+            await pilot.pause(0.02)
+            if not a.docking and ("focusing", "w1:p92") in calls:
+                break
+        await pilot.pause(0.1)
+        assert calls == [("focusing", "w1:p94"), ("tab", "w1:t4"), ("focusing", "w1:p92")]
+        assert a.pane_focused and a.grid.screen_data.c[30][20].bg == theme.FIXED[0]
+
+
+async def test_the_core_rereads_the_real_focus_after_an_unconfirmed_announcement(paths, fake_herdr, monkeypatch):
+    """The announcing panel died, or never took it back: herdr's real focus wins after a moment."""
+    from herdr_panorama import tui
+    from herdr_panorama.tui import SwarmApp
+    monkeypatch.setattr(tui, "FOCUS_CONFIRM_SECONDS", 0.2)
+    monkeypatch.setattr(herdr, "snapshot", lambda: {"focused_pane_id": "w1:p92", "panes": []})
+    sw = design_swarm(NINE["data"])
+    app = SwarmApp(source=lambda: sw, live_refresh=False, clock=lambda: 0.0, home_mode=True, cockpit_mode=False)
+    async with app.run_test(size=(160, 45)) as pilot:
+        await pilot.pause(0.2)
+        app.focusing("w1:p94")
+        assert app.herdr_focused_pane == "w1:p94"
+        for _ in range(40):
+            await pilot.pause(0.05)
+            if app.herdr_focused_pane == "w1:p92":
+                break
+        assert app.herdr_focused_pane == "w1:p92"
+
+
+async def test_a_confirmed_announcement_is_not_second_guessed(paths, fake_herdr, monkeypatch):
+    from herdr_panorama import tui
+    from herdr_panorama.tui import SwarmApp
+    monkeypatch.setattr(tui, "FOCUS_CONFIRM_SECONDS", 0.2)
+    asked = []
+    monkeypatch.setattr(herdr, "snapshot", lambda: asked.append(1) or {"focused_pane_id": "w1:p92", "panes": []})
+    sw = design_swarm(NINE["data"])
+    app = SwarmApp(source=lambda: sw, live_refresh=False, clock=lambda: 0.0, home_mode=True, cockpit_mode=False)
+    async with app.run_test(size=(160, 45)) as pilot:
+        await pilot.pause(0.2)
+        app.focusing("w1:p94")
+        app.herdr_focus("w1:p94")  # herdr's own pane_focused event confirms it
+        await pilot.pause(0.5)
+        assert app.herdr_focused_pane == "w1:p94" and asked == []

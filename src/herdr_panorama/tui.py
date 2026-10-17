@@ -264,6 +264,7 @@ class SwarmApp(App):
         self.docking = False  # one dock at a time
         self.pane_focused = True  # panorama's pane has the keyboard (the terminal's focus in/out)
         self.herdr_focused_pane: str | None = None  # the pane herdr last reported focused
+        self._unconfirmed: str | None = None  # a panel's announced focus, not yet confirmed by herdr
         self.dock_hold_until = 0.0  # keep the docked panel until herdr has settled the split
         self.docked_hint: tuple[str, float] | None = None  # (agent pane, when) set by a dock
         self.following = False  # one follow at a time
@@ -573,6 +574,7 @@ class SwarmApp(App):
         its own pane. The terminal's focus reports (``on_app_focus``) did not always arrive, e.g.
         for the open key's pane.focus (the operator's report), so herdr's own event counts too."""
         self.herdr_focused_pane = pane_id  # kept: panorama's own id can change after this (a dock)
+        self._unconfirmed = None  # any focus herdr reports settles an announced one (focusing)
         if self.core is not None:
             self.publish()  # the panels' focus looks follow at once
         if not self.my_pane or not pane_id:
@@ -585,8 +587,25 @@ class SwarmApp(App):
     def focusing(self, pane_id: str) -> None:
         """A per-tab panel is about to switch tabs and put the keyboard on ``pane_id``: published
         now, so that panel paints its focused look while still hidden and is shown with it (the
-        operator's report: the wrong focus colour for a frame). herdr's own event follows."""
+        operator's report: the wrong focus colour for a frame). herdr's own event follows.
+        Provisional: if no focus event from herdr comes within FOCUS_CONFIRM_SECONDS (the switch
+        failed, the panel died), herdr's real focus is read and published (review of #44)."""
         self.herdr_focus(pane_id)
+        self._unconfirmed = pane_id
+        self.set_timer(FOCUS_CONFIRM_SECONDS, lambda: self._confirm_focus(pane_id))
+
+    def _confirm_focus(self, pane_id: str) -> None:
+        if self._unconfirmed != pane_id:
+            return  # herdr reported a focus since: nothing to correct
+
+        def read():
+            real = (herdr.snapshot() or {}).get("focused_pane_id")
+            self._to_ui(self._focus_read, pane_id, real)
+        self.run_worker(read, thread=True, group="focus-confirm")
+
+    def _focus_read(self, pane_id: str, real: str | None) -> None:
+        if self._unconfirmed == pane_id and isinstance(real, str) and real:
+            self.herdr_focus(real)
 
     def _refocus(self) -> None:
         """Panorama's pane id just changed (a dock or follow across workspaces gives it a new
@@ -1338,6 +1357,7 @@ def live_count(swarm: Swarm) -> int:
     return sum(1 for o in swarm.orchestrators for a in o.agents() if live(a.status))
 
 
+FOCUS_CONFIRM_SECONDS = 0.75  # an announced focus herdr has not confirmed by then is re-read
 NEW_AGENT_MIN_WIDTH = 80  # the form is 76 columns wide (plus its margin): narrower panes use a popup
 POPUP_START_SECONDS = 3.0  # after an unanswered popup request: how long its process may take to start
 POPUP_DID_NOT_OPEN = "herdr did not open the New agent popup; press n again"  # the operator's wording (Q154)
