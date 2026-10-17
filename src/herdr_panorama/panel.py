@@ -15,6 +15,7 @@ import os
 import socket
 import threading
 import time
+import traceback
 
 from . import herdr, protocol, render, theme
 from .tui import SwarmApp
@@ -37,12 +38,25 @@ def crash_marker(pane_id: str):
     return home.state_dir() / f"panel-crash-{pane_id}"
 
 
-def mark_crash(pane_id: str | None) -> None:
+CRASH_LOG_BYTES = 16384  # the crash log keeps this much of the traceback's end
+
+
+def crash_log(pane_id: str):
+    """The traceback of the last error that killed this pane's viewer, next to its marker (the
+    marker is used up by the core; the log stays for the next report)."""
+    return crash_marker(pane_id).with_name(f"panel-crash-{pane_id}.log")
+
+
+def mark_crash(pane_id: str | None, error: BaseException | None = None) -> None:
     if not pane_id:
         return
     try:
         crash_marker(pane_id).parent.mkdir(parents=True, exist_ok=True)
         crash_marker(pane_id).write_text(str(time.time()))
+        if error is not None:
+            text = "".join(traceback.format_exception(error))
+            stamp = time.strftime("%Y-%m-%d %H:%M:%S %z")
+            crash_log(pane_id).write_text(f"{stamp}\n{text[-CRASH_LOG_BYTES:]}")
     except OSError:
         pass
 
@@ -239,7 +253,7 @@ class PanelApp(SwarmApp):
             if isinstance(got, dict) else {}
         self._latest = swarm
         focused = state.get("focused_pane")
-        active = self._shown(swarm, vis, focused)
+        active = self._herdr_shows(swarm, vis, focused)
         if not self.loaded:
             self.focus_pane = active or mine
         self.apply(swarm, marks=unseen)
@@ -258,8 +272,9 @@ class PanelApp(SwarmApp):
                 self._echo.set()
 
     @staticmethod
-    def _shown(swarm, visible, focused) -> str | None:
-        """The local orchestrator in the tab herdr shows, else the one whose pane has the focus."""
+    def _herdr_shows(swarm, visible, focused) -> str | None:
+        """The local orchestrator in the tab herdr shows, else the one whose pane has the focus.
+        (Not ``_shown``: that is SwarmApp's own, which every click calls.)"""
         local = [o for o in swarm.orchestrators if not o.machine]
         if isinstance(visible, list):
             hit = next((o.pane_id for o in local if o.tab_id and o.tab_id in visible), None)
@@ -424,9 +439,9 @@ def run() -> int:
     app = PanelApp()
     try:
         app.run()
-    except Exception:
-        mark_crash(app.my_pane)
+    except Exception as exc:
+        mark_crash(app.my_pane, exc)
         raise
     if app.return_code:  # Textual caught an error: a crash, not the operator closing the panel
-        mark_crash(app.my_pane)
+        mark_crash(app.my_pane, getattr(app, "_exception", None))
     return app.return_code or 0
