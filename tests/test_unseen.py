@@ -37,7 +37,7 @@ def graph(frame, marks):
 
 
 @pytest.mark.parametrize("frame", sorted(FRAMES, key=int))
-def test_2a_pulses_the_same_cells_in_the_same_colours_as_the_design(frame):
+def test_2a_pulses_the_same_cells_in_the_same_colours_as_the_design(frame, design_pulse):
     """Every cell the design's pulse changes (unseen vs nothing unseen) changes in the app, to
     the same character, colour and weight, and no other. Compared where the design and the app
     draw the same character without marks (their sample texts differ in a few tags)."""

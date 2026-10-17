@@ -693,6 +693,16 @@ compares cell for cell (the whole 3a panel; every pulsed cell of 2a).
   frames (3 s), a sine wave in time, never fully off: full 35–100 % of the event colour over the line colour,
   quiet 15–45 %. The docked panel tints the entry's two lines (8–30 %, quiet 4–14 %) and
   pulses the docked list's thread glyph (and `✓ n done`). Unseen marks keep frames running.
+  - **The selected card pulses over its own border colour** (the operator's report: the
+    current card was lost under the animation). In swarm-unseen.js the pulse recolours the
+    whole border over the line colour, the selection's white included, so a selected
+    pulsing card looked exactly like any other pulsing card. Now the pulse runs over the
+    card's own border colour: white when focused, grey when selected in another column. The
+    current card stays the brightest at every point of the pulse.
+  - This is a deliberate difference from the design. The design comparisons
+    (`test_unseen`, `test_smooth`) set it aside with the `design_pulse` fixture, and
+    `test_current_card` covers it. The working sweep and the state edge were already drawn
+    over the selection without hiding it.
 - **State:** `unseen-<session>.json` in panorama's state dir, shared by every panorama process
   of the herdr session and kept across restarts. Remote agents are keyed `<machine id>:<agent id>`.
   The update runs on the collect worker and a seen mark is written by a worker thread: the
