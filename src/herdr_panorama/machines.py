@@ -22,7 +22,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import re
 import shutil
 import signal
 import subprocess
@@ -34,6 +33,7 @@ from pathlib import Path
 from . import config, herdr
 from .collect import Collector
 from .model import Swarm
+from .scan import discovery
 
 log = logging.getLogger("herdr_panorama.machines")
 
@@ -43,7 +43,6 @@ SNAPSHOT_TIMEOUT = 8.0
 SYNC_TIMEOUT = 30.0
 STALE_SECONDS = 30.0  # a result older than this is shown as stale
 MAX_FILE = "64M"  # rsync --max-size: no single mirrored file is larger
-_SESSION = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 _locks: dict[str, threading.Lock] = {}
 _locks_guard = threading.Lock()
 
@@ -51,7 +50,7 @@ _locks_guard = threading.Lock()
 def valid_session(sid: str) -> bool:
     """A Claude Code session id: a UUID. Anything else never becomes an rsync rule or a
     path to delete (it could be empty, ``..`` or carry a separator)."""
-    return isinstance(sid, str) and bool(_SESSION.fullmatch(sid))  # the whole string (no trailing newline)
+    return discovery.is_uuid(sid)  # the whole string (no trailing newline)
 
 
 def machine_lock(machine_id: str) -> threading.Lock:
@@ -262,7 +261,7 @@ def sync(machine: Machine, sessions: list[str]) -> str | None:
     ``~/.claude/projects``, then prune sessions gone longer than the done window."""
     dest = mirror_root(machine)
     dest.mkdir(parents=True, exist_ok=True)
-    sessions = [sid for sid in sessions if valid_session(sid)]
+    sessions = list(dict.fromkeys(c for c in map(discovery.canonical_session_id, sessions) if c))
     with machine_lock(machine.id):  # never two syncs into one mirror (duplicate appends)
         err = None
         if sessions:

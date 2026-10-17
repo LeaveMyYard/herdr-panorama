@@ -15,7 +15,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .scan import tail, wire
+from .scan import discovery, tail, wire
 
 VERSION = 1
 MAX_ITEMS = 30  # phases and agents per thread
@@ -35,7 +35,7 @@ def events_dir() -> Path:
 
 
 def events_path(session_id: str) -> Path:
-    safe = "".join(c for c in session_id if c.isalnum() or c in "-_")
+    safe = discovery.canonical_session_id(session_id) or "".join(c for c in session_id if c.isalnum() or c in "-_")
     return events_dir() / f"{safe}.jsonl"
 
 

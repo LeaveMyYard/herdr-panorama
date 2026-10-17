@@ -64,8 +64,25 @@ ASSISTANT = b'"type":"assistant"'
 USER = b'"type":"user"'
 TAIL_MAX = 8 * 1024 * 1024  # the tail window grows up to this when the last records are huge
 BG_MARK = b'"backgroundTaskId"'  # a Bash moved to the background (the result record)
+_TS_KEY = b'"timestamp":"'
 BG_CAP = 24 * 3600.0  # an open background task nobody can check (remote, no /proc) counts this long
 MONITOR_SLACK = 60.0  # a Monitor past its timeout by this much has expired even without its last event
+
+
+def _last_line_ts(lines: list[bytes], lo: int, hi: int) -> float | None:
+    """The record's own (top-level) timestamp of the last line in ``lines[lo:hi]`` that has one,
+    searched from the end. Only a line carrying a ``timestamp`` key anywhere is parsed, and the
+    search stops at the first dated record. A nested timestamp alone (``file-history-snapshot``'s
+    ``snapshot.timestamp``) does not date a record."""
+    for i in range(hi - 1, lo - 1, -1):
+        raw = lines[i]
+        if _TS_KEY not in raw:
+            continue
+        rec = wire.parse_line(raw)
+        when = wire.ts(rec.get("timestamp")) if isinstance(rec, dict) else None
+        if when is not None:
+            return when
+    return None
 
 
 @dataclass
@@ -128,6 +145,7 @@ class FileState:
     owner: str
     tail: tail.TailState = field(default_factory=tail.TailState)
     last_ts: float | None = None  # stream timestamp for undated records
+    line_ts: float | None = None  # the last timestamp on ANY line read (an undated continued-in's time)
     tool_calls: int = 0
     info: TailInfo = field(default_factory=TailInfo)
     info_size: int = -1
@@ -171,6 +189,7 @@ class Session:
         self.titles: dict[str, str] = {}
         self.continued_in: str | None = None  # the session this one continued in (its last word)
         self.continued_at: float | None = None  # that record's time (a later conversation line: resumed)
+        self.continuations_accepted = 0  # continued-in records taken (an ignored one never moves the resume scan)
         self.qids: dict[str, set[int]] = {}
         self.bad_records = 0
         self._pending_ask: dict[str, str] = {}
@@ -188,7 +207,7 @@ class Session:
             self.hook_file.tail = tail.TailState()
         for f in getattr(self, "files", {}).values():
             f.tail = tail.TailState()
-            f.tool_calls, f.last_ts, f.info_size = 0, None, -1
+            f.tool_calls, f.last_ts, f.line_ts, f.info_size = 0, None, None, -1
         for j in getattr(self, "journals", {}).values():
             j.tail = tail.TailState()
 
@@ -270,6 +289,7 @@ class Session:
         if f.owner != MAIN:  # the agent's own calls: tool_use blocks in assistant records
             f.tool_calls += sum(raw.count(TOOL_USE) for raw in lines if ASSISTANT in raw)
         last_continued = -1
+        done = 0  # f.line_ts holds the last timestamp of lines[:done]
         for i in wire.wanted_lines(lines):
             rec = wire.parse_line(lines[i])
             if rec is None:
@@ -277,12 +297,21 @@ class Session:
             when = wire.ts(rec.get("timestamp")) or f.last_ts
             if when is not None:
                 f.last_ts = when
+            if f.owner == MAIN and rec.get("type") == "continued-in" and wire.ts(rec.get("timestamp")) is None:
+                # undated: the time of the last dated record of any kind before it (the prefilter skips most)
+                found = _last_line_ts(lines, done, i)
+                f.line_ts, done = (f.line_ts if found is None else found), i
+                when = f.line_ts
+            accepted = self.continuations_accepted
             try:
                 self.apply(f.owner, rec, when)
             except Exception:  # noqa: BLE001 - one odd record never costs the rest of the batch
                 self.bad_records += 1
-            if rec.get("type") == "continued-in" and f.owner == MAIN:
+            if self.continuations_accepted != accepted:
                 last_continued = i
+        if f.owner == MAIN:
+            found = _last_line_ts(lines, done, len(lines))
+            f.line_ts = f.line_ts if found is None else found
         if f.owner == MAIN and self.continued_in:
             self._resumed(lines[last_continued + 1:])
         if f.tail.size != f.info_size and f.tail.size > 0:
@@ -387,9 +416,11 @@ class Session:
                     self.notices.setdefault(note["task"], set()).add((when, note["status"], note["tool_uses"]))
             return
         if kind == "continued-in":
-            nxt = rec.get("continuedInSessionId")
-            if owner == MAIN and discovery.is_uuid(nxt) and nxt != self.session_id:  # never a path
+            nxt = discovery.canonical_session_id(rec.get("continuedInSessionId"))  # never a path
+            if owner == MAIN and rec.get("isSidechain") is not True and nxt is not None \
+                    and nxt != discovery.canonical_session_id(self.session_id):
                 self.continued_in, self.continued_at = nxt, when
+                self.continuations_accepted += 1
             return
         if kind == "custom-title" and isinstance(rec.get("customTitle"), str):
             self.titles["custom"] = rec["customTitle"]

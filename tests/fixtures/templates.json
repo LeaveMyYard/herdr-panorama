@@ -2570,5 +2570,64 @@
   "version": "",
   "gitBranch": "",
   "slug": ""
+ },
+ "continued_in": {
+  "type": "continued-in",
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "sessionId": "00000000-0000-4000-8000-000000000000",
+  "continuedInSessionId": "00000000-0000-4000-8000-000000000000"
+ },
+ "last_prompt": {
+  "type": "last-prompt",
+  "leafUuid": "00000000-0000-4000-8000-000000000000",
+  "sessionId": "00000000-0000-4000-8000-000000000000"
+ },
+ "cost_state": {
+  "type": "cost-state",
+  "sessionId": "00000000-0000-4000-8000-000000000000",
+  "totalCostUSD": 0,
+  "totalAPIDuration": 0,
+  "totalAPIDurationWithoutRetries": 0,
+  "totalToolDuration": 0,
+  "totalLinesAdded": 0,
+  "totalLinesRemoved": 0,
+  "totalDuration": 0,
+  "startTime": 0,
+  "modelUsage": {
+   "claude-haiku-5-5": {
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "thinkingTokens": 0,
+    "cacheReadInputTokens": 0,
+    "cacheCreationInputTokens": 0,
+    "webSearchRequests": 0,
+    "costUSD": 0
+   },
+   "claude-opus-5-5": {
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "thinkingTokens": 0,
+    "cacheReadInputTokens": 0,
+    "cacheCreationInputTokens": 0,
+    "webSearchRequests": 0,
+    "costUSD": 0
+   }
+  },
+  "hasUnknownModelCost": false
+ },
+ "mode": {
+  "type": "mode",
+  "mode": "normal",
+  "sessionId": "00000000-0000-4000-8000-000000000000"
+ },
+ "file_history_snapshot": {
+  "type": "file-history-snapshot",
+  "messageId": "00000000-0000-4000-8000-000000000000",
+  "snapshot": {
+   "messageId": "00000000-0000-4000-8000-000000000000",
+   "trackedFileBackups": {},
+   "timestamp": "2026-01-01T00:00:00.000Z"
+  },
+  "isSnapshotUpdate": false
  }
 }
