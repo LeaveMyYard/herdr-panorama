@@ -24,7 +24,7 @@ import sys
 KEEP_STR = {"type", "role", "agentType", "isFork", "operation", "subtype", "userType", "entrypoint", "status", "agentType",
             "requestShape", "renderedRole", "thinkingDisplay", "permissionMode", "kind", "stop_reason",
             "decision", "source", "reasonType", "taskType", "effort", "perTurnEffort", "service_tier",
-            "promptSource", "turnOrigin", "turnPosition", "inference_geo"}
+            "promptSource", "turnOrigin", "turnPosition", "inference_geo", "mode"}
 TOOL_NAMES = {"Agent", "Task", "SendMessage", "Workflow", "AskUserQuestion", "Bash", "Read", "SubagentHandback",
               "StructuredOutput", "mcp__plugin_herdr-inbox_herdr-inbox__ask_operator", "Monitor", "TaskStop", "KillShell"}
 UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
@@ -60,7 +60,8 @@ def anon(value, key: str | None = None, parent: dict | None = None):
     if isinstance(value, bool) or value is None:
         return value
     if isinstance(value, (int, float)):
-        return 0 if key and ("Ms" in key or "token" in key.lower() or "At" in key or "time" in key.lower()) else value
+        return 0 if key and ("Ms" in key or "token" in key.lower() or "At" in key or "time" in key.lower()
+                             or any(w in key.lower() for w in ("cost", "duration", "lines", "requests"))) else value
     s = str(value)
     if key in KEEP_STR:
         return s
@@ -167,6 +168,24 @@ def main() -> None:
     out: dict = {}
     for kind, pred in preds.items():
         for path in mains:
+            rec = first(path, pred)
+            if rec:
+                out[kind] = anon(rec)
+                break
+    # the continuation rule (D6): continued-in and the bookkeeping records Claude Code writes after
+    # it; rare, so every main transcript is searched (newest first), not only the largest
+    book = {
+        "continued_in": lambda r: r.get("type") == "continued-in",
+        "last_prompt": lambda r: r.get("type") == "last-prompt",
+        "cost_state": lambda r: r.get("type") == "cost-state",
+        "mode": lambda r: r.get("type") == "mode",
+        # undated at the top, dated inside (snapshot.timestamp): an undated continued-in's time
+        "file_history_snapshot": lambda r: r.get("type") == "file-history-snapshot" and "timestamp" not in r
+        and isinstance((r.get("snapshot") or {}).get("timestamp"), str),
+    }
+    every = sorted(glob.glob(os.path.join(root, "*", "*.jsonl")), key=os.path.getmtime, reverse=True)
+    for kind, pred in book.items():
+        for path in every:
             rec = first(path, pred)
             if rec:
                 out[kind] = anon(rec)
