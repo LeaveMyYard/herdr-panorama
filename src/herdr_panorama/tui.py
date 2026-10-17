@@ -535,7 +535,12 @@ class SwarmApp(App):
         (``anim_frame``). At a new whole frame spinners and sweeps step; in between only the
         colours glide (pulses, blinks), and only if the screen has any. A low animation_fps, a
         late timer or a long stall needs no catching up: the next tick simply lands on the
-        current frame. Nothing to do while nothing moves."""
+        current frame. Nothing to do while nothing moves.
+
+        It repaints from the cached model only, never a collect, and is not a background change:
+        it touches neither the selection nor the arming. App focus is ignored, because herdr
+        sends focus-out to a pane the operator merely typed past (the docked panel next to an
+        agent is unfocused nearly all the time), not only a hidden one."""
         if not render.animated(self.swarm, self.view.unseen):
             return
         frame = self.anim_frame()

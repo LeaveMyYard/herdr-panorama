@@ -729,13 +729,22 @@ colours and `TILE_OFF` the same way, and an unseen tile's pulse runs over that b
   the time itself: the unseen pulse is a sine of it, and the attention blink eases on and off
   with a sine ramp (on 1 frame, fade 1, off 1, fade 1). At whole frames every colour is exactly
   the old stepped one, so the golden frames of turns 3, 5 and 6 are unchanged.
+- **The wall clock, not a counter.** `View.frame` is `time.time() / 0.25` (`SwarmApp.anim_frame`;
+  `anim_clock` is injectable for tests), set by every tick and every full repaint. The operator's
+  report: with per-tab panels each window counted its own frames from its own start (and a hidden
+  panel paused), so switching tabs showed a phase jump. Now any two windows draw an animation in
+  the same phase at the same moment, and a panel shown again draws the current phase at once.
+  Animations keep their own periods and per-element offsets (a spinner's `seq`, a sweep's seed),
+  so they are synced between windows, not with each other. The frame is about 7e9; a float64
+  resolves about 1e-6 of a frame there, so `frame % period` into a sine stays smooth with no extra
+  reduction (`tests/test_anim_sync.py`), and whole-frame animations take an exact `int(frame)`.
 - **The colour tick:** `animation_fps` (default 20, clamped to 2..30, read when the view starts;
   the operator's choice). It runs only while something on screen moves, like frames. Between
   frames it runs only while a pulse or a blink is visible. Each tick costs no render: the last
   render's moving cells hold `render.Anim` values (a str that knows how to recompute itself:
   colours, spinner glyphs, sweep cells). `restyle` recomputes them in place and only the cells
   that changed are repainted. At a lower fps a tick can span several frames, so spinners and
-  sweeps keep their speed, only steppier.
+  sweeps keep their speed, only steppier; after a stall the next tick lands on the current frame.
 - **Renders** happen only on a refresh, a key, the mouse or a resize, and then only the spans that
   differ from the screen on display are repainted. A frame where the docked panel's hold ran out
   repaints in full (the panel may turn back into the graph).
