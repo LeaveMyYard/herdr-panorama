@@ -72,7 +72,7 @@ D4–D6 are proposed in this PR and still need your decision.
 - **Q176:** the shared-crates repo is **`herdr-agent-kit`**
   (`github.com/LeaveMyYard/herdr-agent-kit`): final, public, MIT like the two plugins.
 - **Harness-neutral seams (operator direction, 2026-10-17):** other agent harnesses (codex,
-  opencode and more) will be added later, and the kit may become a public library. Only the seams
+  opencode and more) will be added later, and the kit is a public library (decided, §2.3 "Kit publication"). Only the seams
   are built now (§2.3, "Harness-neutral seams"). Designs 1C (New agent modal) and 2C (empty inbox)
   are built in P4 and P6 (Q179).
 
@@ -455,7 +455,7 @@ Claude specifics live only there, in the plugins' hook and MCP code, and in `.cl
 
 **Rename.** The kit's `claude_session` module is named `agent_session` (with `claude` below it)
 **in P1, before the `v0.1.0` tag**, since nobody depends on it before the tag; afterwards a rename
-is a breaking change under the semver policy below. The text below still says `claude-session` for
+is a breaking change under the semver policy above. The text below still says `claude-session` for
 the Claude part. The plugin crates (`panorama-core`, `inbox-core`) keep their names; neither names
 a harness.
 
@@ -467,9 +467,16 @@ field or `claude` hard-coded in `panorama-core`, `inbox-core`, `herdr-api` or `a
 Code mechanisms; other harnesses have none. Whether typing through herdr alone is enough is **not
 designed now** (§7.2).
 
-**Open question: publishing the kit.** Not decided here (§7.2). Publication would need a curated
-public API (everything else `pub(crate)`), crate docs and examples, a crates.io name check, a
-semver policy (0.x, breaking changes at minor bumps), and the operator running `cargo publish`.
+**Kit publication (decided, operator 2026-10-17).** All three repos (herdr-panorama, herdr-inbox,
+herdr-agent-kit) are community open-source projects, and the kit's API is **public now**, not after
+P4. From `v0.1.0`:
+
+- a curated public API with semver (0.x: a breaking change bumps the minor); everything else is
+  `pub(crate)`;
+- plugin-only parts (e.g. `inbox_contract`) sit behind a clearly internal module or feature flag;
+- docs.rs-quality docs and examples;
+- a crates.io name check before the first publish;
+- the operator runs `cargo publish` himself.
 
 **`inbox-core`** holds the delivery policy as a pure function. It replaces the branch ladder in
 `service.py:388-567`.
@@ -1014,8 +1021,6 @@ The estimate after the rewrite is 100–150 MB and about 2% of a core.
   per-tab panels. I recommend asking at P4 with usage data.
 - Inbox delivery to non-Claude harnesses: no hook or MCP path exists for them. Is typing through
   herdr alone acceptable? Open; not designed (§2.3, "Harness-neutral seams").
-- Publishing `herdr-agent-kit`: publish on crates.io after P4 with the general parts as 0.x, or
-  treat the API as public now? Open; the steps are in §2.3.
 - Whether `panorama` and `herdr-inbox` should merge into one binary later. Not now: they install
   separately, and one binary would make each plugin carry the other.
 
