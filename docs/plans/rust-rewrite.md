@@ -17,8 +17,11 @@ above.
 
 ## Summary
 
-- **Recommendation: rewrite both plugins in Rust as one Cargo workspace with shared crates, using a
-  strangler migration rather than a big bang.** Each component is replaced behind the existing
+- **Recommendation: rewrite both plugins in Rust, keeping two repos.** Each repo gets its own
+  Cargo workspace and stays installable and usable on its own. The code both need comes from a
+  small third repo of library crates, pinned as a git dependency, so neither plugin needs the other
+  at runtime (§2.1).
+- **Migrate piece by piece (a strangler), not in a big bang.** Each component is replaced behind the existing
   contracts (the inbox's SQLite database, the panorama core↔panel socket protocol, the hook
   payloads, the MCP tool schemas), and you keep a working setup the whole way.
 - **The structural problem is real and measurable.**
@@ -36,23 +39,22 @@ above.
 - **The first win can ship early.** The inbox hooks and the rewake watcher are small, already
   isolated, and the most frequently started processes. Porting them first proves the shared crates
   and the distribution path at the lowest risk.
-- **Effort, rough:** about 44–67 agent-days of building plus review rounds over 9 phases. That is
-  about 9–13 calendar weeks on one track, or less with the two plugin tracks running in parallel
+- **Effort, rough:** about 46–70 agent-days of building plus review rounds over 9 phases. That is
+  about 9–14 calendar weeks on one track, or less with the two plugin tracks running in parallel
   after phase 1 (§7.3).
 
-### Decisions this plan needs from you
+### Decisions
 
-| # | Decision | Recommended | Asked as |
+| # | Decision | Choice | Status |
 |---|---|---|---|
-| D1 | One repo or two | One new monorepo with both plugins in subdirectories (§2.1) | Q168 (open) |
-| D2 | Python feature freeze while a component is ported | Freeze per component, bugfixes only (§5.5) | Q169 (open) |
-| D3 | The Python refactor from #22/#36 Part 1 | Skip it. Keep only the parity harness (§5.2) | Q170 (open) |
+| D1 | One repo or two | **Two repos**, each usable alone, plus a small shared-crates repo used as a pinned git dependency (§2.1) | Decided by you (Q168): "Those two solve different problems and one might use them separately." |
+| D2 | Python feature freeze while a component is ported | Freeze per component, bugfixes only (§5.5) | Decided by you (Q169) |
+| D3 | The Python refactor from #22/#36 Part 1 | Skip it. Keep only the parity harness (§5.2) | Decided by you (Q170) |
 | D4 | Migration style | Strangler, inbox hooks first (§5.1) | this PR |
 | D5 | UI toolkit | ratatui 0.30 + crossterm 0.29 (§2.6) | this PR |
 | D6 | One continuation rule for both plugins | panorama's rule, pinned by captured fixtures (§1.3, item 3) | this PR |
 
-Q168–Q170 were filed through herdr-inbox and are still open. This document follows the
-recommended default for each of them until you answer.
+D4–D6 are proposed in this PR and still need your decision.
 
 ---
 
@@ -66,12 +68,16 @@ recommended default for each of them until you answer.
 | Functions / without a docstring | 669 / **373 (56%)** | 523 / **291 (56%)** |
 | Tests (`def test_`) / collected | 519 / 953 | 507 / 552 |
 | Test code | 10,119 lines | 9,016 lines |
-| Full test run | 92 s (1 failure here) | 141 s (2 failures here) |
+| Full test run | 92 s | 141 s |
 | Non-Python parts | `docs/design/*.js` (the design's own renderers, used to capture goldens) | `plugins/herdr-inbox-ui` (TSX mod, 176 lines plus tests) |
 
-About the failures: `test_follow.py::test_no_follow_while[form]` failed in panorama, and two
-`test_venvs.py` tests failed in inbox, on this workstation's checkouts of main. I did not look into
-them because they are outside this plan. They are listed only so that "all green" is not assumed.
+About the failures, which come from the first runs with this agent's `HERDR_*` environment
+inherited:
+
+- panorama's `test_follow.py::test_no_follow_while[form]` passes once every `HERDR_*` variable is
+  unset, so it was environment leakage, not a bug on main.
+- inbox's two `test_venvs.py` failures remain with `HERDR_*` unset, and look like a stale venv in
+  that checkout. They were not investigated (Appendix A).
 
 **Largest files:**
 
@@ -193,52 +199,95 @@ Rows 3–5 are the ones that matter. Duplicated logic has already turned into di
 
 ## 2. Target architecture
 
-### 2.1 One repo or two
+### 2.1 Two repos, and how they share code
 
-| | One monorepo (recommended) | Two repos and shared crates |
+**Layout (D1).**
+
+- **herdr-panorama** and **herdr-inbox** stay separate repos. Each has its own Cargo workspace,
+  releases, issues and install command, and each runs alone.
+- Install commands, the two herdr.dev cards and the two Claude marketplaces do not change. The
+  plugin ids are unchanged, so herdr's config and state directories carry over.
+
+**Rule: neither plugin needs the other at runtime.** Each one works without the other installed.
+They touch in four places today, and all four stay optional:
+
+| Integration | Direction | After the rewrite |
 |---|---|---|
-| Shared code | Path dependencies, so one change means one PR and one CI run | Git or crates.io dependency; every shared fix needs a version bump in both repos |
-| herdr install | `herdr plugin install LeaveMyYard/<repo>/plugins/panorama` (herdr accepts `owner/repo/subdir`) | Same commands as today |
-| herdr.dev/plugins | One card listing both manifests ("one card per repository … lists each valid manifest") | Two cards |
-| Claude marketplace | One `marketplace.json` with 3 plugins (inbox, inbox-ui, panorama) | Same as today |
-| Cost of moving | The install source changes. Both repos have 2 stars and 0 forks, and your setup uses linked checkouts, so in practice it is a relink | None |
+| `?N` question counts on cards | panorama reads the inbox's database | It stays read-only, uses only the original 0.1 `questions` columns, and treats a missing file, a lock or no table as "no inbox". It moves into the shared crate `inbox-contract`, so the reader is versioned with the format it reads. |
+| `a` / click: answer in the inbox | panorama opens the inbox popup | It goes through herdr only: `plugin action invoke leavemyyard.herdr-inbox.open`, or the inbox's own `inbox open --question` found with `herdr plugin list`. It falls back to the plain action, and to nothing when the inbox is not installed (today's `inbox_link.py` behaviour). |
+| `ask_operator` receipts in transcripts | panorama's scanner reads the inbox's MCP receipts | It parses the receipt format from `inbox-contract`. Without the inbox, no receipts appear and nothing breaks. |
+| Remote ssh | both | Each keeps its own ssh code. They share a **ControlPath naming scheme** (from `remote-machines`), so when both run, ssh's own `ControlMaster=auto` makes them share one master. No process depends on the other. |
 
-**Recommendation: one new repository** (name open in Q168; e.g. `herdr-swarm`).
+**How shared code is shared.** These are the options:
 
-- Keep the plugin ids `leavemyyard.herdr-panorama` and `leavemyyard.herdr-inbox` unchanged. herdr
-  keys config and state directories by plugin id, so `HERDR_PLUGIN_CONFIG_DIR` and
-  `HERDR_PLUGIN_STATE_DIR` survive the move.
-- The old repos stay as they are until cutover. They then get a final README pointer and are
-  archived.
+| Option | Pros | Cons |
+|---|---|---|
+| **A. A third repo of library crates (`herdr-agent-kit`), used as a git dependency pinned by tag** (recommended) | One implementation of the parts that have already drifted (§1.3, rows 3–5). Each plugin moves to a new kit version when it chooses. No publishing step. Builds are reproducible from `Cargo.lock`. | A shared fix needs a kit tag and then a bump in each plugin. A plugin building from source needs network access to the kit repo, as for any crate. |
+| B. The same crates published on crates.io | Normal Rust dependency hygiene. Others can use the crates. | Semver and publishing work for crates with two users. Every change becomes a release. |
+| C. Deliberate copies in each repo | Fully independent repos | The copies drift. This is how rows 3–5 of §1.3 happened. |
+
+**Choice: A for anything with rules in it, C only for trivial glue.**
+
+| `herdr-agent-kit` crate (shared, A) | Why it must not be copied |
+|---|---|
+| `herdr-api` (with `FakeHerdr`) | Both plugins need the whole herdr API and the same error model and sanitising |
+| `claude-session` | Discovery, tailing, the wire format, **continuation (D6)** and session-id validation: rows 2–4 have already drifted |
+| `agent-procs` | "Is this Claude Code", nested Claude, liveness: row 5 has already drifted |
+| `plugin-env` | The plugin environment, config.toml with reload, state dirs, flock, private socket dirs |
+| `remote-machines` | Machine list, ssh options and the ControlPath scheme. Each plugin keeps its own pull logic (an rsync mirror in panorama, `export`/`apply` in the inbox). |
+| `tui-kit` | Terminal setup, arming, identity cursors, click targets, herdr theme |
+| `inbox-contract` | The inbox's *published* formats: the `[inbox] …` delivery text, the `ask_operator` receipt, the read-only 0.1 `questions` columns, the `inbox open` arguments. The inbox owns the format; panorama only reads it; the TS mod tests against the same golden files. |
+
+Trivial glue is copied (C): a few lines each, such as the `HERDR_PLUGIN_CONTEXT_JSON` focused-pane
+lookup inside each binary's CLI layer.
+
+A crates.io release (B) can come later, if someone outside wants the crates; nothing in the design
+blocks it.
+
+**Why one repo would still be simpler to build, honestly.**
+
+- With one repo, a change to a shared crate and both of its users is one PR and one CI run.
+- With three repos, a cross-cutting fix (a new Claude Code record type, a herdr API change) is a
+  kit PR, a tag, then two bump PRs.
+- During the port, that tax will be paid often. Your argument wins on the product: the two plugins
+  solve different problems, and people install them separately.
+- The tax is kept small by:
+  - keeping the kit to the crates above;
+  - automating the bump PRs;
+  - letting each plugin pin a kit version on its own schedule, so a kit change never forces a
+    release of the other plugin.
 
 ### 2.2 Workspace layout
 
 ```
-herdr-swarm/                         (name: Q168)
-  Cargo.toml                         [workspace], one Cargo.lock, edition 2024, MSRV pinned
+herdr-agent-kit/                     shared library crates (no binaries, no plugin manifests)
+  Cargo.toml                         [workspace], edition 2024, MSRV pinned
+  crates/ herdr-api/ claude-session/ agent-procs/ plugin-env/ remote-machines/ tui-kit/ inbox-contract/
+  fixtures/                          captured transcripts, herdr socket recordings, `[inbox]`-format goldens (§5.2)
+
+herdr-panorama/                      depends on herdr-agent-kit (git, tag)
+  Cargo.toml                         [workspace]
   crates/
-    herdr-api/                       herdr socket client, typed ids and events, fake server (feature "fake")
-    claude-session/                  transcripts: discovery, tailing, lenient wire, continuation, session fold
-    agent-procs/                     process tree: is-Claude, owning Claude, nested, start token, liveness
-    plugin-env/                      HERDR_PLUGIN_* env, config.toml with reload, durations, state dirs, flock, private socket dirs
-    remote-machines/                 herdr machine list, one shared ssh mux, rsync mirror
-    tui-kit/                         terminal setup and restore, identity cursors, arming, click targets, herdr theme, colour mixing
-    inbox-format/                    the `[inbox] …` delivery text: one encoder and parser (golden file shared with the TS mod)
     panorama-model/                  pure: Swarm/Orchestrator/Thread/Phase/Agent, status codes, thread grouping, unseen
     panorama-view/                   pure: layout and render into a ratatui Buffer: graph2a, narrow, dock9e, tiles, legend, anim
     panorama-proto/                  core↔panel protocol v1.x types (serde), framing, limits
+  src/main.rs + src/…                the `panorama` binary: tui | panel | core | new-agent | open | home | snapshot | hook | mcp | emit
+  herdr-plugin.toml, .claude-plugin/, hooks/hooks.json, scripts/   (same places as today)
+  tests/fixtures/                    design goldens (as today) plus app-screen and model goldens
+
+herdr-inbox/                         depends on herdr-agent-kit (git, tag)
+  Cargo.toml                         [workspace]
+  crates/
     inbox-core/                      pure: Question/Group/Alert, DeliveryState, delivery policy `decide()`, dedup
     inbox-store/                     rusqlite: the same schema and migrations, CAS claims, remote mirror and outbox
-  bins/
-    panorama/                        one binary: tui | panel | core | new-agent | open | home | snapshot | hook | mcp | emit
-    herdr-inbox/                     one binary: tui | mcp | hook | worker | open | deliver | verify | export | apply | remote …
-  plugins/
-    panorama/   herdr-plugin.toml, .claude-plugin/, hooks/hooks.json, scripts/
-    inbox/      herdr-plugin.toml, .claude-plugin/, hooks/hooks.json, scripts/, skills/
-    inbox-ui/   the TSX mod (unchanged, §3)
-  fixtures/                          captured goldens and protocol recordings (§5.2), shared by every crate's tests
-  tools/                             fixture capture (kept in Python or JS where the source is Python or JS)
+  src/main.rs + src/…                the `herdr-inbox` binary: tui | mcp | hook | worker | open | deliver | verify | export | apply | remote …
+  herdr-plugin.toml, .claude-plugin/, hooks/, scripts/, skills/   (same places as today)
+  plugins/herdr-inbox-ui/            the TSX mod (unchanged, §3)
 ```
+
+During the migration, the Rust workspace sits at each repo's root next to the Python `src/`
+package. The names do not collide: `crates/` and `src/main.rs` against `src/herdr_*`. The Python
+code is deleted at cutover.
 
 Each plugin gets **one binary**, with subcommands that keep today's CLI names. The `inbox open`,
 `inbox export`, and `inbox apply` commands are contracts that other plugins and remote machines
@@ -249,7 +298,7 @@ is not needed.
 
 The rule throughout: **pure crates take data and the current time, and return data.** They do no
 IO, start no threads and read no environment. IO lives in the `herdr-api`, `claude-session::io`,
-`agent-procs`, `inbox-store`, `remote-machines` and `bins/*` crates.
+`agent-procs`, `inbox-store` and `remote-machines` crates, and in the two binaries.
 
 ```mermaid
 graph LR
@@ -257,7 +306,7 @@ graph LR
     PM[panorama-model] --> PV[panorama-view]
     PP[panorama-proto]
     IC[inbox-core]
-    IF[inbox-format]
+    IF[inbox-contract]
     CSf[claude-session::fold]
   end
   subgraph io
@@ -273,8 +322,8 @@ graph LR
   IF --> IC
   IF --> CSf
   IS --> IC
-  bins/panorama --> PV & PP & HA & CSio & AP & RM & PE
-  bins/herdr-inbox --> IC & IS & HA & CSio & AP & RM & PE
+  panorama --> PV & PP & HA & CSio & AP & RM & PE & IF
+  herdr-inbox --> IC & IS & HA & CSio & AP & RM & PE
 ```
 
 **`herdr-api`** is the only code that talks to herdr. It uses the socket only; the CLI subprocess is
@@ -479,7 +528,7 @@ The inbox popup also needs a text input (free answers and notes).
 
 | Piece | Language | Why |
 |---|---|---|
-| `herdr-inbox-ui` mod (`register.tsx`) | TypeScript | Claude Code mods run inside Claude Code's JS engine, so there is no alternative. It keeps its tests. Its `parseAnswers` is pinned to the same `fixtures/inbox-format/*.txt` goldens that `inbox-format` uses, so the 3 parsers become 1 spec with 2 implementations. |
+| `herdr-inbox-ui` mod (`register.tsx`) | TypeScript | Claude Code mods run inside Claude Code's JS engine, so there is no alternative. It keeps its tests. Its `parseAnswers` is pinned to the same `inbox-format` golden files that the `inbox-contract` crate uses, so the 3 parsers become 1 spec with 2 implementations. |
 | herdr and Claude manifests (`herdr-plugin.toml`, `plugin.json`, `hooks.json`, `marketplace.json`) | TOML and JSON | Contracts with the hosts |
 | Launcher shims (`scripts/launch`) | POSIX sh, about 30 lines | Resolve the binary (§4). Keep the hook's always-exit-0 policy and the exit 3 → 2 mapping of `rewake-watch`. Hooks need a stable path that exists before the binary does. |
 | SessionStart rules fallback | plain text file printed by the shim | If the binary is missing, sessions still get the inbox rules (today's `SESSION_RULES`) |
@@ -517,8 +566,8 @@ Claude Code plugin docs):
 1. **Releases.** CI builds the targets `x86_64-unknown-linux-musl`, `aarch64-unknown-linux-musl`,
    `x86_64-apple-darwin` and `aarch64-apple-darwin`.
    - Static musl Linux builds; `rusqlite` with `bundled`, so there is no system sqlite dependency.
-   - One tarball per plugin and target, plus a `SHA256SUMS` file, attached to a tag per plugin
-     (`panorama-v0.2.0`, `inbox-v0.11.0`).
+   - Each repo releases its own plugin: one tarball per target, plus a `SHA256SUMS` file, attached
+     to that repo's version tag (`v0.2.0` for panorama, `v0.11.0` for the inbox).
    - Use cargo-dist (0.32) or a plain matrix workflow, whichever is less config. cargo-dist's
      installer scripts are not used, because the herdr build step is our installer.
 2. **herdr side.** `[[build]] command = ["sh", "scripts/install-bin.sh"]`:
@@ -544,8 +593,9 @@ Claude Code plugin docs):
 4. **Updates.** `herdr plugin update` re-runs the build, so a new binary lands in a new directory.
    The inbox worker's version handover (`worker.py:233-275`) is kept: the Rust worker hands over to
    the binary of the newer installed version.
-5. **Listing.** herdr.dev shows the repo's primary language (Rust) and one card with both plugins.
-   `platforms` stays `["linux", "macos"]`. Windows is out of scope: the plugins use flock, Unix
+5. **Listing.** No change: two herdr.dev cards and two Claude marketplaces, as today. Install
+   commands stay `herdr plugin install LeaveMyYard/herdr-panorama` and `…/herdr-inbox`. Each card
+   shows Rust as the primary language after cutover. `platforms` stays `["linux", "macos"]`. Windows is out of scope: the plugins use flock, Unix
    sockets and `/proc`.
 
 ---
@@ -567,7 +617,7 @@ A strangler works because the seams already exist:
 | panorama hooks ↔ scanner | `hooks/<session>.jsonl` (v1 records) |
 | report_thread ↔ scanner | `events/<session>.jsonl` (the explicit channel) |
 | inbox ↔ remote machines | `inbox export` and `inbox apply` JSON (`docs/REMOTE.md`) |
-| panorama ↔ inbox | read-only `questions` columns, and `inbox open --question/--pane` |
+| panorama ↔ inbox (optional on both sides, §2.1) | read-only `questions` columns, and `inbox open --question/--pane` |
 
 Each phase replaces one side of one seam and leaves the other side in Python. A component switches
 by changing one command line in a manifest. Rolling back means changing it back.
@@ -599,22 +649,22 @@ real herdr and Claude Code runs (the rule from `tests/fixtures/README.md`).
 7. **A test ledger.** A CSV maps each of the 1,505 collected Python tests to its Rust test, or to
    "retired" with a reason (for example, the venv tests). A phase is done when its rows are filled.
 
-On D3: the Python Part 1 refactor of #22/#36 would restructure code that this plan then replaces.
-Only items 2, 3 and 5 touch the Python repos, and only in test code.
+D3 (decided: skip the refactor): the Python Part 1 refactor of #22/#36 would restructure code that
+this plan then replaces. Only items 2, 3 and 5 touch the Python code, and only in test code.
 
 ### 5.3 Phases
 
 | Phase | Builds | Milestone and exit criteria | Rough effort |
 |---|---|---|---|
-| **P0 Harness** | Capture items 2, 3, 5 and 6 above. Create the monorepo, CI (Linux and macOS, musl), and the ledger. | Goldens committed. CI green on an empty workspace. | 3–5 d |
-| **P1 Shared crates** | `herdr-api` (with `FakeHerdr`), `claude-session`, `agent-procs`, `plugin-env`, `inbox-format` | Scanner model goldens match. Differential replay shows 0 disagreements on your transcripts. `inbox-format` goldens match in Rust and in the TS mod. | 5–7 d |
+| **P0 Harness** | Capture items 2, 3, 5 and 6 above. Create `herdr-agent-kit`. Add a Cargo workspace beside the Python code in both plugin repos, CI (Linux and macOS, musl), the kit-bump automation, and the ledger. | Goldens committed. CI green on empty workspaces in all three repos. | 4–6 d |
+| **P1 Shared crates** (in `herdr-agent-kit`) | `herdr-api` (with `FakeHerdr`), `claude-session`, `agent-procs`, `plugin-env`, `inbox-contract` | Scanner model goldens match. Differential replay shows 0 disagreements on your transcripts. `[inbox]`-format goldens match in Rust and in the TS mod. Kit tagged `v0.1.0`, and both plugin repos build against the tag. | 6–8 d |
 | **P2 Inbox hooks and rewake watcher** | `herdr-inbox hook …`, `inbox-store` (claims and sessions only), `inbox-core::decide` (hook and watcher paths) | Ledger rows for `test_hook*`, `test_rewake`, `test_verified_delivery`, and the hook paths of `test_session_continuation`. One week of your daily use with Python worker, MCP and popup, and Rust hooks: no double delivery, no lost delivery (every answer verified in the transcript, checked with an audit query), and no exit-2 leak. | 3–5 d |
 | **P3 Panorama panel viewer** | `panorama panel` on protocol 1.1, `panorama-view::dock9e` | `design_9` and `design_10` goldens byte-identical. The isolated-herdr panel checks in DESIGN.md "As built" pass. 8 panels at under 5 MB each. | 3–5 d |
 | **P4 Panorama core and home view** | collector, core socket, panel manager, cockpit and home, `graph2a` and `narrow`, new-agent form, mouse, arming, hooks, report_thread MCP | All design and app-screen goldens. The safety tests (identity cursors, arming, follow guards, never closing panes) are ported. Ledger complete for panorama. A week as your daily view. | 10–15 d |
 | **P5 Inbox worker, MCP and CLI** | worker, `mcp` (rmcp), `ask`, `export`/`apply`, the rest of `inbox-store` | The decision table is reproduced. MCP `tools/list` goldens are identical. Remote export and apply pass against a Python remote and a Rust remote. | 7–10 d |
 | **P6 Inbox popup** | `herdr-inbox tui` | App-screen goldens. The key-safety and arming tests are ported. A week of daily use. | 6–9 d |
-| **P7 Remote machines, unified** | `remote-machines` with one ssh mux shared by both plugins, the rsync mirror, the remote pull and outbox | Both plugins' remote tests pass against a saved VM. One control master per host. | 4–6 d |
-| **P8 Cutover** | Manifests move to the monorepo, releases, the old repos archived, Python deleted | A fresh `herdr plugin install` on Linux x86_64 and aarch64 and on macOS. The ledger is 100%. | 3–5 d |
+| **P7 Remote machines** | `remote-machines` in the kit (machine list, ssh options, the ControlPath scheme); panorama's rsync mirror and the inbox's pull and outbox in their own repos | Both plugins' remote tests pass against a saved VM, each with the other plugin uninstalled. With both running: one control master per host. | 4–6 d |
+| **P8 Cutover, per repo** | Each repo: manifests switch to the binary, release, Python deleted. Repos, ids and install commands unchanged. | A fresh `herdr plugin install` on Linux x86_64 and aarch64 and on macOS, **with only that plugin installed** (the independence check). The ledger is 100%. | 3–5 d |
 
 Order: P2 comes first after the crates because it is small, it is the hottest path (§6), and it
 proves `claude-session`, `inbox-store` and the distribution path against real traffic. P3 comes
@@ -649,11 +699,13 @@ the inbox track (P2, P5, P6) can run in parallel.
   two are never both live.
 - **Rollback.** Switch the manifest line back. Rust never changes the meaning of an existing
   column, so Python reads everything Rust wrote.
-- **Your linked checkouts.** During P2–P7, the Python repos' manifests point a ported entrypoint at
-  `<monorepo>/target/release/<bin>` when it exists, so you build once and keep the links you have.
-  At P8 you unlink the two Python checkouts and link `plugins/panorama` and `plugins/inbox`.
+- **Your linked checkouts stay linked.** The Rust code lands in the same repos, so you keep
+  `~/Code/herdr-panorama` and `~/Code/herdr-inbox` linked throughout.
+  - During P2–P7, a ported entrypoint's manifest line runs `./target/release/<bin>` when it exists,
+    and the Python command otherwise.
+  - A linked plugin runs no build step, so you run `cargo build --release` after pulling.
 
-### 5.5 The feature freeze (D2)
+### 5.5 The feature freeze (D2, decided)
 
 While a component is being ported, its Python version takes bugfixes only. Each bugfix gets a
 ledger row and a golden, so the Rust side picks it up. Without a freeze, every feature is built
@@ -715,13 +767,14 @@ today. The estimate after the rewrite is 100–150 MB and about 2%.
 | Download supply chain for the release binaries | Checksums are committed in the repo at the tag, plus the cargo fallback |
 | macOS coverage (no Mac here) | CI on `macos-latest` for both architectures. `agent-procs` has a `ps` fallback as today. |
 | Two implementations during the migration double the bug surface | The phases are short. Each one deletes the Python code it replaces when it exits. |
+| Kit version skew across the two plugin repos (D1) | Each plugin pins a kit tag and moves when it chooses. Bump PRs are automated. Kit CI runs both plugins' test suites against a kit PR before it is tagged. |
+| One plugin quietly coming to depend on the other | P8's independence check (fresh install of each plugin alone). Every cross-plugin call is optional and tested with the other plugin absent (§2.1). |
 | Licences | herdr has no licence, so only its public API and docs are used, as today. zoetrope is MIT: keep `LICENSES/zoetrope-MIT.txt` and the per-module attribution. |
 
 ### 7.2 Open questions
 
-- **Q168 (D1):** where the code lives, and the repo's name.
-- **Q169 (D2):** the per-component freeze.
-- **Q170 (D3):** skip the Python refactor.
+- D1–D3 are decided (Q168–Q170). D4–D6 are proposed in this PR.
+- The name of the shared-crates repo. `herdr-agent-kit` is a placeholder.
 - Whether the cockpit (experimental, `cockpit = true`) is ported at all, or dropped in favour of
   per-tab panels. I recommend asking at P4 with usage data.
 - Whether `panorama` and `herdr-inbox` should merge into one binary later. Not now: they install
@@ -729,8 +782,10 @@ today. The estimate after the rewrite is 100–150 MB and about 2%.
 
 ### 7.3 Effort
 
-The rough total is **44–67 agent-days** (sum of §5.3), including review rounds. One track at about
-5 effective days a week means **9–13 weeks**. Two tracks after P1 means about **6–9 weeks**.
+The rough total is **46–70 agent-days** (sum of §5.3), including review rounds. Two repos plus a
+kit cost about 2–3 days more than one repo, for the third repo's CI and the bump automation. One
+track at about 5 effective days a week means **9–14 weeks**. Two tracks after P1 means about
+**6–9 weeks**.
 
 - The biggest single item is P4. That is where `render.py` and `tui.py` live.
 - The estimates assume the freeze. Without it, add 20–30%.
@@ -744,7 +799,7 @@ The rough total is **44–67 agent-days** (sum of §5.3), including review round
 | Integration | binaries against `FakeHerdr` and a temporary database and projects dir | `cargo test` with `assert_cmd` |
 | Differential (migration only) | Python vs Rust on the same inputs: replay, decision table, export and apply | a small runner in `tools/` |
 | Real runs | isolated herdr plus Claude Code: hooks, rewake, panels, docking | scripted, with `PANORAMA_TRACE` as today |
-| CI | Linux x86_64 and aarch64 (musl), macOS arm64 and x86_64; `claude plugin validate --strict`; the TS mod's tests | GitHub Actions |
+| CI | Linux x86_64 and aarch64 (musl), macOS arm64 and x86_64; `claude plugin validate --strict`; the TS mod's tests. Kit PRs also run both plugins' suites. | GitHub Actions |
 
 ---
 
@@ -753,6 +808,13 @@ The rough total is **44–67 agent-days** (sum of §5.3), including review round
 - **Sizes:** an `ast` walk over `src/` (line spans, methods, `ast.get_docstring`), plus `wc -l`.
 - **Tests:** `.venv/bin/pytest -q -p no:cacheprovider --durations=8` on both main checkouts, with
   no bytecode written.
+  - **Caveat:** these full runs inherited this agent shell's `HERDR_*` variables, including
+    `HERDR_SOCKET_PATH`.
+  - Re-run with every `HERDR_*` unset: `test_follow.py::test_no_follow_while` passes (4/4), so that
+    failure came from the leaked environment.
+  - The two `test_venvs.py` failures remain with `HERDR_*` unset: a `TypeError` from a `None`
+    package version in this checkout's venv, which looks environmental and was not investigated.
+  - Re-runs for the timings should unset `HERDR_*`.
 - **Processes:** `/proc/<pid>/smaps_rollup` (PSS) and `utime+stime` sampled over 20 s, for the
   processes running at the time. Read-only. Nothing was attached and nothing was signalled.
 - **Hooks:**
