@@ -1,0 +1,98 @@
+{
+ "source": "Textual run_test(notifications=True) of each run's app; a scenario input is materialised as for model/ and read through the app's own source (herdr + the inbox) with the clock held; a swarm input through protocol.swarm_from_wire; <root> in env: that run's own directory; TZ=UTC; no herdr config.toml (panorama's default theme); NO_COLOR, FORCE_COLOR, COLORTERM, TERM and every HERDR_*/PANORAMA_*/TEXTUAL_*/CLAUDE_* variable unset except those a run names; tools/capture_goldens.py",
+ "runs": [
+  {
+   "app": "new_agent",
+   "size": [
+    84,
+    26
+   ],
+   "env": {
+    "PANORAMA_NEW_AGENT_CWD": "/home/user/work/billing"
+   },
+   "steps": [
+    {
+     "do": "snap",
+     "name": "empty"
+    },
+    {
+     "do": "type",
+     "text": "Billing export"
+    },
+    {
+     "do": "press",
+     "keys": [
+      "tab",
+      "tab"
+     ]
+    },
+    {
+     "do": "type",
+     "text": "Add CSV export to the invoices page"
+    },
+    {
+     "do": "snap",
+     "name": "typed"
+    }
+   ]
+  }
+ ],
+ "screens": {
+  "empty": [
+    [["    ",null,"#101215",false],["╭──────────────────────────────────────────────────────────────────────────╮","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["                                                                          ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["+ New agent","#eceef1","#171a1f",true],["                                                             ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["                                                                          ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["Name (also the tab label)","#80868f","#171a1f",false],["                                               ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["▊","#171a1f","#0178d4",false],["▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔","#0178d4","#272727",false],["▎","#0178d4","#171a1f",false],["  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["▊","#171a1f","#0178d4",false],["  ",null,"#272727",false],["b","#121212","#e0e0e0",false],["illing-api","#797979","#272727",false],["                                                     ","#e0e0e0","#272727",false],["  ",null,"#272727",false],["▎","#0178d4","#171a1f",false],["  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["▊","#171a1f","#0178d4",false],["▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁","#0178d4","#272727",false],["▎","#0178d4","#171a1f",false],["  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["                                                                          ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["                                                                          ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["Working directory","#80868f","#171a1f",false],["                                                       ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["▊","#171a1f","#191919",false],["▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔","#191919","#1e1e1e",false],["▎","#191919","#171a1f",false],["  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["▊","#171a1f","#191919",false],["  ",null,"#1e1e1e",false],["/home/user/work/billing                                         ","#e0e0e0","#1e1e1e",false],["  ",null,"#1e1e1e",false],["▎","#191919","#171a1f",false],["  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["▊","#171a1f","#191919",false],["▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁","#191919","#1e1e1e",false],["▎","#191919","#171a1f",false],["  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["                                                                          ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["First prompt (optional)","#80868f","#171a1f",false],["                                                 ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["▊","#171a1f","#191919",false],["▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔","#191919","#1e1e1e",false],["▎","#191919","#171a1f",false],["  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["▊","#171a1f","#191919",false],["  ",null,"#1e1e1e",false],["what should it start with?","#737373","#1e1e1e",false],["                                      ","#e0e0e0","#1e1e1e",false],["  ",null,"#1e1e1e",false],["▎","#191919","#171a1f",false],["  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["▊","#171a1f","#191919",false],["▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁","#191919","#1e1e1e",false],["▎","#191919","#171a1f",false],["  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["                                                                          ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["                                                                          ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["                                                                          ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["enter on the last field or ctrl+s: start · tab: next field · esc:","#4d535c","#171a1f",false],["       ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["cancel","#4d535c","#171a1f",false],["                                                                  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["                                                                          ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["╰──────────────────────────────────────────────────────────────────────────╯","#80868f","#171a1f",false],["    ",null,"#101215",false]]
+  ],
+  "typed": [
+    [["    ",null,"#101215",false],["╭──────────────────────────────────────────────────────────────────────────╮","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["                                                                          ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["+ New agent","#eceef1","#171a1f",true],["                                                             ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["                                                                          ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["Name (also the tab label)","#80868f","#171a1f",false],["                                               ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["▊","#171a1f","#191919",false],["▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔","#191919","#1e1e1e",false],["▎","#191919","#171a1f",false],["  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["▊","#171a1f","#191919",false],["  ",null,"#1e1e1e",false],["Billing export                                                  ","#e0e0e0","#1e1e1e",false],["  ",null,"#1e1e1e",false],["▎","#191919","#171a1f",false],["  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["▊","#171a1f","#191919",false],["▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁","#191919","#1e1e1e",false],["▎","#191919","#171a1f",false],["  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["agent name: billing-export","#e2cf9c","#171a1f",false],["                                              ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["                                                                          ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["Working directory","#80868f","#171a1f",false],["                                                       ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["▊","#171a1f","#191919",false],["▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔","#191919","#1e1e1e",false],["▎","#191919","#171a1f",false],["  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["▊","#171a1f","#191919",false],["  ",null,"#1e1e1e",false],["/home/user/work/billing                                         ","#e0e0e0","#1e1e1e",false],["  ",null,"#1e1e1e",false],["▎","#191919","#171a1f",false],["  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["▊","#171a1f","#191919",false],["▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁","#191919","#1e1e1e",false],["▎","#191919","#171a1f",false],["  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["                                                                          ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["First prompt (optional)","#80868f","#171a1f",false],["                                                 ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["▊","#171a1f","#0178d4",false],["▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔","#0178d4","#272727",false],["▎","#0178d4","#171a1f",false],["  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["▊","#171a1f","#0178d4",false],["  ",null,"#272727",false],["Add CSV export to the invoices page","#e0e0e0","#272727",false],[" ","#121212","#e0e0e0",false],["                            ","#e0e0e0","#272727",false],["  ",null,"#272727",false],["▎","#0178d4","#171a1f",false],["  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["▊","#171a1f","#0178d4",false],["▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁","#0178d4","#272727",false],["▎","#0178d4","#171a1f",false],["  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["                                                                          ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["                                                                          ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["                                                                          ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["enter on the last field or ctrl+s: start · tab: next field · esc:","#4d535c","#171a1f",false],["       ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["  ",null,"#171a1f",false],["cancel","#4d535c","#171a1f",false],["                                                                  ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["│","#80868f","#171a1f",false],["                                                                          ",null,"#171a1f",false],["│","#80868f","#171a1f",false],["    ",null,"#101215",false]],
+    [["    ",null,"#101215",false],["╰──────────────────────────────────────────────────────────────────────────╯","#80868f","#171a1f",false],["    ",null,"#101215",false]]
+  ]
+ }
+}

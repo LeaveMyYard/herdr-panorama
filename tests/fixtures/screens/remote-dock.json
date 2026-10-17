@@ -1,0 +1,77 @@
+{
+ "source": "Textual run_test(notifications=True) of each run's app; a scenario input is materialised as for model/ and read through the app's own source (herdr + the inbox) with the clock held; a swarm input through protocol.swarm_from_wire; <root> in env: that run's own directory; TZ=UTC; no herdr config.toml (panorama's default theme); NO_COLOR, FORCE_COLOR, COLORTERM, TERM and every HERDR_*/PANORAMA_*/TEXTUAL_*/CLAUDE_* variable unset except those a run names; tools/capture_goldens.py",
+ "runs": [
+  {
+   "app": "swarm",
+   "focus_pane": "w1:p1",
+   "home_mode": true,
+   "cockpit_mode": true,
+   "docked": "w1:p1",
+   "size": [
+    46,
+    45
+   ],
+   "input": "inputs/swarm-remote.json",
+   "now": 1791972240.0,
+   "steps": [
+    {
+     "do": "frame",
+     "n": 0
+    },
+    {
+     "do": "snap",
+     "name": "initial"
+    }
+   ]
+  }
+ ],
+ "screens": {
+  "initial": [
+    [[" ","#c3c7cd","#14161b",false],["SWARM","#80868f","#14161b",true],["  5 orchestrators","#4d535c","#14161b",false],["              ","#c3c7cd","#14161b",false],["?1","#ffb547","#14161b",true],[" ","#c3c7cd","#14161b",false],["!1","#ffb547","#14161b",true],[" ","#c3c7cd","#14161b",false],["✗2","#ff6b6b","#14161b",true],[" ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["▌","#e2cf9c","#1e2937",false],[" ","#c3c7cd","#1e2937",false],["?","#4d535c","#1e2937",false],[" ","#c3c7cd","#1e2937",false],[" ✗ ","#ffffff","#d8363e",true],[" ","#c3c7cd","#1e2937",false],["Billing API","#eceef1","#1e2937",true],["                 ","#c3c7cd","#1e2937",false],["?1","#ffb547","#1e2937",true],[" ","#c3c7cd","#1e2937",false],["failed","#ff6b6b","#1e2937",false],[" ","#c3c7cd","#1e2937",false]],
+    [["▌","#e2cf9c","#1e2937",false],["       ","#c3c7cd","#1e2937",false],["3 active · 4 agents","#4d535c","#1e2937",false],["                   ","#c3c7cd","#1e2937",false]],
+    [["▌","#e2cf9c","#14161b",false],["  ","#c3c7cd","#14161b",false],["├","#2c313a","#14161b",false],[" ","#c3c7cd","#14161b",false],[" » ","#dfe8f8","#2e4f86",true],[" PR #42 invoice export        ","#c3c7cd","#14161b",false],["»","#8eaee6","#14161b",false],[" ","#c3c7cd","#14161b",false],["○","#8d939d","#14161b",false],[" ","#c3c7cd","#14161b",false],["+3✓","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false]],
+    [["▌","#e2cf9c","#14161b",false],["  ","#c3c7cd","#14161b",false],["├","#2c313a","#14161b",false],[" ","#c3c7cd","#14161b",false],[" ✗ ","#ffffff","#d8363e",true],[" PR #44 health badge            ","#c3c7cd","#14161b",false],["✗","#ff6b6b","#14161b",true],[" ","#c3c7cd","#14161b",false],["+3✓","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false]],
+    [["▌","#e2cf9c","#14161b",false],["  ","#c3c7cd","#14161b",false],["├","#2c313a","#14161b",false],[" ","#c3c7cd","#14161b",false],[" ? ","#1b1203","#f2a93b",true],[" PR #48 retry banner c…         ","#c3c7cd","#14161b",false],["?","#ffb547","#14161b",true],[" ","#c3c7cd","#14161b",false],["+1✓","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false]],
+    [["▌","#e2cf9c","#14161b",false],["  ","#c3c7cd","#14161b",false],["└","#2c313a","#14161b",false],[" ","#c3c7cd","#14161b",false],[" ✓ ","#e3f2e9","#2c6b4c",true],[" ","#c3c7cd","#14161b",false],["1","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],["done","#4d535c","#14161b",false],["                               ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["  ","#c3c7cd","#14161b",false],["?","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],[" ⠸ ","#d8f2ee","#1f625c",true],[" Search refactor               ","#c3c7cd","#14161b",false],["working","#68c2b5","#14161b",false],[" ","#c3c7cd","#14161b",false]],
+    [["        ","#c3c7cd","#14161b",false],[" ⠸ ","#d8f2ee","#1f625c",true],["  ","#c3c7cd","#14161b",false],["1","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],["active","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],["·","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],["2","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],["agents","#4d535c","#14161b",false],["              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["  ","#c3c7cd","#14161b",false],["?","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],[" ! ","#1b1203","#f2a93b",true],[" Docs site                     ","#c3c7cd","#14161b",false],["blocked","#ffb547","#14161b",false],[" ","#c3c7cd","#14161b",false]],
+    [["        ","#c3c7cd","#14161b",false],[" ⠧ ","#d8f2ee","#1f625c",true],["  ","#c3c7cd","#14161b",false],["1","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],["active","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],["·","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],["1","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],["agents","#4d535c","#14161b",false],["              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["  ","#c3c7cd","#14161b",false],["?","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],[" ✓ ","#e3f2e9","#2c6b4c",true],[" ","#c3c7cd","#14161b",false],["Release","#80868f","#14161b",false],[" ","#c3c7cd","#14161b",false],["notes","#80868f","#14161b",false],["                    ","#c3c7cd","#14161b",false],["done","#80868f","#14161b",false],[" ","#c3c7cd","#14161b",false]],
+    [["        ","#c3c7cd","#14161b",false],[" ✓ ","#e3f2e9","#2c6b4c",true],["  ","#c3c7cd","#14161b",false],["0","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],["active","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],["·","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],["0","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],["agents","#4d535c","#14161b",false],["              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["─","#2c313a","#14161b",false],[" ","#c3c7cd","#14161b",false],["devbox","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],["─────────────────────────────────────","#2c313a","#14161b",false]],
+    [["  ","#c3c7cd","#14161b",false],["?","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],[" ✗ ","#ffffff","#d8363e",true],[" Remote work                    ","#c3c7cd","#14161b",false],["failed","#ff6b6b","#14161b",false],[" ","#c3c7cd","#14161b",false]],
+    [["        ","#c3c7cd","#14161b",false],[" » ","#dfe8f8","#2e4f86",true],[" ","#c3c7cd","#14161b",false],[" ✗ ","#ffffff","#d8363e",true],[" ","#c3c7cd","#14161b",false],[" ? ","#1b1203","#f2a93b",true],[" ","#c3c7cd","#14161b",false],[" ✓ ","#e3f2e9","#2c6b4c",true],["  ","#c3c7cd","#14161b",false],["3","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],["active","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],["·","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],["4","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false],["agents","#4d535c","#14161b",false],["  ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["  ","#c3c7cd","#14161b",false],["+","#e2cf9c","#14161b",true],[" ","#c3c7cd","#14161b",false],["New","#80868f","#14161b",false],[" ","#c3c7cd","#14161b",false],["agent","#80868f","#14161b",false],["                               ","#c3c7cd","#14161b",false],["n","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["                                              ","#c3c7cd","#14161b",false]],
+    [["─────────────────────────────────── ","#2c313a","#14161b",false],["z","#e2cf9c","#14161b",false],[" graph ","#4d535c","#14161b",false],["──","#2c313a","#14161b",false]],
+    [[" ","#c3c7cd","#14161b",false],["↑↓","#e2cf9c","#14161b",false],[" move ","#4d535c","#14161b",false],["ret","#e2cf9c","#14161b",false],[" open ","#4d535c","#14161b",false],["a","#e2cf9c","#14161b",false],[" answer ","#4d535c","#14161b",false],["n","#e2cf9c","#14161b",false],[" new ","#4d535c","#14161b",false],["pfx+spc","#e2cf9c","#14161b",false],[" back","#4d535c","#14161b",false],[" ","#c3c7cd","#14161b",false]]
+  ]
+ }
+}

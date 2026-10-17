@@ -1,0 +1,249 @@
+{
+ "source": "tests/scenario.py build_continued; mtimes: a transcript's newest record, undated files the scenario's newest; tools/capture_goldens.py",
+ "now": 1791969600.0,
+ "projects": "projects",
+ "events": "events",
+ "files": {
+  "projects/-home-user-project/55555555-5555-4555-8555-555555555555/subagents/agent-p1schema0000000001.jsonl": {
+   "mtime": 1791968880.0,
+   "text": "{\"parentUuid\":null,\"isSidechain\":true,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"agentId\":\"p1schema0000000001\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":\"brief\"},\"uuid\":\"0b133d7f-5100-4bcf-b098-6a1bdc27a252\",\"timestamp\":\"2026-10-14T09:01:00.000Z\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":true,\"agentId\":\"p1schema0000000001\",\"message\":{\"model\":\"claude-model\",\"id\":\"\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_6548896186792253086158\",\"name\":\"Bash\",\"input\":{\"command\":\"true\",\"description\":\"Run the migration tests\"},\"caller\":{\"type\":\"direct\"}}],\"container\":null,\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":0,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"wireToolInputs\":{\"toolu_KEY\":{\"command\":\"\",\"description\":\"\"}},\"serverClassifierRequest\":\"00000000-0000-4000-8000-000000000000\",\"apiBlockIndex\":2,\"requestId\":\"\",\"attributionAgent\":\"\",\"type\":\"assistant\",\"uuid\":\"3635d99f-43f1-4490-b406-a61c7be06611\",\"timestamp\":\"2026-10-14T09:03:00.000Z\",\"advisorModel\":\"\",\"effort\":\"medium\",\"perTurnEffort\":\"medium\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\",\"slug\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":true,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"agentId\":\"p1schema0000000001\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":[{\"tool_use_id\":\"toolu_6548896186792253086158\",\"type\":\"tool_result\",\"content\":[{\"type\":\"text\",\"text\":\"ok\"}],\"is_error\":false}]},\"uuid\":\"5fb0be2c-cd4e-4d1b-a685-add6064248bc\",\"timestamp\":\"2026-10-14T09:03:01.000Z\",\"toolUseResult\":{\"stdout\":\"ok\",\"stderr\":\"\",\"interrupted\":false,\"isImage\":false,\"noOutputExpected\":false},\"sourceToolAssistantUUID\":\"00000000-0000-4000-8000-000000000000\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":true,\"agentId\":\"p1schema0000000001\",\"message\":{\"model\":\"claude-model\",\"id\":\"\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_6490801962658594314129\",\"name\":\"SubagentHandback\",\"input\":{\"message\":\"migration ready\"},\"caller\":{\"type\":\"direct\"}}],\"container\":null,\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":0,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"wireToolInputs\":{\"toolu_KEY\":{\"message\":\"\"}},\"serverClassifierRequest\":\"00000000-0000-4000-8000-000000000000\",\"apiBlockIndex\":0,\"requestId\":\"\",\"attributionAgent\":\"\",\"type\":\"assistant\",\"uuid\":\"6e125ce9-755c-4641-b625-97074b5cea63\",\"timestamp\":\"2026-10-14T09:08:00.000Z\",\"advisorModel\":\"\",\"effort\":\"medium\",\"perTurnEffort\":\"medium\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\",\"slug\":\"\"}\n"
+  },
+  "projects/-home-user-project/55555555-5555-4555-8555-555555555555/subagents/agent-p1schema0000000001.meta.json": {
+   "mtime": 1791969480.0,
+   "text": "{\"agentType\": \"general-purpose\", \"description\": \"Write the schema migration\", \"spawnDepth\": 1, \"requestShape\": \"background\", \"requestNonInteractive\": true, \"model\": \"opus\"}"
+  },
+  "projects/-home-user-project/55555555-5555-4555-8555-555555555555.jsonl": {
+   "mtime": 1791969000.0,
+   "text": "{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":\"Migrate the payments tables\"},\"uuid\":\"4a76e1d1-b345-4d4a-a87d-7b6980222458\",\"timestamp\":\"2026-10-14T09:00:00.000Z\",\"permissionMode\":\"auto\",\"origin\":{\"kind\":\"human\"},\"promptSource\":\"typed\",\"turnOrigin\":\"human\",\"turnPosition\":{\"promptIndex\":1,\"turnIndex\":1},\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"message\":{\"model\":\"claude-model\",\"id\":\"\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_7517889722938246673709\",\"name\":\"Agent\",\"input\":{\"description\":\"Write the schema migration\",\"subagent_type\":\"general-purpose\",\"model\":\"opus\",\"prompt\":\"brief\",\"run_in_background\":true},\"caller\":{\"type\":\"direct\"}}],\"container\":null,\"stop_reason\":\"tool_use\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":{\"thinking_tokens\":0},\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":0,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"global\",\"iterations\":[{\"input_tokens\":0,\"output_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"message\"}],\"speed\":\"\",\"fallback_credit\":null},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"wireToolInputs\":{\"toolu_KEY\":{\"description\":\"\",\"subagent_type\":\"\",\"prompt\":\"\"}},\"serverClassifierRequest\":\"00000000-0000-4000-8000-000000000000\",\"apiBlockIndex\":2,\"requestId\":\"\",\"requestedModel\":\"claude-model\",\"type\":\"assistant\",\"uuid\":\"8ab1f58a-6add-4b02-bcf0-dcea1b252bae\",\"timestamp\":\"2026-10-14T09:01:00.000Z\",\"advisorModel\":\"\",\"effort\":\"medium\",\"perTurnEffort\":\"medium\",\"session_id\":\"55555555-5555-4555-8555-555555555555\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":[{\"tool_use_id\":\"toolu_7517889722938246673709\",\"type\":\"tool_result\",\"content\":[{\"type\":\"text\",\"text\":\"Async agent launched successfully.\\nagentId: p1schema0000000001\"}]}]},\"uuid\":\"96c3e48b-1670-4cd8-b950-9716548994bf\",\"timestamp\":\"2026-10-14T09:01:01.000Z\",\"toolUseResult\":{\"isAsync\":true,\"status\":\"async_launched\",\"agentId\":\"p1schema0000000001\",\"description\":\"Write the schema migration\",\"resolvedModel\":\"claude-model\",\"prompt\":\"\",\"outputFile\":\"\",\"canReadOutputFile\":true,\"canContinueAgent\":true},\"serverClassifierContext\":{\"request\":\"00000000-0000-4000-8000-000000000000\",\"context\":{\"git_state\":{\"cwd\":\"\",\"root\":\"\",\"branch\":null,\"default_branch\":null,\"status\":null,\"visibility\":{\"origin\":null,\"push_remote\":\"\",\"remotes\":[],\"visibility_cache\":[{\"host\":\"\",\"remote\":\"\",\"visibility\":\"\"}]},\"error\":\"\"},\"live_cwd\":\"\",\"platform\":\"\"}},\"sourceToolAssistantUUID\":\"00000000-0000-4000-8000-000000000000\",\"permissionDecision\":{\"decision\":\"accept\",\"source\":\"config\",\"reasonType\":\"classifier\"},\"session_id\":\"55555555-5555-4555-8555-555555555555\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"type\":\"queue-operation\",\"operation\":\"enqueue\",\"timestamp\":\"2026-10-14T09:08:00.000Z\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"content\":\"<task-notification>\\n<task-id>p1schema0000000001</task-id>\\n<tool-use-id>toolu_7517889722938246673709</tool-use-id>\\n<output-file>/tmp/tasks/p1schema0000000001.output</output-file>\\n<status>completed</status>\\n<summary>Agent finished</summary>\\n<result>report</result>\\n<usage><subagent_tokens>1000</subagent_tokens><tool_uses>11</tool_uses><duration_ms>1000</duration_ms></usage>\\n</task-notification>\",\"uuid\":\"6e4a5f4e-fa41-4876-8c0f-bc3057a2cf76\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"attachment\":{\"type\":\"queued_command\",\"prompt\":\"<task-notification>\\n<task-id>p1schema0000000001</task-id>\\n<tool-use-id>toolu_7517889722938246673709</tool-use-id>\\n<output-file>/tmp/tasks/p1schema0000000001.output</output-file>\\n<status>completed</status>\\n<summary>Agent finished</summary>\\n<result>report</result>\\n<usage><subagent_tokens>1000</subagent_tokens><tool_uses>11</tool_uses><duration_ms>1000</duration_ms></usage>\\n</task-notification>\",\"source_uuid\":\"00000000-0000-4000-8000-000000000000\",\"delivery_id\":\"00000000-0000-4000-8000-000000000000\",\"commandMode\":\"\",\"origin\":{\"kind\":\"task-notification\",\"producer\":\"\"},\"runId\":\"\",\"timestamp\":\"2026-01-01T00:00:00.000Z\",\"usage\":{\"totalTokens\":0,\"toolUses\":30,\"durationMs\":0}},\"type\":\"attachment\",\"uuid\":\"d2b7b288-c3f0-4da1-bb2c-5b4a8113aab5\",\"timestamp\":\"2026-10-14T09:08:00.009Z\",\"rendered\":[{\"content\":\"\"}],\"renderedInHumanTurn\":[{\"content\":\"\"}],\"renderedRole\":\"system\",\"session_id\":\"55555555-5555-4555-8555-555555555555\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"message\":{\"model\":\"claude-model\",\"id\":\"\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"The migration is ready.\"}],\"container\":null,\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":{\"thinking_tokens\":0},\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":0,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"global\",\"iterations\":[{\"input_tokens\":0,\"output_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"message\"}],\"speed\":\"\",\"fallback_credit\":null},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"serverClassifierRequest\":\"00000000-0000-4000-8000-000000000000\",\"apiBlockIndex\":1,\"requestId\":\"\",\"requestedModel\":\"claude-model\",\"attributionMcpServer\":\"\",\"attributionMcpTool\":\"\",\"type\":\"assistant\",\"uuid\":\"f7330262-f1a8-4800-b207-c45bfe728ba7\",\"timestamp\":\"2026-10-14T09:09:00.000Z\",\"advisorModel\":\"\",\"effort\":\"medium\",\"perTurnEffort\":\"medium\",\"session_id\":\"55555555-5555-4555-8555-555555555555\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"type\":\"continued-in\",\"timestamp\":\"2026-10-14T09:10:00.000Z\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"continuedInSessionId\":\"66666666-6666-4666-8666-666666666666\"}\n{\"type\":\"last-prompt\",\"leafUuid\":\"00000000-0000-4000-8000-000000000000\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\"}\n{\"type\":\"cost-state\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\",\"totalCostUSD\":0,\"totalAPIDuration\":0,\"totalAPIDurationWithoutRetries\":0,\"totalToolDuration\":0,\"totalLinesAdded\":0,\"totalLinesRemoved\":0,\"totalDuration\":0,\"startTime\":0,\"modelUsage\":{\"claude-haiku-5-5\":{\"inputTokens\":0,\"outputTokens\":0,\"thinkingTokens\":0,\"cacheReadInputTokens\":0,\"cacheCreationInputTokens\":0,\"webSearchRequests\":0,\"costUSD\":0},\"claude-opus-5-5\":{\"inputTokens\":0,\"outputTokens\":0,\"thinkingTokens\":0,\"cacheReadInputTokens\":0,\"cacheCreationInputTokens\":0,\"webSearchRequests\":0,\"costUSD\":0}},\"hasUnknownModelCost\":false}\n{\"type\":\"mode\",\"mode\":\"normal\",\"sessionId\":\"55555555-5555-4555-8555-555555555555\"}\n"
+  },
+  "projects/-home-user-project/66666666-6666-4666-8666-666666666666/subagents/agent-p2backfill00000001.jsonl": {
+   "mtime": 1791969480.0,
+   "text": "{\"parentUuid\":null,\"isSidechain\":true,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"agentId\":\"p2backfill00000001\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":\"brief\"},\"uuid\":\"d312ede1-390d-42df-8889-d34493e884b2\",\"timestamp\":\"2026-10-14T09:12:00.000Z\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"66666666-6666-4666-8666-666666666666\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":true,\"agentId\":\"p2backfill00000001\",\"message\":{\"model\":\"claude-model\",\"id\":\"\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_6249252479595018586903\",\"name\":\"Bash\",\"input\":{\"command\":\"true\",\"description\":\"Backfill batch 3 of 8\"},\"caller\":{\"type\":\"direct\"}}],\"container\":null,\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":0,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"wireToolInputs\":{\"toolu_KEY\":{\"command\":\"\",\"description\":\"\"}},\"serverClassifierRequest\":\"00000000-0000-4000-8000-000000000000\",\"apiBlockIndex\":2,\"requestId\":\"\",\"attributionAgent\":\"\",\"type\":\"assistant\",\"uuid\":\"925724b5-e886-42f8-a56d-7d5ab3ce9e41\",\"timestamp\":\"2026-10-14T09:18:00.000Z\",\"advisorModel\":\"\",\"effort\":\"medium\",\"perTurnEffort\":\"medium\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"66666666-6666-4666-8666-666666666666\",\"version\":\"\",\"gitBranch\":\"\",\"slug\":\"\"}\n"
+  },
+  "projects/-home-user-project/66666666-6666-4666-8666-666666666666/subagents/agent-p2backfill00000001.meta.json": {
+   "mtime": 1791969480.0,
+   "text": "{\"agentType\": \"general-purpose\", \"description\": \"Backfill ledger ids\", \"spawnDepth\": 1, \"requestShape\": \"background\", \"requestNonInteractive\": true, \"model\": \"sonnet\"}"
+  },
+  "projects/-home-user-project/66666666-6666-4666-8666-666666666666.jsonl": {
+   "mtime": 1791969180.0,
+   "text": "{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":\"Now backfill the ledger ids\"},\"uuid\":\"e8959d0e-899b-4557-bf8f-db2f6b039f45\",\"timestamp\":\"2026-10-14T09:11:00.000Z\",\"permissionMode\":\"auto\",\"origin\":{\"kind\":\"human\"},\"promptSource\":\"typed\",\"turnOrigin\":\"human\",\"turnPosition\":{\"promptIndex\":1,\"turnIndex\":1},\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"66666666-6666-4666-8666-666666666666\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"message\":{\"model\":\"claude-model\",\"id\":\"\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_6303440778924639896580\",\"name\":\"Agent\",\"input\":{\"description\":\"Backfill ledger ids\",\"subagent_type\":\"general-purpose\",\"model\":\"sonnet\",\"prompt\":\"brief\",\"run_in_background\":true},\"caller\":{\"type\":\"direct\"}}],\"container\":null,\"stop_reason\":\"tool_use\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":{\"thinking_tokens\":0},\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":0,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"global\",\"iterations\":[{\"input_tokens\":0,\"output_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"message\"}],\"speed\":\"\",\"fallback_credit\":null},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"wireToolInputs\":{\"toolu_KEY\":{\"description\":\"\",\"subagent_type\":\"\",\"prompt\":\"\"}},\"serverClassifierRequest\":\"00000000-0000-4000-8000-000000000000\",\"apiBlockIndex\":2,\"requestId\":\"\",\"requestedModel\":\"claude-model\",\"type\":\"assistant\",\"uuid\":\"fbb8ac25-3937-4f62-bba1-2d4633c9814a\",\"timestamp\":\"2026-10-14T09:12:00.000Z\",\"advisorModel\":\"\",\"effort\":\"medium\",\"perTurnEffort\":\"medium\",\"session_id\":\"66666666-6666-4666-8666-666666666666\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"66666666-6666-4666-8666-666666666666\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":[{\"tool_use_id\":\"toolu_6303440778924639896580\",\"type\":\"tool_result\",\"content\":[{\"type\":\"text\",\"text\":\"Async agent launched successfully.\\nagentId: p2backfill00000001\"}]}]},\"uuid\":\"b378c57a-461b-4957-b70f-b603e72a6210\",\"timestamp\":\"2026-10-14T09:12:01.000Z\",\"toolUseResult\":{\"isAsync\":true,\"status\":\"async_launched\",\"agentId\":\"p2backfill00000001\",\"description\":\"Backfill ledger ids\",\"resolvedModel\":\"claude-model\",\"prompt\":\"\",\"outputFile\":\"\",\"canReadOutputFile\":true,\"canContinueAgent\":true},\"serverClassifierContext\":{\"request\":\"00000000-0000-4000-8000-000000000000\",\"context\":{\"git_state\":{\"cwd\":\"\",\"root\":\"\",\"branch\":null,\"default_branch\":null,\"status\":null,\"visibility\":{\"origin\":null,\"push_remote\":\"\",\"remotes\":[],\"visibility_cache\":[{\"host\":\"\",\"remote\":\"\",\"visibility\":\"\"}]},\"error\":\"\"},\"live_cwd\":\"\",\"platform\":\"\"}},\"sourceToolAssistantUUID\":\"00000000-0000-4000-8000-000000000000\",\"permissionDecision\":{\"decision\":\"accept\",\"source\":\"config\",\"reasonType\":\"classifier\"},\"session_id\":\"66666666-6666-4666-8666-666666666666\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"66666666-6666-4666-8666-666666666666\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"message\":{\"model\":\"claude-model\",\"id\":\"\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"Started the backfill agent.\"}],\"container\":null,\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":{\"thinking_tokens\":0},\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":0,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"global\",\"iterations\":[{\"input_tokens\":0,\"output_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"message\"}],\"speed\":\"\",\"fallback_credit\":null},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"serverClassifierRequest\":\"00000000-0000-4000-8000-000000000000\",\"apiBlockIndex\":1,\"requestId\":\"\",\"requestedModel\":\"claude-model\",\"attributionMcpServer\":\"\",\"attributionMcpTool\":\"\",\"type\":\"assistant\",\"uuid\":\"f1d0d495-b7b4-411a-b578-ab98b34ed051\",\"timestamp\":\"2026-10-14T09:13:00.000Z\",\"advisorModel\":\"\",\"effort\":\"medium\",\"perTurnEffort\":\"medium\",\"session_id\":\"66666666-6666-4666-8666-666666666666\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"66666666-6666-4666-8666-666666666666\",\"version\":\"\",\"gitBranch\":\"\"}\n"
+  },
+  "projects/-home-user-project/77777777-7777-4777-8777-777777777777.jsonl": {
+   "mtime": 1791968760.0,
+   "text": "{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"promptId\":\"00000000-0000-4000-8000-000000000000\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":\"Summarise the ledger audit\"},\"uuid\":\"ac4bd65c-7a76-4f86-8208-99bae9bda057\",\"timestamp\":\"2026-10-14T09:02:00.000Z\",\"permissionMode\":\"auto\",\"origin\":{\"kind\":\"human\"},\"promptSource\":\"typed\",\"turnOrigin\":\"human\",\"turnPosition\":{\"promptIndex\":1,\"turnIndex\":1},\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"77777777-7777-4777-8777-777777777777\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"parentUuid\":\"00000000-0000-4000-8000-000000000000\",\"isSidechain\":false,\"message\":{\"model\":\"claude-model\",\"id\":\"\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"Summary written.\"}],\"container\":null,\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":{\"thinking_tokens\":0},\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":0,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"global\",\"iterations\":[{\"input_tokens\":0,\"output_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"message\"}],\"speed\":\"\",\"fallback_credit\":null},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"serverClassifierRequest\":\"00000000-0000-4000-8000-000000000000\",\"apiBlockIndex\":1,\"requestId\":\"\",\"requestedModel\":\"claude-model\",\"attributionMcpServer\":\"\",\"attributionMcpTool\":\"\",\"type\":\"assistant\",\"uuid\":\"17cba078-a3ec-40fa-ba67-38a7944cb83e\",\"timestamp\":\"2026-10-14T09:06:00.000Z\",\"advisorModel\":\"\",\"effort\":\"medium\",\"perTurnEffort\":\"medium\",\"session_id\":\"77777777-7777-4777-8777-777777777777\",\"userType\":\"external\",\"entrypoint\":\"cli\",\"cwd\":\"/home/user/project\",\"sessionId\":\"77777777-7777-4777-8777-777777777777\",\"version\":\"\",\"gitBranch\":\"\"}\n{\"type\":\"continued-in\",\"sessionId\":\"77777777-7777-4777-8777-777777777777\",\"continuedInSessionId\":\"88888888-8888-4888-8888-888888888888\"}\n"
+  }
+ },
+ "snapshot": {
+  "agents": [
+   {
+    "agent": "claude",
+    "agent_session": {
+     "agent": "claude",
+     "kind": "id",
+     "source": "herdr:claude",
+     "value": "55555555-5555-4555-8555-555555555555"
+    },
+    "agent_status": "working",
+    "cwd": "/home/user/project",
+    "focused": false,
+    "foreground_cwd": "",
+    "pane_id": "w1:p1",
+    "revision": 77387,
+    "state_change_seq": 81,
+    "tab_id": "w1:t1",
+    "terminal_id": "",
+    "terminal_title": "",
+    "terminal_title_stripped": "",
+    "tokens": {
+     "harness_logo": "",
+     "logo_working": "",
+     "sort_key": "",
+     "state_working": "",
+     "tab_key": "",
+     "title_working": "",
+     "ws_key": ""
+    },
+    "workspace_id": "w1"
+   },
+   {
+    "agent": "claude",
+    "agent_session": {
+     "agent": "claude",
+     "kind": "id",
+     "source": "herdr:claude",
+     "value": "77777777-7777-4777-8777-777777777777"
+    },
+    "agent_status": "idle",
+    "cwd": "/home/user/project",
+    "focused": false,
+    "foreground_cwd": "",
+    "pane_id": "w1:p2",
+    "revision": 77387,
+    "state_change_seq": 81,
+    "tab_id": "w1:t2",
+    "terminal_id": "",
+    "terminal_title": "",
+    "terminal_title_stripped": "",
+    "tokens": {
+     "harness_logo": "",
+     "logo_working": "",
+     "sort_key": "",
+     "state_working": "",
+     "tab_key": "",
+     "title_working": "",
+     "ws_key": ""
+    },
+    "workspace_id": "w1"
+   }
+  ],
+  "focused_pane_id": "",
+  "focused_tab_id": "",
+  "focused_workspace_id": "",
+  "layouts": [
+   {
+    "area": {
+     "height": 77,
+     "width": 296,
+     "x": 0,
+     "y": 0
+    },
+    "focused_pane_id": "",
+    "panes": [
+     {
+      "focused": true,
+      "pane_id": "",
+      "rect": {
+       "height": 77,
+       "width": 296,
+       "x": 0,
+       "y": 0
+      }
+     }
+    ],
+    "splits": [],
+    "tab_id": "",
+    "workspace_id": "",
+    "zoomed": false
+   }
+  ],
+  "panes": [
+   {
+    "agent": "claude",
+    "agent_session": {
+     "agent": "claude",
+     "kind": "",
+     "source": "",
+     "value": ""
+    },
+    "agent_status": "working",
+    "cwd": "",
+    "focused": false,
+    "foreground_cwd": "",
+    "pane_id": "w1:p1",
+    "revision": 77387,
+    "scroll": {
+     "max_offset_from_bottom": 0,
+     "offset_from_bottom": 0,
+     "viewport_rows": 77
+    },
+    "tab_id": "w1:t1",
+    "terminal_id": "",
+    "terminal_title": "",
+    "terminal_title_stripped": "",
+    "tokens": {
+     "harness_logo": "",
+     "logo_working": "",
+     "sort_key": "",
+     "state_working": "",
+     "tab_key": "",
+     "title_working": "",
+     "ws_key": ""
+    },
+    "workspace_id": "w1"
+   },
+   {
+    "agent": "claude",
+    "agent_session": {
+     "agent": "claude",
+     "kind": "",
+     "source": "",
+     "value": ""
+    },
+    "agent_status": "working",
+    "cwd": "",
+    "focused": false,
+    "foreground_cwd": "",
+    "pane_id": "w1:p2",
+    "revision": 77387,
+    "scroll": {
+     "max_offset_from_bottom": 0,
+     "offset_from_bottom": 0,
+     "viewport_rows": 77
+    },
+    "tab_id": "w1:t2",
+    "terminal_id": "",
+    "terminal_title": "",
+    "terminal_title_stripped": "",
+    "tokens": {
+     "harness_logo": "",
+     "logo_working": "",
+     "sort_key": "",
+     "state_working": "",
+     "tab_key": "",
+     "title_working": "",
+     "ws_key": ""
+    },
+    "workspace_id": "w1"
+   }
+  ],
+  "protocol": 22,
+  "tabs": [
+   {
+    "agent_status": "working",
+    "focused": false,
+    "label": "Payments",
+    "number": 98,
+    "pane_count": 1,
+    "tab_id": "w1:t1",
+    "workspace_id": "w1"
+   },
+   {
+    "agent_status": "working",
+    "focused": false,
+    "label": "Ledger",
+    "number": 98,
+    "pane_count": 1,
+    "tab_id": "w1:t2",
+    "workspace_id": "w1"
+   }
+  ],
+  "version": "0.9.3",
+  "workspaces": [
+   {
+    "active_tab_id": "",
+    "agent_status": "working",
+    "focused": true,
+    "label": "",
+    "number": 1,
+    "pane_count": 10,
+    "tab_count": 8,
+    "tokens": {
+     "space_label": "",
+     "space_logo_claude": "",
+     "space_working_claude": ""
+    },
+    "workspace_id": ""
+   }
+  ]
+ },
+ "inbox": [
+  {
+   "id": 7,
+   "session": "66666666-6666-4666-8666-666666666666",
+   "pane": "w1:p1",
+   "asked_by": null,
+   "question": "Backfill in one transaction or in batches?",
+   "status": "open"
+  }
+ ]
+}
