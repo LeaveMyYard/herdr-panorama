@@ -11,17 +11,12 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from herdr_panorama.tui import FRAME_SECONDS, SwarmApp
+from herdr_panorama.tui import SwarmApp
 
+from .anim import at_frame
 from .demo import NOW, demo_swarm
 
 OUT = Path(__file__).resolve().parent.parent / "docs" / "screenshots"
-
-
-def at_frame(app, frame: float) -> None:
-    """Hold the animation at design frame ``frame``: the frame is the anim clock's (the wall
-    clock's in the app), so a fixed clock is what pins it; the next repaint draws it."""
-    app.anim_clock = lambda: frame * FRAME_SECONDS
 
 
 CHROME = next((c for c in ("google-chrome-stable", "google-chrome", "chromium", "chromium-browser") if shutil.which(c)), None)

@@ -5,15 +5,16 @@ not show a phase jump)."""
 
 from __future__ import annotations
 
+import itertools
 import math
 
 from herdr_panorama import protocol, render, tui
 from herdr_panorama.tui import FRAME_SECONDS
 
+from .anim import AnimClock
 from .design_dock import FIX, design_swarm
-from .test_core import paths  # noqa: F401  (the fixture: a private core socket)
 from .test_smooth import dump
-from .test_tui import AnimClock, loaded, make_app
+from .test_tui import loaded, make_app
 from .test_unseen import MARKS
 
 T = 1_792_000_000.0 + 0.13  # a wall-clock-sized instant, mid-frame (colours between steps)
@@ -48,7 +49,7 @@ async def test_two_windows_started_apart_show_the_same_phase(fake_herdr):
     assert got1 == got2
 
 
-async def test_a_panel_and_the_home_view_share_the_frame(paths, fake_herdr):
+async def test_a_panel_and_the_home_view_share_the_frame(tmp_path, fake_herdr):
     """A per-tab panel (a separate process in real use) reads the same frame as the home view
     at the same instant, though it started later and was hidden in between."""
     import json
@@ -58,7 +59,7 @@ async def test_a_panel_and_the_home_view_share_the_frame(paths, fake_herdr):
     clock = AnimClock(T - 60)
     home, _ = make_app(design_swarm(), focus_pane="w1:p1")
     home.anim_clock = clock
-    panel = PanelApp(sock_path=paths[0], pane_id="w1:p9", tab_id="w1:t3", start_client=False)
+    panel = PanelApp(sock_path=tmp_path / "core.sock", pane_id="w1:p9", tab_id="w1:t3", start_client=False)  # never connects
     panel.anim_clock = clock
     async with home.run_test(size=(160, 45)) as pilot:
         await loaded(home, pilot)
@@ -90,5 +91,5 @@ def test_colour_glides_stay_smooth_at_wall_clock_frames():
 
     def steps(f0):
         w = [render.wave(f0 + i * step) for i in range(240)]
-        return [b - a for a, b in zip(w, w[1:])]
+        return [b - a for a, b in itertools.pairwise(w)]
     assert all(math.isclose(a, b, abs_tol=1e-5) for a, b in zip(steps(base), steps(0.0)))

@@ -15,7 +15,8 @@ from herdr_panorama.render import FAINT, ST
 from .demo import demo_swarm
 from .design_deep import deep_swarm
 from .design_dock import FIX, design_swarm
-from .test_tui import AnimClock, loaded, make_app, next_frame
+from .anim import AnimClock
+from .test_tui import loaded, make_app, next_frame
 from .test_states import NOW as STATES_NOW
 from .test_states import states_swarm
 from .test_unseen import MARKS, cells, grid

@@ -733,7 +733,9 @@ colours and `TILE_OFF` the same way, and an unseen tile's pulse runs over that b
   `anim_clock` is injectable for tests), set by every tick and every full repaint. The operator's
   report: with per-tab panels each window counted its own frames from its own start (and a hidden
   panel paused), so switching tabs showed a phase jump. Now any two windows draw an animation in
-  the same phase at the same moment, and a panel shown again draws the current phase at once.
+  the same phase at the same moment (to within one colour tick: each window's timer runs on its
+  own phase, at most 50 ms apart at the default 20 fps), and a panel shown again draws the
+  current phase at once (the state message's repaint).
   Animations keep their own periods and per-element offsets (a spinner's `seq`, a sweep's seed),
   so they are synced between windows, not with each other. The frame is about 7e9; a float64
   resolves about 1e-6 of a frame there, so `frame % period` into a sine stays smooth with no extra

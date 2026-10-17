@@ -260,7 +260,7 @@ async def test_a_hidden_tabs_panel_draws_no_frames(paths):
     from herdr_panorama.panel import PanelApp
     from herdr_panorama.tui import FRAME_SECONDS
 
-    from .test_tui import AnimClock
+    from .anim import AnimClock
     clock = AnimClock(1_792_000_000.0)  # a wall-clock-sized time
     app = PanelApp(sock_path=paths[0], pane_id="w1:p9", tab_id="w1:t3", start_client=False)
     app.anim_clock = clock

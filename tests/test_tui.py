@@ -8,17 +8,8 @@ from herdr_panorama import herdr, render
 from herdr_panorama.model import DONE, RUN
 from herdr_panorama.tui import ARM_SECONDS, FRAME_SECONDS, Grid, SwarmApp
 
+from .anim import AnimClock
 from .demo import NOW, demo_swarm
-
-
-class AnimClock:
-    """A fake anim_clock (the app's is the wall clock): seconds, held still until moved."""
-
-    def __init__(self, t: float = 0.0):
-        self.t = t
-
-    def __call__(self) -> float:
-        return self.t
 
 
 def make_app(swarm=None, focus_pane="w1:p1"):
