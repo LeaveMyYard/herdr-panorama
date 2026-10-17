@@ -1,6 +1,6 @@
 [project]
 name = "herdr-panorama"
-version = "0.1.0"
+version = "0.1.1"
 description = "Live swarm view of Claude Code orchestrators, threads and subagents in herdr"
 readme = "README.md"
 license = "MIT"

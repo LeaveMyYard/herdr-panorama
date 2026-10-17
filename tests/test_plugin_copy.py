@@ -21,7 +21,7 @@ pytestmark = pytest.mark.skipif(shutil.which("uv") is None, reason="needs uv")
 
 @pytest.fixture
 def installed(tmp_path):
-    copy = tmp_path / "cache" / "herdr-panorama" / "herdr-panorama" / "0.1.0"
+    copy = tmp_path / "cache" / "herdr-panorama" / "herdr-panorama" / "0.1.1"
     files = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard"], cwd=ROOT,
                            capture_output=True, text=True, check=True).stdout.split()
     for rel in files:

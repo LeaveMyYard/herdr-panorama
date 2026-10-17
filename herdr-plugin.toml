@@ -1,6 +1,6 @@
 id = "leavemyyard.herdr-panorama"
 name = "herdr panorama"
-version = "0.1.0"
+version = "0.1.1"
 min_herdr_version = "0.9.0"
 description = "Read-only swarm view: Claude Code orchestrators, the threads they drive and the subagents they spawned."
 platforms = ["linux", "macos"]
