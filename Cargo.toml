@@ -70,8 +70,9 @@ tokio = { version = "1", features = ["rt", "net", "io-util", "time", "sync", "ma
 ratatui = { version = "0.30", default-features = false, features = ["crossterm"] }
 crossterm = { version = "0.29", features = ["event-stream"] }
 futures-util = { version = "0.3", default-features = false }
-# Whether the terminal hung up (a poll; crossterm spins instead of reporting it).
-rustix = { version = "1", features = ["event"] }
+# Whether the terminal hung up (a poll; crossterm spins instead of reporting it); a timed-out
+# rsync's process group killed (machines).
+rustix = { version = "1", features = ["event", "process"] }
 # A character's width in cells (a notice folds its text by it), as ratatui counts it.
 unicode-width = "0.2"
 # The local time zone's offset, for clock times.
@@ -82,7 +83,7 @@ chrono = { version = "0.4", default-features = false, features = ["clock"] }
 herdr-agent-kit = { workspace = true, features = ["internal", "test-support"] }
 tempfile = "3"
 # A pseudo-terminal for the panel's hang-up test (safe calls: the crate forbids unsafe).
-rustix = { version = "1", features = ["event", "pty", "termios", "fs"] }
+rustix = { version = "1", features = ["event", "process", "pty", "termios", "fs"] }
 
 [lints]
 workspace = true
