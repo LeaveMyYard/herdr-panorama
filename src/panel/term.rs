@@ -58,6 +58,29 @@ pub fn restore() {
     let _ = execute!(io::stdout(), ratatui::crossterm::cursor::Show);
 }
 
+/// Whether the terminal is gone (its other side closed): crossterm's reader never reports
+/// it (it reads the error again and again), and without a controlling terminal no SIGHUP
+/// comes either.
+///
+/// It looks at stdin, which herdr makes the pane's terminal. A stdin that closes some other
+/// way (a pipe whose writer went) counts too: no key can come any more, the same end as the
+/// input ending (`End::Input`).
+pub fn hung_up() -> bool {
+    use rustix::event::{PollFd, PollFlags, Timespec, poll};
+    let stdin = io::stdin();
+    let mut fds = [PollFd::new(&stdin, PollFlags::IN)];
+    let now = Timespec {
+        tv_sec: 0,
+        tv_nsec: 0,
+    };
+    match poll(&mut fds, Some(&now)) {
+        Ok(_) => fds[0]
+            .revents()
+            .intersects(PollFlags::HUP | PollFlags::ERR | PollFlags::NVAL),
+        Err(_) => false,
+    }
+}
+
 /// Sets the terminal up for the panel.
 pub fn setup() -> io::Result<Term> {
     enable_raw_mode()?;

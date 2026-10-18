@@ -585,10 +585,12 @@ dependencies = [
  "herdr-agent-kit",
  "panorama-core",
  "ratatui",
+ "rustix",
  "serde",
  "serde_json",
  "tempfile",
  "tokio",
+ "unicode-width",
 ]
 
 [[package]]

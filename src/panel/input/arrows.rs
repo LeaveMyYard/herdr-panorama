@@ -86,10 +86,14 @@ impl Panel {
         vec![Effect::Switch { pane, keep_focus }]
     }
 
-    /// The switch ended (`err`: why it failed): the focus is judged again, arrows that came to
-    /// rest meanwhile are looked at again, and a failure is said.
-    pub fn switched(&mut self, err: Option<String>, now: Instant) -> Vec<Effect> {
+    /// The switch ended (`err`: why it failed; `took_back`: it announced this panel again, so
+    /// this panel is the focused one): the focus is judged again, arrows that came to rest
+    /// meanwhile are looked at again, and a failure is said.
+    pub fn switched(&mut self, err: Option<String>, took_back: bool, now: Instant) -> Vec<Effect> {
         self.input.docking = false;
+        if took_back {
+            self.herdr_focused_pane = self.my_pane.clone();
+        }
         if let Some(f) = self.herdr_focused_pane.clone() {
             self.herdr_focus(&f);
         }

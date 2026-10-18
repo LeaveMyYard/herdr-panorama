@@ -21,14 +21,18 @@ pub mod no_core;
 pub mod pacing;
 pub mod paint;
 pub mod term;
+pub mod toast;
 
 use crate::proto::client::{BACKOFF, Client, Config};
 use crate::proto::socket;
 use crate::settings::Settings;
 use actor::Actor;
-use herdr_agent_kit::internal::plugin_paths::panorama::state_dir;
+use herdr_agent_kit::herdr_api::Herdr;
+use herdr_agent_kit::internal::plugin_paths::PANORAMA_ID;
+use herdr_agent_kit::internal::plugin_paths::panorama::{session_key, state_dir};
 use herdr_agent_kit::plugin_env::PluginEnv;
 use model::Panel;
+use std::path::Path;
 use tokio::sync::mpsc;
 
 /// Runs the panel until it ends; the process's exit code.
@@ -36,20 +40,13 @@ pub fn run() -> i32 {
     let env = PluginEnv::from_env();
     let state = state_dir(&env);
     let pane = env.pane_id().map(str::to_owned);
-    let hook_pane = pane.clone();
-    let hook_state = state.clone();
     let default_hook = std::panic::take_hook();
-    std::panic::set_hook(Box::new(move |info| {
-        term::restore();
-        crash::mark(
-            &hook_state,
-            hook_pane.as_deref(),
-            // the panic and where it happened, as Python's log keeps the traceback
-            &format!("{info}\n{}", std::backtrace::Backtrace::force_capture()),
-            &clock::stamp(),
-        );
-        default_hook(info);
-    }));
+    std::panic::set_hook(crash::hook(
+        state.clone(),
+        pane.clone(),
+        term::restore,
+        default_hook,
+    ));
     let result = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
@@ -80,8 +77,25 @@ async fn serve(env: &PluginEnv) -> std::io::Result<actor::End> {
     let panel = Panel::new(cfg.pane_id.clone(), cfg.tab_id.clone());
     let (tx, rx) = mpsc::unbounded_channel();
     let client = Client::spawn(cfg, tx);
+    let place = actor::Place {
+        plugin_id: env.plugin_id(PANORAMA_ID).to_owned(),
+        root: env.plugin_root().map(Path::to_path_buf),
+        new_agent_mark: act::new_agent::marker(&state_dir(env), &session_key(env)),
+        home: env
+            .home()
+            .map_or_else(|| "~".to_owned(), |h| h.to_string_lossy().into_owned()),
+    };
+    let herdr = Herdr::from_env().with_client("panorama");
     let term = term::setup()?;
-    let mut actor = Actor::new(panel, Settings::from_env(env), term, rx);
+    let mut actor = Actor::new(
+        panel,
+        Settings::from_env(env),
+        term,
+        rx,
+        client.clone(),
+        herdr,
+        place,
+    );
     let end = actor.run().await;
     client.stop().await;
     end
