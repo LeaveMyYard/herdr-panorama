@@ -105,6 +105,7 @@ dependencies = [
 name = "panorama-core"
 version = "0.1.0"
 dependencies = [
+ "herdr-agent-kit",
  "serde",
  "serde_json",
 ]

@@ -11,6 +11,8 @@ publish.workspace = true
 [dependencies]
 # The model reads from (and writes) the core's `state.swarm` JSON (protocol 1.x).
 serde = { workspace = true }
+# `herdr_api::clean`: every label drawn goes through it (no escape sequence survives).
+herdr-agent-kit = { workspace = true }
 
 [dev-dependencies]
 # Reads the captured fixtures in tests/fixtures/.
