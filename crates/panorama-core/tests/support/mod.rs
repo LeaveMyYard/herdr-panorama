@@ -4,6 +4,7 @@
 #![allow(dead_code)] // each test binary uses its own part
 
 pub mod design;
+pub mod glyphs;
 
 /// The no-sessions words the Claude Code panel passes (Python's).
 pub const NO_SESSIONS: &str = "No Claude Code sessions in herdr";

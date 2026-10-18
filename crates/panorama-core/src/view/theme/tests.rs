@@ -103,3 +103,150 @@ fn reset_tokens_and_the_terminal_theme_keep_panoramas_colours() {
         BG.mix(DOCK_HOV, 0.15)
     );
 }
+
+#[test]
+fn every_built_in_theme_is_herdrs_with_six_tokens() {
+    // tests/test_focus_theme.py::test_every_built_in_theme_has_the_six_tokens: herdr 0.9.3's
+    // list, less "terminal"; every token set
+    let mut names: Vec<&str> = THEMES.iter().map(|(n, _)| *n).collect();
+    names.sort_unstable();
+    let mut want = "catppuccin catppuccin-latte tokyo-night tokyo-night-day dracula nord gruvbox \
+        gruvbox-light one-dark one-light solarized solarized-light kanagawa kanagawa-lotus \
+        rose-pine rose-pine-dawn vesper"
+        .split_whitespace()
+        .collect::<Vec<_>>();
+    want.sort_unstable();
+    assert_eq!(names, want);
+    for (n, t) in THEMES {
+        let all = [
+            t.panel_bg,
+            t.active_row_bg,
+            t.text,
+            t.subtext0,
+            t.overlay1,
+            t.overlay0,
+        ];
+        assert!(all.iter().all(Option::is_some), "{n}");
+    }
+}
+
+#[test]
+fn the_table_is_herdrs_measured_values() {
+    // tests/test_focus_theme.py::test_the_table_is_herdrs_measured_values (review of #19):
+    // herdr 0.9.3's own values, measured per token
+    let measured: &[(&str, &[(&str, u32)])] = &[
+        (
+            "catppuccin",
+            &[("panel_bg", 0x181825), ("active_row_bg", 0x1e1e2e)],
+        ),
+        ("catppuccin-latte", &[("active_row_bg", 0xe6e9ef)]),
+        ("tokyo-night", &[("active_row_bg", 0x232636)]),
+        (
+            "tokyo-night-day",
+            &[("active_row_bg", 0xd2d3da), ("overlay0", 0x8990b3)],
+        ),
+        (
+            "dracula",
+            &[
+                ("active_row_bg", 0x373c52),
+                ("subtext0", 0xd2d2dc),
+                ("overlay1", 0x828cb4),
+                ("overlay0", 0x6272a4),
+            ],
+        ),
+        (
+            "nord",
+            &[("active_row_bg", 0x434c5e), ("overlay1", 0x646e82)],
+        ),
+        (
+            "gruvbox",
+            &[
+                ("active_row_bg", 0x323130),
+                ("overlay1", 0xa89984),
+                ("overlay0", 0x928374),
+            ],
+        ),
+        (
+            "gruvbox-light",
+            &[
+                ("active_row_bg", 0xf2e5bc),
+                ("overlay1", 0x7c6f64),
+                ("overlay0", 0x928374),
+            ],
+        ),
+        (
+            "one-dark",
+            &[
+                ("active_row_bg", 0x313640),
+                ("subtext0", 0x969ca8),
+                ("overlay1", 0x737a87),
+            ],
+        ),
+        (
+            "one-light",
+            &[("active_row_bg", 0xd8dbe2), ("subtext0", 0x686b77)],
+        ),
+        ("solarized", &[("active_row_bg", 0x164b57)]),
+        (
+            "solarized-light",
+            &[
+                ("text", 0x657b83),
+                ("subtext0", 0x839496),
+                ("overlay1", 0x586e75),
+            ],
+        ),
+        (
+            "kanagawa",
+            &[
+                ("subtext0", 0xc8c3aa),
+                ("overlay1", 0x87867d),
+                ("overlay0", 0x727169),
+            ],
+        ),
+        (
+            "kanagawa-lotus",
+            &[("active_row_bg", 0xd5cea3), ("subtext0", 0x43436c)],
+        ),
+        (
+            "rose-pine",
+            &[
+                ("active_row_bg", 0x26233a),
+                ("subtext0", 0xc8c5dc),
+                ("overlay1", 0x908caa),
+                ("overlay0", 0x6e6a86),
+            ],
+        ),
+        (
+            "rose-pine-dawn",
+            &[
+                ("active_row_bg", 0xe3d9cf),
+                ("text", 0x464261),
+                ("overlay1", 0x797593),
+                ("overlay0", 0x9893a5),
+            ],
+        ),
+        (
+            "vesper",
+            &[
+                ("panel_bg", 0x1a1a1a),
+                ("active_row_bg", 0x101010),
+                ("overlay1", 0x7e7e7e),
+                ("overlay0", 0x5c5c5c),
+            ],
+        ),
+    ];
+    for (name, tokens) in measured {
+        let t = Tokens::builtin(name).unwrap();
+        for (token, hex) in *tokens {
+            let got = match *token {
+                "panel_bg" => t.panel_bg,
+                "active_row_bg" => t.active_row_bg,
+                "text" => t.text,
+                "subtext0" => t.subtext0,
+                "overlay1" => t.overlay1,
+                _ => t.overlay0,
+            };
+            assert_eq!(got, Some(Rgb::hex(*hex)), "{name} {token}");
+        }
+    }
+}

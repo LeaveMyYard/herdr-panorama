@@ -73,3 +73,49 @@ fn the_hover_follows_the_mouse_and_the_wheel_scrolls_the_list() {
     assert!(p.view.wheel.contains(&0));
     assert!(!p.wheel(5, 44, 3, &s)); // the footer is no column
 }
+
+#[test]
+fn a_click_anywhere_on_a_panel_acts_only_with_a_core_and_never_closes_it() {
+    // test_panel_click.py::test_a_click_anywhere_on_a_panel_keeps_it_open[True/False]: every
+    // drawn target, then empty space and a hover; with a core the clicks switch, without one
+    // nothing acts
+    for connected in [true, false] {
+        let (mut p, mut t) = panel("w1:t2", "w1:t2");
+        p.on_connected(connected);
+        let s = p.paint(46, 45, &frame());
+        assert!(
+            s.targets
+                .iter()
+                .any(|h| matches!(h.target, Target::Orch(_)))
+        );
+        assert!(s.targets.iter().any(|h| h.target == Target::NewAgent));
+        let mut acted = false;
+        for hit in s.targets.clone() {
+            t += Duration::from_secs(2); // armed, and no cell held
+            let out = p.click(hit.x0, hit.y, &s, t);
+            assert!(!out.contains(&Effect::Quit), "{:?}", hit.target);
+            let moves = out.iter().any(|e| {
+                matches!(
+                    e,
+                    Effect::Switch { .. }
+                        | Effect::Goto { .. }
+                        | Effect::GotoRemote { .. }
+                        | Effect::OpenInbox { .. }
+                        | Effect::NewAgent { .. }
+                )
+            });
+            acted |= moves;
+            assert!(
+                connected || !moves,
+                "{:?} acted without a core: {out:?}",
+                hit.target
+            );
+            if out.iter().any(|e| matches!(e, Effect::Switch { .. })) {
+                p.switched(None, false, t); // the switch ran (a worker in Python)
+            }
+        }
+        assert!(p.click(1, 44, &s, t + Duration::from_secs(2)).is_empty()); // empty space
+        p.hover(Some((5, 5)), &s);
+        assert_eq!(acted, connected, "connected {connected}");
+    }
+}

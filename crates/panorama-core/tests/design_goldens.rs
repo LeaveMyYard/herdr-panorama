@@ -83,6 +83,28 @@ fn design_9e_unseen_tiles_pulse_like_the_design() {
     }
 }
 
+#[test]
+fn design_9e_glides_like_the_design_between_frames() {
+    // tests/test_smooth.py::test_9e_glides_exactly_like_the_design_between_frames: the whole
+    // panel at fractional frames (design_smooth.json), plain and with the unseen marks
+    let smooth = fixture("design_smooth.json");
+    let swarm = design_swarm();
+    for (key, frame) in frames(&smooth) {
+        for (look, unseen) in [("E", Marks::new()), ("U", marks())] {
+            let view = View {
+                unseen,
+                ..design_view(frame)
+            };
+            let got = render_dock(&swarm, &view, 46, 45, None, NO_SESSIONS);
+            assert_same(
+                &format!("9e smooth frame {key} {look}"),
+                &golden(&smooth["frames"][&key][look]),
+                &cells(&got),
+            );
+        }
+    }
+}
+
 const OWN: OwnColours = OwnColours {
     fg: FG,
     dim: DIM,
