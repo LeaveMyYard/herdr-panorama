@@ -59,6 +59,10 @@ pub struct State {
     pub looks: Option<Looks>,
     /// Overrides `shell_state`.
     pub ages: Option<(Option<f64>, Option<bool>)>,
+    /// herdr refuses to open a panel, with this.
+    pub fail_open: Option<String>,
+    /// Panes herdr refuses to close.
+    pub fail_close: BTreeSet<String>,
 }
 
 impl State {
@@ -149,6 +153,8 @@ impl World {
             asked: vec![],
             looks: None,
             ages: None,
+            fail_open: None,
+            fail_close: BTreeSet::new(),
         })))
     }
 
@@ -213,6 +219,10 @@ impl Ops for World {
 
     async fn open_panel(&self, target: &str) -> Result<String, String> {
         let mut s = self.s();
+        if let Some(e) = s.fail_open.clone() {
+            s.calls.push(format!("open {target}"));
+            return Err(e);
+        }
         s.n += 1;
         let (n, id) = (s.n, format!("w1:p{}", s.n));
         let tab = s.tab_of(target);
@@ -255,6 +265,9 @@ impl Ops for World {
 
     async fn close_plugin_pane(&self, pane: &str) -> Result<(), String> {
         let mut s = self.s();
+        if s.fail_close.contains(pane) {
+            return Err("refused".into());
+        }
         let tab = s.tab_of(pane);
         s.tab(&tab).retain(|p| p.id != pane);
         s.calls.push(format!("close {pane}"));

@@ -108,3 +108,40 @@ fn a_plain_shell_is_only_the_panes_own_shell() {
         serde_json::from_value(json!({"foreground_processes": one(&["zsh"], 1)})).unwrap();
     assert_eq!(plain_shell(&no_shell), Shell::Unknown);
 }
+
+#[test]
+fn the_width_setting_is_read_leniently_and_clamped() {
+    use crate::panels::fit::width;
+    assert_eq!(width(None), 46);
+    assert_eq!(width(Some(&json!(60))), 60);
+    assert_eq!(width(Some(&json!("50"))), 50);
+    assert_eq!(width(Some(&json!(50.7))), 50);
+    assert_eq!(width(Some(&json!(10))), 36);
+    assert_eq!(width(Some(&json!(500))), 119);
+    assert_eq!(width(Some(&json!("x"))), 46);
+}
+
+#[test]
+fn split_path_and_side() {
+    use crate::panels::fit::{pane_ids, ratio, split_of};
+    let root = json!({"type": "split", "direction": "down", "first": {"type": "pane", "pane_id": "a"},
+        "second": {"type": "split", "direction": "right", "first": {"type": "pane", "pane_id": "b"},
+                   "second": {"type": "pane", "pane_id": "me"}}});
+    let (path, node, first) = split_of(&root, "me", &mut vec![]).unwrap();
+    assert_eq!(path, [true]);
+    assert!(!first);
+    assert_eq!(pane_ids(node), ["b", "me"]);
+    assert!(split_of(&json!({"type": "pane", "pane_id": "me"}), "me", &mut vec![]).is_none());
+    // the panel first in its split: its own share; a down split or no rects: nothing set
+    let rects = json!([{"pane_id": "b", "rect": {"x": 0, "width": 100}}, {"pane_id": "me", "rect": {"x": 100, "width": 200}}]);
+    let (p, r) = ratio(&root, &rects, "b", 46).unwrap();
+    assert_eq!(p, [true]);
+    assert!((r - 48.0 / 300.0).abs() < 1e-9);
+    assert!(ratio(&root, &rects, "a", 46).is_none(), "a down split");
+    assert!(ratio(&root, &json!([]), "b", 46).is_none());
+    let narrow = json!([{"pane_id": "b", "rect": {"x": 0, "width": 30}}, {"pane_id": "me", "rect": {"x": 30, "width": 20}}]);
+    assert!(
+        (ratio(&root, &narrow, "b", 46).unwrap().1 - 0.95).abs() < 1e-9,
+        "clamped"
+    );
+}

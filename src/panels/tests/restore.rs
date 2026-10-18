@@ -428,3 +428,39 @@ async fn a_focus_stream_that_connects_within_the_passes_lets_the_core_decide() {
     pass(&mut again, &w, &orch(BOTH), &[], false).await;
     assert!(w.calls().contains(&format!("close_pane {panel}")));
 }
+
+#[tokio::test]
+async fn a_pane_seen_focused_is_never_looked_into() {
+    let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
+    let (_, panel) = recorded_panel(&w, dir.path()).await;
+    w.s().restart_herdr();
+    w.s().record(Focus::Pane(panel.clone())); // the operator clicked into it after the restore
+    w.s().looks = Some(Box::new(|s: &mut State, p| {
+        s.asked.push(format!("look {p}"));
+        Shell::Plain(7000)
+    }));
+    let again = restarted(&w, dir.path(), 1, BOTH).await;
+    assert!(
+        !w.s().asked.contains(&format!("look {panel}")),
+        "its processes were asked about"
+    );
+    assert!(w.closes().is_empty() && !recorded(&again, &panel));
+}
+
+#[tokio::test]
+async fn a_panel_left_alone_after_a_restore_is_not_recorded_again() {
+    let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
+    let (mut m, panel) = recorded_panel(&w, dir.path()).await;
+    {
+        let mut s = w.s();
+        let p = s.pane(&panel);
+        p.terminal = Some("term_new".into());
+        p.agent = Some("claude".into()); // someone runs an agent in it: not our panel now
+    }
+    pass(&mut m, &w, &orch(BOTH), &[], false).await;
+    assert!(w.closes().is_empty());
+    assert!(
+        !recorded(&m, &panel),
+        "a pane that no longer runs our viewer was recorded"
+    );
+}

@@ -278,3 +278,77 @@ async fn a_crash_marker_wins_over_a_connected_viewer() {
     assert!(m.closed().is_empty());
     assert!(!crate::panel::crash::marker(&state, &p).exists(), "used up");
 }
+
+#[tokio::test]
+async fn an_orphaned_look_alike_is_never_closed() {
+    // a look-alike left of our panel in a tab whose orchestrator went, our panel's close
+    // refused: the tab stays surveyed through our panel, and the look-alike is what is left
+    let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
+    let now = Arc::new(Mutex::new(Instant::now()));
+    let c = now.clone();
+    let mut m = manager_with(&w, dir.path(), Arc::new(move || *c.lock().unwrap()));
+    pass(&mut m, &w, &orch(&["w1:p2"]), &[], true).await;
+    let ours = w.order("w1:t2")[0].clone();
+    w.s().tab("w1:t2").insert(0, pane("w1:p50"));
+    w.s().argv.insert("w1:p50".into(), "panel".into());
+    w.s().fail_close.insert(ours.clone());
+    pass(&mut m, &w, &orch(&[]), &[], false).await; // its orchestrator went
+    *now.lock().unwrap() += REMOVE_AFTER;
+    pass(&mut m, &w, &orch(&[]), &[], false).await;
+    assert!(!w.calls().contains(&"close w1:p50".to_string()));
+    assert!(w.order("w1:t2").contains(&"w1:p50".to_string()));
+}
+
+#[tokio::test]
+async fn an_orchestrator_that_comes_back_restarts_the_orphan_wait() {
+    let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
+    let now = Arc::new(Mutex::new(Instant::now()));
+    let c = now.clone();
+    let mut m = manager_with(&w, dir.path(), Arc::new(move || *c.lock().unwrap()));
+    pass(&mut m, &w, &orch(&["w1:p2"]), &[], true).await;
+    let panel = w.order("w1:t2")[0].clone();
+    pass(&mut m, &w, &orch(&[]), &[], false).await; // it left
+    *now.lock().unwrap() += REMOVE_AFTER;
+    pass(&mut m, &w, &orch(&["w1:p2"]), &[], false).await; // back just in time
+    pass(&mut m, &w, &orch(&[]), &[], false).await; // left again: a new wait
+    assert!(w.order("w1:t2").contains(&panel), "closed on the old wait");
+}
+
+#[tokio::test]
+async fn a_panel_herdr_would_not_open_is_not_asked_for_again_at_once() {
+    let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
+    let now = Arc::new(Mutex::new(Instant::now()));
+    let c = now.clone();
+    let mut m = manager_with(&w, dir.path(), Arc::new(move || *c.lock().unwrap()));
+    m.started = true;
+    w.s().fail_open = Some("ui_busy".into());
+    w.s().focus = ("w1:t2".into(), "w1:p2".into());
+    let sw = orch(&["w1:p2"]);
+    pass(&mut m, &w, &sw, &[], false).await;
+    pass(&mut m, &w, &sw, &[], false).await;
+    let opens = || w.calls().iter().filter(|c| *c == "open w1:p2").count();
+    assert_eq!(opens(), 1, "CREATING: not again at once");
+    w.s().fail_open = None;
+    *now.lock().unwrap() += crate::panels::CREATING;
+    pass(&mut m, &w, &sw, &[], false).await;
+    assert_eq!(opens(), 2);
+    let first = w.order("w1:t2")[0].clone();
+    assert!(w.s().argv.contains_key(&first));
+}
+
+#[tokio::test]
+async fn a_restarted_core_adopts_a_verified_panel() {
+    // adopted: its viewer said a verified hello, so it is ours (closing it by hand is closed)
+    let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
+    let mut m = manager(&w, dir.path());
+    let sw = orch(&["w1:p2"]);
+    pass(&mut m, &w, &sw, &[], true).await;
+    let panel = w.order("w1:t2")[0].clone();
+    let mut again = manager(&w, dir.path());
+    again.started = true;
+    pass(&mut again, &w, &sw, &[&panel], false).await;
+    assert_eq!(again.created.get(&panel).map(String::as_str), Some("w1:t2"));
+    *w.s().tab("w1:t2") = vec![agent("w1:p2")]; // the operator closed it
+    pass(&mut again, &w, &sw, &[], false).await;
+    assert_eq!(again.closed(), &set(&["w1:t2"]));
+}

@@ -49,11 +49,16 @@ impl Ops for RealOps {
     }
 
     async fn swap(&self, source: &str, target: &str) -> Result<(), String> {
-        self.herdr
+        // herdr may answer "not swapped" (cross_tab) instead of an error
+        let swap = self
+            .herdr
             .swap_panes(&PaneId::new(source), &PaneId::new(target))
             .await
-            .map(drop)
-            .map_err(err)
+            .map_err(err)?;
+        match swap.changed {
+            Some(false) => Err(format!("not swapped: {}", swap.reason.unwrap_or_default())),
+            _ => Ok(()),
+        }
     }
 
     async fn close_plugin_pane(&self, pane: &str) -> Result<(), String> {
