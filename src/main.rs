@@ -1,6 +1,9 @@
-//! The `panorama` binary. A stub until the port starts (plan §5.3): it only
-//! prints its version.
+//! The `panorama` binary (plan §2.2): one binary, subcommands keep today's CLI names. Ported
+//! so far: `panel`, the per-tab panel viewer. Without a subcommand it prints its version.
 
 fn main() {
-    println!("panorama {}", env!("CARGO_PKG_VERSION"));
+    match std::env::args().nth(1).as_deref() {
+        Some("panel") => std::process::exit(panorama::panel::run()),
+        _ => println!("panorama {}", env!("CARGO_PKG_VERSION")),
+    }
 }

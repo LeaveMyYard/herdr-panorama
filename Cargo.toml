@@ -47,8 +47,8 @@ license.workspace = true
 repository.workspace = true
 publish.workspace = true
 
-# The binary's modules (proto, and the panel from P3) as a library, so its
-# integration tests in tests/ reach them.
+# The binary's modules as a library, so its integration tests in tests/
+# reach them.
 [lib]
 name = "panorama"
 path = "src/lib.rs"
@@ -58,13 +58,20 @@ name = "panorama"
 path = "src/main.rs"
 
 [dependencies]
-# `internal`: panorama's own state layout (the core socket's path).
+# `internal`: panorama's own ids and state layout.
 herdr-agent-kit = { workspace = true, features = ["internal"] }
 panorama-core = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 # The interactive processes run one current_thread runtime (plan §2.5).
-tokio = { version = "1", features = ["rt", "net", "io-util", "time", "sync", "macros"] }
+tokio = { version = "1", features = ["rt", "net", "io-util", "time", "sync", "macros", "signal"] }
+# The terminal (plan §2.6, D5): ratatui's diffing buffer over crossterm, with its
+# event stream for keys, mouse, focus and resizes.
+ratatui = { version = "0.30", default-features = false, features = ["crossterm"] }
+crossterm = { version = "0.29", features = ["event-stream"] }
+futures-util = { version = "0.3", default-features = false }
+# The local time zone's offset, for clock times.
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
 
 [dev-dependencies]
 tempfile = "3"
