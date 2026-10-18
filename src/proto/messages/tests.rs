@@ -49,6 +49,10 @@ fn the_cores_messages_are_told_by_their_key() {
         FromCore::State(json!({"protocol": "1.3"}).as_object().unwrap().clone())
     );
     assert_eq!(read(json!({"state": [1]})), FromCore::Other);
+    assert_eq!(
+        read(json!({"state": [1], "shutdown": {}})),
+        FromCore::Shutdown
+    );
     assert_eq!(read(json!({"shutdown": {}})), FromCore::Shutdown);
     assert_eq!(read(json!({"ping": 3})), FromCore::Other);
     assert_eq!(

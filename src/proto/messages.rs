@@ -60,23 +60,31 @@ impl FromCore {
             return Self::Welcome;
         }
         if let Some(err) = msg.get("error") {
-            let text = err
-                .get("message")
-                .and_then(Value::as_str)
-                .filter(|s| !s.is_empty());
-            return Self::Error(text.unwrap_or("refused").to_owned());
+            return Self::Error(refusal(err));
         }
-        match msg.get("state") {
-            Some(Value::Object(st)) => return Self::State(st.clone()),
-            Some(_) => return Self::Other,
-            None => {}
+        if let Some(Value::Object(st)) = msg.get("state") {
+            return Self::State(st.clone());
         }
+        // a `state` that is not an object falls through, as in Python's elif chain
         if msg.contains_key("shutdown") {
             Self::Shutdown
         } else {
             Self::Other
         }
     }
+}
+
+/// An error's message as Python's `str(err.get("message") or "refused")` reads it: a falsy
+/// message (missing, empty, 0, false, null) is "refused"; a number or `true` is its text. A
+/// list or an object message reads "refused" here (Python would print its repr).
+fn refusal(err: &Value) -> String {
+    let text = match err.get("message") {
+        Some(Value::String(s)) if !s.is_empty() => Some(s.clone()),
+        Some(Value::Number(n)) if n.as_f64() != Some(0.0) => Some(n.to_string()),
+        Some(Value::Bool(true)) => Some("True".to_owned()),
+        _ => None,
+    };
+    text.unwrap_or_else(|| "refused".to_owned())
 }
 
 #[cfg(test)]

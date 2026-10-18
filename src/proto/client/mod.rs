@@ -6,22 +6,17 @@
 //! queued and sent after the next welcome. The panel app decides what a long absence means
 //! (it exits after 10 minutes without a core).
 
+mod backoff;
+mod connection;
 mod session;
+
+pub use backoff::{BACKOFF, Backoff};
 
 use super::messages::ToCore;
 use super::state::State;
 use std::path::PathBuf;
 use std::time::Duration;
 use tokio::sync::{mpsc, oneshot};
-
-/// Python's `BACKOFF`: the waits before reconnecting, the last one repeating.
-pub const BACKOFF: [Duration; 5] = [
-    Duration::from_millis(250),
-    Duration::from_millis(500),
-    Duration::from_secs(1),
-    Duration::from_secs(2),
-    Duration::from_secs(5),
-];
 
 /// What the client reports.
 #[derive(Debug, PartialEq)]
@@ -30,7 +25,8 @@ pub enum Event {
     Connected(bool),
     /// A snapshot from the core.
     State(Box<State>),
-    /// The core refused our hello (an incompatible protocol): its message.
+    /// The core refused our hello (an incompatible protocol): its message. It stands until
+    /// the next `Connected(true)` (Python clears `refused` on the welcome).
     Refused(String),
     /// The core says the panels go: the viewer exits. The client has stopped.
     Shutdown,
@@ -46,7 +42,7 @@ pub struct Config {
     /// This panel's pane and tab, claimed in the hello.
     pub pane_id: Option<String>,
     pub tab_id: Option<String>,
-    /// The reconnect waits ([`BACKOFF`]).
+    /// The reconnect waits ([`BACKOFF`]; empty: that).
     pub backoff: Vec<Duration>,
 }
 
@@ -59,7 +55,7 @@ pub(crate) enum Command {
     Stop(oneshot::Sender<()>),
 }
 
-/// The handle the panel holds. Dropping it stops the client.
+/// The handle the panel holds. Dropping the last clone stops the client.
 #[derive(Clone)]
 pub struct Client {
     tx: mpsc::UnboundedSender<Command>,
