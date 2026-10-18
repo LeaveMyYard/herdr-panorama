@@ -91,6 +91,7 @@ impl Panel {
         );
         let first = !self.loaded;
         let focus_pane = if first { active.clone().or(mine) } else { None };
+        let before = (!first).then(|| self.selected_card());
         self.apply(swarm, st.unseen, focus_pane, now);
         if let Some(f) = st.filter {
             self.core_filter(f, now);
@@ -113,6 +114,11 @@ impl Panel {
             _ => {
                 self.back_to_shown();
             }
+        }
+        if before.is_some_and(|b| b != self.selected_card()) {
+            // what a key acts on changed with this state, the cursor moved to the shown
+            // orchestrator included (apply only compares its own part): the keys wait (#75)
+            self.input.armed_at = self.input.armed_at.max(now + ARM);
         }
         if let Some(f) = st.focused_pane {
             self.herdr_focus(&f);
