@@ -1,6 +1,11 @@
 //! panorama's own panel settings in its `config.toml` (Python `theme.mode`, `focus_tint`,
 //! `own_colors`, `config.animation_fps`). Each key is read on its own; a value of the wrong
 //! kind takes the default, as in Python.
+//!
+//! Deviation, stated: a number that is not finite takes the default. TOML's `inf` and `nan`
+//! arrive here as nothing (the kit's table conversion turns them into null), and a `"nan"`
+//! string is filtered out; Python clamps `inf` (focus_tint 1, animation_fps 30), keeps 1 for a
+//! NaN focus_tint, and lets a NaN animation_fps through.
 
 use super::colour::{ColourValue, colour};
 use panorama_core::view::theme::{DEFAULT_TINT, PanelSettings};

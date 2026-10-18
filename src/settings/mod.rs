@@ -19,6 +19,19 @@ use panorama_core::view::{PanelSettings, Tokens};
 use serde_json::{Map, Value};
 use std::path::PathBuf;
 
+/// What the panel reads from the two files, at one moment.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Snapshot {
+    /// The panel's colour settings.
+    pub panel: PanelSettings,
+    /// How often colours move, per second.
+    pub animation_fps: f64,
+    /// herdr's theme tokens; `None` for its "terminal" theme.
+    pub theme: Option<Tokens>,
+    /// The open key, `(full, short)`.
+    pub open_key: (String, String),
+}
+
 /// The two config files, cached until they change.
 #[derive(Debug)]
 pub struct Settings {
@@ -53,27 +66,22 @@ impl Settings {
         )
     }
 
-    /// The panel's colour settings.
-    pub fn panel(&mut self) -> PanelSettings {
-        panel::panel_settings(&table(&mut self.panorama))
+    /// Everything the panel reads, each file's table converted once. Call it when a full
+    /// repaint needs the settings (a state, a focus change, a resize), not per animation
+    /// frame: the files are only stat'ed when unchanged, but the tables are converted.
+    pub fn read(&mut self) -> Snapshot {
+        let own = table(&mut self.panorama);
+        let herdr = table(&mut self.herdr);
+        Snapshot {
+            panel: panel::panel_settings(&own),
+            animation_fps: panel::animation_fps(&own),
+            theme: theme::tokens(&herdr),
+            open_key: open_key::current(&herdr, &self.plugin_id),
+        }
     }
 
-    /// How often colours move, per second.
-    pub fn animation_fps(&mut self) -> f64 {
-        panel::animation_fps(&table(&mut self.panorama))
-    }
-
-    /// herdr's theme tokens; `None` for its "terminal" theme.
-    pub fn theme(&mut self) -> Option<Tokens> {
-        theme::tokens(&table(&mut self.herdr))
-    }
-
-    /// The open key, `(full, short)`.
-    pub fn open_key(&mut self) -> (String, String) {
-        open_key::current(&table(&mut self.herdr), &self.plugin_id)
-    }
-
-    /// Why a config file was ignored, if one was (for the log).
+    /// Why a config file was ignored, if one was (for the log). The same message stands until
+    /// the file changes: log it when it changes, as Python logs once per re-read.
     pub fn errors(&self) -> impl Iterator<Item = &str> {
         [self.panorama.error(), self.herdr.error()]
             .into_iter()

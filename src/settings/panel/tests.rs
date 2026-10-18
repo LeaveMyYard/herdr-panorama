@@ -22,6 +22,9 @@ fn focus_tint_takes_what_python_float_takes_and_clamps() {
     assert_eq!(tint(json!(7)), 1.0);
     assert_eq!(tint(json!(-1)), 0.0);
     assert_eq!(tint(json!("lots")), DEFAULT_TINT);
+    // not finite: the default (the stated deviation)
+    assert_eq!(tint(json!("nan")), DEFAULT_TINT);
+    assert_eq!(tint(json!(null)), DEFAULT_TINT);
     assert_eq!(tint(json!([1])), DEFAULT_TINT);
 }
 

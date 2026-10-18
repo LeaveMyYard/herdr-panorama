@@ -42,4 +42,13 @@ fn the_binding_is_the_plugin_action_for_our_open() {
     let other = json!([{"type": "plugin_action", "command": "fork.open", "key": "f9"}]);
     assert_eq!(current(&cfg(other), "fork").0, "f9");
     assert_eq!(binding(&Map::new(), ID), None);
+    // a blank key on our action is skipped: the next binding counts, else the default
+    let blank = json!([
+        {"type": "plugin_action", "command": "leavemyyard.herdr-panorama.open", "key": "  "},
+        {"type": "plugin_action", "command": "leavemyyard.herdr-panorama.open", "key": "f7"},
+    ]);
+    assert_eq!(current(&cfg(blank), ID).0, "f7");
+    let only_blank =
+        json!([{"type": "plugin_action", "command": "leavemyyard.herdr-panorama.open", "key": ""}]);
+    assert_eq!(current(&cfg(only_blank), ID).0, "pfx+spc");
 }
