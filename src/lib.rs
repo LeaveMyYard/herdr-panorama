@@ -13,6 +13,7 @@ pub mod hook;
 pub mod machines;
 pub mod mcp;
 pub mod panel;
+pub mod panels;
 pub mod proto;
 pub mod report;
 pub mod settings;
