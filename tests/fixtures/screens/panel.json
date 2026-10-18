@@ -65,6 +65,12 @@
    ]
   }
  ],
+ "unseen": {
+  "before the first state": {},
+  "shown": {},
+  "filter running from the core": {},
+  "no core": {}
+ },
  "screens": {
   "before the first state": [
     [[" ","#c3c7cd","#171a1f",false],["panorama is restarting…","#80868f","#171a1f",false],[" ","#c3c7cd","#171a1f",false],["running","#4d535c","#171a1f",false],["   ","#c3c7cd","#171a1f",false],["needs","#4d535c","#171a1f",false],["10:04","#80868f","#171a1f",false],[" ","#c3c7cd","#171a1f",false]],

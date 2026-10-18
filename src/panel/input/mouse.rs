@@ -58,6 +58,8 @@ impl Panel {
             Target::Goto(r) => self.click_action(ActionKind::Goto, r, now),
             Target::Transcript(r) => self.click_action(ActionKind::Transcript, r, now),
             Target::Answer(r) => self.click_action(ActionKind::Answer, r, now),
+            // the wide graph's (the app wires it, P4 8a); no panel view draws one
+            Target::Fin { .. } => vec![],
         }
     }
 
