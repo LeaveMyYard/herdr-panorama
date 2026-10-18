@@ -2,10 +2,10 @@
 //! `selected_card`, `_update_dock`): by identity, never by row.
 
 use panorama_core::model::{HerdrStatus, Status, Swarm};
-use panorama_core::view::empty::WIDE;
 use panorama_core::view::filter::visible_orchs;
 use panorama_core::view::nav::{default_children, find_agent, find_orch, find_thread, nav};
 use panorama_core::view::{NEW_ROW, View};
+use std::time::Duration;
 
 /// The selectable rows, in order: the orchestrators the filter shows, then `+ New agent`
 /// (Python `render.nav(...)[0]`).
@@ -51,14 +51,11 @@ pub fn resolve(swarm: &Swarm, view: &mut View) -> Option<String> {
     parked
 }
 
-/// The docked panel (design 9e) rather than the graph: an orchestrator is docked here and
-/// the pane (`width`, 0 before the first paint) is narrower than the wide layout.
-pub fn docked(swarm: &Swarm, width: i32) -> bool {
-    swarm.docked.is_some() && width > 0 && width < WIDE
-}
+/// No key acts this long after what it would act on changed (Python `ARM_SECONDS`).
+pub const ARM: Duration = Duration::from_millis(400);
 
 /// What an action key would act on, as a comparable value (Python `selected_card`): a
-/// refresh that changes it arms the keys again.
+/// refresh that changes it arms the keys again ([`ARM`]).
 #[derive(Debug, PartialEq)]
 pub struct SelectedCard {
     dock: bool,
@@ -90,3 +87,6 @@ pub fn selected_card(swarm: &Swarm, view: &View, dock: bool) -> SelectedCard {
         }),
     }
 }
+
+#[cfg(test)]
+mod tests;

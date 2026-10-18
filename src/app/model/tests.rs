@@ -3,7 +3,7 @@
 //! effects join with the app's input, P4 PR 8b).
 
 use super::*;
-use crate::panel::input::ARM;
+use crate::ui::selection::ARM;
 use panorama_core::view::nav::nav;
 use serde_json::Value;
 use std::time::Duration;
@@ -37,7 +37,7 @@ fn loaded(pane: &str) -> (App, Instant) {
     let t0 = Instant::now();
     let mut app = App::new(Some(pane.into()), false, t0);
     app.apply(demo(), Marks::new(), t0);
-    app.before_paint(160);
+    app.before_paint(160, 45);
     (app, t0)
 }
 
@@ -139,22 +139,22 @@ fn docked_and_narrow_is_the_docked_panel_with_one_column() {
     app.apply(design9(true), Marks::new(), t0);
     app.apply(design9(true), Marks::new(), t0);
     assert!(!app.dock); // no width before the first paint: no layout decided yet
-    app.before_paint(46);
+    app.before_paint(46, 45);
     assert!(app.dock && app.view.focus == 0);
     assert!(app.view.zoom_hint);
     app.view.focus = 1; // a key cannot leave the list's one column: the next paint says so
-    app.before_paint(46);
+    app.before_paint(46, 45);
     assert_eq!(app.view.focus, 0);
     // wide, or not docked: the graph
-    app.before_paint(160);
+    app.before_paint(160, 45);
     assert!(!app.dock);
     app.apply(design9(false), Marks::new(), t0);
-    app.before_paint(46);
+    app.before_paint(46, 45);
     assert!(!app.dock && !app.view.zoom_hint);
     // a popup has no zoom
     let mut popup = App::new(Some("w1:p3".into()), false, t0);
     popup.apply(design9(true), Marks::new(), t0);
-    popup.before_paint(46);
+    popup.before_paint(46, 45);
     assert!(popup.dock && !popup.view.zoom_hint);
 }
 
@@ -164,7 +164,7 @@ fn a_refresh_that_docks_the_view_arms_the_keys_again() {
     let t0 = Instant::now();
     let mut app = App::new(Some("w1:p3".into()), true, t0);
     app.apply(design9(false), Marks::new(), t0);
-    app.before_paint(46);
+    app.before_paint(46, 45);
     app.view.focus = 1; // on a thread
     assert!(!app.dock);
     let later = t0 + Duration::from_secs(5);
@@ -187,4 +187,15 @@ fn a_paint_keeps_each_columns_scroll_offset() {
     });
     app.painted(&s);
     assert_eq!(app.view.offsets.get(&1), Some(&7));
+}
+
+#[test]
+fn a_pane_with_no_size_is_not_painted_and_keeps_its_layout() {
+    // Python's repaint returns before deciding anything at width or height 0
+    let t0 = Instant::now();
+    let mut app = App::new(Some("w1:p3".into()), true, t0);
+    app.apply(design9(true), Marks::new(), t0);
+    assert!(app.before_paint(46, 45) && app.dock);
+    assert!(!app.before_paint(0, 45) && app.dock && app.width == 46);
+    assert!(!app.before_paint(46, 0) && app.dock);
 }

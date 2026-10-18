@@ -3,6 +3,7 @@
 //! ([`crate::ui::selection`]).
 
 use super::Panel;
+use crate::ui::layout;
 use crate::ui::selection::{self, SelectedCard};
 use panorama_core::model::Swarm;
 use panorama_core::view::Filter;
@@ -80,7 +81,7 @@ impl Panel {
     /// and the pane (as last painted) is narrower than the wide layout; the docked list is
     /// one column. Decided on each refresh before the arming comparison, and on each paint.
     pub(crate) fn update_dock(&mut self) {
-        self.input.dock = selection::docked(&self.swarm, self.input.width);
+        self.input.dock = layout::docked(&self.swarm, self.input.width);
         if self.input.dock {
             self.view.focus = 0;
         }

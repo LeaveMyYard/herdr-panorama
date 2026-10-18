@@ -5,8 +5,8 @@
 //! The moving cockpit is dropped (Q187): no dock or follow runs here, so nothing holds the
 //! docked panel while a move resizes the pane, and no dock hint outlives a collect.
 
-use crate::panel::input::ARM;
-use crate::ui::selection::{self, SelectedCard};
+use crate::ui::layout;
+use crate::ui::selection::{self, ARM, SelectedCard};
 use panorama_core::model::Swarm;
 use panorama_core::view::{Marks, Screen, View};
 use std::time::Instant;
@@ -27,8 +27,6 @@ pub struct App {
     pub focus_pane: Option<String>,
     /// The home tab's view (it stays open after an action) rather than a popup.
     pub home_mode: bool,
-    /// `z` zooms this pane to the full graph (not a per-tab panel).
-    pub can_zoom: bool,
     /// Why the last refresh failed (the last good model stays).
     pub error: Option<String>,
     /// Keys act from then on.
@@ -50,7 +48,6 @@ impl App {
             loaded: false,
             focus_pane,
             home_mode,
-            can_zoom: true,
             error: None,
             armed_at: now,
             dock: false,
@@ -102,22 +99,29 @@ impl App {
     /// Docked next to an agent and narrower than the wide layout: the docked panel, its list
     /// one column (the keyboard on it).
     pub fn update_dock(&mut self) {
-        self.dock = selection::docked(&self.swarm, self.width);
+        self.dock = layout::docked(&self.swarm, self.width);
         if self.dock {
             self.view.focus = 0;
         }
     }
 
-    /// The rule's `z panel` hint: the home tab's view, docked next to an agent.
+    /// The rule's `z panel` hint: the home tab's view, docked next to an agent (`z` zooms
+    /// this pane to the full graph; the per-tab panel, which cannot, is not this app).
     pub fn zoom_hint(&self) -> bool {
-        self.home_mode && self.swarm.docked.is_some() && self.can_zoom
+        self.home_mode && self.swarm.docked.is_some()
     }
 
-    /// Before a paint `w` cells wide: the layout for that width, the zoom hint.
-    pub fn before_paint(&mut self, w: i32) {
+    /// Before a paint of `w` × `h`: the layout for that width, the zoom hint. Whether to
+    /// paint: a pane with no size yet is not painted, and keeps its last layout (Python's
+    /// `repaint` returns first).
+    pub fn before_paint(&mut self, w: i32, h: i32) -> bool {
+        if w <= 0 || h <= 0 {
+            return false;
+        }
         self.width = w;
         self.update_dock();
         self.view.zoom_hint = self.zoom_hint();
+        true
     }
 
     /// After a paint: each column's scroll offset, kept for the next one (Python's `scroll`
