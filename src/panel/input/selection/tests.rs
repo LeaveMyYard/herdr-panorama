@@ -166,5 +166,27 @@ fn click_arming_follows_refreshes_and_the_wheel_only() {
         !p.click(hit.x0, hit.y, &s, t + Duration::from_millis(300))
             .is_empty()
     );
-    p.painted(None, &s, Painted::Refresh, t); // the first paint: nothing to compare
+}
+
+#[test]
+fn the_first_paint_holds_every_cell_for_a_second_and_the_keys_for_400_ms() {
+    // Python's first apply stamps every cell of the first screen (no screen before it)
+    let (mut p, t0) = loaded_at("w1:t2", "w1:t2");
+    let s = p.paint(46, 45, &frame());
+    p.painted(None, &s, Painted::Refresh, t0);
+    let hit = s
+        .targets
+        .iter()
+        .find(|h| h.target == Target::Orch("w1:p4".into()))
+        .unwrap()
+        .clone();
+    assert!(
+        p.click(hit.x0, hit.y, &s, t0 + Duration::from_millis(999))
+            .is_empty()
+    );
+    assert!(
+        !p.click(hit.x0, hit.y, &s, t0 + Duration::from_secs(1))
+            .is_empty()
+    );
+    assert!(!p.on_key(Key::Goto, t0 + ARM).is_empty());
 }
