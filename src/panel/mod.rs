@@ -11,6 +11,7 @@
 //! - [`paint`]: a frame of it;
 //! - [`actor`]: the event loop; [`term`]: the terminal; [`clock`]; [`crash`].
 
+pub mod act;
 pub mod actor;
 pub mod clock;
 pub mod crash;
