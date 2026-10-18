@@ -1,0 +1,44 @@
+//! The crash marker (Python `panel.mark_crash`): a viewer that dies of an error leaves
+//! `panel-crash-<pane>` in the state dir, so the core does not take its vanished pane for the
+//! operator closing it, and `panel-crash-<pane>.log` with the error's last 16 KB as evidence.
+
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+/// The log keeps this many bytes of the error's end.
+pub const LOG_BYTES: usize = 16384;
+
+/// The marker for `pane` in `state_dir`.
+pub fn marker(state_dir: &Path, pane: &str) -> PathBuf {
+    state_dir.join(format!("panel-crash-{pane}"))
+}
+
+/// The last `LOG_BYTES` of `text`, cut at a character boundary.
+fn tail(text: &str) -> &str {
+    let mut start = text.len().saturating_sub(LOG_BYTES);
+    while !text.is_char_boundary(start) {
+        start += 1;
+    }
+    &text[start..]
+}
+
+/// Leaves the marker (and the log, with `stamp` as its first line). Never fails: it runs
+/// while a crash is already on its way out.
+pub fn mark(state_dir: &Path, pane: Option<&str>, error: &str, stamp: &str) {
+    let Some(pane) = pane.filter(|p| !p.is_empty()) else {
+        return;
+    };
+    let path = marker(state_dir, pane);
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0.0, |d| d.as_secs_f64());
+    if fs::create_dir_all(state_dir).is_err() || fs::write(&path, now.to_string()).is_err() {
+        return;
+    }
+    let log = state_dir.join(format!("panel-crash-{pane}.log"));
+    let _ = fs::write(log, format!("{stamp}\n{}", tail(error)));
+}
+
+#[cfg(test)]
+mod tests;
