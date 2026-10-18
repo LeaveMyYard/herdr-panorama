@@ -153,3 +153,26 @@ fn a_sideways_scroll_is_clamped_to_the_first_column_shown() {
     app.paint(160, 45, &frame(0.0)).unwrap();
     assert_eq!(app.view.hcol, Some(6));
 }
+
+#[test]
+fn untrusted_text_is_stripped_of_control_characters() {
+    // test_render.py::test_untrusted_text_is_stripped_of_control_characters: the app cleans
+    // its collector's swarm before drawing it (the panel's comes cleaned in the state)
+    let (mut app, f) = app_of("demo-wide.json");
+    let mut swarm = app.swarm.clone();
+    swarm.orchestrators[0].threads[0].agents[0].activity =
+        "Bash(\u{1b}[31mred\u{1b}]0;title\u{7})".into();
+    app.apply(
+        crate::proto::state::cleaned_swarm(swarm),
+        Marks::new(),
+        Instant::now(),
+    );
+    app.view.agent = Some("a2f81c0".into()); // test_render.py's view: its details show it whole
+    let run = &f["runs"][0];
+    let text = app
+        .paint(160, 45, &frame(run["now"].as_f64().unwrap()))
+        .unwrap()
+        .text();
+    assert!(!text.contains('\u{1b}') && !text.contains('\u{7}'));
+    assert!(text.contains("Bash([31mred]0;title)"), "{text}");
+}

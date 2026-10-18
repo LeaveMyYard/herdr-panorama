@@ -203,7 +203,7 @@ tests/test_core.py::test_messages_before_hello_close_the_connection,tests/test_c
 tests/test_core.py::test_the_client_queues_seen_while_the_core_is_away,tests/test_core.py,tests/proto_client.rs::the_client_reconnects_after_the_core_goes_and_flushes_queued_seen ; tests/proto_client.rs::hello_welcome_state_and_the_viewers_messages,mapped,,P3
 tests/test_core.py::test_the_panel_renders_its_tab_exactly_like_the_docked_panel,tests/test_core.py,tests/panel_screens.rs::the_panels_screens_are_pythons ; src/panel/model/tests.rs::the_docked_entry_is_this_tabs_and_the_selected_row_the_shown_one,mapped,,P3
 tests/test_core.py::test_a_panel_without_a_core_acts_on_nothing,tests/test_core.py,src/panel/input/actions/tests.rs::nothing_acts_before_the_keys_are_armed_or_without_a_core,mapped,,P3
-tests/test_core.py::test_a_hidden_tabs_panel_draws_no_frames,tests/test_core.py,src/panel/pacing/tests.rs::a_hidden_tab_or_a_still_screen_never_ticks ; src/panel/model/tests.rs::the_docked_entry_is_this_tabs_and_the_selected_row_the_shown_one ; src/panel/clock/tests.rs::the_animation_time_is_the_wall_clock_in_quarter_seconds,mapped,,P3
+tests/test_core.py::test_a_hidden_tabs_panel_draws_no_frames,tests/test_core.py,src/ui/pacing/tests.rs::a_hidden_tab_or_a_still_screen_never_ticks ; src/panel/model/tests.rs::the_docked_entry_is_this_tabs_and_the_selected_row_the_shown_one ; src/ui/clock/tests.rs::the_animation_time_is_the_wall_clock_in_quarter_seconds,mapped,,P3
 tests/test_core.py::test_the_panels_focus_look_follows_the_cores_focused_pane,tests/test_core.py,src/panel/model/tests.rs::the_focus_look_follows_herdrs_focus_and_the_terminals ; crates/panorama-core/tests/design_goldens.rs::design_10_focused_and_not_in_two_themes_cell_for_cell,mapped,,P3
 tests/test_core.py::test_the_home_panorama_publishes_each_refresh_and_takes_seen_back,tests/test_core.py,,todo,,P4
 tests/test_core.py::test_the_line_reader_is_linear_and_one_read_reports_seen_once,tests/test_core.py,,todo,,P4
@@ -581,8 +581,8 @@ tests/test_panel_click.py::test_a_click_anywhere_on_a_panel_keeps_it_open[True],
 tests/test_panel_click.py::test_a_click_anywhere_on_a_panel_keeps_it_open[False],tests/test_panel_click.py,src/panel/input/mouse/tests.rs::a_click_anywhere_on_a_panel_acts_only_with_a_core_and_never_closes_it,mapped,,P3
 tests/test_panel_click.py::test_the_panel_overrides_no_method_with_another_signature,tests/test_panel_click.py,,retired,Pins Python method signatures shared between PanelApp and SwarmApp subclasses; Rust's type checker rules this class out.,P3
 tests/test_panel_click.py::test_no_attribute_shadows_a_textual_member,tests/test_panel_click.py,,retired,Pins Textual DOMNode attribute shadowing; the Rust panel has no Textual base class.,P3
-tests/test_panel_click.py::test_a_crash_leaves_its_traceback_next_to_the_marker,tests/test_panel_click.py,src/panel/crash/tests.rs::a_crash_leaves_the_marker_and_the_errors_end ; src/panel/crash/tests.rs::the_hook_marks_a_crash_but_leaves_a_tasks_panic_to_the_task,mapped,,P3
-tests/test_panel_click.py::test_the_crash_log_is_bounded_in_bytes,tests/test_panel_click.py,src/panel/crash/tests.rs::a_crash_leaves_the_marker_and_the_errors_end,mapped,,P3
+tests/test_panel_click.py::test_a_crash_leaves_its_traceback_next_to_the_marker,tests/test_panel_click.py,src/ui/crash/tests.rs::a_crash_leaves_the_marker_and_the_errors_end ; src/ui/crash/tests.rs::the_hook_marks_a_crash_but_leaves_a_tasks_panic_to_the_task,mapped,,P3
+tests/test_panel_click.py::test_the_crash_log_is_bounded_in_bytes,tests/test_panel_click.py,src/ui/crash/tests.rs::a_crash_leaves_the_marker_and_the_errors_end,mapped,,P3
 tests/test_panel_click.py::test_mark_crash_never_raises_on_an_unencodable_message,tests/test_panel_click.py,,retired,Pins Python's surrogate-escape encoding of the crash log; Rust strings are always valid UTF-8.,P3
 tests/test_panel_filter.py::test_the_core_passes_a_panels_filter_on,tests/test_panel_filter.py,,todo,,P4
 tests/test_panel_filter.py::test_the_state_carries_the_filter_and_the_version_says_so,tests/test_panel_filter.py,,todo,,P4
@@ -684,7 +684,7 @@ tests/test_render.py::test_question_and_blocked_detail_lines,tests/test_render.p
 tests/test_render.py::test_explicit_thread_shows_pct_and_worktree,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::an_explicit_thread_shows_its_pct_and_worktree,mapped,,P4
 tests/test_render.py::test_nav_lists_identities_per_column,tests/test_render.py,crates/panorama-core/tests/narrow_layout.rs::nav_lists_identities_per_column,mapped,,P3
 tests/test_render.py::test_filters,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::filters,mapped,,P4
-tests/test_render.py::test_untrusted_text_is_stripped_of_control_characters,tests/test_render.py,,todo,,P4
+tests/test_render.py::test_untrusted_text_is_stripped_of_control_characters,tests/test_render.py,src/app/paint/tests.rs::untrusted_text_is_stripped_of_control_characters,mapped,,P4
 tests/test_render.py::test_empty_and_unreachable_states,tests/test_render.py,crates/panorama-core/tests/empty_pages.rs::herdr_down_shows_the_retry_page ; crates/panorama-core/tests/empty_pages.rs::no_sessions_at_panel_width,mapped,,P3
 tests/test_render.py::test_long_columns_scroll_to_keep_the_selection_visible,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::long_columns_scroll_to_keep_the_selection_visible,mapped,,P4
 tests/test_render.py::test_inferred_and_lost_agents_are_marked,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::inferred_and_lost_agents_are_marked,mapped,,P4
