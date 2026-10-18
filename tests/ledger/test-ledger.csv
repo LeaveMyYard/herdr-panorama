@@ -149,8 +149,6 @@ tests/test_cockpit.py::test_the_fake_tab_focus_moves_focus,tests/test_cockpit.py
 tests/test_cockpit.py::test_dock_keep_focus_setting_defaults_on,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_the_key_brings_a_left_docked_panorama_home_and_focuses_it,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_closing_the_agent_tab_with_panorama_in_it_reopens_a_home,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[True],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[False],tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_an_older_home_pane_is_adopted_and_labelled,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_records_are_per_herdr_session,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_fit_sizes_panoramas_split_and_leaves_a_dragged_one,tests/test_cockpit.py,,todo,,P4
@@ -175,6 +173,10 @@ tests/test_cockpit.py::test_r8f_l4_duplicates_are_left_alone_not_closed,tests/te
 tests/test_cockpit.py::test_r8f_l3_no_foreground_process_is_unknown,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_ensure_with_the_lock_held_elsewhere_gives_up,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_lock_busy_is_its_own_exception,tests/test_cockpit.py,,todo,,P4
+tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[per-tab],tests/test_cockpit.py,,todo,,P4
+tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[off],tests/test_cockpit.py,,todo,,P4
+tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[old-moving-setting],tests/test_cockpit.py,,todo,,P4
+tests/test_cockpit.py::test_the_cores_open_key_brings_a_docked_home_back_to_its_own_tab,tests/test_cockpit.py,,todo,,P4
 tests/test_collect.py::test_demo_swarm_shape,tests/test_collect.py,,todo,,P4
 tests/test_collect.py::test_done_window_hides_old_threads,tests/test_collect.py,,todo,,P4
 tests/test_collect.py::test_later_ticks_read_only_what_was_appended,tests/test_collect.py,,todo,,P4
@@ -310,6 +312,8 @@ tests/test_follow.py::test_r12_l1_backoff_grows_until_data_arrives,tests/test_fo
 tests/test_follow.py::test_r12f_l1_the_watcher_tracks_liveness,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_r12f_l1_events_marks_connect_and_disconnect,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_r16_the_settle_wait_keeps_its_margin,tests/test_follow.py,,todo,,P4
+tests/test_follow.py::test_a_burst_of_focus_events_makes_one_panel_pass,tests/test_follow.py,,todo,,P4
+tests/test_follow.py::test_z_zooms_panoramas_own_pane,tests/test_follow.py,,todo,,P4
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 46 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 60 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep dock f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
@@ -679,6 +683,7 @@ tests/test_panels.py::test_without_a_live_focus_stream_nothing_is_closed[none],t
 tests/test_panels.py::test_without_a_live_focus_stream_nothing_is_closed[not-live],tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_a_click_during_the_looks_stops_the_close,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_a_focus_stream_that_connects_within_the_passes_lets_the_core_decide,tests/test_panels.py,,todo,,P4
+tests/test_panels.py::test_follow_tabs_single_gives_panels_only_to_tabs_of_one_orchestrator,tests/test_panels.py,,todo,,P4
 tests/test_plugin_copy.py::test_hooks_run_from_the_copy,tests/test_plugin_copy.py,,todo,,P4
 tests/test_plugin_copy.py::test_mcp_server_runs_from_the_copy,tests/test_plugin_copy.py,,todo,,P4
 tests/test_render.py::test_wide_layout_has_the_three_columns_and_links,tests/test_render.py,,todo,,P4
@@ -1111,3 +1116,21 @@ tests/test_wide.py::test_the_model_keeps_its_version[some-other-model-some-other
 tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[44],tests/test_wide.py,,todo,,P4
 tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[60],tests/test_wide.py,,todo,,P4
 tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[64],tests/test_wide.py,,todo,,P4
+tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[enter-False-True],tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[g-False-True],tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[enter-True-False],tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_docked_enter_with_keep_focus_off_focuses_the_agent,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_the_2a_graph_enter_still_focuses_the_agent,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_arrows_switch_the_chats_once_they_settle,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_arrows_do_not_dock_the_docked_one_new_agent_or_a_remote,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_arrows_off_or_the_2a_graph_never_dock_on_arrows,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left[blurred],tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left[herdr says another pane],tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_an_arrow_settling_during_a_dock_runs_after_it_even_if_focus_looks_elsewhere,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_an_arrow_dock_due_during_a_dock_runs_after_it,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_one_click_on_an_entry_docks_and_question_marks_answer,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_one_click_on_the_docked_entry_focuses_its_agent_like_enter,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_one_click_still_obeys_arming_and_identity,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_the_2a_graph_keeps_select_first,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_no_graph_flash_while_a_switch_runs,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_a_switch_that_ends_judges_the_focus_again,tests/test_panel_keys.py,,todo,,P4

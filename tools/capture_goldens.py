@@ -444,7 +444,6 @@ def capture_screens(out: Path, work: Path, inputs: dict, env0: dict) -> list[Pat
     for name, runs in screen_files(inputs["scenarios"], inputs["swarms"]).items():
         shots: dict = {}
         for run in runs:
-            cockpit.moving_until = 0.0
             asyncio.run(play(run, flat, work, env0, shots))
         os.environ.clear()
         os.environ.update(env0)

@@ -212,7 +212,14 @@ dock_on_arrows = true  # ↑/↓ in a panel switch the chats (default true)
 ```
 
 The single panel that moved between tabs (`cockpit_panels = "moving"`, and `cockpit_follow`) is
-gone: an old `cockpit_panels` setting is ignored, and every tab gets its own panel.
+gone: an old `cockpit_panels` setting is ignored, and every tab gets its own panel. A home view
+that an older version left docked beside an agent goes back to its own first tab at the next
+start or open key.
+
+**Upgrading from the moving panel by restarting herdr:** if the home view was docked beside an
+agent when herdr stopped, herdr's session restore brings that pane back as a plain shell still
+labelled `◆ panorama`. Panorama never closes it: the older version kept no record that would
+prove the shell is its own unused pane. Close it by hand in that tab.
 
 - **Panels.** When the home panorama starts, every orchestrator tab gets its panel on the left
   of the agent. A tab that gets an orchestrator later gets its panel when you visit it. Agents

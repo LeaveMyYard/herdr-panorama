@@ -427,11 +427,20 @@ class SwarmApp(App):
             snap = herdr.snapshot() or {}
             did = self.panels.open_key(snap, self.swarm)
         if did == "home" and self.my_pane:
-            me = home.find(herdr.snapshot() or {}, prefer=self.my_pane)
-            if me is not None:
-                err = herdr.focus_tab(me.tab_id) or herdr.focus_pane(me.pane_id)
-                return "failed" if err else "home"
-            return "failed"
+            snap = herdr.snapshot() or {}
+            me = home.find(snap, prefer=self.my_pane)
+            if me is None:
+                return "failed"
+            if not home.is_home_label(home._tab_label(snap, me.tab_id)):
+                # left docked beside an agent by an older version's moving cockpit: back to a
+                # home tab of its own first (``home.ensure`` undocks it), then shown there
+                moved, err = home.ensure(focus=True)
+                if moved is None or err:
+                    return "failed"
+                self.my_pane = self.collector.self_pane = moved.pane_id
+                me = moved
+            err = herdr.focus_tab(me.tab_id) or herdr.focus_pane(me.pane_id)
+            return "failed" if err else "home"
         return did
 
     def _tab_shown(self, tab_id: str) -> None:

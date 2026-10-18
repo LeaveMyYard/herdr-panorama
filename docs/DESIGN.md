@@ -1041,7 +1041,8 @@ label, and the form uses the same palette. `◆ panorama` is the herdr tab label
 > home panorama staying in its home tab and feeding them. Moving panorama's pane between tabs
 > (the dock, "Follow", `cockpit_follow`) is gone from the code; `cockpit_panels` is not read
 > (an old `"moving"` reads as per-tab), and a home panorama an older version left docked next
-> to an agent goes back to its home tab (`home.ensure` → `cockpit.undock`). The sections below
+> to an agent goes back to its home tab (`home.ensure` → `cockpit.undock`) at the next start or
+> open key, also when the key goes through a running core (`_open_key`). The sections below
 > on docking and following are the history of that design, kept for the measurements and the
 > reasons; the docked panel's look (3a/9e) and the herdr measurements still hold for the
 > per-tab panels.
@@ -1184,7 +1185,7 @@ press, the rules are strict:
   - other workspaces;
   - panorama itself;
   - nothing focused.
-- **The move** is the same path as an explicit dock (`_move_next_to`):
+- **The move** was the same path as an explicit dock (`_move_next_to`, removed):
   1. the rename before leaving a shared home tab;
   2. `pane move --no-focus`;
   3. the split ratio.
@@ -1262,17 +1263,17 @@ they stay CLI calls. The lag came from the view:
 
 - **The graph flash.** `pane move` first gives panorama half the agent's tab, then the
   ratio shrinks it. In between the view saw a wide pane and drew the 2a graph.
-  - Now the docked panel is kept while a dock runs, while a move of panorama's pane is
-    under way (`cockpit.moving_until`, which covers the follow path too), and for 1 s
-    after a successful dock or follow.
-  - The layout is re-decided after that, so a deliberate zoom (`z`) still shows the graph.
+  - The fix then kept the docked panel while a dock ran, while a move of panorama's pane
+    was under way (`cockpit.moving_until`, removed with the moving cockpit), and for 1 s
+    after a successful dock or follow. Today only a running switch keeps it.
+  - The layout was re-decided after that, so a deliberate zoom (`z`) still showed the graph.
 - **The stale highlight.** Which agent is docked came only from the next collect (up to
   1.5 s).
-  - Now a successful dock or follow shows it at once: the worker calls `on_docked` right
-    after the move, the view runs `show_docked`, and a collect starts immediately. The
-    agent comes from that call, not from a process-wide variable.
-  - A collect that began *before* the dock keeps the new value. One that began after it
-    reconciles with herdr.
+  - The fix made a successful dock or follow show it at once: the worker called `on_docked`
+    right after the move, the view ran `show_docked` (removed), and a collect started
+    immediately. The agent came from that call, not from a process-wide variable.
+  - A collect that began *before* the dock kept the new value. One that began after it
+    reconciled with herdr.
 - **The follow settle wait stays at 0.3 s, but nobody waits for it.** On an isolated
   server, herdr delivered focus events ~50 ms (median) and up to ~100 ms after the action
   (a ~100 ms flush tick), so the guard needs that margin. The view is told about the new

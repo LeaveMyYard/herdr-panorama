@@ -9,7 +9,7 @@ import time
 
 import pytest
 
-from herdr_panorama import cockpit, render, theme
+from herdr_panorama import cockpit, herdr, render, theme
 
 from .design_dock import FIX, design_swarm
 
@@ -31,6 +31,9 @@ def panel(sock, monkeypatch):
     from herdr_panorama.panel import PanelApp
     app = PanelApp(sock_path=sock, pane_id="w1:p93", tab_id="w1:t3", start_client=False)
     switched: list = []
+    # Enter's fresh look at herdr: every orchestrator's pane is there
+    panes = [{"pane_id": o.pane_id} for o in design_swarm(NINE["data"]).orchestrators]
+    monkeypatch.setattr(herdr, "snapshot", lambda: {"panes": panes})
 
     def switch(pane_id, keep_focus):
         switched.append((pane_id, keep_focus))

@@ -149,3 +149,48 @@ def test_r16_the_settle_wait_keeps_its_margin():
     assert cockpit.SYNC_SECONDS >= 0.3  # herdr delivers focus events up to ~100 ms late (measured)
 
 
+
+
+# -- the home view: a burst of focus events, one pass; the zoom key (review of #83) ---------------
+
+async def home_app(fake_herdr):
+    from herdr_panorama.tui import SwarmApp
+
+    from .demo import NOW, demo_swarm
+    app = SwarmApp(source=demo_swarm, live_refresh=False, clock=lambda: NOW, focus_pane="w1:p1", home_mode=True)
+    app.my_pane = "w1:p9"
+    return app
+
+
+async def settle(pilot, seconds=0.4):
+    end = time.monotonic() + seconds
+    while time.monotonic() < end:
+        await pilot.pause(0.05)
+
+
+async def test_a_burst_of_focus_events_makes_one_panel_pass(fake_herdr, monkeypatch):
+    """prefix+1, prefix+2, ... in a row: the panel manager looks once, where the operator ended
+    up (a tab entered for the first time gets its panel then)."""
+    app = await home_app(fake_herdr)
+    passes = []
+    monkeypatch.setattr(app, "panels_pass", lambda: passes.append(1))
+    async with app.run_test(size=(46, 45)) as pilot:
+        await settle(pilot, 0.2)
+        passes.clear()
+        for _ in range(5):
+            app.focus_event()
+            await pilot.pause(0.03)
+        await settle(pilot)
+        assert passes == [1]
+        app.focus_event()  # a later one: another pass
+        await settle(pilot)
+        assert passes == [1, 1]
+
+
+async def test_z_zooms_panoramas_own_pane(fake_herdr):
+    app = await home_app(fake_herdr)
+    async with app.run_test(size=(46, 45)) as pilot:
+        await settle(pilot, 0.2)
+        await pilot.press("z")
+        await pilot.pause()
+    assert fake_herdr.calls_of("pane", "zoom") == [["pane", "zoom", "w1:p9", "--toggle"]]

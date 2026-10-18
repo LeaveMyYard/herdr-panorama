@@ -253,6 +253,22 @@ def test_only_provable_panels_are_closed(world, tmp_path):
     assert verified.remove_all(world.snapshot()) == 1 and "w1:p50" not in world.order("w1:t2")
 
 
+def test_follow_tabs_single_gives_panels_only_to_tabs_of_one_orchestrator(world, tmp_path, monkeypatch):
+    """``cockpit_follow_tabs = "single"``: a tab the operator split (Claude beside an editor)
+    gets no panel; "any", the default, gives every orchestrator tab one."""
+    from herdr_panorama import config
+    world.tabs["w1:t3"].append({"pane_id": "w1:p60"})  # an editor beside the agent
+    monkeypatch.setattr(cockpit, "follow_tabs", lambda: "single")
+    m = manager(world, tmp_path)
+    m.reconcile(world.snapshot(), orch("w1:p2", "w1:p3"), start=True)
+    assert world.order("w1:t3") == ["w1:p3", "w1:p60"] and len(world.order("w1:t2")) == 2
+    monkeypatch.undo()
+    for cfg, want in (({}, "any"), ({"cockpit_follow_tabs": "Single"}, "single"),
+                      ({"cockpit_follow_tabs": "nonsense"}, "any")):
+        monkeypatch.setattr(config, "load", lambda cfg=cfg: cfg)
+        assert cockpit.follow_tabs() == want
+
+
 def test_a_tab_herdr_could_not_check_gets_no_panel(world, tmp_path, monkeypatch):
     world.tabs["w1:t2"].append({"pane_id": "w1:p60"})
     monkeypatch.setattr(herdr, "runs_panorama", lambda pane, cmd="tui", pid=None: None if pane == "w1:p60" else False)

@@ -145,21 +145,49 @@ def test_closing_the_agent_tab_with_panorama_in_it_reopens_a_home(herdr):
     assert state(herdr)["tabs"][0]["label"] == home.HOME_LABEL
 
 
-@pytest.mark.parametrize("cockpit_on", [True, False])
-def test_a_panorama_left_docked_goes_back_to_its_own_first_tab(herdr, cockpit_on):
+@pytest.mark.parametrize("config", ["cockpit = true\n", "cockpit = false\n",
+                                    "cockpit = true\ncockpit_panels = \"moving\"\n"],
+                         ids=["per-tab", "off", "old-moving-setting"])
+def test_a_panorama_left_docked_goes_back_to_its_own_first_tab(herdr, config):
     """The moving cockpit is gone (Q187): a home panorama an older version left beside an
-    agent goes back to a home tab of its own, the cockpit on (per-tab) or off."""
+    agent goes back to a home tab of its own, the cockpit on (per-tab) or off, and with the
+    old ``cockpit_panels = "moving"`` still in the config (the #79 upgrade). The home record
+    names the new tab."""
     h, _ = home.ensure(focus=False)
     add_agent(herdr, "search")
     a, ta = add_agent(herdr, "billing")
     left_docked(herdr, h.pane_id, a)
-    configure(f"cockpit = {'true' if cockpit_on else 'false'}\n")
+    configure(config)
     h2, _ = home.ensure(focus=False)
+    assert h2.tab_id != ta and home._load() == {"pane_id": h2.pane_id, "tab_id": h2.tab_id}
     assert herdr.calls("pane", "move")[-1] == ["pane", "move", h.pane_id, "--new-tab", "--label", home.HOME_LABEL,
                                                "--no-focus", "--workspace", "w1"]
     assert state(herdr)["tabs"][0]["label"] == home.HOME_LABEL and in_tab(herdr, h2.tab_id) == [h.pane_id]
     assert in_tab(herdr, ta) == [a]
     only_panorama_moved(herdr, h.pane_id)
+
+
+def test_the_cores_open_key_brings_a_docked_home_back_to_its_own_tab(herdr):
+    """Review of #83 M2: with the cockpit on and the core running, the open key goes through
+    the core (``_open_key``), not ``home.ensure``: a home an older version left docked still
+    goes back to its own first tab, and the key shows it there."""
+    from herdr_panorama.tui import SwarmApp
+
+    from .demo import NOW, demo_swarm
+    h, _ = home.ensure(focus=False)
+    a, ta = add_agent(herdr, "billing")
+    left_docked(herdr, h.pane_id, a)
+    configure("cockpit = true\ncockpit_panels = \"moving\"\n")
+    app = SwarmApp(source=demo_swarm, live_refresh=False, clock=lambda: NOW, home_mode=True)
+    app.my_pane = h.pane_id
+    assert app._open_key({}) == "home"
+    h2 = home.find(home.herdr.snapshot(), prefer=h.pane_id)
+    assert h2.tab_id != ta and state(herdr)["tabs"][0]["label"] == home.HOME_LABEL
+    assert in_tab(herdr, h2.tab_id) == [h.pane_id] and in_tab(herdr, ta) == [a]
+    assert herdr.calls("tab", "focus")[-1] == ["tab", "focus", h2.tab_id]
+    only_panorama_moved(herdr, h.pane_id)
+    moves = len(herdr.calls("pane", "move"))
+    assert app._open_key({}) == "home" and len(herdr.calls("pane", "move")) == moves  # home now: no move
 
 
 def test_an_older_home_pane_is_adopted_and_labelled(herdr):
