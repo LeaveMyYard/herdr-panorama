@@ -66,8 +66,11 @@ fn a_run_ended_by_a_signal_reads_as_python_returncode() {
     assert_eq!(err.as_deref(), Some("rsync exit -15"));
 }
 
+/// The real thing, where the OS produces it: Linux returns ETXTBSY for a file open for
+/// writing; macOS does not (the bound itself is tested in `bounded/tests.rs` everywhere).
+#[cfg(target_os = "linux")]
 #[test]
-fn a_binary_that_stays_busy_is_retried_a_bounded_number_of_times() {
+fn a_binary_held_open_for_writing_fails_fast_and_runs_once_released() {
     use std::os::unix::fs::PermissionsExt;
     let dir = scratch("run-busy");
     let bin = dir.path().join("rsync");

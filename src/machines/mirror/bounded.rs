@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 /// How often the child is checked for its end.
 const POLL: Duration = Duration::from_millis(10);
 /// How often a spawn of a busy binary is retried, and how long apart.
-const SPAWN_TRIES: u32 = 5;
+pub(crate) const SPAWN_TRIES: u32 = 5;
 const SPAWN_RETRY: Duration = Duration::from_millis(20);
 
 /// How a bounded run ended.
@@ -80,14 +80,20 @@ pub fn bounded(argv: &[String], timeout: Duration, stdout: bool) -> Ended {
 /// update in progress, or a file another thread's fork briefly holds open). Nothing ran, so a
 /// retry is safe (the kit's CLI runner does the same).
 fn spawn(command: &mut Command) -> std::io::Result<Child> {
+    retry_busy(|| command.spawn())
+}
+
+/// `attempt` until it is not `ETXTBSY`, at most [`SPAWN_TRIES`] retries [`SPAWN_RETRY`]
+/// apart; then its last result.
+pub(crate) fn retry_busy<T>(mut attempt: impl FnMut() -> std::io::Result<T>) -> std::io::Result<T> {
     let mut tries = 0;
     loop {
-        match command.spawn() {
+        match attempt() {
             Err(e) if e.kind() == std::io::ErrorKind::ExecutableFileBusy && tries < SPAWN_TRIES => {
                 tries += 1;
                 std::thread::sleep(SPAWN_RETRY);
             }
-            spawned => return spawned,
+            done => return done,
         }
     }
 }
@@ -114,3 +120,6 @@ fn kill_group(child: &Child) {
         let _ = rustix::process::kill_process_group(pid, rustix::process::Signal::KILL);
     }
 }
+
+#[cfg(test)]
+mod tests;
