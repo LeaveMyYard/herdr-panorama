@@ -260,6 +260,7 @@ async def test_m5_a_new_inbox_question_arms_the_answer_key(fake_herdr):
     async with app.run_test(size=(160, 45)) as pilot:
         await loaded(app, pilot)
         disarm(app)
+        app.monotonic = lambda: 1000.0  # the arming clock held: a slow runner cannot pass the window (#76)
         sw2 = demo_swarm()
         sw2.orchestrators[1].inbox, sw2.orchestrators[1].inbox_texts = [9], ["New?"]
         app.apply(sw2)
