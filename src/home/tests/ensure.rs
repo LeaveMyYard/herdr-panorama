@@ -358,3 +358,77 @@ async fn ensure_with_the_lock_held_elsewhere_gives_up() {
     drop(held);
     assert!(ensure(&w, &p, true).await.is_ok());
 }
+
+#[test]
+fn the_record_and_lock_are_where_python_keeps_them() {
+    // a Python and a Rust panorama must share one record and one lock, or both would make a
+    // home: `home._record()` and `home._lock()` (values from home.py itself)
+    use herdr_agent_kit::plugin_env::PluginEnv;
+    let env = PluginEnv::from_vars(
+        [
+            ("HERDR_PLUGIN_STATE_DIR", "/state"),
+            ("HERDR_SOCKET_PATH", "/run/herdr.sock"),
+        ],
+        None,
+        1000,
+    );
+    let p = crate::home::Places::from_env(&env);
+    assert_eq!(
+        p.record,
+        std::path::Path::new("/state/home-837fc5258150.json")
+    );
+    assert_eq!(
+        p.lock,
+        std::path::Path::new("/state/home-837fc5258150.lock")
+    );
+    let env = PluginEnv::from_vars([("XDG_STATE_HOME", "/xdg")], None, 1000);
+    let p = crate::home::Places::from_env(&env);
+    assert_eq!(
+        p.record,
+        std::path::Path::new("/xdg/herdr-panorama/home-7505d64a54e0.json")
+    );
+    assert_eq!(
+        p.lock,
+        std::path::Path::new("/xdg/herdr-panorama/home-7505d64a54e0.lock")
+    );
+    assert_eq!(p.wait, crate::home::LOCK);
+}
+
+#[tokio::test]
+async fn a_docked_home_goes_back_home_in_its_own_workspace() {
+    let (w, dir) = (World::default(), tempfile::tempdir().unwrap());
+    let p = places(dir.path());
+    let h = ensure(&w, &p, false).await.unwrap();
+    {
+        // an agent's tab in workspace w2, the home left docked beside it there
+        let mut s = w.s();
+        s.tabs.push(Tab {
+            id: "w2:t7".into(),
+            label: "billing".into(),
+            ws: "w2".into(),
+        });
+        s.panes.push(Pane {
+            id: "w2:p7".into(),
+            tab: "w2:t7".into(),
+            ws: "w2".into(),
+            agent: Some("claude".into()),
+            ..Pane::default()
+        });
+        s.left_docked(&h.pane_id, "w2:p7");
+        s.pane(&h.pane_id).ws = "w2".into();
+    }
+    let h2 = ensure(&w, &p, false).await.unwrap();
+    let last_move = w
+        .calls()
+        .into_iter()
+        .rev()
+        .find(|c| c.starts_with("move_pane"))
+        .unwrap();
+    assert!(last_move.ends_with(" w2"), "{last_move}");
+    assert!(h2.tab_id.starts_with("w2:"), "{h2:?}");
+    assert_eq!(
+        h2.pane_id, h.pane_id,
+        "within its workspace the pane keeps its id"
+    );
+    assert_eq!(w.s().in_tab("w2:t7"), ["w2:p7"]);
+}
