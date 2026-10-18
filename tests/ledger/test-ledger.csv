@@ -145,43 +145,13 @@ tests/test_card_title.py::test_an_unselected_title_is_cut_too[160],tests/test_ca
 tests/test_card_title.py::test_fit_segs_keeps_short_titles_and_cuts_long_ones,tests/test_card_title.py,,todo,,P4
 tests/test_cockpit.py::test_config_defaults_off_and_width_is_clamped,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_the_home_pane_is_labelled_and_found_by_content,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_dock_moves_only_panorama_left_of_the_agent,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_dock_keep_focus_puts_the_operator_on_panorama_and_follow_leaves_it,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_dock_keep_focus_moves_the_client_to_the_new_tab,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_dock_keep_focus_leaves_an_operator_who_moved_on,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_an_explicit_dock_shows_the_agents_tab_first,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_an_operator_who_moved_on_before_the_dock_is_not_shown_the_agents_tab,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_the_fake_tab_focus_moves_focus,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_dock_keep_focus_falls_back_to_the_agent_if_its_tab_cannot_be_focused,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_dock_keep_focus_traces_each_focus_step,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_dock_keep_focus_without_a_swap_still_focuses_panorama,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_dock_keep_focus_setting_defaults_on,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_docking_elsewhere_leaves_the_previous_agent_alone_in_its_tab,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_a_failed_move_leaves_panorama_where_it_was,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_non_agents_are_not_docked_to,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_the_key_finds_a_docked_panorama_and_focuses_the_list,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_closing_the_agent_tab_with_panorama_in_it_reopens_a_home,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_cockpit_off_brings_panorama_back_to_its_own_first_tab,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_an_older_home_pane_is_adopted_and_labelled,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_records_are_per_herdr_session,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_fit_sizes_panoramas_split_and_leaves_a_dragged_one,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_split_path_and_side,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_enter_docks_and_focuses_the_agent,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_docked_enter_browses_and_g_goes_into_the_agent[enter-False-True],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_docked_enter_browses_and_g_goes_into_the_agent[g-False-True],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_docked_enter_browses_and_g_goes_into_the_agent[enter-True-False],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_arrows_switch_the_chats_once_they_settle,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_arrows_do_not_dock_the_docked_one_new_agent_or_a_remote,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_arrows_off_or_the_2a_graph_never_dock_on_arrows,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left_or_a_follow_runs[following],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left_or_a_follow_runs[blurred],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left_or_a_follow_runs[herdr says another pane],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_an_arrow_settling_during_a_dock_runs_after_it_even_if_focus_looks_elsewhere,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_an_arrow_dock_due_during_a_dock_runs_after_it,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_docked_enter_with_keep_focus_off_focuses_the_agent,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_a_failed_keep_focus_dock_still_goes_to_the_agent,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_the_2a_graph_enter_still_focuses_the_agent,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_a_failed_dock_still_goes_to_the_agent,tests/test_cockpit.py,,todo,,P4
+tests/test_cockpit.py::test_split_path_and_side,tests/test_cockpit.py,src/panels/tests/shell.rs::split_path_and_side,mapped,,P4
 tests/test_cockpit.py::test_r8_lookalikes_are_never_adopted_renamed_moved_or_closed[shell with the label],tests/test_cockpit.py,,todo,,P4
 "tests/test_cockpit.py::test_r8_lookalikes_are_never_adopted_renamed_moved_or_closed[panorama exited, its shell left]",tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_r8_lookalikes_are_never_adopted_renamed_moved_or_closed[another plugin alone in a \u25c6 tab],tests/test_cockpit.py,,todo,,P4
@@ -198,18 +168,8 @@ tests/test_cockpit.py::test_r8_process_match[argv5-False],tests/test_cockpit.py,
 tests/test_cockpit.py::test_r8_process_match[argv6-False],tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_r8f_h1_a_shared_home_tab_is_left_alone_with_the_cockpit_off[False],tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_r8f_h1_a_shared_home_tab_is_left_alone_with_the_cockpit_off[True],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_h1_docking_out_of_a_shared_home_tab_relabels_it_first,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_h1_an_unnamed_agent_left_behind_gives_its_kind,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_h1_a_failed_relabel_refuses_to_dock,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_r8f_l4_duplicates_are_left_alone_not_closed,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_l2_dock_moves_the_instance_whose_key_was_pressed,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_r8f_l3_no_foreground_process_is_unknown,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_nit_dock_follows_a_new_id_across_workspaces,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_nit_dock_holds_the_home_lock,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_m1_l1_fit_waits_for_the_dock_and_uses_a_verified_pane,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_l5_enter_reads_the_cockpit_setting_live,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_dock_with_the_lock_held_elsewhere_gives_up,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_follow_with_the_lock_held_elsewhere_gives_up,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_ensure_with_the_lock_held_elsewhere_gives_up,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_lock_busy_is_its_own_exception,tests/test_cockpit.py,,todo,,P4
 tests/test_collect.py::test_demo_swarm_shape,tests/test_collect.py,tests/collect_demo.rs::demo_swarm_shape ; tests/model_goldens.rs::the_demo_model_matches_its_golden ; tests/model_goldens.rs::the_continued_model_matches_its_golden ; tests/model_goldens.rs::the_background_model_matches_its_golden,mapped,,P4
@@ -233,32 +193,31 @@ tests/test_core.py::test_the_model_round_trips_on_the_wire,tests/test_core.py,cr
 tests/test_core.py::test_unknown_fields_are_ignored_and_versions_compare_by_major,tests/test_core.py,crates/panorama-core/src/model/swarm/tests.rs::missing_fields_take_model_pys_defaults_and_unknown_ones_are_ignored ; src/proto/tests.rs::only_the_same_major_is_compatible,mapped,,P3
 tests/test_core.py::test_lines_are_capped,tests/test_core.py,src/proto/framing/tests.rs::a_line_over_the_limit_ends_the_connection ; src/proto/framing/tests.rs::messages_split_across_reads_come_out_whole,mapped,,P3
 tests/test_core.py::test_a_long_state_dir_falls_back_to_a_short_socket_path,tests/test_core.py,herdr-agent-kit@v0.1.0:src/internal/plugin_paths/panorama/tests.rs::socket_dir_falls_back_by_length,mapped,,P1
-tests/test_core.py::test_one_core_per_session_and_its_socket_is_private,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_a_dead_cores_socket_is_replaced_under_the_lock,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_another_users_connection_is_refused,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_hello_welcome_state_seen_and_an_old_major_refused,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_an_unverified_pane_claim_is_not_trusted,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_a_stuck_viewer_never_stalls_the_core,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_messages_before_hello_close_the_connection,tests/test_core.py,,todo,,P4
+tests/test_core.py::test_one_core_per_session_and_its_socket_is_private,tests/test_core.py,tests/core_server.rs::one_core_per_session_and_its_socket_is_private,mapped,,P4
+tests/test_core.py::test_a_dead_cores_socket_is_replaced_under_the_lock,tests/test_core.py,tests/core_server.rs::a_dead_cores_socket_is_replaced_under_the_lock,mapped,,P4
+tests/test_core.py::test_another_users_connection_is_refused,tests/test_core.py,tests/core_server.rs::another_users_connection_is_refused,mapped,,P4
+tests/test_core.py::test_hello_welcome_state_seen_and_an_old_major_refused,tests/test_core.py,tests/core_server.rs::hello_welcome_state_seen_and_an_old_major_refused,mapped,,P4
+tests/test_core.py::test_an_unverified_pane_claim_is_not_trusted,tests/test_core.py,tests/core_server.rs::an_unverified_pane_claim_is_not_trusted_and_the_claim_is_checked_against_the_peer,mapped,,P4
+tests/test_core.py::test_a_stuck_viewer_never_stalls_the_core,tests/test_core.py,tests/core_server.rs::a_stuck_viewer_never_stalls_the_core ; src/core/outbox/tests.rs::a_full_outbox_loses_its_oldest,mapped,,P4
+tests/test_core.py::test_messages_before_hello_close_the_connection,tests/test_core.py,tests/core_server.rs::messages_before_hello_close_the_connection,mapped,,P4
 tests/test_core.py::test_the_client_queues_seen_while_the_core_is_away,tests/test_core.py,tests/proto_client.rs::the_client_reconnects_after_the_core_goes_and_flushes_queued_seen ; tests/proto_client.rs::hello_welcome_state_and_the_viewers_messages,mapped,,P3
 tests/test_core.py::test_the_panel_renders_its_tab_exactly_like_the_docked_panel,tests/test_core.py,tests/panel_screens.rs::the_panels_screens_are_pythons ; src/panel/model/tests.rs::the_docked_entry_is_this_tabs_and_the_selected_row_the_shown_one,mapped,,P3
 tests/test_core.py::test_a_panel_without_a_core_acts_on_nothing,tests/test_core.py,src/panel/input/actions/tests.rs::nothing_acts_before_the_keys_are_armed_or_without_a_core,mapped,,P3
 tests/test_core.py::test_a_hidden_tabs_panel_draws_no_frames,tests/test_core.py,src/panel/pacing/tests.rs::a_hidden_tab_or_a_still_screen_never_ticks ; src/panel/model/tests.rs::the_docked_entry_is_this_tabs_and_the_selected_row_the_shown_one ; src/panel/clock/tests.rs::the_animation_time_is_the_wall_clock_in_quarter_seconds,mapped,,P3
 tests/test_core.py::test_the_panels_focus_look_follows_the_cores_focused_pane,tests/test_core.py,src/panel/model/tests.rs::the_focus_look_follows_herdrs_focus_and_the_terminals ; crates/panorama-core/tests/design_goldens.rs::design_10_focused_and_not_in_two_themes_cell_for_cell,mapped,,P3
-tests/test_core.py::test_the_home_panorama_publishes_only_in_per_tab_mode,tests/test_core.py,,todo,,P4
 tests/test_core.py::test_the_home_panorama_publishes_each_refresh_and_takes_seen_back,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_the_line_reader_is_linear_and_one_read_reports_seen_once,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_an_unsafe_socket_directory_is_refused[symlink],tests/test_core.py,,todo,,P4
-tests/test_core.py::test_an_unsafe_socket_directory_is_refused[group-writable],tests/test_core.py,,todo,,P4
-tests/test_core.py::test_an_unsafe_socket_directory_is_refused[not-ours],tests/test_core.py,,todo,,P4
+tests/test_core.py::test_the_line_reader_is_linear_and_one_read_reports_seen_once,tests/test_core.py,tests/core_server.rs::one_read_reports_seen_once ; src/proto/framing/tests.rs::a_feed_splits_its_lines_once,mapped,,P4
+tests/test_core.py::test_an_unsafe_socket_directory_is_refused[symlink],tests/test_core.py,tests/core_server.rs::an_unsafe_socket_directory_is_refused,mapped,,P4
+tests/test_core.py::test_an_unsafe_socket_directory_is_refused[group-writable],tests/test_core.py,tests/core_server.rs::an_unsafe_socket_directory_is_refused,mapped,,P4
+tests/test_core.py::test_an_unsafe_socket_directory_is_refused[not-ours],tests/test_core.py,tests/core_server.rs::an_unsafe_socket_directory_is_refused,mapped,,P4
 tests/test_core.py::test_a_viewer_refuses_a_core_of_another_user,tests/test_core.py,tests/proto_client.rs::a_socket_served_by_another_uid_is_no_core,mapped,,P3
-tests/test_core.py::test_a_connection_without_hello_is_closed_at_the_deadline,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_idle_connections_are_capped_and_hold_no_threads,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_a_viewer_that_never_reads_is_dropped_after_the_send_timeout,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_a_pane_claim_is_checked_against_the_peers_own_process,tests/test_core.py,,todo,,P4
+tests/test_core.py::test_a_connection_without_hello_is_closed_at_the_deadline,tests/test_core.py,tests/core_server.rs::a_connection_without_hello_is_closed_at_the_deadline,mapped,,P4
+tests/test_core.py::test_idle_connections_are_capped_and_hold_no_threads,tests/test_core.py,tests/core_server.rs::idle_connections_are_capped,mapped,,P4
+tests/test_core.py::test_a_viewer_that_never_reads_is_dropped_after_the_send_timeout,tests/test_core.py,tests/core_server.rs::a_viewer_that_never_reads_is_dropped_after_the_send_timeout,mapped,,P4
+tests/test_core.py::test_a_pane_claim_is_checked_against_the_peers_own_process,tests/test_core.py,tests/core_server.rs::an_unverified_pane_claim_is_not_trusted_and_the_claim_is_checked_against_the_peer,mapped,,P4
 tests/test_core.py::test_a_pane_runs_our_panel_only_with_that_pid_and_argv,tests/test_core.py,,todo,,P4
 tests/test_core.py::test_the_rust_panel_is_our_panel_too,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_the_tmp_fallbacks_parent_must_be_safe_too,tests/test_core.py,,todo,,P4
+tests/test_core.py::test_the_tmp_fallbacks_parent_must_be_safe_too,tests/test_core.py,tests/core_server.rs::an_unsafe_socket_directory_is_refused,mapped,,P4
 tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[True-fail],tests/test_current_card.py,crates/panorama-core/tests/wide_layout.rs::the_selected_card_stays_apart_through_a_whole_pulse,mapped,,P4
 tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[True-wait],tests/test_current_card.py,crates/panorama-core/tests/wide_layout.rs::the_selected_card_stays_apart_through_a_whole_pulse,mapped,,P4
 tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[True-done],tests/test_current_card.py,crates/panorama-core/tests/wide_layout.rs::the_selected_card_stays_apart_through_a_whole_pulse,mapped,,P4
@@ -297,10 +256,6 @@ tests/test_dock_panel.py::test_the_cursor_wears_the_hover_look_and_the_docked_en
 tests/test_dock_panel.py::test_docked_panel_scrolls_to_the_cursor,tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::the_docked_panel_scrolls_to_the_cursor,mapped,,P3
 tests/test_dock_panel.py::test_docked_view_uses_the_panel_and_keeps_one_column,tests/test_dock_panel.py,,todo,,P4
 tests/test_dock_panel.py::test_wide_or_undocked_keeps_the_2a_layout,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_one_click_on_an_entry_docks_and_question_marks_answer,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_one_click_on_the_docked_entry_focuses_its_agent_like_enter,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_one_click_still_obeys_arming_and_identity,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_the_2a_graph_keeps_select_first,tests/test_dock_panel.py,,todo,,P4
 tests/test_dock_panel.py::test_a_card_that_moved_ignores_clicks,tests/test_dock_panel.py,,todo,,P4
 tests/test_dock_panel.py::test_collector_finds_the_docked_agent_and_tab_numbers,tests/test_dock_panel.py,tests/collect_snapshot.rs::collector_finds_the_docked_agent_and_tab_numbers,mapped,,P4
 tests/test_dock_panel.py::test_r11_a_refresh_that_docks_the_view_rearms_the_keys,tests/test_dock_panel.py,,todo,,P4
@@ -311,18 +266,8 @@ tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[46],tests/test_d
 tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[50],tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::the_panel_lays_out_to_the_width_it_gets,mapped,,P3
 tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[60],tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::the_panel_lays_out_to_the_width_it_gets,mapped,,P3
 tests/test_dock_panel.py::test_3a_at_its_design_width_keeps_every_footer_hint,tests/test_dock_panel.py,crates/panorama-core/tests/design_goldens.rs::design_9e_cell_for_cell,mapped,,P3
-tests/test_dock_panel.py::test_fit_sizes_the_drawable_width_not_the_rect,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_the_view_measures_its_own_frame,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_a_new_frame_measurement_refits_even_at_the_same_tab_width,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_no_graph_flash_while_a_dock_moves_panorama,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_a_successful_dock_shows_at_once_and_a_stale_collect_does_not_undo_it,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_the_workers_report_the_dock_as_soon_as_the_move_succeeds,tests/test_dock_panel.py,,todo,,P4
 tests/test_dock_panel.py::test_trace_records_each_herdr_call,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_r16b_a_dock_report_under_the_lock_and_quit_both_finish,tests/test_dock_panel.py,,todo,,P4
 tests/test_dock_panel.py::test_r16b_the_lock_gives_up_instead_of_hanging,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_a_slow_follow_keeps_the_panel_after_the_holds_expire,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_a_failed_move_clears_the_move_hold,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_the_resize_fit_skips_while_the_lock_is_busy,tests/test_dock_panel.py,,todo,,P4
 tests/test_fixture_privacy.py::test_fixtures_hold_no_real_ids,tests/test_fixture_privacy.py,,todo,,P4
 tests/test_fixture_privacy.py::test_docs_hold_no_real_agent_ids,tests/test_fixture_privacy.py,,todo,,P4
 tests/test_focus_theme.py::test_turn_10_matches_the_design_cell_for_cell[0-yours-A],tests/test_focus_theme.py,crates/panorama-core/tests/design_goldens.rs::design_10_focused_and_not_in_two_themes_cell_for_cell,mapped,,P3
@@ -356,47 +301,13 @@ tests/test_focus_theme.py::test_herdrs_focus_events_switch_the_look_too,tests/te
 tests/test_focus_theme.py::test_the_focus_watcher_forwards_herdrs_pane_focus,tests/test_focus_theme.py,,todo,,P4
 tests/test_focus_theme.py::test_the_hover_row_is_a_step_lighter_than_either_background,tests/test_focus_theme.py,crates/panorama-core/src/view/theme/tests.rs::fixed_is_the_default_and_own_colours_replace_either,mapped,,P3
 tests/test_focus_theme.py::test_a_panorama_started_without_the_keyboard_looks_unfocused,tests/test_focus_theme.py,,todo,,P4
-tests/test_focus_theme.py::test_a_new_pane_id_after_a_dock_is_judged_again,tests/test_focus_theme.py,,todo,,P4
-tests/test_follow.py::test_follow_docks_beside_the_agent_and_the_operator_stays_put,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_follow_skips[shell],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_follow_skips[panorama],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_follow_skips[other workspace],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_follow_skips[already there],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_follow_skips[other agent kind],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_follow_skips[nothing focused],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_follow_reuses_the_rename_before_leaving_a_shared_home_tab,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_a_failed_follow_leaves_everything_as_is,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_if_the_operator_moved_on_mid_dock_the_swap_is_skipped,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_follow_holds_the_home_lock,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_a_burst_of_focus_events_follows_once,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_events_during_a_follow_are_coalesced_into_one_more,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_no_follow_while[form],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_no_follow_while[docking],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_no_follow_while[follow off],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_no_follow_while[cockpit off],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_a_follow_updates_the_views_own_pane,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_z_zooms_panoramas_own_pane,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_the_docked_panel_and_the_graph_show_the_zoom_key,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_event_stream_yields_focus_events_and_reconnects,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12_m1_a_switch_in_the_swap_window_gets_focus_sent_back,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12_m1_a_tab_switch_in_the_window_goes_to_that_tabs_pane,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12_m1_without_the_event_stream_follow_does_not_swap,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12_m1_no_switch_means_no_refocus,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12_m2_follow_tabs_any_by_default_single_on_request,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12_l2_no_follow_while_panorama_is_zoomed,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_r12_l1_backoff_grows_until_data_arrives,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12f_m1_the_operator_back_in_panorama_before_the_move_stops_it,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12f_l1_a_stream_that_is_not_live_means_no_swap,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_r12f_l1_the_watcher_tracks_liveness,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_r12f_l1_events_marks_connect_and_disconnect,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12f_l2_a_switch_reported_late_still_gets_focus_sent_back,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12f_l3_a_tab_only_switch_refocuses_with_tab_focus,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12f_refocus_rereads_once_for_a_later_switch,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12f_l4_only_the_home_instance_follows,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12f_nit_quiet_reasons_have_one_source,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r16_the_docked_display_is_updated_before_the_settle_wait,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_r16_the_settle_wait_keeps_its_margin,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r16_no_module_wide_last_docked,tests/test_follow.py,,todo,,P4
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 46 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 60 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep dock f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
@@ -550,20 +461,20 @@ tests/test_hook_interp.py::test_hooks_run_isolated_from_pythonpath[False],tests/
 tests/test_hook_interp.py::test_hooks_run_isolated_from_pythonpath[True],tests/test_hook_interp.py,,retired,Pins python -I isolation from PYTHONPATH; a native Rust hook imports no Python modules.,P0b
 tests/test_hook_interp.py::test_a_relative_cache_entry_is_never_run_even_if_it_exists_in_the_cwd,tests/test_hook_interp.py,,retired,Pins run-hook.sh's Python interpreter resolution and cache; the Rust hook is a native binary with no interpreter to resolve.,P0b
 tests/test_hook_interp.py::test_a_directory_in_the_cache_place_collects_no_temp_files,tests/test_hook_interp.py,,retired,Pins run-hook.sh's Python interpreter resolution and cache; the Rust hook is a native binary with no interpreter to resolve.,P0b
-tests/test_hooks.py::test_start_and_stop_are_recorded,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_bad_input_never_fails_and_writes_nothing,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_session_start_text_only_inside_herdr,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_process_identity,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_cli_entry,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_b1_hooks_never_use_uv_and_always_exit_0,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_b1_concurrent_hooks_from_two_plugin_versions,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_b1_stop_hook_active_is_respected,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_b1_unknown_kind_and_direct_run_exit_0,tests/test_hooks.py,,todo,,P4
+tests/test_hooks.py::test_start_and_stop_are_recorded,tests/test_hooks.py,src/hook/tests.rs::start_and_stop_are_recorded ; src/hook/tests.rs::captured_payloads_are_recorded,mapped,,P4
+tests/test_hooks.py::test_bad_input_never_fails_and_writes_nothing,tests/test_hooks.py,src/hook/tests.rs::bad_input_never_fails_and_writes_nothing,mapped,,P4
+tests/test_hooks.py::test_session_start_text_only_inside_herdr,tests/test_hooks.py,src/hook/tests.rs::session_start_text_only_inside_herdr,mapped,,P4
+tests/test_hooks.py::test_process_identity,tests/test_hooks.py,herdr-agent-kit@v0.1.0:src/agent_procs/system/alive/tests.rs::a_gone_process_is_dead_and_another_namespace_is_unknown ; herdr-agent-kit@v0.1.0:src/agent_procs/system/alive/tests.rs::a_process_we_may_not_signal_is_alive_by_its_start_token,mapped,,P4
+tests/test_hooks.py::test_cli_entry,tests/test_hooks.py,tests/claude_launch.rs::the_built_binary_runs_the_hooks_and_the_server,mapped,,P4
+tests/test_hooks.py::test_b1_hooks_never_use_uv_and_always_exit_0,tests/test_hooks.py,tests/claude_launch.rs::the_built_binary_runs_the_hooks_and_the_server ; src/hook/tests.rs::bad_input_never_fails_and_writes_nothing,mapped,,P4
+tests/test_hooks.py::test_b1_concurrent_hooks_from_two_plugin_versions,tests/test_hooks.py,src/hook/tests.rs::concurrent_hooks_keep_every_line_whole,mapped,,P4
+tests/test_hooks.py::test_b1_stop_hook_active_is_respected,tests/test_hooks.py,src/hook/tests.rs::stop_hook_active_is_respected_and_unknown_kinds_do_nothing,mapped,,P4
+tests/test_hooks.py::test_b1_unknown_kind_and_direct_run_exit_0,tests/test_hooks.py,src/hook/tests.rs::stop_hook_active_is_respected_and_unknown_kinds_do_nothing ; tests/claude_launch.rs::the_built_binary_runs_the_hooks_and_the_server,mapped,,P4
 tests/test_hooks.py::test_m3_subagent_hooks_skip_internal_agents,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_m3_old_hook_files_are_pruned,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_l4_session_text_once_per_session,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_m2_claude_process_found_for_native_and_node_installs,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_m2_another_pid_namespace_is_unknown,tests/test_hooks.py,,todo,,P4
+tests/test_hooks.py::test_m3_old_hook_files_are_pruned,tests/test_hooks.py,src/hook/tests.rs::old_hook_files_are_pruned,mapped,,P4
+tests/test_hooks.py::test_l4_session_text_once_per_session,tests/test_hooks.py,src/hook/tests.rs::l4_session_text_once_per_session,mapped,,P4
+tests/test_hooks.py::test_m2_claude_process_found_for_native_and_node_installs,tests/test_hooks.py,herdr-agent-kit@v0.1.0:src/agent_procs/claude/tests.rs::two_claudes_are_nested_and_the_nearest_owns ; herdr-agent-kit@v0.1.0:src/agent_procs/claude/tests.rs::a_claude_without_a_start_token_is_not_recorded,mapped,,P4
+tests/test_hooks.py::test_m2_another_pid_namespace_is_unknown,tests/test_hooks.py,herdr-agent-kit@v0.1.0:src/agent_procs/system/alive/tests.rs::a_gone_process_is_dead_and_another_namespace_is_unknown,mapped,,P4
 tests/test_inbox.py::test_absent_inbox_is_none,tests/test_inbox.py,herdr-agent-kit@v0.1.0:tests/inbox_contract_goldens.rs::no_inbox,mapped,,P4
 tests/test_inbox.py::test_open_questions_only,tests/test_inbox.py,herdr-agent-kit@v0.1.0:tests/inbox_contract_goldens.rs::current_and_0_1_databases,mapped,,P4
 tests/test_inbox.py::test_opened_read_only,tests/test_inbox.py,herdr-agent-kit@v0.1.0:tests/inbox_contract_goldens.rs::current_and_0_1_databases,mapped,,P4
@@ -673,7 +584,7 @@ tests/test_panel_click.py::test_no_attribute_shadows_a_textual_member,tests/test
 tests/test_panel_click.py::test_a_crash_leaves_its_traceback_next_to_the_marker,tests/test_panel_click.py,src/panel/crash/tests.rs::a_crash_leaves_the_marker_and_the_errors_end ; src/panel/crash/tests.rs::the_hook_marks_a_crash_but_leaves_a_tasks_panic_to_the_task,mapped,,P3
 tests/test_panel_click.py::test_the_crash_log_is_bounded_in_bytes,tests/test_panel_click.py,src/panel/crash/tests.rs::a_crash_leaves_the_marker_and_the_errors_end,mapped,,P3
 tests/test_panel_click.py::test_mark_crash_never_raises_on_an_unencodable_message,tests/test_panel_click.py,,retired,Pins Python's surrogate-escape encoding of the crash log; Rust strings are always valid UTF-8.,P3
-tests/test_panel_filter.py::test_the_core_passes_a_panels_filter_on,tests/test_panel_filter.py,,todo,,P4
+tests/test_panel_filter.py::test_the_core_passes_a_panels_filter_on,tests/test_panel_filter.py,tests/core_server.rs::focusing_counts_only_from_a_verified_panel_and_filters_only_from_panels,mapped,,P4
 tests/test_panel_filter.py::test_the_state_carries_the_filter_and_the_version_says_so,tests/test_panel_filter.py,,todo,,P4
 tests/test_panel_filter.py::test_a_filter_chosen_in_one_panel_shows_in_every_panel,tests/test_panel_filter.py,,todo,,P4
 tests/test_panel_filter.py::test_the_home_panorama_takes_a_panels_filter_and_publishes_it,tests/test_panel_filter.py,,todo,,P4
@@ -688,7 +599,7 @@ tests/test_panel_sync.py::test_every_panel_selects_the_orchestrator_herdr_shows,
 tests/test_panel_sync.py::test_a_cursor_moved_to_the_shown_orchestrator_re_arms_the_keys,tests/test_panel_sync.py,src/panel/input/selection/tests.rs::a_cursor_moved_to_the_shown_orchestrator_re_arms_the_keys,mapped,,P3
 tests/test_panel_sync.py::test_an_arrow_move_waiting_for_its_switch_is_kept,tests/test_panel_sync.py,src/panel/model/tests.rs::an_arrow_move_waiting_for_its_switch_is_kept,mapped,,P3
 tests/test_panel_sync.py::test_the_cursor_has_no_highlight_only_the_mouse_has,tests/test_panel_sync.py,crates/panorama-core/tests/dock_layout.rs::the_cursor_has_no_highlight_only_the_mouse_has,mapped,,P3
-tests/test_panel_sync.py::test_the_core_announces_a_focus_only_from_a_verified_panel,tests/test_panel_sync.py,,todo,,P4
+tests/test_panel_sync.py::test_the_core_announces_a_focus_only_from_a_verified_panel,tests/test_panel_sync.py,tests/core_server.rs::focusing_counts_only_from_a_verified_panel_and_filters_only_from_panels,mapped,,P4
 tests/test_panel_sync.py::test_a_switch_announces_the_focus_before_showing_the_tab,tests/test_panel_sync.py,src/panel/act/switch/tests.rs::onto_the_target_tabs_panel_after_announcing_it ; src/panel/act/switch/tests.rs::the_paint_wait_follows_only_an_echo,mapped,,P3
 tests/test_panel_sync.py::test_the_switching_panel_keeps_its_look_until_it_is_hidden,tests/test_panel_sync.py,src/panel/model/tests.rs::the_switching_panel_keeps_its_look_until_it_is_hidden,mapped,,P3
 tests/test_panel_sync.py::test_a_hidden_target_paints_focused_before_it_is_shown,tests/test_panel_sync.py,src/panel/model/tests.rs::a_hidden_target_paints_focused_before_it_is_shown,mapped,,P3
@@ -697,77 +608,76 @@ tests/test_panel_sync.py::test_tests_never_reach_a_live_herdr,tests/test_panel_s
 tests/test_panel_sync.py::test_a_failed_switch_takes_its_announcement_back,tests/test_panel_sync.py,src/panel/act/switch/tests.rs::a_failed_switch_takes_the_announcement_back ; src/panel/input/arrows/tests.rs::a_switch_that_took_its_announcement_back_leaves_this_panel_focused,mapped,,P3
 tests/test_panel_sync.py::test_the_core_rereads_the_real_focus_after_an_unconfirmed_announcement,tests/test_panel_sync.py,,todo,,P4
 tests/test_panel_sync.py::test_a_confirmed_announcement_is_not_second_guessed,tests/test_panel_sync.py,,todo,,P4
-tests/test_panels.py::test_the_start_batch_puts_a_panel_left_of_every_orchestrator_and_the_operator_back,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_an_operator_who_moves_during_the_batch_is_left_there,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_after_the_start_only_the_operators_tab_gets_a_panel,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_lazy_panel_waits_on_the_right_when_the_operator_left_before_the_swap,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_panel_the_operator_closed_stays_closed_until_the_open_key,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_the_open_key_focuses_an_existing_panel_or_says_home,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_only_provable_panels_are_closed,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_tab_herdr_could_not_check_gets_no_panel,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_second_panel_is_closed_keeping_the_connected_one,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_tab_without_its_orchestrator_loses_the_panel_only_after_a_while,tests/test_panels.py,,todo,,P4
+tests/test_panels.py::test_the_start_batch_puts_a_panel_left_of_every_orchestrator_and_the_operator_back,tests/test_panels.py,src/panels/tests/batch.rs::the_start_batch_puts_a_panel_left_of_every_orchestrator_and_the_operator_back,mapped,,P4
+tests/test_panels.py::test_an_operator_who_moves_during_the_batch_is_left_there,tests/test_panels.py,src/panels/tests/batch.rs::an_operator_who_moves_during_the_batch_is_left_there,mapped,,P4
+tests/test_panels.py::test_after_the_start_only_the_operators_tab_gets_a_panel,tests/test_panels.py,src/panels/tests/batch.rs::after_the_start_only_the_operators_tab_gets_a_panel,mapped,,P4
+tests/test_panels.py::test_a_lazy_panel_waits_on_the_right_when_the_operator_left_before_the_swap,tests/test_panels.py,src/panels/tests/batch.rs::a_lazy_panel_waits_on_the_right_when_the_operator_left_before_the_swap,mapped,,P4
+tests/test_panels.py::test_a_panel_the_operator_closed_stays_closed_until_the_open_key,tests/test_panels.py,src/panels/tests/closing.rs::a_panel_the_operator_closed_stays_closed_until_the_open_key,mapped,,P4
+tests/test_panels.py::test_the_open_key_focuses_an_existing_panel_or_says_home,tests/test_panels.py,src/panels/tests/closing.rs::the_open_key_focuses_an_existing_panel_or_says_home,mapped,,P4
+tests/test_panels.py::test_only_provable_panels_are_closed,tests/test_panels.py,src/panels/tests/closing.rs::only_provable_panels_are_closed,mapped,,P4
+tests/test_panels.py::test_a_tab_herdr_could_not_check_gets_no_panel,tests/test_panels.py,src/panels/tests/batch.rs::a_tab_herdr_could_not_check_gets_no_panel,mapped,,P4
+tests/test_panels.py::test_a_second_panel_is_closed_keeping_the_connected_one,tests/test_panels.py,src/panels/tests/closing.rs::a_second_panel_is_closed_keeping_the_connected_one,mapped,,P4
+tests/test_panels.py::test_a_tab_without_its_orchestrator_loses_the_panel_only_after_a_while,tests/test_panels.py,src/panels/tests/closing.rs::a_tab_without_its_orchestrator_loses_the_panel_only_after_a_while,mapped,,P4
 tests/test_panels.py::test_the_open_key_asks_the_core,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_a_panel_switches_by_tab_and_panel_focus,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_per_tab_keeps_the_home_panorama_home,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_new_agent_builds_its_tab_with_the_panel_on_the_left,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_a_viewer_exits_on_the_cores_shutdown,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_a_viewer_without_a_core_for_long_exits,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_a_connected_viewer_does_not_time_out,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_viewers_start_from_the_venv_not_uv_run,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_panel_that_dies_before_its_viewer_connected_is_a_crash_not_a_close,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_panel_whose_viewer_connected_then_vanished_was_closed_by_the_operator,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_crash_marker_wins_over_a_connected_viewer,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_the_restore_skips_only_the_batchs_own_events_in_order,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_known_panel_is_not_asked_about_on_every_pass,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_panel_herdr_restored_as_a_plain_shell_is_closed_and_made_again_in_its_place,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[never-recorded],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[same-terminal],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[no-terminal-recorded],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[pane-without-terminal],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[relabelled],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[agent],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[focused],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[focused-flag],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[tab-focus],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[in-use],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[background-job],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[children-unknown],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[old-shell],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[age-unknown],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[quit-cleanly],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_pane_focused_after_the_restore_is_never_closed,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_restored_panel_is_judged_only_on_the_first_passes,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_shell_seen_busy_at_either_look_is_not_closed[busy-at-the-last-look],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_shell_seen_busy_at_either_look_is_not_closed[busy-first],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_live_handoff_keeps_the_panels_and_rekeys_the_record,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_stale_record_never_closes_a_later_pane_with_the_same_id,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_the_panel_record_is_kept_in_the_state_dir_with_herdrs_terminal,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_ps_elapsed_time_parses[mm:ss],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_ps_elapsed_time_parses[hh:mm:ss],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_ps_elapsed_time_parses[dd-hh:mm:ss],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_ps_elapsed_time_parses[padded],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_ps_elapsed_time_parses[empty],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_ps_elapsed_time_parses[garbage],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_shell_state_reads_ps_and_pgrep,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[restored],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[login],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[live-panel],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[busy],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[execed],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[with-child],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[nested-shell],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[exec-script],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[exec-dash-c],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[unknown],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_only_a_shell_seen_young_enough_is_closed,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_pane_used_before_the_cores_first_pass_is_never_closed,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_without_a_live_focus_stream_nothing_is_closed[none],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_without_a_live_focus_stream_nothing_is_closed[not-live],tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_click_during_the_looks_stops_the_close,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_focus_stream_that_connects_within_the_passes_lets_the_core_decide,tests/test_panels.py,,todo,,P4
-tests/test_plugin_copy.py::test_hooks_run_from_the_copy,tests/test_plugin_copy.py,,todo,,P4
-tests/test_plugin_copy.py::test_mcp_server_runs_from_the_copy,tests/test_plugin_copy.py,,todo,,P4
+tests/test_panels.py::test_a_panel_that_dies_before_its_viewer_connected_is_a_crash_not_a_close,tests/test_panels.py,src/panels/tests/closing.rs::a_panel_that_dies_before_its_viewer_connected_is_a_crash_not_a_close,mapped,,P4
+tests/test_panels.py::test_a_panel_whose_viewer_connected_then_vanished_was_closed_by_the_operator,tests/test_panels.py,src/panels/tests/closing.rs::a_panel_whose_viewer_connected_then_vanished_was_closed_by_the_operator,mapped,,P4
+tests/test_panels.py::test_a_crash_marker_wins_over_a_connected_viewer,tests/test_panels.py,src/panels/tests/closing.rs::a_crash_marker_wins_over_a_connected_viewer,mapped,,P4
+tests/test_panels.py::test_the_restore_skips_only_the_batchs_own_events_in_order,tests/test_panels.py,src/panels/tests/batch.rs::the_restore_skips_only_the_batchs_own_events_in_order,mapped,,P4
+tests/test_panels.py::test_a_known_panel_is_not_asked_about_on_every_pass,tests/test_panels.py,src/panels/tests/batch.rs::a_known_panel_is_not_asked_about_on_every_pass,mapped,,P4
+tests/test_panels.py::test_a_panel_herdr_restored_as_a_plain_shell_is_closed_and_made_again_in_its_place,tests/test_panels.py,src/panels/tests/restore.rs::a_panel_herdr_restored_as_a_plain_shell_is_closed_and_made_again_in_its_place,mapped,,P4
+tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[never-recorded],tests/test_panels.py,src/panels/tests/restore.rs::a_restored_pane_is_closed_only_when_provably_our_unused_panel,mapped,,P4
+tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[same-terminal],tests/test_panels.py,src/panels/tests/restore.rs::a_restored_pane_is_closed_only_when_provably_our_unused_panel,mapped,,P4
+tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[no-terminal-recorded],tests/test_panels.py,src/panels/tests/restore.rs::a_restored_pane_is_closed_only_when_provably_our_unused_panel,mapped,,P4
+tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[pane-without-terminal],tests/test_panels.py,src/panels/tests/restore.rs::a_restored_pane_is_closed_only_when_provably_our_unused_panel,mapped,,P4
+tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[relabelled],tests/test_panels.py,src/panels/tests/restore.rs::a_restored_pane_is_closed_only_when_provably_our_unused_panel,mapped,,P4
+tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[agent],tests/test_panels.py,src/panels/tests/restore.rs::a_restored_pane_is_closed_only_when_provably_our_unused_panel,mapped,,P4
+tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[focused],tests/test_panels.py,src/panels/tests/restore.rs::a_restored_pane_is_closed_only_when_provably_our_unused_panel,mapped,,P4
+tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[focused-flag],tests/test_panels.py,src/panels/tests/restore.rs::a_restored_pane_is_closed_only_when_provably_our_unused_panel,mapped,,P4
+tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[tab-focus],tests/test_panels.py,src/panels/tests/restore.rs::a_restored_pane_is_closed_only_when_provably_our_unused_panel,mapped,,P4
+tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[in-use],tests/test_panels.py,src/panels/tests/restore.rs::a_restored_pane_is_closed_only_when_provably_our_unused_panel,mapped,,P4
+tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[background-job],tests/test_panels.py,src/panels/tests/restore.rs::a_restored_pane_is_closed_only_when_provably_our_unused_panel,mapped,,P4
+tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[children-unknown],tests/test_panels.py,src/panels/tests/restore.rs::a_restored_pane_is_closed_only_when_provably_our_unused_panel,mapped,,P4
+tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[old-shell],tests/test_panels.py,src/panels/tests/restore.rs::a_restored_pane_is_closed_only_when_provably_our_unused_panel,mapped,,P4
+tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[age-unknown],tests/test_panels.py,src/panels/tests/restore.rs::a_restored_pane_is_closed_only_when_provably_our_unused_panel,mapped,,P4
+tests/test_panels.py::test_a_restored_pane_is_closed_only_when_provably_our_unused_panel[quit-cleanly],tests/test_panels.py,src/panels/tests/restore.rs::a_restored_pane_is_closed_only_when_provably_our_unused_panel,mapped,,P4
+tests/test_panels.py::test_a_pane_focused_after_the_restore_is_never_closed,tests/test_panels.py,src/panels/tests/restore.rs::a_pane_focused_after_the_restore_is_never_closed,mapped,,P4
+tests/test_panels.py::test_a_restored_panel_is_judged_only_on_the_first_passes,tests/test_panels.py,src/panels/tests/restore.rs::a_restored_panel_is_judged_only_on_the_first_passes,mapped,,P4
+tests/test_panels.py::test_a_shell_seen_busy_at_either_look_is_not_closed[busy-at-the-last-look],tests/test_panels.py,src/panels/tests/restore.rs::a_shell_seen_busy_at_either_look_is_not_closed,mapped,,P4
+tests/test_panels.py::test_a_shell_seen_busy_at_either_look_is_not_closed[busy-first],tests/test_panels.py,src/panels/tests/restore.rs::a_shell_seen_busy_at_either_look_is_not_closed,mapped,,P4
+tests/test_panels.py::test_a_live_handoff_keeps_the_panels_and_rekeys_the_record,tests/test_panels.py,src/panels/tests/restore.rs::a_live_handoff_keeps_the_panels_and_rekeys_the_record,mapped,,P4
+tests/test_panels.py::test_a_stale_record_never_closes_a_later_pane_with_the_same_id,tests/test_panels.py,src/panels/tests/restore.rs::a_stale_record_never_closes_a_later_pane_with_the_same_id,mapped,,P4
+tests/test_panels.py::test_the_panel_record_is_kept_in_the_state_dir_with_herdrs_terminal,tests/test_panels.py,src/panels/tests/restore.rs::the_panel_record_is_kept_in_the_state_dir_with_herdrs_terminal,mapped,,P4
+tests/test_panels.py::test_ps_elapsed_time_parses[mm:ss],tests/test_panels.py,src/panels/tests/shell.rs::ps_elapsed_time_parses,mapped,,P4
+tests/test_panels.py::test_ps_elapsed_time_parses[hh:mm:ss],tests/test_panels.py,src/panels/tests/shell.rs::ps_elapsed_time_parses,mapped,,P4
+tests/test_panels.py::test_ps_elapsed_time_parses[dd-hh:mm:ss],tests/test_panels.py,src/panels/tests/shell.rs::ps_elapsed_time_parses,mapped,,P4
+tests/test_panels.py::test_ps_elapsed_time_parses[padded],tests/test_panels.py,src/panels/tests/shell.rs::ps_elapsed_time_parses,mapped,,P4
+tests/test_panels.py::test_ps_elapsed_time_parses[empty],tests/test_panels.py,src/panels/tests/shell.rs::ps_elapsed_time_parses,mapped,,P4
+tests/test_panels.py::test_ps_elapsed_time_parses[garbage],tests/test_panels.py,src/panels/tests/shell.rs::ps_elapsed_time_parses,mapped,,P4
+tests/test_panels.py::test_shell_state_reads_ps_and_pgrep,tests/test_panels.py,src/panels/tests/shell.rs::shell_state_reads_ps_and_pgrep,mapped,,P4
+tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[restored],tests/test_panels.py,src/panels/tests/shell.rs::a_plain_shell_is_only_the_panes_own_shell,mapped,,P4
+tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[login],tests/test_panels.py,src/panels/tests/shell.rs::a_plain_shell_is_only_the_panes_own_shell,mapped,,P4
+tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[live-panel],tests/test_panels.py,src/panels/tests/shell.rs::a_plain_shell_is_only_the_panes_own_shell,mapped,,P4
+tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[busy],tests/test_panels.py,src/panels/tests/shell.rs::a_plain_shell_is_only_the_panes_own_shell,mapped,,P4
+tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[execed],tests/test_panels.py,src/panels/tests/shell.rs::a_plain_shell_is_only_the_panes_own_shell,mapped,,P4
+tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[with-child],tests/test_panels.py,src/panels/tests/shell.rs::a_plain_shell_is_only_the_panes_own_shell,mapped,,P4
+tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[nested-shell],tests/test_panels.py,src/panels/tests/shell.rs::a_plain_shell_is_only_the_panes_own_shell,mapped,,P4
+tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[exec-script],tests/test_panels.py,src/panels/tests/shell.rs::a_plain_shell_is_only_the_panes_own_shell,mapped,,P4
+tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[exec-dash-c],tests/test_panels.py,src/panels/tests/shell.rs::a_plain_shell_is_only_the_panes_own_shell,mapped,,P4
+tests/test_panels.py::test_a_plain_shell_is_only_the_panes_own_shell[unknown],tests/test_panels.py,src/panels/tests/shell.rs::a_plain_shell_is_only_the_panes_own_shell,mapped,,P4
+tests/test_panels.py::test_only_a_shell_seen_young_enough_is_closed,tests/test_panels.py,src/panels/tests/restore.rs::only_a_shell_seen_young_enough_is_closed,mapped,,P4
+tests/test_panels.py::test_a_pane_used_before_the_cores_first_pass_is_never_closed,tests/test_panels.py,src/panels/tests/restore.rs::a_pane_used_before_the_cores_first_pass_is_never_closed,mapped,,P4
+tests/test_panels.py::test_without_a_live_focus_stream_nothing_is_closed[none],tests/test_panels.py,src/panels/tests/restore.rs::without_a_live_focus_stream_nothing_is_closed,mapped,,P4
+tests/test_panels.py::test_without_a_live_focus_stream_nothing_is_closed[not-live],tests/test_panels.py,src/panels/tests/restore.rs::without_a_live_focus_stream_nothing_is_closed,mapped,,P4
+tests/test_panels.py::test_a_click_during_the_looks_stops_the_close,tests/test_panels.py,src/panels/tests/restore.rs::a_click_during_the_looks_stops_the_close,mapped,,P4
+tests/test_panels.py::test_a_focus_stream_that_connects_within_the_passes_lets_the_core_decide,tests/test_panels.py,src/panels/tests/restore.rs::a_focus_stream_that_connects_within_the_passes_lets_the_core_decide,mapped,,P4
+tests/test_plugin_copy.py::test_hooks_run_from_the_copy,tests/test_plugin_copy.py,tests/claude_launch.rs::the_built_binary_runs_the_hooks_and_the_server ; tests/claude_launch.rs::without_a_binary_the_python_hooks_and_server_run,mapped,,P4
+tests/test_plugin_copy.py::test_mcp_server_runs_from_the_copy,tests/test_plugin_copy.py,tests/claude_launch.rs::the_built_binary_runs_the_hooks_and_the_server ; tests/claude_launch.rs::without_a_binary_the_python_hooks_and_server_run,mapped,,P4
 tests/test_render.py::test_wide_layout_has_the_three_columns_and_links,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::the_wide_layout_has_the_three_columns_and_links,mapped,,P4
 tests/test_render.py::test_narrow_layout_is_an_indented_list_with_only_the_selected_orchestrator_open,tests/test_render.py,crates/panorama-core/tests/narrow_layout.rs::the_narrow_layout_is_an_indented_list_with_only_the_selected_orchestrator_open,mapped,,P3
 tests/test_render.py::test_question_and_blocked_detail_lines,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::question_and_blocked_detail_lines,mapped,,P4
@@ -783,13 +693,13 @@ tests/test_render.py::test_quiet_orchestrators_do_not_animate,tests/test_render.
 tests/test_render.py::test_r4_thread_and_agent_cards_have_animated_edges,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::every_card_has_an_animated_edge,mapped,,P4
 tests/test_render.py::test_r4_sweeps_are_all_running_colour_and_offset_per_card,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::sweeps_are_all_running_colour_and_offset_per_card,mapped,,P4
 tests/test_render.py::test_r4_links_join_animated_edges,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::links_join_animated_edges,mapped,,P4
-tests/test_report_thread.py::test_report_merges_phases_and_keeps_times,tests/test_report_thread.py,,todo,,P4
-tests/test_report_thread.py::test_tool_uses_the_session_from_the_environment,tests/test_report_thread.py,,todo,,P4
-tests/test_report_thread.py::test_tool_prefers_the_panes_current_session,tests/test_report_thread.py,,todo,,P4
-tests/test_report_thread.py::test_mcp_server_over_stdio,tests/test_report_thread.py,,todo,,P4
-tests/test_report_thread.py::test_m1_limits_and_no_wildcard_claims,tests/test_report_thread.py,,todo,,P4
-tests/test_report_thread.py::test_m1_the_events_file_is_compacted,tests/test_report_thread.py,,todo,,P4
-tests/test_report_thread.py::test_m1_short_patterns_never_match_on_read,tests/test_report_thread.py,,todo,,P4
+tests/test_report_thread.py::test_report_merges_phases_and_keeps_times,tests/test_report_thread.py,src/report/merge/tests.rs::report_merges_phases_and_keeps_times,mapped,,P4
+tests/test_report_thread.py::test_tool_uses_the_session_from_the_environment,tests/test_report_thread.py,src/mcp/session/tests.rs::tool_uses_the_session_from_the_environment ; src/mcp/call/tests.rs::tool_uses_the_session_it_is_given,mapped,,P4
+tests/test_report_thread.py::test_tool_prefers_the_panes_current_session,tests/test_report_thread.py,src/mcp/session/tests.rs::tool_prefers_the_panes_current_session,mapped,,P4
+tests/test_report_thread.py::test_mcp_server_over_stdio,tests/test_report_thread.py,tests/mcp_goldens.rs::report_thread_answers_and_records_as_the_python_server_does ; tests/mcp_goldens.rs::the_legacy_handshake_lists_the_same_tool_and_refuses_the_same_way ; tests/mcp_goldens.rs::claude_code_s_2026_requests_get_the_python_server_s_answers,mapped,,P4
+tests/test_report_thread.py::test_m1_limits_and_no_wildcard_claims,tests/test_report_thread.py,src/mcp/call/tests.rs::m1_limits_and_no_wildcard_claims,mapped,,P4
+tests/test_report_thread.py::test_m1_the_events_file_is_compacted,tests/test_report_thread.py,src/mcp/call/tests.rs::m1_the_events_file_is_compacted ; src/report/emit/tests.rs::the_file_is_compacted_past_its_limit_and_keeps_every_thread,mapped,,P4
+tests/test_report_thread.py::test_m1_short_patterns_never_match_on_read,tests/test_report_thread.py,src/collect/events/tests.rs::patterns_claim_by_id_description_or_a_long_enough_prefix,mapped,,P4
 tests/test_scan_session.py::test_notice_from_the_queue_carrier_ends_the_agent,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_scan_session.py::test_killed_is_terminal,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_scan_session.py::test_latest_notice_wins_across_resumes,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules ; herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/status.rs::a_resume_is_counted_and_restarts_the_clock,mapped,,P1
@@ -1198,3 +1108,30 @@ tests/test_wide.py::test_the_model_keeps_its_version[some-other-model-some-other
 tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[44],tests/test_wide.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision, kept by the wide graph in P4), so 'restyle equals a full render' holds by construction; the sweep's lap is pinned by cards/tests.rs::a_sweep_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged",P4
 tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[60],tests/test_wide.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision, kept by the wide graph in P4), so 'restyle equals a full render' holds by construction; the sweep's lap is pinned by cards/tests.rs::a_sweep_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged",P4
 tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[64],tests/test_wide.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision, kept by the wide graph in P4), so 'restyle equals a full render' holds by construction; the sweep's lap is pinned by cards/tests.rs::a_sweep_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged",P4
+tests/test_cockpit.py::test_the_key_brings_a_left_docked_panorama_home_and_focuses_it,tests/test_cockpit.py,,todo,,P4
+tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[per-tab],tests/test_cockpit.py,,todo,,P4
+tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[off],tests/test_cockpit.py,,todo,,P4
+tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[old-moving-setting],tests/test_cockpit.py,,todo,,P4
+tests/test_cockpit.py::test_the_cores_open_key_brings_a_docked_home_back_to_its_own_tab,tests/test_cockpit.py,,todo,,P4
+tests/test_follow.py::test_a_burst_of_focus_events_makes_one_panel_pass,tests/test_follow.py,,todo,,P4
+tests/test_panels.py::test_follow_tabs_single_gives_panels_only_to_tabs_of_one_orchestrator,tests/test_panels.py,,todo,,P4
+tests/test_panels.py::test_the_cockpit_is_per_tab_panels_and_an_old_moving_setting_reads_as_per_tab,tests/test_panels.py,,todo,,P4
+tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[enter-False-True],tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[g-False-True],tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[enter-True-False],tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_docked_enter_with_keep_focus_off_focuses_the_agent,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_the_2a_graph_enter_still_focuses_the_agent,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_arrows_switch_the_chats_once_they_settle,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_arrows_do_not_dock_the_docked_one_new_agent_or_a_remote,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_arrows_off_or_the_2a_graph_never_dock_on_arrows,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left[blurred],tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left[herdr says another pane],tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_an_arrow_settling_during_a_dock_runs_after_it_even_if_focus_looks_elsewhere,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_an_arrow_dock_due_during_a_dock_runs_after_it,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_one_click_on_an_entry_docks_and_question_marks_answer,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_one_click_on_the_docked_entry_focuses_its_agent_like_enter,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_one_click_still_obeys_arming_and_identity,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_the_2a_graph_keeps_select_first,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_no_graph_flash_while_a_switch_runs,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_a_switch_that_ends_judges_the_focus_again,tests/test_panel_keys.py,,todo,,P4
+tests/test_cockpit.py::test_the_cores_open_key_follows_the_home_panes_new_id,tests/test_cockpit.py,,todo,,P4
