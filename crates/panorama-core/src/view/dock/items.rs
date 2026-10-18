@@ -13,7 +13,6 @@ use crate::view::seg::{Seg, width};
 use crate::view::state::View;
 use crate::view::text::{dur, trunc};
 use crate::view::unseen::mark_of;
-use herdr_agent_kit::herdr_api::{MAX_ARG, clean};
 
 /// One row of the list.
 pub enum Item<'a> {
@@ -51,10 +50,6 @@ pub fn items_of<'a>(o: &'a Orchestrator, d: &DockState<'a>) -> Vec<Item<'a>> {
     out
 }
 
-fn cleaned(s: &str) -> String {
-    clean(s, MAX_ARG)
-}
-
 /// Python `role_label`: the role, else the agent type, else "agent".
 fn role_label(a: &Agent) -> &str {
     [a.role.as_str(), a.agent_type.as_deref().unwrap_or("")]
@@ -72,21 +67,22 @@ fn short_id(a: &Agent) -> String {
     }
 }
 
-/// Draws list row `i` at `yy`; `last_thread` is the index of the last head row.
-#[allow(clippy::too_many_arguments)]
-pub fn draw_item(
-    cv: &mut Screen,
-    yy: i32,
-    item: &Item,
-    i: usize,
-    last_thread: Option<usize>,
-    d: &DockState,
-    view: &View,
-    xr: i32,
-) {
+/// What every row of one entry's list shares.
+pub struct ItemCtx<'a> {
+    pub view: &'a View,
+    pub d: &'a DockState<'a>,
+    /// Where right-aligned fields end.
+    pub xr: i32,
+    /// The index of the last row on the entry's own branch.
+    pub last_head: Option<usize>,
+}
+
+/// Draws list row `i` at `yy`.
+pub fn draw_item(cv: &mut Screen, yy: i32, item: &Item, i: usize, ctx: &ItemCtx) {
+    let (view, xr) = (ctx.view, ctx.xr);
     match item {
         Item::Spawn(row, below) => {
-            if last_thread.is_some_and(|l| i < l) {
+            if ctx.last_head.is_some_and(|l| i < l) {
                 cv.put(3, yy, "│", LINE, None, false);
             }
             draw_spawn(cv, yy, row, below, view.frame, xr);
@@ -95,14 +91,18 @@ pub fn draw_item(
             cv.put(
                 3,
                 yy,
-                if Some(i) == last_thread { "└" } else { "├" },
+                if Some(i) == ctx.last_head {
+                    "└"
+                } else {
+                    "├"
+                },
                 LINE,
                 None,
                 false,
             );
             match head {
                 Item::Bg(t) => draw_bg(cv, yy, t, i, view, xr),
-                Item::Done => draw_done(cv, yy, d, view),
+                Item::Done => draw_done(cv, yy, ctx.d, view),
                 Item::Thread(t, own) => draw_thread(cv, yy, t, own, view, xr),
                 Item::Spawn(..) => {}
             }
@@ -118,10 +118,7 @@ fn draw_spawn(cv: &mut Screen, yy: i32, row: &SpawnRow, below: &[&Agent], frame:
     let a = row.agent;
     let g = glyph(a, frame);
     let room = (xr - width(&segs) - 1 - (x + g.chars().count() as i32 + 1)).max(1);
-    let name = trunc(
-        &cleaned(&format!("{} {}", role_label(a), short_id(a))),
-        room,
-    );
+    let name = trunc(&format!("{} {}", role_label(a), short_id(a)), room);
     let att = a.status.needs_operator();
     let glyph_seg = Seg::new(g, glyph_colour(&a.status, frame))
         .bold_if(att)
@@ -135,8 +132,9 @@ fn draw_bg(cv: &mut Screen, yy: i32, t: &BgTask, i: usize, view: &View, xr: i32)
     let frame = view.frame;
     let kind = t.kind.to_lowercase();
     let when = match t.started {
-        Some(s) => format!("{kind} {}", dur(Some(view.now - s))),
-        None => kind,
+        // Python's truthiness: a start time of 0 counts as none
+        Some(s) if s != 0.0 => format!("{kind} {}", dur(Some(view.now - s))),
+        _ => kind,
     };
     let tl = tile(
         &Status::Background,
@@ -145,16 +143,15 @@ fn draw_bg(cv: &mut Screen, yy: i32, t: &BgTask, i: usize, view: &View, xr: i32)
         None,
     );
     let room = (xr - when.chars().count() as i32 - 1 - (5 + tl.len() + 1)).clamp(1, 22);
-    let desc = cleaned(&t.description);
-    let desc = if desc.is_empty() {
-        "in the background".to_owned()
+    let desc = if t.description.is_empty() {
+        "in the background"
     } else {
-        desc
+        t.description.as_str()
     };
     cv.segs(
         5,
         yy,
-        &[tl, Seg::plain(" "), Seg::new(trunc(&desc, room), FG)],
+        &[tl, Seg::plain(" "), Seg::new(trunc(desc, room), FG)],
     );
     cv.segs_right(xr, yy, &[Seg::new(when, DIM)]);
 }
@@ -185,11 +182,7 @@ fn draw_thread(cv: &mut Screen, yy: i32, t: &Thread, own: &[&Agent], view: &View
     cv.segs(
         5,
         yy,
-        &[
-            tl,
-            Seg::plain(" "),
-            Seg::new(trunc(&cleaned(&t.name), room), FG),
-        ],
+        &[tl, Seg::plain(" "), Seg::new(trunc(&t.name, room), FG)],
     );
     cv.segs_right(xr, yy, &ags);
 }

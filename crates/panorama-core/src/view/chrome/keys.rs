@@ -27,14 +27,14 @@ const NARROW_KEYS: [(&str, &str); 6] = [
 
 /// The key hints on the last row (no `i` without the inbox; `z panel` when zoomable).
 pub fn keys(s: &mut Screen, zoom_hint: bool, inbox_ok: bool) {
-    let base: &[(&str, &str)] = if s.w >= WIDE {
+    let base: &[(&str, &str)] = if s.w() >= WIDE {
         &WIDE_KEYS
     } else {
         &NARROW_KEYS
     };
     let zoom = [("z", "panel")];
     let items = base.iter().chain(if zoom_hint { &zoom[..] } else { &[] });
-    let (y, mut x) = (s.h - 1, 1);
+    let (y, mut x) = (s.h() - 1, 1);
     for (k, lab) in items.filter(|(k, _)| *k != "i" || inbox_ok) {
         x = s.segs(
             x,
