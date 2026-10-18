@@ -19,6 +19,35 @@
 hook=$1
 shift
 
+# The Rust hooks first (docs/plans/rust-rewrite.md §5.4): when this plugin root has the binary
+# built (target/release/panorama: a linked checkout's `cargo build --release`, or a copy of one)
+# and it speaks this checkout's Claude-side contract (`panorama contract claude` answers
+# `claude <n>`: a binary from before the contract answers a bare number and is passed over),
+# it runs the hook (`panorama hook <kind>`, same records, same output, exit 0). Anything else
+# (no binary, a stale one, one that fails on the probe, or hangs on it: 2 s with timeout(1),
+# then KILL; where there is no timeout(1), as on stock macOS, perl's alarm ends the probed
+# process after 2 s (only that process: a child it left holding the output would keep the
+# probe waiting); unbounded with neither) falls through to Python.
+CLAUDE_CONTRACT=1
+case $0 in
+*/*) here=${0%/*} ;;
+*) here=. ;;
+esac
+root=$(cd "$here/.." 2>/dev/null && pwd)
+bin=$root/target/release/panorama
+if [ -n "$root" ] && [ -f "$bin" ] && [ -x "$bin" ]; then
+	if command -v timeout >/dev/null 2>&1; then
+		got=$(timeout -k 1 2 "$bin" contract claude </dev/null 2>/dev/null)
+	elif command -v perl >/dev/null 2>&1; then
+		got=$(perl -e 'alarm shift; exec @ARGV or exit 127' 2 "$bin" contract claude </dev/null 2>/dev/null)
+	else
+		got=$("$bin" contract claude </dev/null 2>/dev/null)
+	fi
+	if [ "$got" = "claude $CLAUDE_CONTRACT" ]; then
+		exec "$bin" hook "$@"
+	fi
+fi
+
 usable() {
 	case $1 in
 	/*) [ -f "$1" ] && [ -x "$1" ] ;;
