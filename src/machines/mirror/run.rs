@@ -16,6 +16,9 @@ const VANISHED: i32 = 24;
 /// Runs `argv`; `None` when it succeeded (exit 0 or 24), else the error: its stderr (trimmed,
 /// at most 300 characters), `rsync exit <n>`, [`TIMED_OUT`], or why it could not start.
 ///
+/// Like Python's `communicate()`, a run that exited waits for stderr to close (here never
+/// past the deadline): a grandchild holding it keeps the run open that long.
+///
 /// Deviation, stated: a failure whose stderr is only whitespace reads `rsync exit <n>`; Python
 /// returns that empty text, which its caller takes for success.
 pub fn run(argv: &[String], timeout: Duration) -> Option<String> {

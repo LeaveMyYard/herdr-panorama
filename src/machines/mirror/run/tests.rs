@@ -65,3 +65,26 @@ fn a_run_ended_by_a_signal_reads_as_python_returncode() {
     let err = run(&sh("kill -TERM $$"), Duration::from_secs(5));
     assert_eq!(err.as_deref(), Some("rsync exit -15"));
 }
+
+#[test]
+fn a_binary_that_stays_busy_is_retried_a_bounded_number_of_times() {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = scratch("run-busy");
+    let bin = dir.path().join("rsync");
+    std::fs::write(&bin, "#!/bin/sh\nexit 0\n").unwrap();
+    std::fs::set_permissions(&bin, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let argv = [bin.display().to_string()];
+    let held = std::fs::OpenOptions::new().write(true).open(&bin).unwrap(); // busy: ETXTBSY
+    // on a thread: without the bound the retries would never end, and this test must fail,
+    // not hang
+    let (tx, rx) = std::sync::mpsc::channel();
+    let busy = argv.clone();
+    std::thread::spawn(move || tx.send(run(&busy, Duration::from_secs(5))));
+    let err = rx
+        .recv_timeout(Duration::from_secs(1))
+        .expect("the retries end within a second");
+    let err = err.unwrap();
+    assert!(err.contains("Text file busy"), "{err}");
+    drop(held);
+    assert_eq!(run(&argv, Duration::from_secs(5)), None);
+}
