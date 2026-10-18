@@ -49,3 +49,33 @@ def test_claude_plugin_manifests():
         assert spec["args"][2] == "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.sh"
         assert spec["args"][3] == "${CLAUDE_PLUGIN_ROOT}/src/herdr_panorama/hooks.py"
         assert spec["timeout"] <= 10
+
+
+def test_the_panel_runs_the_rust_viewer_when_built_else_the_venv_else_uv(tmp_path):
+    """docs/plans/rust-rewrite.md §5.4: a ported entrypoint runs ./target/release/<bin> when it
+    exists, the Python command otherwise; removing the binary rolls back."""
+    import os
+    import subprocess
+
+    from herdr_panorama import herdr
+
+    def run(root):
+        env = {k: v for k, v in os.environ.items() if not k.startswith("HERDR_")}
+        env["HERDR_PLUGIN_ROOT"] = str(root)
+        env["PATH"] = f"{root / 'bin'}:/usr/bin:/bin"  # a stub uv first: it says what it was asked
+        out = subprocess.run(herdr.PANEL_COMMAND, env=env, capture_output=True, text=True, timeout=10, check=True)
+        return out.stdout.strip()
+
+    def stub(path, word):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f'#!/bin/sh\necho {word} "$@"\n')
+        path.chmod(0o755)
+
+    stub(tmp_path / "bin" / "uv", "uv")
+    assert run(tmp_path).startswith("uv run --quiet --frozen --no-dev --project")
+    stub(tmp_path / ".venv" / "bin" / "panorama", "venv")
+    assert run(tmp_path) == "venv panel"
+    stub(tmp_path / "target" / "release" / "panorama", "rust")
+    assert run(tmp_path) == "rust panel"
+    (tmp_path / "target" / "release" / "panorama").chmod(0o644)  # not executable: not used
+    assert run(tmp_path) == "venv panel"

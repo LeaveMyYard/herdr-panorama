@@ -430,8 +430,9 @@ def test_viewers_start_from_the_venv_not_uv_run():
     """Low: a panel's process is the venv's own entry point (uv run adds a ~31 MB parent per
     panel); uv run only when there is no venv."""
     cmd = herdr.PANEL_COMMAND[-1]
-    assert cmd.index('.venv/bin/panorama" panel') < cmd.index("uv run")
-    assert cmd.startswith('R="${HERDR_PLUGIN_ROOT:-.}"; [ -x "$R/.venv/bin/panorama" ] && exec ')
+    # the Rust viewer first when built (rust-rewrite.md §5.4), then the venv, uv run last
+    assert cmd.index('target/release/panorama" panel') < cmd.index('.venv/bin/panorama" panel') < cmd.index("uv run")
+    assert cmd.startswith('R="${HERDR_PLUGIN_ROOT:-.}"; [ -x "$R/target/release/panorama" ] && exec ')
 
 
 def test_a_panel_that_dies_before_its_viewer_connected_is_a_crash_not_a_close(world, tmp_path):

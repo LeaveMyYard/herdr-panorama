@@ -1776,6 +1776,32 @@ has proven itself (the operator, Q140).
   `.venv/bin/panorama panel` and falls back to `uv run` only when there is no venv. Measured
   on the isolated herdr: one process of about 41 MB RSS per panel, with no ~31 MB `uv`
   parent.
+- **The Rust viewer (rewrite P3, docs/plans/rust-rewrite.md §5.4).** When the checkout has
+  `target/release/panorama` (`cargo build --release`), the manifest's `panel` pane and
+  `herdr.PANEL_COMMAND` run it instead of the venv's; removing the binary rolls back, panel by
+  panel (old and new viewers share one core). The core knows it as a panel as before:
+  `pane process-info` shows `…/target/release/panorama panel`. Checked on an isolated herdr
+  0.9.3 (own HOME and socket), with two then eight orchestrator tabs:
+  - placement (left of the agent, 46 columns plus the frame), the record, no doubling;
+  - Enter and `g` go into the agent; ↑/↓ switch to the next tab's panel; `?` shows the keys
+    notice; `f` changes the filter in every panel and the home view;
+  - closing a panel's pane: the viewer exits 0 with no crash marker, and the tab stays closed;
+    the open key makes and focuses a new one; a crash marker in the Rust format makes it
+    again;
+  - per-tab off: every viewer exits and its pane closes; after `kill -9` of herdr and every
+    panorama process, the restored panels are closed and new ones made on the left;
+  - without the binary a new panel runs the venv's viewer, beside Rust ones.
+
+  Eight panels, 0.0 to 0.1 % CPU each, shown or hidden. Memory per panel, PSS (its real
+  cost) and RSS:
+  - the dev build (`cargo build --release`, glibc): 1.4 to 2.1 MB PSS, 5.4 to 6.1 MB RSS
+    (the shared libc and binary pages count in every process's RSS);
+  - the musl build the release workflow ships on Linux: 3.1 MB PSS, 4.8 MB RSS; 1.1 MB and
+    2.8 MB where the kernel did not back a 2 MB region with a huge page
+    (`transparent_hugepage=always`), 3.6 MB and 5.3 MB for one that got two.
+
+  So the 5 MB bar is met on PSS for the dev build and on RSS for the release build, give or
+  take one huge page.
 - **Open key.** In per-tab mode the open key asks the core over its socket (`role: "key"`,
   `{"open": {}}`, answered with `{"opened": {"result": …}}`):
   - a panel in the operator's tab: it is focused;
