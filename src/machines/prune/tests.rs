@@ -110,3 +110,17 @@ fn a_broken_seen_file_starts_over_and_no_mirror_is_fine() {
     assert!(prune(&dest, &ids(&[SID]), 60.0, 0.0).is_empty());
     assert!(fs::read_to_string(dest.join(SEEN)).unwrap().contains(SID));
 }
+
+#[test]
+fn a_symlinked_project_dir_is_never_entered() {
+    let dir = scratch("prune-projlink");
+    let (dest, outside) = (dir.path().join("mirror"), dir.path().join("outside"));
+    fs::create_dir_all(&dest).unwrap();
+    fs::create_dir_all(outside.join(OLD)).unwrap();
+    fs::write(outside.join(format!("{OLD}.jsonl")), "precious").unwrap();
+    fs::write(outside.join(OLD).join("x"), "precious").unwrap();
+    symlink(&outside, dest.join("linkproj")).unwrap();
+    prune(&dest, &ids(&[OLD]), 60.0, 0.0);
+    assert!(prune(&dest, &[], 60.0, 1000.0).is_empty());
+    assert!(outside.join(format!("{OLD}.jsonl")).exists() && outside.join(OLD).join("x").exists());
+}

@@ -20,6 +20,9 @@ const VANISHED: i32 = 24;
 
 /// Runs `argv`; `None` when it succeeded (exit 0 or 24), else the error: its stderr (trimmed,
 /// at most 300 characters), `rsync exit <n>`, [`TIMED_OUT`], or why it could not start.
+///
+/// Deviation, stated: a failure whose stderr is only whitespace reads `rsync exit <n>`; Python
+/// returns that empty text, which its caller takes for success.
 pub fn run(argv: &[String], timeout: Duration) -> Option<String> {
     let (bin, args) = argv.split_first()?;
     let spawned = Command::new(bin)

@@ -162,3 +162,30 @@ fn the_first_failed_pass_stops_the_mirror() {
     assert_eq!(err.as_deref(), Some("no route"));
     assert_eq!(*calls.lock().unwrap(), 1);
 }
+
+#[test]
+fn a_mirror_deletes_nothing_already_in_the_dest() {
+    const OTHER: &str = "bbbbbbbb-0000-0000-0000-000000000002";
+    let dir = scratch("mirror-keeps");
+    let (src, dest) = (dir.path().join("remote"), dir.path().join("mirror"));
+    fs::create_dir_all(src.join("p")).unwrap();
+    fs::write(src.join("p").join(format!("{SID}.jsonl")), "a\n").unwrap();
+    fs::create_dir_all(dest.join("p")).unwrap();
+    fs::write(dest.join("p").join(format!("{OTHER}.jsonl")), "mine").unwrap();
+    fs::write(dest.join("unrelated.txt"), "mine").unwrap();
+    let source = format!("{}/", src.display());
+    let named = [SID.to_owned(), OTHER.to_owned()];
+    assert_eq!(Rsync::new(None).mirror(&source, &dest, &named, run), None);
+    assert_eq!(
+        fs::read_to_string(dest.join("p").join(format!("{OTHER}.jsonl"))).unwrap(),
+        "mine"
+    );
+    assert_eq!(
+        fs::read_to_string(dest.join("unrelated.txt")).unwrap(),
+        "mine"
+    );
+    assert_eq!(
+        fs::read_to_string(dest.join("p").join(format!("{SID}.jsonl"))).unwrap(),
+        "a\n"
+    );
+}

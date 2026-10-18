@@ -41,7 +41,7 @@ impl Remotes {
             return;
         }
         self.chosen = sel;
-        let mut wanted = saved(&mut *self.source);
+        let mut wanted = by_id(saved(&mut *self.source));
         let mut kept = Vec::new();
         for w in self.watchers.drain(..) {
             let same = |m: &Machine| m.id == w.machine.id && m.target == w.machine.target;
@@ -101,6 +101,19 @@ impl Remotes {
             w.stop();
         }
     }
+}
+
+/// One machine per id, as Python's `{m.id: m for m in saved()}`: the last one wins, in the
+/// place the id was first seen.
+fn by_id(machines: Vec<Machine>) -> Vec<Machine> {
+    let mut out: Vec<Machine> = Vec::new();
+    for m in machines {
+        match out.iter_mut().find(|o| o.id == m.id) {
+            Some(slot) => *slot = m,
+            None => out.push(m),
+        }
+    }
+    out
 }
 
 #[cfg(test)]

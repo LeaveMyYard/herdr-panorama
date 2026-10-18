@@ -57,3 +57,13 @@ fn an_idle_watcher_has_tried_nothing() {
     assert_eq!(w.outcome(), Outcome::default());
     assert!(!w.is_running() && !w.is_stopped());
 }
+
+#[test]
+fn a_dropped_watcher_stops() {
+    let api = Arc::new(Api(Mutex::new(Ok(one_agent(None)))));
+    let w = Watcher::spawn(refresher(api, Arc::default()));
+    let flag = w.stop_flag();
+    assert!(wait_for(|| w.outcome().tried));
+    drop(w);
+    assert!(flag.is_set());
+}

@@ -136,3 +136,87 @@ fn one_machine_never_syncs_twice_at_once() {
     }
     assert_eq!(peak.load(Ordering::SeqCst), 1); // one lock per machine around mirror + prune
 }
+
+/// Python's argv for one sync of `SID` on devbox (machines.mirror with _ssh_options), token
+/// for token: any added option (`--delete`, `-L`, ...) or reordering fails this.
+#[test]
+fn the_rsync_argv_is_pythons_exactly() {
+    let dir = scratch("sync-argv");
+    let state = dir.path().join("state");
+    let (s, calls) = recording(&state, true);
+    s.sync(&devbox(), &[SID.to_owned()]);
+    let ssh = "ssh -o BatchMode=yes -o ConnectTimeout=5 -o ServerAliveInterval=5 \
+               -o ControlMaster=auto -o ControlPath=/run/me/panorama-ssh-%C -o ControlPersist=60";
+    let dest = format!("{}/", state.join("remote/abc123/projects").display());
+    let head = [
+        "rsync",
+        "-rt",
+        "--prune-empty-dirs",
+        "--max-size=64M",
+        "-e",
+        ssh,
+    ];
+    let tail = ["devbox:.claude/projects/", dest.as_str()];
+    let jsonl: Vec<String> = head
+        .iter()
+        .map(|s| (*s).to_owned())
+        .chain(["--append-verify".to_owned(), "--include=*/".to_owned()])
+        .chain([
+            format!("--include=*/{SID}.jsonl"),
+            format!("--include=*/{SID}/subagents/agent-*.jsonl"),
+            format!("--include=*/{SID}/subagents/workflows/*/journal.jsonl"),
+            format!("--include=*/{SID}/subagents/workflows/*/agent-*.jsonl"),
+            "--exclude=*".to_owned(),
+        ])
+        .chain(tail.iter().map(|s| (*s).to_owned()))
+        .collect();
+    let json: Vec<String> = head
+        .iter()
+        .map(|s| (*s).to_owned())
+        .chain(["--include=*/".to_owned()])
+        .chain([
+            format!("--include=*/{SID}/subagents/agent-*.meta.json"),
+            format!("--include=*/{SID}/subagents/workflows/*/agent-*.meta.json"),
+            format!("--include=*/{SID}/workflows/*.json"),
+            "--exclude=*".to_owned(),
+        ])
+        .chain(tail.iter().map(|s| (*s).to_owned()))
+        .collect();
+    assert_eq!(*calls.lock().unwrap(), [jsonl, json]);
+}
+
+#[test]
+fn two_ids_with_one_mirror_share_its_lock() {
+    let dir = scratch("sync-shared");
+    let state = dir.path().join("state");
+    let (active, peak) = (Arc::new(AtomicUsize::new(0)), Arc::new(AtomicUsize::new(0)));
+    let mut s = RsyncSync::new(&env(&state), Arc::new(|| 3600.0));
+    let (a, p) = (active.clone(), peak.clone());
+    s.runner = Arc::new(move |_: &[String], _| {
+        let now = a.fetch_add(1, Ordering::SeqCst) + 1;
+        p.fetch_max(now, Ordering::SeqCst);
+        std::thread::sleep(Duration::from_millis(100));
+        a.fetch_sub(1, Ordering::SeqCst);
+        None
+    });
+    let s = Arc::new(s);
+    let machines = [
+        Machine::new("sh-ared9", "a", "a"),
+        Machine::new("shared9", "b", "b"),
+    ];
+    assert_eq!(
+        mirror_root(&state, &machines[0]),
+        mirror_root(&state, &machines[1])
+    );
+    let threads: Vec<_> = machines
+        .into_iter()
+        .map(|m| {
+            let s = s.clone();
+            std::thread::spawn(move || s.sync(&m, &[SID.to_owned()]))
+        })
+        .collect();
+    for t in threads {
+        t.join().unwrap();
+    }
+    assert_eq!(peak.load(Ordering::SeqCst), 1);
+}

@@ -1,7 +1,7 @@
 //! One machine's transcript mirror (Python `machines.sync`, `mirror_root`, `_ssh_options`,
 //! `machine_lock`): what the scanner reads of the named sessions, mirrored from the machine's
 //! `~/.claude/projects` over batch ssh, then the sessions gone longer than the done window
-//! pruned. One sync at a time per machine: two would append the same bytes twice.
+//! pruned. One sync at a time per mirror: two would append the same bytes twice.
 
 use super::mirror::{Rsync, Runner, run};
 use super::prune::prune;
@@ -49,12 +49,15 @@ pub fn ssh_options(env: &PluginEnv) -> Vec<String> {
     argv
 }
 
-/// The lock of one machine's mirror, shared by every sync in this process.
-pub fn machine_lock(machine_id: &str) -> Arc<Mutex<()>> {
-    static LOCKS: OnceLock<Mutex<HashMap<String, Arc<Mutex<()>>>>> = OnceLock::new();
+/// The lock of one mirror, shared by every sync in this process. Keyed by the mirror's
+/// directory, not the machine id: two ids that differ only in other characters than
+/// alphanumerics (`a-b`, `ab`) share one mirror, so they share its lock too. (Python keys it
+/// by the machine id: issue #87.)
+pub fn mirror_lock(mirror: &Path) -> Arc<Mutex<()>> {
+    static LOCKS: OnceLock<Mutex<HashMap<PathBuf, Arc<Mutex<()>>>>> = OnceLock::new();
     let locks = LOCKS.get_or_init(Mutex::default);
     let mut locks = locks.lock().unwrap_or_else(PoisonError::into_inner);
-    locks.entry(machine_id.to_owned()).or_default().clone()
+    locks.entry(mirror.to_path_buf()).or_default().clone()
 }
 
 /// The canonical session ids, each once, in order; anything else dropped.
@@ -103,7 +106,7 @@ impl Syncer for RsyncSync {
         let dest = mirror_root(&self.state_dir, machine);
         let _ = std::fs::create_dir_all(&dest);
         let sessions = canonical(sessions);
-        let lock = machine_lock(&machine.id);
+        let lock = mirror_lock(&dest);
         let _held = lock.lock().unwrap_or_else(PoisonError::into_inner);
         let mut err = None;
         if !sessions.is_empty() {

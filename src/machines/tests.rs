@@ -27,7 +27,14 @@ fn malformed_session_ids_are_not_sessions() {
 fn an_ssh_target_that_reads_as_an_option_or_has_spaces_is_unsafe() {
     assert!(safe_target("devbox"));
     assert!(safe_target("me@host:2222"));
-    for bad in ["", "-oProxyCommand=x", "dev box", "dev\tbox", "a\n"] {
+    for bad in [
+        "",
+        "-oProxyCommand=x",
+        "dev box",
+        "dev\tbox",
+        "a\n",
+        "a\x1cb",
+    ] {
         assert!(!safe_target(bad), "{bad:?}");
     }
 }

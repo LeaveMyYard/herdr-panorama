@@ -211,3 +211,19 @@ fn an_unchanged_setting_never_asks_herdr_again() {
     assert_eq!(*asked.lock().unwrap(), 2);
     assert_eq!(r.watchers.len(), 1);
 }
+
+#[test]
+fn one_watcher_per_machine_id_the_last_entry_winning() {
+    let (mut r, shared, started) = remotes(Selection::None, vec![]);
+    *shared.lock().unwrap() = (
+        Selection::All,
+        vec![
+            row("a", "one", "old"),
+            row("b", "two", "b"),
+            row("a", "one", "new"),
+        ],
+    );
+    r.merge(&mut Swarm::default());
+    assert_eq!(ids(&started), ["a", "b"]);
+    assert_eq!(r.watchers[0].machine.target, "new");
+}

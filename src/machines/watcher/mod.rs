@@ -146,5 +146,12 @@ impl Watcher {
     }
 }
 
+/// A dropped watcher stops: its thread never syncs or prunes on, unowned.
+impl Drop for Watcher {
+    fn drop(&mut self) {
+        self.stop();
+    }
+}
+
 #[cfg(test)]
 mod tests;

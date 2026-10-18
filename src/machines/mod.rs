@@ -75,9 +75,10 @@ pub fn valid_session(sid: &str) -> bool {
 }
 
 /// An ssh target that can never become an rsync or ssh option: not empty, no leading `-`, no
-/// whitespace.
+/// whitespace (as Python's `isspace` counts it: `\x1c`..`\x1f` too).
 pub fn safe_target(target: &str) -> bool {
-    !target.is_empty() && !target.starts_with('-') && !target.chars().any(char::is_whitespace)
+    let space = |c: char| c.is_whitespace() || ('\x1c'..='\x1f').contains(&c);
+    !target.is_empty() && !target.starts_with('-') && !target.chars().any(space)
 }
 
 /// `text` cut to [`ERROR_CHARS`] characters (Python `[:200]`).
