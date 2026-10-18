@@ -29,29 +29,16 @@ pub(super) fn herdr_shows(
 }
 
 impl Panel {
-    /// The selectable rows, in order: the orchestrators the filter shows, then `+ New agent`.
-    pub fn shown_ids(&self) -> Vec<String> {
-        selection::shown_ids(&self.swarm, &self.view)
-    }
-
-    /// After a refresh or a filter change: every selection that still exists stays, an
-    /// orchestrator no longer shown is parked (Python `SwarmApp.resolve`).
-    pub(super) fn resolve(&mut self) {
-        if let Some(p) = selection::resolve(&self.swarm, &mut self.view) {
-            self.parked = Some(p);
-        }
-    }
-
     /// The filter changes: a selection it hides is parked; the shown orchestrator stays
     /// selected while the filter shows it, and none is selected while it hides it.
     pub(crate) fn apply_filter(&mut self, f: Filter) {
-        self.view.filter = f;
-        self.view.wheel.clear();
+        self.graph.view.filter = f;
+        self.graph.view.wheel.clear();
         self.resolve();
-        if self.view.orch.is_none() && !self.back_to_shown() {
-            self.view.focus = 0;
+        if self.graph.view.orch.is_none() && !self.back_to_shown() {
+            self.graph.view.focus = 0;
             if self.active.is_some() {
-                self.parked = self.active.clone(); // the arrows resume from it
+                self.graph.parked = self.active.clone(); // the arrows resume from it
             }
         }
     }
@@ -62,18 +49,14 @@ impl Panel {
         let Some(active) = self.active.clone() else {
             return false;
         };
-        if self.view.orch.is_some() || !self.shown_ids().contains(&active) {
+        if self.graph.view.orch.is_some() || !self.shown_ids().contains(&active) {
             return false;
         }
-        self.view.orch = Some(active);
-        default_children(&self.swarm, &mut self.view);
+        self.graph.view.orch = Some(active);
+        default_children(&self.graph.swarm, &mut self.graph.view);
         true
     }
 
-    /// Where the arrows resume from while no row is selected.
-    pub fn parked(&self) -> Option<&str> {
-        self.parked.as_deref()
-    }
 }
 
 impl Panel {
@@ -81,14 +64,14 @@ impl Panel {
     /// and the pane (as last painted) is narrower than the wide layout; the docked list is
     /// one column. Decided on each refresh before the arming comparison, and on each paint.
     pub(crate) fn update_dock(&mut self) {
-        self.input.dock = layout::docked(&self.swarm, self.input.width);
+        self.input.dock = layout::docked(&self.graph.swarm, self.input.width);
         if self.input.dock {
-            self.view.focus = 0;
+            self.graph.view.focus = 0;
         }
     }
 
     /// What an action key would act on (a refresh that changes it re-arms the keys).
     pub(crate) fn selected_card(&self) -> SelectedCard {
-        selection::selected_card(&self.swarm, &self.view, self.input.dock)
+        selection::selected_card(&self.graph.swarm, &self.graph.view, self.input.dock)
     }
 }

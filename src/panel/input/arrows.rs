@@ -44,7 +44,7 @@ impl Panel {
             return vec![];
         }
         self.input.arrow_due = None;
-        if !self.arrows_mode() || self.view.focus != 0 {
+        if !self.arrows_mode() || self.graph.view.focus != 0 {
             return vec![];
         }
         if self.input.docking {
@@ -59,11 +59,11 @@ impl Panel {
             return vec![];
         }
         let o = find_orch(
-            &self.swarm,
-            self.view.orch.as_deref().filter(|o| *o != NEW_ROW),
+            &self.graph.swarm,
+            self.graph.view.orch.as_deref().filter(|o| *o != NEW_ROW),
         );
         let Some(o) =
-            o.filter(|o| o.machine.is_none() && self.swarm.docked.as_deref() != Some(&o.pane_id))
+            o.filter(|o| o.machine.is_none() && self.graph.swarm.docked.as_deref() != Some(&o.pane_id))
         else {
             return vec![];
         };

@@ -13,7 +13,8 @@
 
 use super::collect::{Collected, Worker};
 use super::model::App;
-use crate::panel::actor::{End, HANGUP_CHECK, hung_up};
+use crate::ui::end::End;
+use crate::ui::term::{HANGUP_CHECK, hung_up_error};
 use crate::panel::input::keys::key;
 use crate::settings::Settings;
 use crate::ui::clock;
@@ -67,7 +68,7 @@ impl Actor {
     /// Runs until the app ends; a terminal that hung up is an end, not an error.
     pub async fn run(&mut self) -> io::Result<End> {
         match self.serve().await {
-            Err(e) if hung_up(&e) => Ok(End::Hangup),
+            Err(e) if hung_up_error(&e) => Ok(End::Hangup),
             r => r,
         }
     }
@@ -136,7 +137,7 @@ impl Actor {
 
     /// Whether the tick has anything to do (a terminal view is always shown).
     fn moving(&self) -> bool {
-        ticking(true, &self.app.swarm, &self.app.view.unseen)
+        ticking(true, &self.app.graph.swarm, &self.app.graph.view.unseen)
     }
 
     /// A full repaint: the settings read again, the frame of the clock now.

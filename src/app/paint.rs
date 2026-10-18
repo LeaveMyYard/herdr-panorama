@@ -18,7 +18,7 @@ impl App {
         }
         let stale = self.stale().map(str::to_owned);
         let stale = stale.as_deref();
-        let v = &mut self.view;
+        let v = &mut self.graph.view;
         v.now = f.now;
         v.frame = f.frame;
         v.utc_offset = f.utc_offset;
@@ -26,10 +26,10 @@ impl App {
         let s = if self.dock {
             let look = panel_look(f.theme.as_ref(), self.pane_focused, OWN, &f.settings);
             v.panel = Some(look);
-            render_dock(&self.swarm, v, w, h, stale, NO_SESSIONS)
+            render_dock(&self.graph.swarm, v, w, h, stale, NO_SESSIONS)
         } else {
             v.panel = None;
-            render_graph(&self.swarm, v, w, h, stale, NO_SESSIONS)
+            render_graph(&self.graph.swarm, v, w, h, stale, NO_SESSIONS)
         };
         self.painted(&s);
         Some(s)

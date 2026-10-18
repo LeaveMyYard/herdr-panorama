@@ -41,27 +41,8 @@ use std::time::{Duration, Instant};
 use tokio::signal::unix::{SignalKind, signal};
 use tokio::sync::{mpsc, watch};
 
-/// How often the panel looks whether its terminal hung up (crossterm does not say).
-pub const HANGUP_CHECK: Duration = Duration::from_secs(1);
-
-/// Why the panel ended (a clean end: herdr closes the pane with the viewer).
-#[derive(Debug, PartialEq, Eq)]
-pub enum End {
-    /// The core said the panels go.
-    Shutdown,
-    /// No core for `no_core::NO_CORE`.
-    NoCore,
-    /// A signal (the pane closed, or the process was asked to stop).
-    Signal,
-    /// The terminal's input ended.
-    Input,
-    /// The core client stopped on its own (its task ended: a panic in it, say).
-    ClientGone,
-    /// The operator closed the panel (q).
-    Quit,
-    /// The terminal went away (the pane closed): reads and writes fail.
-    Hangup,
-}
+pub use crate::ui::end::End;
+pub use crate::ui::term::{HANGUP_CHECK, hung_up_error as hung_up};
 
 /// Where the panel's herdr side runs: its plugin, its root, the new-agent popup's mark, the
 /// home directory (the popup's default directory).
@@ -196,9 +177,3 @@ async fn sleep_until(at: Option<Instant>) {
     }
 }
 
-/// Whether `e` says the terminal is gone (its pane closed): EIO, a broken pipe, no device.
-pub fn hung_up(e: &io::Error) -> bool {
-    const EIO: i32 = 5;
-    const ENXIO: i32 = 6;
-    e.kind() == io::ErrorKind::BrokenPipe || matches!(e.raw_os_error(), Some(EIO | ENXIO))
-}

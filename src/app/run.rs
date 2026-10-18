@@ -5,7 +5,7 @@ use super::actor::Actor;
 use super::collect::{Source, Worker};
 use super::model::App;
 use super::panic;
-use crate::panel::actor::End;
+use crate::ui::end::End;
 use crate::settings::Settings;
 use crate::snapshot::source;
 use crate::ui::term;

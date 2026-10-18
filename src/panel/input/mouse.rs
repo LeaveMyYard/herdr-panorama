@@ -35,7 +35,7 @@ impl Panel {
                     return vec![];
                 }
                 self.select(0, NEW_ROW);
-                self.view.focus = 0;
+                self.graph.view.focus = 0;
                 self.new_agent()
             }
             Target::Orch(pane) => self.click_orch(&pane, false, now),
@@ -44,7 +44,7 @@ impl Panel {
                 let card = format!("{DONE_CARD}{pane}");
                 if self.armed(now) && self.shown(&pane, Some(&card), None) {
                     self.point(&pane, Some(&card), None);
-                    toggle(&mut self.view.done_open, &pane); // what Enter does on it
+                    toggle(&mut self.graph.view.done_open, &pane); // what Enter does on it
                 }
                 vec![]
             }
@@ -70,7 +70,7 @@ impl Panel {
         if !self.shown(pane, None, None) {
             return vec![];
         }
-        let again = self.view.orch.as_deref() == Some(pane) && self.view.focus == 0;
+        let again = self.graph.view.orch.as_deref() == Some(pane) && self.graph.view.focus == 0;
         if answer {
             if !self.armed(now) {
                 return vec![];
@@ -96,11 +96,11 @@ impl Panel {
         }
         let mut out = vec![];
         self.seen(vec![r.agent.clone()], &mut out); // a click on an unseen card: seen
-        let t = find_thread(find_orch(&self.swarm, Some(&r.pane)), Some(&r.thread));
-        let selected = self.view.orch.as_deref() == Some(&r.pane)
-            && self.view.thread.as_deref() == Some(&r.thread)
-            && self.view.agent.as_deref() == Some(&r.agent)
-            && self.view.focus == 1 + agent_depth(t, Some(&r.agent));
+        let t = find_thread(find_orch(&self.graph.swarm, Some(&r.pane)), Some(&r.thread));
+        let selected = self.graph.view.orch.as_deref() == Some(&r.pane)
+            && self.graph.view.thread.as_deref() == Some(&r.thread)
+            && self.graph.view.agent.as_deref() == Some(&r.agent)
+            && self.graph.view.focus == 1 + agent_depth(t, Some(&r.agent));
         if selected {
             out.extend(self.goto(false, now));
         } else {
@@ -128,33 +128,7 @@ impl Panel {
         out
     }
 
-    /// The mouse moved to `(x, y)` (`None`: it left): the card under it gets the hover look.
-    /// Whether that changed anything.
-    pub fn hover(&mut self, at: Option<(i32, i32)>, screen: &Screen) -> bool {
-        let hit = at.and_then(|(x, y)| screen.card_at(x, y).cloned());
-        if hit == self.view.hover {
-            return false;
-        }
-        self.view.hover = hit;
-        true
-    }
 
-    /// The wheel over `(x, y)` by `rows`: the column there scrolls and stops following the
-    /// selection until it changes. Whether there was a column; if so, the actor repaints and
-    /// calls [`Panel::painted`] with `Painted::Wheel`, which holds the cells it slid.
-    pub fn wheel(&mut self, x: i32, y: i32, rows: i32, screen: &Screen) -> bool {
-        let Some(col) = screen
-            .columns
-            .iter()
-            .find(|c| (c.x0..c.x1).contains(&x) && (c.y0..c.y1).contains(&y))
-        else {
-            return false;
-        };
-        let off = self.view.offsets.entry(col.column).or_insert(0);
-        *off = (*off + rows).max(0);
-        self.view.wheel.insert(col.column);
-        true
-    }
 }
 
 /// Which action hint was clicked.

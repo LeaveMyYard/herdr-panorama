@@ -11,7 +11,7 @@ impl Panel {
     pub fn next_filter(&mut self, now: Instant) -> Vec<Effect> {
         let i = Filter::ALL
             .iter()
-            .position(|f| *f == self.view.filter)
+            .position(|f| *f == self.graph.view.filter)
             .unwrap_or(0);
         self.set_filter(Filter::ALL[(i + 1) % Filter::ALL.len()], now)
     }

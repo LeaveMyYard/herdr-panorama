@@ -1,12 +1,9 @@
-//! What the action keys act on, and when (Python `SwarmApp.armed`, `_selection`, `_seen`,
-//! `PanelApp._usable`).
+//! When the action keys act, and what they report seen (Python `SwarmApp.armed`, `_seen`,
+//! `PanelApp._usable`); what they act on is the graph's `selection`.
 
 use super::effect::{Effect, Toast};
 use crate::panel::model::Panel;
 use crate::panel::paint::NOTICE;
-use panorama_core::model::{Agent, Orchestrator, Thread};
-use panorama_core::view::NEW_ROW;
-use panorama_core::view::nav::{find_agent, find_orch, find_thread};
 use std::time::Instant;
 
 impl Panel {
@@ -34,28 +31,13 @@ impl Panel {
     /// The operator looked at these agents: their marks clear here at once, and the core hears.
     pub(crate) fn seen(&mut self, ids: Vec<String>, out: &mut Vec<Effect>) {
         for id in &ids {
-            self.view.unseen.remove(id);
+            self.graph.view.unseen.remove(id);
         }
         if !ids.is_empty() {
             out.push(Effect::Seen(ids));
         }
     }
 
-    /// What the action keys act on: (orchestrator, thread, agent); nothing while the focused
-    /// column's cursor is parked, or on + New agent.
-    pub(crate) fn selection(&self) -> (Option<&Orchestrator>, Option<&Thread>, Option<&Agent>) {
-        if self.cur(self.view.focus).is_none() || self.view.orch.as_deref() == Some(NEW_ROW) {
-            return (None, None, None);
-        }
-        let o = find_orch(&self.swarm, self.view.orch.as_deref());
-        let t = find_thread(o, self.view.thread.as_deref());
-        let a = if self.view.focus >= 2 || t.is_some() {
-            find_agent(t, self.view.agent.as_deref())
-        } else {
-            None
-        };
-        (o, t, a)
-    }
 }
 
 #[cfg(test)]

@@ -6,7 +6,7 @@ use super::effect::{Effect, Toast};
 use crate::panel::model::Panel;
 use panorama_core::model::{HerdrStatus, Status};
 use panorama_core::view::NEW_ROW;
-use panorama_core::view::nav::{find_orch, find_thread, tree_entries};
+use panorama_core::view::nav::find_orch;
 use panorama_core::view::state::{DONE_CARD, FIN_CARD};
 use std::time::Instant;
 
@@ -23,20 +23,20 @@ impl Panel {
         if !self.armed(now) {
             return out;
         }
-        let (focus, orch) = (self.view.focus, self.view.orch.clone());
-        let thread = self.view.thread.clone().unwrap_or_default();
-        let agent = self.view.agent.clone().unwrap_or_default();
+        let (focus, orch) = (self.graph.view.focus, self.graph.view.orch.clone());
+        let thread = self.graph.view.thread.clone().unwrap_or_default();
+        let agent = self.graph.view.agent.clone().unwrap_or_default();
         if focus == 0 && orch.as_deref() == Some(NEW_ROW) {
             return self.new_agent();
         } else if focus == 0 && orch.is_some() {
             let switch = !self.arrows_mode();
             return self.goto(switch, now);
         } else if let Some(pane) = thread.strip_prefix(DONE_CARD).filter(|_| focus == 1) {
-            toggle(&mut self.view.done_open, pane);
+            toggle(&mut self.graph.view.done_open, pane);
         } else if let Some(key) = agent.strip_prefix(FIN_CARD).filter(|_| focus >= 2) {
             let fin = self.fin_agents(key);
             self.seen(fin, &mut out);
-            toggle(&mut self.view.fin_open, key);
+            toggle(&mut self.graph.view.fin_open, key);
         } else {
             if focus >= 2 && !agent.is_empty() {
                 self.seen(vec![agent], &mut out);
@@ -44,19 +44,6 @@ impl Panel {
             self.right();
         }
         out
-    }
-
-    /// The agents folded into a group's "n finished" card.
-    fn fin_agents(&self, key: &str) -> Vec<String> {
-        let o = find_orch(&self.swarm, self.view.orch.as_deref());
-        let Some(t) = find_thread(o, self.view.thread.as_deref()) else {
-            return vec![];
-        };
-        let card = format!("{FIN_CARD}{key}");
-        tree_entries(t, &self.view)
-            .into_iter()
-            .find(|e| e.ident == card)
-            .map_or(vec![], |e| e.fin)
     }
 
     /// g (and Enter on an orchestrator): to the selected orchestrator's tab. `switch`: from
@@ -84,7 +71,7 @@ impl Panel {
         }
         let keep_focus = switch
             && self.input.dock
-            && self.swarm.docked.as_deref() != Some(o.pane_id.as_str())
+            && self.graph.swarm.docked.as_deref() != Some(o.pane_id.as_str())
             && self.input.settings.keep_focus;
         // its agents are seen once herdr confirms the pane is still there (the actor); while a
         // switch runs, that is all it does (`switch` makes no second one), as in Python
@@ -114,7 +101,7 @@ impl Panel {
             return out;
         }
         // on an orchestrator: its own state and questions, not a remembered agent's
-        let a = if self.view.focus == 0 { None } else { a };
+        let a = if self.graph.view.focus == 0 { None } else { a };
         let blocked = match a {
             Some(a) => a.status == Status::Blocked,
             None => o.herdr_status == HerdrStatus::Blocked,
@@ -122,7 +109,7 @@ impl Panel {
         if blocked {
             return self.goto(false, now); // a blocking prompt is answered in the pane itself
         }
-        if !self.swarm.inbox_ok {
+        if !self.graph.swarm.inbox_ok {
             return out;
         }
         if let Some(q) = a.and_then(|a| a.question_ids.iter().min().copied()) {
@@ -142,7 +129,7 @@ impl Panel {
     /// i: herdr-inbox.
     pub fn inbox(&mut self, now: Instant) -> Vec<Effect> {
         let mut out = vec![];
-        if self.usable(&mut out) && self.armed(now) && self.swarm.inbox_ok {
+        if self.usable(&mut out) && self.armed(now) && self.graph.swarm.inbox_ok {
             out.push(Effect::OpenInbox {
                 question: None,
                 pane: None,
@@ -171,21 +158,16 @@ impl Panel {
         if !self.usable(&mut out) {
             return out;
         }
-        let o = find_orch(&self.swarm, self.view.orch.as_deref());
+        let o = find_orch(&self.graph.swarm, self.graph.view.orch.as_deref());
         let cwd = o
             .and_then(|o| o.cwd.clone())
-            .or_else(|| self.swarm.orchestrators.iter().find_map(|o| o.cwd.clone()));
+            .or_else(|| self.graph.swarm.orchestrators.iter().find_map(|o| o.cwd.clone()));
         out.push(Effect::NewAgent { cwd });
         out
     }
 }
 
-/// Adds `key` to `set`, or takes it out.
-pub(crate) fn toggle(set: &mut std::collections::BTreeSet<String>, key: &str) {
-    if !set.remove(key) {
-        set.insert(key.to_owned());
-    }
-}
+pub(crate) use crate::ui::graph::toggle;
 
 /// `s` cut to `n` characters with an ellipsis (Python `herdr.clean(s, n)` on clean text).
 fn truncated(s: &str, n: usize) -> String {

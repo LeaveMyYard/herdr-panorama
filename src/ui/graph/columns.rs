@@ -1,16 +1,13 @@
 //! →/← through the columns (Python `action_right`, `action_left`): into the agents the
 //! selected one spawned, back up to the one that spawned it; the docked list has one.
 
-use crate::panel::model::Panel;
+use super::Graph;
 use panorama_core::view::nav::{find_orch, find_thread, nav, parent_key, path_ids};
 use panorama_core::view::state::FIN_CARD;
 
-impl Panel {
-    /// →: into the next column (the docked list has one).
+impl Graph {
+    /// →: into the next column (the docked list has one: its view does not call this).
     pub(crate) fn right(&mut self) {
-        if self.input.dock {
-            return;
-        }
         let cols = nav(&self.swarm, &self.view);
         let nxt = self.view.focus + 1;
         if cols.get(nxt).is_none_or(|c| c.is_empty()) {

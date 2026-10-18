@@ -7,8 +7,21 @@ use rustix::io::{FdFlags, fcntl_getfd, fcntl_setfd};
 use rustix::pty::{OpenptFlags, grantpt, openpt, ptsname, unlockpt};
 use rustix::termios::{Winsize, tcsetwinsize};
 use std::io::{Read, Write};
-use std::process::{Command, Stdio};
+use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
+
+/// This test's own `panorama tui`, killed if the test ends early (a panic before `q`): the
+/// test signals only the child it started.
+struct Own(Child);
+
+impl Drop for Own {
+    fn drop(&mut self) {
+        if matches!(self.0.try_wait(), Ok(None)) {
+            let _ = self.0.kill();
+            let _ = self.0.wait();
+        }
+    }
+}
 
 #[test]
 fn the_tui_draws_the_unreachable_page_and_q_ends_it() {
@@ -32,7 +45,7 @@ fn the_tui_draws_the_unreachable_page_and_q_ends_it() {
         ws_ypixel: 0,
     };
     tcsetwinsize(&slave, size).unwrap();
-    let mut child = Command::new(env!("CARGO_BIN_EXE_panorama"))
+    let mut child = Own(Command::new(env!("CARGO_BIN_EXE_panorama"))
         .arg("tui")
         .env_clear()
         .env("PATH", "/usr/bin:/bin")
@@ -49,7 +62,7 @@ fn the_tui_draws_the_unreachable_page_and_q_ends_it() {
         .stdout(Stdio::from(slave.try_clone().unwrap()))
         .stderr(Stdio::from(slave))
         .spawn()
-        .unwrap();
+        .unwrap());
     let flags = fcntl_getfl(&master).unwrap();
     fcntl_setfl(&master, flags | OFlags::NONBLOCK).unwrap();
     let mut pty = std::fs::File::from(master);
@@ -71,12 +84,11 @@ fn the_tui_draws_the_unreachable_page_and_q_ends_it() {
     let deadline = Instant::now() + Duration::from_secs(10);
     let status = loop {
         let _ = pty.read(&mut buf); // never let it wait on a full pty
-        if let Some(s) = child.try_wait().unwrap() {
+        if let Some(s) = child.0.try_wait().unwrap() {
             break s;
         }
         if Instant::now() > deadline {
-            let _ = child.kill();
-            panic!("q did not end the tui");
+            panic!("q did not end the tui"); // Own's drop kills it
         }
         std::thread::sleep(Duration::from_millis(20));
     };

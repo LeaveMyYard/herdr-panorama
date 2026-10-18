@@ -12,6 +12,7 @@ use super::input::{ARM, FILTER_ECHO, InputState};
 use std::time::Instant;
 
 use crate::proto::state::State;
+use crate::ui::graph::Graph;
 use crate::ui::selection::initial;
 use panorama_core::model::Swarm;
 use panorama_core::view::nav::default_children;
@@ -24,14 +25,13 @@ pub struct Panel {
     /// This panel's pane and tab (`$HERDR_PANE_ID`, `$HERDR_TAB_ID`).
     pub my_pane: Option<String>,
     pub my_tab: Option<String>,
-    /// The last swarm the core sent (an empty one before the first).
-    pub swarm: Swarm,
+    /// The swarm the core last sent, the view and the cursor (Python `PanelApp` inherits
+    /// them from `SwarmApp`): the shared [`Graph`], reached through `Deref`.
+    pub graph: Graph,
     /// A state has arrived.
     pub loaded: bool,
     /// A core is connected (welcomed).
     pub connected: bool,
-    /// What is drawn: the selection, the filter, the unseen marks.
-    pub view: View,
     /// herdr shows this panel's tab (a hidden panel draws no animation frames).
     pub tab_shown: bool,
     /// This panel's pane has the keyboard: the focused look.
@@ -41,8 +41,6 @@ pub struct Panel {
     pub(crate) herdr_focused_pane: Option<String>,
     /// The orchestrator herdr shows, as last applied to the selection.
     pub(crate) active: Option<String>,
-    /// Where the arrows resume from while no row is selected.
-    pub(crate) parked: Option<String>,
     /// What the panel's input keeps between events (arming, a pending switch, settings).
     pub(crate) input: InputState,
 }
@@ -53,20 +51,21 @@ impl Panel {
         Self {
             my_pane,
             my_tab,
-            swarm: Swarm::default(),
+            graph: Graph {
+                view: View {
+                    cursor_look: false,
+                    ..View::default()
+                },
+                ..Graph::default()
+            },
             loaded: false,
             connected: false,
-            view: View {
-                cursor_look: false,
-                ..View::default()
-            },
             tab_shown: true,
             pane_focused: true,
             panes_of: HashMap::new(),
             herdr_focused_pane: None,
             input: InputState::default(),
             active: None,
-            parked: None,
         }
     }
 
@@ -102,13 +101,13 @@ impl Panel {
                 // one selected row in every tab's panel: the orchestrator herdr shows; a row
                 // an arrow moved to stays until the shown one changes
                 if !self.shown_ids().contains(&a) {
-                    self.view.orch = None;
-                    self.view.focus = 0;
-                    self.parked = Some(a.clone());
-                } else if self.view.orch.as_ref() != Some(&a) {
-                    self.view.orch = Some(a.clone());
-                    self.view.focus = 0;
-                    default_children(&self.swarm, &mut self.view);
+                    self.graph.view.orch = None;
+                    self.graph.view.focus = 0;
+                    self.graph.parked = Some(a.clone());
+                } else if self.graph.view.orch.as_ref() != Some(&a) {
+                    self.graph.view.orch = Some(a.clone());
+                    self.graph.view.focus = 0;
+                    default_children(&self.graph.swarm, &mut self.graph.view);
                 }
                 self.active = Some(a);
             }
@@ -131,11 +130,11 @@ impl Panel {
     /// armed again ([`ARM`]) when what they would act on changed.
     fn apply(&mut self, swarm: Swarm, marks: Marks, focus_pane: Option<String>, now: Instant) {
         let before = self.selected_card();
-        self.swarm = swarm;
-        self.view.unseen = marks;
+        self.graph.swarm = swarm;
+        self.graph.view.unseen = marks;
         if !self.loaded {
             self.loaded = true;
-            initial(&self.swarm, &mut self.view, focus_pane.as_deref());
+            initial(&self.graph.swarm, &mut self.graph.view, focus_pane.as_deref());
             self.input.armed_at = now + ARM;
         } else {
             self.resolve();
@@ -158,7 +157,7 @@ impl Panel {
                 return;
             }
         }
-        if f != self.view.filter {
+        if f != self.graph.view.filter {
             self.apply_filter(f);
         }
     }
@@ -189,6 +188,20 @@ impl Panel {
         if !on {
             self.input.filter_sent = None; // the next core's state decides
         }
+    }
+}
+
+impl std::ops::Deref for Panel {
+    type Target = Graph;
+
+    fn deref(&self) -> &Graph {
+        &self.graph
+    }
+}
+
+impl std::ops::DerefMut for Panel {
+    fn deref_mut(&mut self) -> &mut Graph {
+        &mut self.graph
     }
 }
 
