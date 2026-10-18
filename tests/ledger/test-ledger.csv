@@ -225,9 +225,9 @@ tests/test_collect.py::test_a_continuation_that_is_not_a_session_id_is_ignored[.
 tests/test_collect.py::test_a_continuation_that_is_not_a_session_id_is_ignored[*],tests/test_collect.py,,todo,,P4
 tests/test_collect.py::test_a_continuation_that_is_not_a_session_id_is_ignored[/etc/passwd],tests/test_collect.py,,todo,,P4
 tests/test_collect.py::test_a_continuation_that_is_not_a_session_id_is_ignored[/tmp/elsewhere/x],tests/test_collect.py,,todo,,P4
-tests/test_config.py::test_default_is_one_hour,tests/test_config.py,,todo,,P4
-tests/test_config.py::test_config_file_and_env_override,tests/test_config.py,,todo,,P4
-tests/test_config.py::test_bad_values_fall_back,tests/test_config.py,,todo,,P4
+tests/test_config.py::test_default_is_one_hour,tests/test_config.py,src/settings/durations/tests.rs::default_is_one_hour,mapped,,P4
+tests/test_config.py::test_config_file_and_env_override,tests/test_config.py,src/settings/durations/tests.rs::config_file_and_env_override,mapped,,P4
+tests/test_config.py::test_bad_values_fall_back,tests/test_config.py,src/settings/durations/tests.rs::bad_values_fall_back ; src/settings/durations/tests.rs::durations_read_as_python_parse_duration_reads_them,mapped,,P4
 tests/test_config.py::test_animation_fps_defaults_to_20_and_is_clamped,tests/test_config.py,src/settings/panel/tests.rs::animation_fps_is_clamped_and_needs_a_number ; src/settings/tests.rs::both_files_are_read_and_re_read_when_they_change,mapped,,P3
 tests/test_core.py::test_the_model_round_trips_on_the_wire,tests/test_core.py,crates/panorama-core/src/model/swarm/tests.rs::every_captured_swarm_reads_and_writes_back_unchanged,mapped,,P3
 tests/test_core.py::test_unknown_fields_are_ignored_and_versions_compare_by_major,tests/test_core.py,crates/panorama-core/src/model/swarm/tests.rs::missing_fields_take_model_pys_defaults_and_unknown_ones_are_ignored ; src/proto/tests.rs::only_the_same_major_is_compatible,mapped,,P3
@@ -590,31 +590,31 @@ tests/test_ledger_check.py::test_a_finished_phase_may_leave_no_todo,tests/test_l
 tests/test_ledger_check.py::test_a_mapped_or_retired_row_names_its_phase,tests/test_ledger_check.py,,retired,"tests the Python ledger tool itself (tools/ledger_check.py), which has no Rust counterpart",P0a
 tests/test_ledger_check.py::test_mapped_rows_name_rust_tests_that_exist,tests/test_ledger_check.py,,retired,"tests the Python ledger tool itself (tools/ledger_check.py), which has no Rust counterpart",P0a
 tests/test_ledger_check.py::test_only_real_tests_count,tests/test_ledger_check.py,,retired,"tests the Python ledger tool itself (tools/ledger_check.py), which has no Rust counterpart",P0a
-tests/test_machines.py::test_saved_machines_follow_the_config,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_the_snapshot_is_forwarded_read_only,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_sync_mirrors_over_batch_ssh_in_two_passes,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_mirror_copies_only_what_the_scanner_reads,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_mirror_follows_appends_and_in_place_rewrites,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_mirror_caps_the_file_size,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_prune_drops_sessions_gone_longer_than_the_done_window,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_a_timeout_kills_rsync_and_its_children,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_unsafe_ssh_targets_are_never_used,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_namespacing_keeps_machines_apart,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_merge_marks_stale_and_unreachable,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_a_failed_refresh_keeps_the_last_result,tests/test_machines.py,,todo,,P4
+tests/test_machines.py::test_saved_machines_follow_the_config,tests/test_machines.py,src/machines/select/tests.rs::saved_machines_follow_the_config ; src/machines/select/tests.rs::the_setting_reads_as_python_reads_it,mapped,,P4
+tests/test_machines.py::test_the_snapshot_is_forwarded_read_only,tests/test_machines.py,src/machines/watcher/refresh/tests.rs::the_snapshot_is_forwarded_read_only,mapped,,P4
+tests/test_machines.py::test_sync_mirrors_over_batch_ssh_in_two_passes,tests/test_machines.py,src/machines/sync/tests.rs::sync_mirrors_over_batch_ssh_in_two_passes,mapped,,P4
+tests/test_machines.py::test_mirror_copies_only_what_the_scanner_reads,tests/test_machines.py,src/machines/mirror/tests.rs::mirror_copies_only_what_the_scanner_reads,mapped,,P4
+tests/test_machines.py::test_mirror_follows_appends_and_in_place_rewrites,tests/test_machines.py,src/machines/mirror/tests.rs::mirror_follows_appends_and_in_place_rewrites,mapped,,P4
+tests/test_machines.py::test_mirror_caps_the_file_size,tests/test_machines.py,src/machines/mirror/tests.rs::mirror_caps_the_file_size,mapped,,P4
+tests/test_machines.py::test_prune_drops_sessions_gone_longer_than_the_done_window,tests/test_machines.py,src/machines/prune/tests.rs::prune_drops_sessions_gone_longer_than_the_done_window,mapped,,P4
+tests/test_machines.py::test_a_timeout_kills_rsync_and_its_children,tests/test_machines.py,src/machines/mirror/run/tests.rs::a_timeout_kills_rsync_and_its_children,mapped,,P4
+tests/test_machines.py::test_unsafe_ssh_targets_are_never_used,tests/test_machines.py,src/machines/select/tests.rs::unsafe_ssh_targets_are_never_used ; src/machines/sync/tests.rs::unsafe_ssh_targets_are_never_used,mapped,,P4
+tests/test_machines.py::test_namespacing_keeps_machines_apart,tests/test_machines.py,src/machines/namespace/tests.rs::namespacing_keeps_machines_apart,mapped,,P4
+tests/test_machines.py::test_merge_marks_stale_and_unreachable,tests/test_machines.py,src/machines/remotes/tests.rs::merge_marks_stale_and_unreachable,mapped,,P4
+tests/test_machines.py::test_a_failed_refresh_keeps_the_last_result,tests/test_machines.py,src/machines/watcher/refresh/tests.rs::a_failed_refresh_keeps_the_last_result,mapped,,P4
 tests/test_machines.py::test_enter_on_a_remote_orchestrator_focuses_it_there_and_says_where,tests/test_machines.py,,todo,,P4
 tests/test_machines.py::test_remote_groups_get_a_divider_and_it_is_not_clickable,tests/test_machines.py,,todo,,P4
 tests/test_machines.py::test_two_machines_with_the_same_local_ids_are_two_identities,tests/test_machines.py,,todo,,P4
 tests/test_machines.py::test_a_custom_source_never_starts_machines,tests/test_machines.py,,todo,,P4
 tests/test_machines.py::test_two_machines_with_one_label_stay_apart_and_colons_are_fine,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_a_changed_machines_setting_applies_without_a_restart,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_an_rsync_without_append_verify_gets_a_normal_jsonl_pass,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_prune_never_touches_live_sessions_or_leaves_the_project,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_malformed_session_ids_never_reach_rsync_or_prune,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_a_reload_keeps_unchanged_watchers_and_never_runs_two_per_machine,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_one_machine_never_syncs_twice_at_once,tests/test_machines.py,,todo,,P4
+tests/test_machines.py::test_a_changed_machines_setting_applies_without_a_restart,tests/test_machines.py,src/machines/remotes/tests.rs::a_changed_machines_setting_applies_without_a_restart,mapped,,P4
+tests/test_machines.py::test_an_rsync_without_append_verify_gets_a_normal_jsonl_pass,tests/test_machines.py,src/machines/sync/tests.rs::an_rsync_without_append_verify_gets_a_normal_jsonl_pass,mapped,,P4
+tests/test_machines.py::test_prune_never_touches_live_sessions_or_leaves_the_project,tests/test_machines.py,src/machines/prune/tests.rs::prune_never_touches_live_sessions_or_leaves_the_project,mapped,,P4
+tests/test_machines.py::test_malformed_session_ids_never_reach_rsync_or_prune,tests/test_machines.py,src/machines/tests.rs::malformed_session_ids_are_not_sessions ; src/machines/mirror/rules/tests.rs::malformed_session_ids_never_reach_rsync,mapped,,P4
+tests/test_machines.py::test_a_reload_keeps_unchanged_watchers_and_never_runs_two_per_machine,tests/test_machines.py,src/machines/remotes/tests.rs::a_reload_keeps_unchanged_watchers_and_never_runs_two_per_machine,mapped,,P4
+tests/test_machines.py::test_one_machine_never_syncs_twice_at_once,tests/test_machines.py,src/machines/sync/tests.rs::one_machine_never_syncs_twice_at_once,mapped,,P4
 tests/test_machines.py::test_a_remote_continuation_is_mirrored_and_followed_in_one_refresh,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_prune_keeps_a_continuation_while_its_old_session_is_named,tests/test_machines.py,,todo,,P4
+tests/test_machines.py::test_prune_keeps_a_continuation_while_its_old_session_is_named,tests/test_machines.py,src/machines/prune/tests.rs::prune_keeps_a_continuation_while_its_old_session_is_named,mapped,,P4
 tests/test_manifest.py::test_plugin_manifest,tests/test_manifest.py,,todo,,P4
 tests/test_manifest.py::test_cli_entry_point,tests/test_manifest.py,,todo,,P4
 tests/test_manifest.py::test_claude_plugin_manifests,tests/test_manifest.py,,todo,,P4
