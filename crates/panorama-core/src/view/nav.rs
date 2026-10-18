@@ -4,7 +4,7 @@
 
 mod tree;
 
-pub use tree::{TreeEntry, path_ids, tree_entries};
+pub use tree::{TreeEntry, agent_depth, parent_key, path_ids, tree_entries};
 
 use super::filter::{Filter, visible_orchs};
 use super::state::{BG_CARD, DONE_CARD, NEW_ROW, View};

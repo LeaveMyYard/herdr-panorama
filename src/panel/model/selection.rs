@@ -3,8 +3,10 @@
 
 use super::Panel;
 use panorama_core::model::Swarm;
+use panorama_core::model::{HerdrStatus, Status};
+use panorama_core::view::empty::WIDE;
 use panorama_core::view::filter::visible_orchs;
-use panorama_core::view::nav::{default_children, nav};
+use panorama_core::view::nav::{default_children, find_agent, find_orch, find_thread, nav};
 use panorama_core::view::{Filter, NEW_ROW};
 
 /// The local orchestrator in the tab herdr shows, else the one whose pane has the focus.
@@ -64,7 +66,7 @@ impl Panel {
 
     /// The filter changes: a selection it hides is parked; the shown orchestrator stays
     /// selected while the filter shows it, and none is selected while it hides it.
-    pub(super) fn apply_filter(&mut self, f: Filter) {
+    pub(crate) fn apply_filter(&mut self, f: Filter) {
         self.view.filter = f;
         self.view.wheel.clear();
         self.resolve();
@@ -93,5 +95,51 @@ impl Panel {
     /// Where the arrows resume from while no row is selected.
     pub fn parked(&self) -> Option<&str> {
         self.parked.as_deref()
+    }
+}
+
+/// What an action key would act on, as a comparable value (Python `selected_card`): a
+/// refresh that changes it arms the keys again.
+#[derive(Debug, PartialEq)]
+pub(crate) struct SelectedCard {
+    dock: bool,
+    focus: usize,
+    orch: Option<(String, HerdrStatus, Vec<i64>)>,
+    inbox_ok: bool,
+    thread: Option<String>,
+    agent: Option<(String, Status, Vec<i64>, Option<String>)>,
+}
+
+impl Panel {
+    /// Docked or narrow (Python `_update_dock`): docked while this tab has an orchestrator
+    /// and the pane (as last painted) is narrower than the wide layout; the docked list is
+    /// one column. Decided on each refresh before the arming comparison, and on each paint.
+    pub(crate) fn update_dock(&mut self) {
+        self.input.dock =
+            self.swarm.docked.is_some() && self.input.width > 0 && self.input.width < WIDE;
+        if self.input.dock {
+            self.view.focus = 0;
+        }
+    }
+
+    pub(crate) fn selected_card(&self) -> SelectedCard {
+        let o = find_orch(&self.swarm, self.view.orch.as_deref());
+        let t = find_thread(o, self.view.thread.as_deref());
+        let a = find_agent(t, self.view.agent.as_deref());
+        SelectedCard {
+            dock: self.input.dock,
+            focus: self.view.focus,
+            orch: o.map(|o| (o.pane_id.clone(), o.herdr_status.clone(), o.inbox.clone())),
+            inbox_ok: self.swarm.inbox_ok,
+            thread: t.map(|t| t.id.clone()),
+            agent: a.map(|a| {
+                (
+                    a.id.clone(),
+                    a.status.clone(),
+                    a.question_ids.clone(),
+                    a.transcript.clone(),
+                )
+            }),
+        }
     }
 }

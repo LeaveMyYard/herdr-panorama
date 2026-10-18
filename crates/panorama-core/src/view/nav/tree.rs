@@ -19,6 +19,8 @@ pub struct TreeEntry {
     pub depth: usize,
     /// The group: the thread's id, or the id of the agent that spawned it.
     pub key: String,
+    /// A "n finished" card's folded agents (empty for an agent's card).
+    pub fin: Vec<String>,
 }
 
 /// One group of siblings: the agents shown, and the finished ones folded (Python
@@ -114,6 +116,7 @@ fn group(
             ident: a.id.clone(),
             depth,
             key: key.to_owned(),
+            fin: vec![],
         });
         group(kids, Some(&a.id), &a.id, depth + 1, view, out);
     };
@@ -125,6 +128,7 @@ fn group(
             ident: format!("{FIN_CARD}{key}"),
             depth,
             key: key.to_owned(),
+            fin: fin.iter().map(|a| a.id.clone()).collect(),
         });
         if view.fin_open.contains(key) {
             for a in &fin {
@@ -157,4 +161,34 @@ pub fn path_ids(t: Option<&Thread>, aid: Option<&str>) -> Vec<String> {
     }
     out.reverse();
     out
+}
+
+/// The group an agent (or a "n finished" card) is in: the id of the agent that spawned it,
+/// else the thread's id (Python `parent_key`).
+pub fn parent_key(t: &Thread, ident: &str) -> String {
+    if let Some(key) = ident.strip_prefix(FIN_CARD) {
+        return key.to_owned();
+    }
+    let p = path_ids(Some(t), Some(ident));
+    if p.len() > 1 {
+        p[p.len() - 2].clone()
+    } else {
+        t.id.clone()
+    }
+}
+
+/// The depth of an agent (or a "n finished" card) in the thread's tree; 1 when unknown
+/// (Python `agent_depth`).
+pub fn agent_depth(t: Option<&Thread>, ident: Option<&str>) -> usize {
+    let (Some(t), Some(ident)) = (t, ident) else {
+        return 1;
+    };
+    if let Some(key) = ident.strip_prefix(FIN_CARD) {
+        return if key == t.id {
+            1
+        } else {
+            path_ids(Some(t), Some(key)).len() + 1
+        };
+    }
+    path_ids(Some(t), Some(ident)).len().max(1)
 }

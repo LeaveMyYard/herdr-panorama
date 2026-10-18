@@ -8,6 +8,9 @@
 
 mod selection;
 
+use super::input::{ARM, FILTER_ECHO, InputState};
+use std::time::Instant;
+
 use crate::proto::state::State;
 use panorama_core::model::Swarm;
 use panorama_core::view::nav::default_children;
@@ -34,11 +37,13 @@ pub struct Panel {
     pub pane_focused: bool,
     /// Tab id -> its panel's pane, where a switch to that tab puts the keyboard.
     pub panes_of: HashMap<String, String>,
-    herdr_focused_pane: Option<String>,
+    pub(crate) herdr_focused_pane: Option<String>,
     /// The orchestrator herdr shows, as last applied to the selection.
-    active: Option<String>,
+    pub(crate) active: Option<String>,
     /// Where the arrows resume from while no row is selected.
-    parked: Option<String>,
+    pub(crate) parked: Option<String>,
+    /// What the panel's input keeps between events (arming, a pending switch, settings).
+    pub(crate) input: InputState,
 }
 
 impl Panel {
@@ -58,13 +63,15 @@ impl Panel {
             pane_focused: true,
             panes_of: HashMap::new(),
             herdr_focused_pane: None,
+            input: InputState::default(),
             active: None,
             parked: None,
         }
     }
 
-    /// A state from the core.
-    pub fn on_state(&mut self, st: State) {
+    /// A state from the core, at `now`. The actor then repaints and calls `Panel::painted`
+    /// with `Painted::Refresh`, which holds the cells whose click target changed.
+    pub fn on_state(&mut self, st: State, now: Instant) {
         let mut swarm = st.swarm;
         let mine = swarm
             .orchestrators
@@ -83,13 +90,10 @@ impl Panel {
             st.focused_pane.as_deref(),
         );
         let first = !self.loaded;
-        self.apply(
-            swarm,
-            st.unseen,
-            if first { active.clone().or(mine) } else { None },
-        );
+        let focus_pane = if first { active.clone().or(mine) } else { None };
+        self.apply(swarm, st.unseen, focus_pane, now);
         if let Some(f) = st.filter {
-            self.core_filter(f);
+            self.core_filter(f, now);
         }
         match active {
             Some(a) if self.active.as_ref() != Some(&a) => {
@@ -116,8 +120,10 @@ impl Panel {
     }
 
     /// The model and its marks (Python `SwarmApp.apply`): the first selects `focus_pane`
-    /// (else the first row); later ones keep the selection while it is shown.
-    fn apply(&mut self, swarm: Swarm, marks: Marks, focus_pane: Option<String>) {
+    /// (else the first row); later ones keep the selection while it is shown. The keys are
+    /// armed again ([`ARM`]) when what they would act on changed.
+    fn apply(&mut self, swarm: Swarm, marks: Marks, focus_pane: Option<String>, now: Instant) {
+        let before = self.selected_card();
         self.swarm = swarm;
         self.view.unseen = marks;
         if !self.loaded {
@@ -128,21 +134,41 @@ impl Panel {
                 .or_else(|| ids.first().cloned());
             self.view.focus = 0;
             default_children(&self.swarm, &mut self.view);
+            self.input.armed_at = now + ARM;
         } else {
             self.resolve();
+            // before the comparison: a refresh that switches the layout re-arms the keys
+            self.update_dock();
+            if self.selected_card() != before {
+                self.input.armed_at = now + ARM;
+            }
         }
     }
 
-    /// The core's filter (1.3; an older core sends none and this panel's own stays).
-    fn core_filter(&mut self, f: Filter) {
+    /// The core's filter (1.3; an older core sends none and this panel's own stays). A filter
+    /// chosen here is kept against the core's older word until the core echoes it, or for
+    /// [`FILTER_ECHO`].
+    fn core_filter(&mut self, f: Filter, now: Instant) {
+        if let Some((sent, at)) = self.input.filter_sent {
+            if f == sent || now.duration_since(at) >= FILTER_ECHO {
+                self.input.filter_sent = None;
+            } else {
+                return;
+            }
+        }
         if f != self.view.filter {
             self.apply_filter(f);
         }
     }
 
     /// herdr says `pane` got the focus: this panel is focused exactly when it is its own pane.
+    /// While this panel's own switch runs it keeps its look (it is still on screen until the
+    /// tab changes); the focus is judged again when the switch ends.
     pub fn herdr_focus(&mut self, pane: &str) {
         self.herdr_focused_pane = Some(pane.to_owned());
+        if self.input.docking && self.my_pane.as_deref() != Some(pane) {
+            return;
+        }
         if let Some(mine) = &self.my_pane
             && !pane.is_empty()
         {
@@ -158,6 +184,9 @@ impl Panel {
     /// A core connected (welcomed), or the connection ended.
     pub fn on_connected(&mut self, on: bool) {
         self.connected = on;
+        if !on {
+            self.input.filter_sent = None; // the next core's state decides
+        }
     }
 }
 
