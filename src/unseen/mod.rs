@@ -14,7 +14,12 @@
 //! Each refresh compares the swarm with the file under a short lock: a status change or a new
 //! question id since the file's record is an event ([`rules`]), so two processes never report
 //! one event twice, and a mark cleared in one process is cleared in all. The first run (no
-//! file) only records what is there.
+//! file) only records what is there. The file is written byte for byte as Python writes it
+//! (keys in their order, `","` and `":"`, ASCII-escaped), so a diff of it means something.
+//!
+//! Stated deviation: a record that is not an object, or question ids that are not integers (a
+//! hand-edited file), make Python's update raise; here the record is replaced by a fresh one
+//! and such ids are dropped (so a `5.0` there would mark `wait` again).
 
 pub mod rules;
 pub mod store;
@@ -22,6 +27,7 @@ mod update;
 
 pub use rules::Event;
 
+use crate::snapshot::pyjson::J;
 use serde_json::{Map, Value};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -118,10 +124,14 @@ impl Tracker {
         };
         let _ = store::locked(&self.path, || {
             if let Some(mut data) = store::read(&self.path) {
-                if let Some(Value::Object(agents)) = data.get_mut("agents") {
+                if let Some(agents) = data.get_mut("agents") {
                     for k in &keys {
-                        if let Some(Value::Object(rec)) = agents.get_mut(k) {
-                            rec.insert("ev".into(), Value::Null);
+                        // Python's `if rec:`: an empty record is left as it is
+                        if let Some(rec @ J::Obj(_)) = agents
+                            .get_mut(k)
+                            .filter(|r| !matches!(r, J::Obj(f) if f.is_empty()))
+                        {
+                            rec.set("ev", J::Null);
                         }
                     }
                 }

@@ -2,8 +2,8 @@
 
 use super::rules::{event, float, mark, qids, record, urgent};
 use super::{Event, KEEP_SECONDS, Marks, Tracker, store};
+use crate::snapshot::pyjson::J;
 use panorama_core::model::{Agent, Orchestrator, Status, Swarm};
-use serde_json::{Map, Value, json};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// The state file's key: an agent on another herdr machine carries that machine's id.
@@ -47,10 +47,11 @@ impl Tracker {
         let read = store::read(&self.path);
         let first = read.is_none();
         let mut data = read.unwrap_or_else(|| {
-            json!({"v": 1, "saved": now, "agents": {}})
-                .as_object()
-                .cloned()
-                .unwrap_or_default()
+            J::obj([
+                ("v", J::Int(1)),
+                ("saved", J::Float(now)),
+                ("agents", J::Obj(Vec::new())),
+            ])
         });
         let saved = float(data.get("saved"));
         // focus clears an orchestrator's marks only when it MOVES onto that pane: focus resting
@@ -70,31 +71,48 @@ impl Tracker {
             inner.prev_focused = Some(focused);
             (arrived, inner.pending.clone())
         };
-        let mut agents = match data.remove("agents") {
-            Some(Value::Object(m)) => m,
-            _ => Map::new(),
+        let mut agents = match data.get_mut("agents") {
+            Some(J::Obj(items)) => std::mem::take(items),
+            _ => Vec::new(),
         };
         let mut keymap = BTreeMap::new();
         for o in &swarm.orchestrators {
             for a in o.agents().filter(|a| !a.id.starts_with("main:")) {
                 let k = key(o, a);
                 keymap.insert(a.id.clone(), k.clone());
-                let (ev, mut rec) = match agents.remove(&k) {
-                    Some(Value::Object(rec)) => {
-                        let prev = rec.get("s").and_then(Value::as_str).map(str::to_owned);
-                        (
-                            event(prev.as_deref(), &qids(&rec), &a.status, &a.question_ids),
-                            rec,
+                let at = agents
+                    .iter()
+                    .position(|(key, rec)| *key == k && rec.is_obj());
+                let ev = match at {
+                    Some(i) => {
+                        let rec = &agents[i].1;
+                        event(
+                            rec.get("s").and_then(J::as_str),
+                            &qids(rec),
+                            &a.status,
+                            &a.question_ids,
                         )
                     }
-                    _ => {
-                        let ev = (!first && when(a) >= saved)
-                            .then(|| event(None, &[], &a.status, &a.question_ids))
-                            .flatten();
-                        (ev, record(&a.status, &a.question_ids, now))
-                    }
+                    None => (!first && when(a) >= saved)
+                        .then(|| event(None, &[], &a.status, &a.question_ids))
+                        .flatten(),
                 };
-                let mut prev = mark(&rec);
+                let i = at.unwrap_or_else(|| {
+                    // a new agent (or a record that is not one: replaced where it was)
+                    let rec = record(&a.status, &a.question_ids, now);
+                    match agents.iter().position(|(key, _)| *key == k) {
+                        Some(i) => {
+                            agents[i].1 = rec;
+                            i
+                        }
+                        None => {
+                            agents.push((k.clone(), rec));
+                            agents.len() - 1
+                        }
+                    }
+                });
+                let rec = &mut agents[i].1;
+                let mut prev = mark(rec);
                 if prev == Some(Event::Wait)
                     && a.question_ids.is_empty()
                     && a.status != Status::Waiting
@@ -105,28 +123,27 @@ impl Tracker {
                     prev = None; // focus moved onto its orchestrator's pane, or seen here
                 }
                 let ev = urgent(prev, ev);
-                let mut q: BTreeSet<i64> = qids(&rec).into_iter().collect();
+                let mut q: BTreeSet<i64> = qids(rec).into_iter().collect();
                 q.extend(a.question_ids.iter().copied());
-                rec.insert("ev".into(), ev.map_or(Value::Null, |e| e.code().into()));
-                rec.insert("s".into(), a.status.code().into());
-                rec.insert("q".into(), json!(q.into_iter().collect::<Vec<_>>()));
-                rec.insert("t".into(), now.into());
-                agents.insert(k, Value::Object(rec));
+                rec.set("ev", ev.map_or(J::Null, |e| J::str(e.code())));
+                rec.set("s", J::str(a.status.code()));
+                rec.set("q", J::ints(q));
+                rec.set("t", J::Float(now));
             }
         }
-        agents.retain(|_, r| now - float(r.get("t")) <= KEEP_SECONDS);
+        agents.retain(|(_, r)| now - float(r.get("t")) <= KEEP_SECONDS);
         let marks: Marks = keymap
             .iter()
             .filter_map(|(aid, k)| {
                 agents
-                    .get(k)
-                    .and_then(Value::as_object)
-                    .and_then(mark)
+                    .iter()
+                    .find(|(key, _)| key == k)
+                    .and_then(|(_, r)| mark(r))
                     .map(|e| (aid.clone(), e))
             })
             .collect();
-        data.insert("saved".into(), now.into());
-        data.insert("agents".into(), Value::Object(agents));
+        data.set("saved", J::Float(now));
+        data.set("agents", J::Obj(agents));
         store::write(&self.path, &data)?;
         let mut inner = self.inner();
         for i in &pending {

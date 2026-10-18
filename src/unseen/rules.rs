@@ -1,8 +1,8 @@
 //! What counts as an unseen event (Python `unseen.Tracker._event`, `urgent`, the record
 //! update): a new failure, a new question, a finished agent. The most urgent mark wins.
 
+use crate::snapshot::pyjson::J;
 use panorama_core::model::Status;
-use serde_json::{Map, Value, json};
 
 /// An unseen mark, most urgent first.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -66,35 +66,39 @@ pub fn event(
     ev
 }
 
-/// A record's question ids (numbers only).
-pub fn qids(rec: &Map<String, Value>) -> Vec<i64> {
-    rec.get("q")
-        .and_then(Value::as_array)
-        .into_iter()
-        .flatten()
-        .filter_map(Value::as_i64)
-        .collect()
+/// A record's question ids (integers only).
+pub fn qids(rec: &J) -> Vec<i64> {
+    match rec.get("q") {
+        Some(J::Arr(items)) => items
+            .iter()
+            .filter_map(|q| if let J::Int(i) = q { Some(*i) } else { None })
+            .collect(),
+        _ => Vec::new(),
+    }
 }
 
 /// A record's mark.
-pub fn mark(rec: &Map<String, Value>) -> Option<Event> {
-    rec.get("ev")
-        .and_then(Value::as_str)
-        .and_then(Event::from_code)
+pub fn mark(rec: &J) -> Option<Event> {
+    rec.get("ev").and_then(J::as_str).and_then(Event::from_code)
 }
 
-/// A fresh record of an agent seen now.
-pub fn record(status: &Status, question_ids: &[i64], now: f64) -> Map<String, Value> {
-    let r = json!({"s": status.code(), "q": question_ids, "ev": null, "t": now});
-    r.as_object().cloned().unwrap_or_default()
+/// A fresh record of an agent seen now: `s`, `q`, `ev`, `t`, in Python's order.
+pub fn record(status: &Status, question_ids: &[i64], now: f64) -> J {
+    J::obj([
+        ("s", J::str(status.code())),
+        ("q", J::ints(question_ids.iter().copied())),
+        ("ev", J::Null),
+        ("t", J::Float(now)),
+    ])
 }
 
-/// A JSON number or a numeric string as Python's `float(x or 0)` reads it.
-pub fn float(v: Option<&Value>) -> f64 {
+/// A number or a numeric string as Python's `float(x or 0)` reads it.
+pub fn float(v: Option<&J>) -> f64 {
     match v {
-        Some(Value::Number(n)) => n.as_f64().unwrap_or(0.0),
-        Some(Value::Bool(b)) => f64::from(u8::from(*b)),
-        Some(Value::String(s)) if !s.is_empty() => s.trim().parse().unwrap_or(0.0),
+        Some(J::Int(i)) => *i as f64,
+        Some(J::Float(f)) => *f,
+        Some(J::Bool(b)) => f64::from(u8::from(*b)),
+        Some(J::Str(s)) if !s.is_empty() => s.trim().parse().unwrap_or(0.0),
         _ => 0.0,
     }
 }

@@ -12,5 +12,9 @@ fn a_file_that_is_not_the_format_reads_as_none() {
     std::fs::write(&p, r#"{"v": 1, "agents": {}, "extra": 3}"#).unwrap();
     let data = read(&p).unwrap();
     write(&p, &data).unwrap();
-    assert_eq!(read(&p).unwrap()["extra"], 3); // what it does not know is kept
+    assert_eq!(read(&p).unwrap().get("extra"), Some(&J::Int(3))); // what it does not know is kept
+    assert_eq!(
+        std::fs::read_to_string(&p).unwrap(),
+        r#"{"v":1,"agents":{},"extra":3}"#
+    ); // in order
 }

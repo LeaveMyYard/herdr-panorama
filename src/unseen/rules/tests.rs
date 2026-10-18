@@ -18,6 +18,6 @@ fn events_and_urgency() {
         Some(Event::Wait)
     );
     assert_eq!(urgent(None, Some(Event::Done)), Some(Event::Done));
-    assert_eq!(float(Some(&serde_json::json!("12.5"))), 12.5);
+    assert_eq!(float(Some(&J::str("12.5"))), 12.5);
     assert_eq!(float(None), 0.0);
 }
