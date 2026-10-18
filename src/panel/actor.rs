@@ -11,50 +11,44 @@
 
 use super::clock;
 use super::model::Panel;
+use super::no_core::{NO_CORE_CHECK, NoCoreClock};
+use super::pacing::{Pacing, ticking};
 use super::paint::Frame;
 use super::term::{self, Term};
-use crate::proto::client::{Client, Event};
+use crate::proto::client::Event;
 use crate::settings::Settings;
 use crossterm::event::{Event as TermEvent, EventStream};
 use futures_util::StreamExt;
-use panorama_core::view::moving::animated;
 use std::io;
 use std::time::{Duration, Instant};
 use tokio::signal::unix::{SignalKind, signal};
 use tokio::sync::mpsc;
-
-/// No core this long: the viewer exits.
-pub const NO_CORE: Duration = Duration::from_secs(600);
-/// How often that is looked at.
-const NO_CORE_CHECK: Duration = Duration::from_secs(10);
 
 /// Why the panel ended (a clean end: herdr closes the pane with the viewer).
 #[derive(Debug, PartialEq, Eq)]
 pub enum End {
     /// The core said the panels go.
     Shutdown,
-    /// No core for [`NO_CORE`].
+    /// No core for `no_core::NO_CORE`.
     NoCore,
     /// A signal (the pane closed, or the process was asked to stop).
     Signal,
     /// The terminal's input ended.
     Input,
-    /// The core client stopped on its own.
+    /// The core client stopped on its own (its task ended: a panic in it, say).
     ClientGone,
 }
 
 pub struct Actor {
-    pub panel: Panel,
-    pub settings: Settings,
-    pub term: Term,
-    pub client: Client,
-    pub events: mpsc::UnboundedReceiver<Event>,
+    panel: Panel,
+    settings: Settings,
+    term: Term,
+    events: mpsc::UnboundedReceiver<Event>,
     /// The look and the open key, as last read (on every full repaint, as Python does).
     look: Option<Frame>,
-    /// The whole frame last drawn, and whether that screen had gliding colours.
-    drawn_frame: Option<i64>,
-    smooth: bool,
-    no_core_since: Option<Instant>,
+    /// What is on screen, for the colour tick.
+    pacing: Pacing,
+    no_core: NoCoreClock,
 }
 
 impl Actor {
@@ -62,19 +56,16 @@ impl Actor {
         panel: Panel,
         settings: Settings,
         term: Term,
-        client: Client,
         events: mpsc::UnboundedReceiver<Event>,
     ) -> Self {
         Self {
             panel,
             settings,
             term,
-            client,
             events,
             look: None,
-            drawn_frame: None,
-            smooth: false,
-            no_core_since: Some(Instant::now()),
+            pacing: Pacing::default(),
+            no_core: NoCoreClock::started(Instant::now()),
         }
     }
 
@@ -97,7 +88,7 @@ impl Actor {
                 ev = input.next() => self.on_terminal(ev)?,
                 // a hidden tab, or a still screen, does not even wake for the tick
                 _ = tick.tick(), if self.moving() => self.animate().map(|()| None)?,
-                _ = no_core.tick() => self.no_core_since.filter(|t| t.elapsed() >= NO_CORE).map(|_| End::NoCore),
+                _ = no_core.tick() => self.no_core.expired(Instant::now()).then_some(End::NoCore),
                 _ = term_sig.recv() => Some(End::Signal),
                 _ = hup.recv() => Some(End::Signal),
             };
@@ -113,11 +104,7 @@ impl Actor {
             Some(Event::State(st)) => self.panel.on_state(*st),
             Some(Event::Connected(on)) => {
                 self.panel.on_connected(on);
-                self.no_core_since = if on {
-                    None
-                } else {
-                    self.no_core_since.or(Some(Instant::now()))
-                };
+                self.no_core.connected(on, Instant::now());
             }
             Some(Event::Shutdown) => return Ok(Some(End::Shutdown)),
             Some(Event::Refused(_)) => return Ok(None),
@@ -155,17 +142,20 @@ impl Actor {
         self.draw(now)
     }
 
-    /// Whether the tick has anything to do: this tab is shown and something on it moves.
+    /// Whether the tick has anything to do (`pacing::ticking`).
     fn moving(&self) -> bool {
-        self.panel.tab_shown && animated(&self.panel.swarm, &self.panel.view.unseen)
+        ticking(
+            self.panel.tab_shown,
+            &self.panel.swarm,
+            &self.panel.view.unseen,
+        )
     }
 
     /// The colour tick: a new frame only when it would differ. A hidden tab gets none (its
     /// next state repaints it at the clock's frame, not where it paused).
     fn animate(&mut self) -> io::Result<()> {
         let now = clock::now();
-        let whole = clock::frame_at(now).floor() as i64;
-        if self.drawn_frame == Some(whole) && !self.smooth {
+        if !self.pacing.due(clock::frame_at(now)) {
             return Ok(());
         }
         self.draw(now)
@@ -181,19 +171,8 @@ impl Actor {
         let screen = self
             .panel
             .paint(i32::from(size.width), i32::from(size.height), look);
-        self.drawn_frame = Some(look.frame.floor() as i64);
-        self.smooth = screen_moves(&screen);
+        self.pacing.drawn(look.frame, &screen);
         self.term.draw(|f| term::copy(&screen, f.buffer_mut()))?;
         Ok(())
     }
-}
-
-/// Whether a screen has colours that glide between whole frames (pulses, blinks).
-fn screen_moves(s: &panorama_core::view::Screen) -> bool {
-    (0..s.h()).any(|y| {
-        (0..s.w()).any(|x| {
-            let c = s.cell(x, y);
-            c.fg_moves || c.bg_moves
-        })
-    })
 }

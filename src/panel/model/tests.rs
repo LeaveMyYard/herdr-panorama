@@ -92,3 +92,34 @@ fn a_tab_without_an_orchestrator_shows_the_narrow_layout_with_the_shown_one_open
     p.on_state(state(json!({"visible_tabs": ["w1:t1"]})));
     assert!(p.paint(46, 45, &f).text().starts_with(" SWARM"));
 }
+
+#[test]
+fn an_empty_focused_pane_changes_nothing() {
+    let mut p = panel();
+    p.on_terminal_focus(false);
+    p.herdr_focus("");
+    assert!(!p.pane_focused);
+    p.herdr_focus("w1:p92");
+    assert!(p.pane_focused);
+    p.herdr_focus("");
+    assert!(p.pane_focused);
+}
+
+#[test]
+fn the_docked_view_needs_a_pane_narrower_than_the_wide_layout() {
+    use crate::panel::paint::Frame;
+    let f = Frame {
+        now: 0.0,
+        frame: 0.0,
+        utc_offset: 0,
+        theme: None,
+        settings: Default::default(),
+        open_key: ("pfx+spc".into(), "pfx+spc".into()),
+    };
+    let mut p = panel();
+    p.on_connected(true);
+    p.on_state(state(json!({"visible_tabs": ["w1:t1"]})));
+    assert!(p.paint(119, 45, &f).text().starts_with(" SWARM"));
+    // Python draws the wide graph from 120 columns (P4); until then, the narrow layout
+    assert!(p.paint(120, 45, &f).text().starts_with(" herdr panorama"));
+}

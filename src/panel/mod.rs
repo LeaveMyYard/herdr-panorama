@@ -15,6 +15,8 @@ pub mod actor;
 pub mod clock;
 pub mod crash;
 pub mod model;
+pub mod no_core;
+pub mod pacing;
 pub mod paint;
 pub mod term;
 
@@ -40,7 +42,8 @@ pub fn run() -> i32 {
         crash::mark(
             &hook_state,
             hook_pane.as_deref(),
-            &info.to_string(),
+            // the panic and where it happened, as Python's log keeps the traceback
+            &format!("{info}\n{}", std::backtrace::Backtrace::force_capture()),
             &clock::stamp(),
         );
         default_hook(info);
@@ -76,7 +79,7 @@ async fn serve(env: &PluginEnv) -> std::io::Result<actor::End> {
     let (tx, rx) = mpsc::unbounded_channel();
     let client = Client::spawn(cfg, tx);
     let term = term::setup()?;
-    let mut actor = Actor::new(panel, Settings::from_env(env), term, client.clone(), rx);
+    let mut actor = Actor::new(panel, Settings::from_env(env), term, rx);
     let end = actor.run().await;
     client.stop().await;
     end
