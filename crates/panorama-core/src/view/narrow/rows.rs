@@ -19,29 +19,13 @@ use crate::view::text::trunc;
 
 /// The state words' colour: stale's, faint when quiet, else the state's.
 fn state_colour(st: &OrchState) -> Rgb {
-    let quiet = matches!(
-        st.st,
-        Status::Queued | Status::Done | Status::Cancelled | Status::Inferred | Status::Lost
-    );
     if st.st == Status::Stale {
         status(&Status::Stale)
-    } else if quiet {
+    } else if st.quiet() {
         FAINT
     } else {
         status(&st.st)
     }
-}
-
-fn is_quiet(st: &OrchState) -> bool {
-    matches!(
-        st.st,
-        Status::Queued
-            | Status::Done
-            | Status::Cancelled
-            | Status::Inferred
-            | Status::Lost
-            | Status::Stale
-    )
 }
 
 /// An unselected orchestrator at row `y`: pod, name and state, marks on the right.
@@ -66,7 +50,7 @@ pub fn orch_row(cv: &mut Screen, y: i32, o: &Orchestrator, view: &View, ages: Ag
         5,
         y,
         &[
-            Seg::new(name, if is_quiet(&st) { DIM } else { FG }),
+            Seg::new(name, if st.quiet() { DIM } else { FG }),
             Seg::new(words, state_colour(&st)),
         ],
     );

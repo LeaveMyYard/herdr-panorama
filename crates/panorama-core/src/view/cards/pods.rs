@@ -1,5 +1,8 @@
 //! A row of a thread's agent pods (Python `render.pods_row`): live and failed agents first
 //! (most urgent first), finished ones while there is room, then `+N done` for the rest.
+//!
+//! Not yet ported (P4's wide graph uses it): Python's `top_only` (the thread's own agents,
+//! then `+N nested`, the selected pod on the selected agent's path).
 
 use crate::model::{Agent, Status, Thread};
 use crate::view::palette::FAINT;

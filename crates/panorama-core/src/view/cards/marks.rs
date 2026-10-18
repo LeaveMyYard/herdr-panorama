@@ -1,5 +1,8 @@
 //! A card's marks on the right: `✗` (an agent failed), `!` (blocked), `?N` (questions)
 //! (Python `render.marks_of`, `marks_right`).
+//!
+//! Not yet ported (P4's wide graph uses it): `marks_of`'s `extra_q`, the questions no
+//! agent filed.
 
 use crate::model::{Agent, Status};
 use crate::view::palette::status;
