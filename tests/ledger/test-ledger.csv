@@ -193,31 +193,31 @@ tests/test_core.py::test_the_model_round_trips_on_the_wire,tests/test_core.py,cr
 tests/test_core.py::test_unknown_fields_are_ignored_and_versions_compare_by_major,tests/test_core.py,crates/panorama-core/src/model/swarm/tests.rs::missing_fields_take_model_pys_defaults_and_unknown_ones_are_ignored ; src/proto/tests.rs::only_the_same_major_is_compatible,mapped,,P3
 tests/test_core.py::test_lines_are_capped,tests/test_core.py,src/proto/framing/tests.rs::a_line_over_the_limit_ends_the_connection ; src/proto/framing/tests.rs::messages_split_across_reads_come_out_whole,mapped,,P3
 tests/test_core.py::test_a_long_state_dir_falls_back_to_a_short_socket_path,tests/test_core.py,herdr-agent-kit@v0.1.0:src/internal/plugin_paths/panorama/tests.rs::socket_dir_falls_back_by_length,mapped,,P1
-tests/test_core.py::test_one_core_per_session_and_its_socket_is_private,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_a_dead_cores_socket_is_replaced_under_the_lock,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_another_users_connection_is_refused,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_hello_welcome_state_seen_and_an_old_major_refused,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_an_unverified_pane_claim_is_not_trusted,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_a_stuck_viewer_never_stalls_the_core,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_messages_before_hello_close_the_connection,tests/test_core.py,,todo,,P4
+tests/test_core.py::test_one_core_per_session_and_its_socket_is_private,tests/test_core.py,tests/core_server.rs::one_core_per_session_and_its_socket_is_private,mapped,,P4
+tests/test_core.py::test_a_dead_cores_socket_is_replaced_under_the_lock,tests/test_core.py,tests/core_server.rs::a_dead_cores_socket_is_replaced_under_the_lock,mapped,,P4
+tests/test_core.py::test_another_users_connection_is_refused,tests/test_core.py,tests/core_server.rs::another_users_connection_is_refused,mapped,,P4
+tests/test_core.py::test_hello_welcome_state_seen_and_an_old_major_refused,tests/test_core.py,tests/core_server.rs::hello_welcome_state_seen_and_an_old_major_refused,mapped,,P4
+tests/test_core.py::test_an_unverified_pane_claim_is_not_trusted,tests/test_core.py,tests/core_server.rs::an_unverified_pane_claim_is_not_trusted_and_the_claim_is_checked_against_the_peer,mapped,,P4
+tests/test_core.py::test_a_stuck_viewer_never_stalls_the_core,tests/test_core.py,tests/core_server.rs::a_stuck_viewer_never_stalls_the_core ; src/core/outbox/tests.rs::a_full_outbox_loses_its_oldest,mapped,,P4
+tests/test_core.py::test_messages_before_hello_close_the_connection,tests/test_core.py,tests/core_server.rs::messages_before_hello_close_the_connection,mapped,,P4
 tests/test_core.py::test_the_client_queues_seen_while_the_core_is_away,tests/test_core.py,tests/proto_client.rs::the_client_reconnects_after_the_core_goes_and_flushes_queued_seen ; tests/proto_client.rs::hello_welcome_state_and_the_viewers_messages,mapped,,P3
 tests/test_core.py::test_the_panel_renders_its_tab_exactly_like_the_docked_panel,tests/test_core.py,tests/panel_screens.rs::the_panels_screens_are_pythons ; src/panel/model/tests.rs::the_docked_entry_is_this_tabs_and_the_selected_row_the_shown_one,mapped,,P3
 tests/test_core.py::test_a_panel_without_a_core_acts_on_nothing,tests/test_core.py,src/panel/input/actions/tests.rs::nothing_acts_before_the_keys_are_armed_or_without_a_core,mapped,,P3
 tests/test_core.py::test_a_hidden_tabs_panel_draws_no_frames,tests/test_core.py,src/panel/pacing/tests.rs::a_hidden_tab_or_a_still_screen_never_ticks ; src/panel/model/tests.rs::the_docked_entry_is_this_tabs_and_the_selected_row_the_shown_one ; src/panel/clock/tests.rs::the_animation_time_is_the_wall_clock_in_quarter_seconds,mapped,,P3
 tests/test_core.py::test_the_panels_focus_look_follows_the_cores_focused_pane,tests/test_core.py,src/panel/model/tests.rs::the_focus_look_follows_herdrs_focus_and_the_terminals ; crates/panorama-core/tests/design_goldens.rs::design_10_focused_and_not_in_two_themes_cell_for_cell,mapped,,P3
 tests/test_core.py::test_the_home_panorama_publishes_each_refresh_and_takes_seen_back,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_the_line_reader_is_linear_and_one_read_reports_seen_once,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_an_unsafe_socket_directory_is_refused[symlink],tests/test_core.py,,todo,,P4
-tests/test_core.py::test_an_unsafe_socket_directory_is_refused[group-writable],tests/test_core.py,,todo,,P4
-tests/test_core.py::test_an_unsafe_socket_directory_is_refused[not-ours],tests/test_core.py,,todo,,P4
+tests/test_core.py::test_the_line_reader_is_linear_and_one_read_reports_seen_once,tests/test_core.py,tests/core_server.rs::one_read_reports_seen_once ; src/proto/framing/tests.rs::a_feed_splits_its_lines_once,mapped,,P4
+tests/test_core.py::test_an_unsafe_socket_directory_is_refused[symlink],tests/test_core.py,tests/core_server.rs::an_unsafe_socket_directory_is_refused,mapped,,P4
+tests/test_core.py::test_an_unsafe_socket_directory_is_refused[group-writable],tests/test_core.py,tests/core_server.rs::an_unsafe_socket_directory_is_refused,mapped,,P4
+tests/test_core.py::test_an_unsafe_socket_directory_is_refused[not-ours],tests/test_core.py,tests/core_server.rs::an_unsafe_socket_directory_is_refused,mapped,,P4
 tests/test_core.py::test_a_viewer_refuses_a_core_of_another_user,tests/test_core.py,tests/proto_client.rs::a_socket_served_by_another_uid_is_no_core,mapped,,P3
-tests/test_core.py::test_a_connection_without_hello_is_closed_at_the_deadline,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_idle_connections_are_capped_and_hold_no_threads,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_a_viewer_that_never_reads_is_dropped_after_the_send_timeout,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_a_pane_claim_is_checked_against_the_peers_own_process,tests/test_core.py,,todo,,P4
+tests/test_core.py::test_a_connection_without_hello_is_closed_at_the_deadline,tests/test_core.py,tests/core_server.rs::a_connection_without_hello_is_closed_at_the_deadline,mapped,,P4
+tests/test_core.py::test_idle_connections_are_capped_and_hold_no_threads,tests/test_core.py,tests/core_server.rs::idle_connections_are_capped,mapped,,P4
+tests/test_core.py::test_a_viewer_that_never_reads_is_dropped_after_the_send_timeout,tests/test_core.py,tests/core_server.rs::a_viewer_that_never_reads_is_dropped_after_the_send_timeout,mapped,,P4
+tests/test_core.py::test_a_pane_claim_is_checked_against_the_peers_own_process,tests/test_core.py,tests/core_server.rs::an_unverified_pane_claim_is_not_trusted_and_the_claim_is_checked_against_the_peer,mapped,,P4
 tests/test_core.py::test_a_pane_runs_our_panel_only_with_that_pid_and_argv,tests/test_core.py,,todo,,P4
 tests/test_core.py::test_the_rust_panel_is_our_panel_too,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_the_tmp_fallbacks_parent_must_be_safe_too,tests/test_core.py,,todo,,P4
+tests/test_core.py::test_the_tmp_fallbacks_parent_must_be_safe_too,tests/test_core.py,tests/core_server.rs::an_unsafe_socket_directory_is_refused,mapped,,P4
 tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[True-fail],tests/test_current_card.py,crates/panorama-core/tests/wide_layout.rs::the_selected_card_stays_apart_through_a_whole_pulse,mapped,,P4
 tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[True-wait],tests/test_current_card.py,crates/panorama-core/tests/wide_layout.rs::the_selected_card_stays_apart_through_a_whole_pulse,mapped,,P4
 tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[True-done],tests/test_current_card.py,crates/panorama-core/tests/wide_layout.rs::the_selected_card_stays_apart_through_a_whole_pulse,mapped,,P4
@@ -584,7 +584,7 @@ tests/test_panel_click.py::test_no_attribute_shadows_a_textual_member,tests/test
 tests/test_panel_click.py::test_a_crash_leaves_its_traceback_next_to_the_marker,tests/test_panel_click.py,src/panel/crash/tests.rs::a_crash_leaves_the_marker_and_the_errors_end ; src/panel/crash/tests.rs::the_hook_marks_a_crash_but_leaves_a_tasks_panic_to_the_task,mapped,,P3
 tests/test_panel_click.py::test_the_crash_log_is_bounded_in_bytes,tests/test_panel_click.py,src/panel/crash/tests.rs::a_crash_leaves_the_marker_and_the_errors_end,mapped,,P3
 tests/test_panel_click.py::test_mark_crash_never_raises_on_an_unencodable_message,tests/test_panel_click.py,,retired,Pins Python's surrogate-escape encoding of the crash log; Rust strings are always valid UTF-8.,P3
-tests/test_panel_filter.py::test_the_core_passes_a_panels_filter_on,tests/test_panel_filter.py,,todo,,P4
+tests/test_panel_filter.py::test_the_core_passes_a_panels_filter_on,tests/test_panel_filter.py,tests/core_server.rs::focusing_counts_only_from_a_verified_panel_and_filters_only_from_panels,mapped,,P4
 tests/test_panel_filter.py::test_the_state_carries_the_filter_and_the_version_says_so,tests/test_panel_filter.py,,todo,,P4
 tests/test_panel_filter.py::test_a_filter_chosen_in_one_panel_shows_in_every_panel,tests/test_panel_filter.py,,todo,,P4
 tests/test_panel_filter.py::test_the_home_panorama_takes_a_panels_filter_and_publishes_it,tests/test_panel_filter.py,,todo,,P4
@@ -599,7 +599,7 @@ tests/test_panel_sync.py::test_every_panel_selects_the_orchestrator_herdr_shows,
 tests/test_panel_sync.py::test_a_cursor_moved_to_the_shown_orchestrator_re_arms_the_keys,tests/test_panel_sync.py,src/panel/input/selection/tests.rs::a_cursor_moved_to_the_shown_orchestrator_re_arms_the_keys,mapped,,P3
 tests/test_panel_sync.py::test_an_arrow_move_waiting_for_its_switch_is_kept,tests/test_panel_sync.py,src/panel/model/tests.rs::an_arrow_move_waiting_for_its_switch_is_kept,mapped,,P3
 tests/test_panel_sync.py::test_the_cursor_has_no_highlight_only_the_mouse_has,tests/test_panel_sync.py,crates/panorama-core/tests/dock_layout.rs::the_cursor_has_no_highlight_only_the_mouse_has,mapped,,P3
-tests/test_panel_sync.py::test_the_core_announces_a_focus_only_from_a_verified_panel,tests/test_panel_sync.py,,todo,,P4
+tests/test_panel_sync.py::test_the_core_announces_a_focus_only_from_a_verified_panel,tests/test_panel_sync.py,tests/core_server.rs::focusing_counts_only_from_a_verified_panel_and_filters_only_from_panels,mapped,,P4
 tests/test_panel_sync.py::test_a_switch_announces_the_focus_before_showing_the_tab,tests/test_panel_sync.py,src/panel/act/switch/tests.rs::onto_the_target_tabs_panel_after_announcing_it ; src/panel/act/switch/tests.rs::the_paint_wait_follows_only_an_echo,mapped,,P3
 tests/test_panel_sync.py::test_the_switching_panel_keeps_its_look_until_it_is_hidden,tests/test_panel_sync.py,src/panel/model/tests.rs::the_switching_panel_keeps_its_look_until_it_is_hidden,mapped,,P3
 tests/test_panel_sync.py::test_a_hidden_target_paints_focused_before_it_is_shown,tests/test_panel_sync.py,src/panel/model/tests.rs::a_hidden_target_paints_focused_before_it_is_shown,mapped,,P3
