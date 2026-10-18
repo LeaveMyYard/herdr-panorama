@@ -3,7 +3,8 @@
 //! taken as absent. Only the swarm is strict: a swarm that does not read (see
 //! `panorama_core::model::swarm`) rejects the state, and the panel keeps its last picture.
 //!
-//! Every string the core sent (and every unseen mark's agent id) goes through the kit's
+//! Every string the core sent (the swarm's, every unseen mark's agent id, the panels, the
+//! focused pane and the visible tabs) goes through the kit's
 //! `clean` here, once: the views draw text as given, so no control character from a
 //! transcript reaches the terminal (Python cleans at each draw; the text shown is the same).
 
@@ -43,7 +44,7 @@ fn strings(v: &Value) -> impl Iterator<Item = String> + '_ {
     v.as_array()
         .into_iter()
         .flatten()
-        .filter_map(|s| s.as_str().map(str::to_owned))
+        .filter_map(|s| s.as_str().map(|s| clean(s, MAX_ARG)))
 }
 
 impl State {
@@ -70,7 +71,7 @@ impl State {
             .and_then(Value::as_object)
             .into_iter()
             .flatten()
-            .filter_map(|(tab, pane)| Some((tab.clone(), pane.as_str()?.to_owned())))
+            .filter_map(|(tab, pane)| Some((clean(tab, MAX_ARG), clean(pane.as_str()?, MAX_ARG))))
             .collect();
         Ok(Self {
             swarm,
@@ -78,7 +79,7 @@ impl State {
             focused_pane: st
                 .get("focused_pane")
                 .and_then(Value::as_str)
-                .map(str::to_owned),
+                .map(|p| clean(p, MAX_ARG)),
             visible_tabs: st
                 .get("visible_tabs")
                 .filter(|v| v.is_array())

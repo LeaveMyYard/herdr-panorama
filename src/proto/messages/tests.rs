@@ -60,3 +60,23 @@ fn the_cores_messages_are_told_by_their_key() {
         FromCore::Other
     );
 }
+
+#[test]
+fn an_errors_message_reads_as_pythons_str_or_refused() {
+    // Python: str(err.get("message") or "refused")
+    let msg = |m: Value| read(json!({ "error": { "message": m } }));
+    for falsy in [json!(""), json!(0), json!(false), json!(null)] {
+        assert_eq!(
+            msg(falsy.clone()),
+            FromCore::Error("refused".into()),
+            "{falsy}"
+        );
+    }
+    assert_eq!(
+        read(json!({"error": {}})),
+        FromCore::Error("refused".into())
+    );
+    assert_eq!(msg(json!(5)), FromCore::Error("5".into()));
+    assert_eq!(msg(json!(true)), FromCore::Error("True".into()));
+    assert_eq!(msg(json!("protocol")), FromCore::Error("protocol".into()));
+}

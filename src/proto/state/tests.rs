@@ -64,7 +64,12 @@ fn every_string_is_cleaned_once_as_it_is_read() {
     swarm["orchestrators"][0]["tab_label"] = json!("evil\u{1b}]0;title\u{7}\ttab");
     swarm["orchestrators"][0]["threads"][0]["agents"][0]["id"] = json!("a\u{1b}1");
     swarm["errors"] = json!(["bad\nline"]);
-    let st = read(json!({"swarm": swarm, "unseen": {"a\u{1b}1": "fail"}})).unwrap();
+    let st = read(json!({"swarm": swarm, "unseen": {"a\u{1b}1": "fail"},
+        "panels": {"w1:t\u{7}2": "w1:p\u{1b}9"}, "focused_pane": "w1:p\u{1b}3", "visible_tabs": ["w1:t\n2"]}))
+    .unwrap();
+    assert_eq!(st.panels.get("w1:t2").map(String::as_str), Some("w1:p9"));
+    assert_eq!(st.focused_pane.as_deref(), Some("w1:p3"));
+    assert_eq!(st.visible_tabs, Some(vec!["w1:t 2".to_owned()]));
     let o = &st.swarm.orchestrators[0];
     assert_eq!(o.tab_label, "evil]0;title tab");
     assert_eq!(o.threads[0].agents[0].id, "a1");
