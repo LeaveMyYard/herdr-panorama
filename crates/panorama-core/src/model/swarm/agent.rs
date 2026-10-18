@@ -36,7 +36,7 @@ pub struct Agent {
     /// Open inbox question texts.
     #[serde(default)]
     pub questions: Vec<String>,
-    /// A blocking prompt: question texts or `wants Tool(...)`.
+    /// A blocking prompt: the questions it asks, or the permission it wants.
     #[serde(default)]
     pub pending: Vec<String>,
     #[serde(default)]

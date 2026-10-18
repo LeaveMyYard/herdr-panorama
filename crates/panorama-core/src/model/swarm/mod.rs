@@ -4,6 +4,11 @@
 //! Field names, defaults and meanings are `model.py`'s; that file documents each field. The
 //! types deserialize from the core's `state.swarm` (protocol 1.x). Unknown fields are
 //! ignored, so a newer minor that adds fields still reads.
+//!
+//! Field types are read strictly, unlike Python's `swarm_from_wire`, which never checks
+//! them: a `null` where the model has no `Option`, a wrong JSON type inside a field, or a
+//! list item that is not an object rejects the whole state. So making a field nullable (or
+//! widening its type) is a breaking change for Rust viewers, not an additive minor.
 
 mod agent;
 mod codes;
@@ -15,13 +20,13 @@ pub use counts::Counts;
 
 use serde::{Deserialize, Serialize};
 
-/// Background work a session or agent started and has not heard the end of: a Bash run in
-/// the background (or moved there by its timeout) or a Monitor watch.
+/// Background work a session or agent started and has not heard the end of (a command left
+/// running in the background, a watch on something).
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct BgTask {
     /// Its id.
     pub id: String,
-    /// `Bash` or `Monitor`.
+    /// The kind of background work, as the harness names it.
     pub kind: String,
     /// What it does, as its starter described it.
     #[serde(default)]
@@ -104,7 +109,7 @@ pub struct Orchestrator {
     pub flavour: String,
     #[serde(default)]
     pub transcript: Option<String>,
-    /// Blocked: question texts or `wants Bash(...)`.
+    /// Blocked: the questions it asks, or the permission it wants, as the harness words them.
     #[serde(default)]
     pub pending: Vec<String>,
     /// Open inbox question ids of this session.

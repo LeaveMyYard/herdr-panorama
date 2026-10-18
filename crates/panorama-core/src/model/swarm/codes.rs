@@ -14,7 +14,8 @@ macro_rules! code_enum {
         #[serde(from = "String", into = "String")]
         pub enum $name {
             $($(#[$vdoc])* $variant,)+
-            /// A word this version does not know, as it was sent.
+            /// A word this version does not know, as it was sent. Never a known word: build
+            /// values with `from_code` (or serde), not this variant by hand.
             Other(String),
         }
 

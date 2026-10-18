@@ -79,14 +79,11 @@ fn every_captured_swarm_reads_and_writes_back_unchanged() {
 fn counts_are_pythons() {
     for (name, snap, want) in snapshots() {
         let swarm: Swarm = serde_json::from_value(snap).unwrap();
-        let c = swarm.counts();
-        let got = serde_json::json!({
-            "orchestrators": c.orchestrators, "threads": c.threads,
-            "active_threads": c.active_threads, "agents": c.agents, "running": c.running,
-            "waiting": c.waiting, "questions": c.questions, "blocked": c.blocked,
-            "failed": c.failed,
-        });
-        assert_eq!(got, want, "{name}");
+        assert_eq!(
+            serde_json::to_value(swarm.counts()).unwrap(),
+            want,
+            "{name}"
+        );
     }
 }
 

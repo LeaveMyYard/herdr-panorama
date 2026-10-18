@@ -1,6 +1,9 @@
 //! The status vocabulary (Python `model.py`: the codes, `GLYPH`, `LABEL`, `ORDER`, `live`,
 //! `urgency`).
 //!
+//! This is the views' vocabulary, broader than an agent's own status: the core's producer
+//! maps what the agent session reports into it, and adds the derived states (`stale`).
+//!
 //! On the wire a status is its short code (`"run"`, `"wait"`, …). A code this version does
 //! not know reads as [`Status::Unknown`] and keeps its text: it is drawn as Python draws an
 //! unknown code (glyph `?`, the default colour, least urgent, live).
@@ -42,7 +45,8 @@ pub enum Status {
     Background,
     /// `stale`: an orchestrator idle for longer than `stale_after` (views only).
     Stale,
-    /// A code this version does not know, as it was sent.
+    /// A code this version does not know, as it was sent. Never a known code: build a
+    /// status with [`Status::from_code`] (or serde), not this variant by hand.
     Unknown(String),
 }
 

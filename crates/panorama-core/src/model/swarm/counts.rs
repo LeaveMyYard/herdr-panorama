@@ -2,9 +2,10 @@
 
 use super::{HerdrStatus, Swarm};
 use crate::model::Status;
+use serde::Serialize;
 
 /// What `panorama snapshot --json` prints as `counts`, and the docked header's `?N !N ✗N`.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize)]
 pub struct Counts {
     pub orchestrators: usize,
     pub threads: usize,
