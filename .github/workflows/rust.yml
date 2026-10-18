@@ -51,6 +51,8 @@ jobs:
               - 'src/main.rs'
               - 'src/**/*.rs'
               - '.github/workflows/rust.yml'
+              - '.github/scripts/structure-check.py'
+              - '.github/structure-allowlist.txt'
             ledger:
               - 'tests/**'
               - 'src/herdr_*/**'
@@ -138,6 +140,29 @@ jobs:
           file "$bin" | grep -Eq 'static-pie linked|statically linked'
           "$bin" | grep -q "^$BIN "
 
+  structure:
+    # COMMON.md "Code structure": at most 300 non-test lines per Rust source
+    # file, tests in their own files; exceptions only in
+    # .github/structure-allowlist.txt, which may not gain an entry over the base.
+    name: structure
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 .github/scripts/structure-check.py --self-test
+      - name: Structure check
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          if [ -n "$BASE_REF" ]; then
+            git fetch --no-tags --depth=1 origin "$BASE_REF"
+            python3 .github/scripts/structure-check.py --base FETCH_HEAD
+          else
+            python3 .github/scripts/structure-check.py
+          fi
+
   ledger:
     # The ledger must list exactly the tests pytest collects: a Python PR that
     # adds or renames a test fails here until its ledger row is added. The
@@ -165,7 +190,7 @@ jobs:
 
   rust-ok:
     name: rust ok
-    needs: [changes, check, build, ledger]
+    needs: [changes, check, build, structure, ledger]
     if: always()
     runs-on: ubuntu-latest
     steps:
