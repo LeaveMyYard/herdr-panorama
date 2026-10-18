@@ -284,3 +284,47 @@ fn the_binary_answers_only_what_it_knows() {
     assert_eq!(ask(&["bogus"]), (Some(2), String::new()));
     assert!(ask(&[]).1.starts_with("panorama "));
 }
+
+#[test]
+fn every_hook_kind_run_directly_exits_0_and_says_nothing_on_bad_input() {
+    // `panorama hook <kind>` itself, without hooks.json's `; exit 0`: exit 2 would keep a
+    // subagent running, so the binary must never return it
+    let dir = tempfile::tempdir().unwrap();
+    for kind in [
+        "subagent-start",
+        "subagent-stop",
+        "session-start",
+        "bogus",
+        "",
+    ] {
+        for payload in [
+            "{bad",
+            "",
+            r#"{"session_id": "s1", "agent_id": "a1", "agent_type": "x"}"#,
+        ] {
+            let mut child = Command::new(env!("CARGO_BIN_EXE_panorama"))
+                .env_clear()
+                .args(["hook", kind])
+                .env("HOME", dir.path())
+                .env("PANORAMA_HOOKS_DIR", dir.path().join("h"))
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+                .unwrap();
+            use std::io::Write;
+            child
+                .stdin
+                .take()
+                .unwrap()
+                .write_all(payload.as_bytes())
+                .unwrap();
+            let out = child.wait_with_output().unwrap();
+            assert_eq!(out.status.code(), Some(0), "{kind} {payload}");
+            assert!(out.stderr.is_empty(), "{kind} {payload}");
+            if kind != "session-start" {
+                assert!(out.stdout.is_empty(), "{kind} {payload}");
+            }
+        }
+    }
+}
