@@ -4,5 +4,6 @@
 
 pub mod contract;
 pub mod panel;
+pub mod panels;
 pub mod proto;
 pub mod settings;
