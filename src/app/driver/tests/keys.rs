@@ -243,3 +243,41 @@ fn g_on_another_machines_orchestrator_asks_for_its_own_server() {
     );
     assert!(!goes_to(&out, "abc123:w1:p1"));
 }
+
+#[test]
+fn g_waits_for_the_arming_and_marks_the_orchestrators_agents_seen() {
+    use panorama_core::view::Unseen;
+    let mut r = Run::demo("w1:p1", WIDE);
+    let now = r.settled();
+    r.d.app.armed_at = now + Duration::from_secs(30); // right after a background change
+    assert!(r.key(Key::Goto, now).is_empty());
+    r.d.app.armed_at = r.t0;
+    r.d.app.view.unseen.insert("a1c3d90".into(), Unseen::Done);
+    let out = r.key(Key::Goto, now);
+    let seen = out.iter().find_map(|e| match e {
+        Effect::Seen(ids) => Some(ids.clone()),
+        _ => None,
+    });
+    assert!(
+        seen.is_some_and(|ids| ids.contains(&"a1c3d90".to_owned())),
+        "{out:?}"
+    );
+    assert!(!r.d.app.view.unseen.contains_key("a1c3d90"));
+    assert!(goes_to(&out, "w1:p1"));
+}
+
+#[test]
+fn a_click_on_a_notice_dismisses_it_and_goes_no_further() {
+    use crate::ui::input::Toast;
+    let mut r = Run::demo("w1:p1", WIDE);
+    let now = r.settled();
+    r.d.toasts
+        .push(Toast::new(Some("keys"), "a notice", 10), now);
+    r.paint(Painted::Other, now);
+    let before = format!("{:?}", r.sel());
+    let (x, y) = (WIDE.0 - 10, WIDE.1 - 4); // inside the notice, bottom right
+    let (out, cause) = r.d.pointer(Pointer::Click, x, y, now);
+    assert!(out.is_empty() && cause == Some(Painted::Other));
+    assert_eq!(r.d.toasts.next_expiry(), None); // dismissed
+    assert_eq!(format!("{:?}", r.sel()), before);
+}

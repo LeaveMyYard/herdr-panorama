@@ -209,3 +209,30 @@ fn a_click_right_after_a_sideways_scroll_does_not_hit_what_slid_under_the_pointe
     assert_eq!(r.d.app.view.agent.as_deref(), Some(target.as_str()));
     assert!(crate::ui::input::arming::SCROLL_ARM < crate::ui::input::arming::CLICK_ARM);
 }
+
+#[test]
+fn a_focus_change_or_a_shift_wheel_off_the_columns_leaves_the_sideways_scroll_alone_or_resets_it() {
+    let mut r = deep();
+    let now = r.settled();
+    r.d.app.point("w1:p3", Some(TID), Some("b1"));
+    r.paint(Painted::Other, now);
+    // shift+wheel over the header (no column): nothing
+    assert_eq!(
+        r.d.pointer(
+            Pointer::Wheel {
+                down: true,
+                shift: true
+            },
+            5,
+            0,
+            now
+        )
+        .1,
+        None
+    );
+    assert_eq!(r.d.app.view.hcol, None);
+    r.d.app.point("w1:p3", Some(TID), Some("l1"));
+    r.d.app.view.hcol = Some(4);
+    r.key(Key::Left, now); // a focus change alone (no new selection) scrolls back to the focus
+    assert_eq!((r.d.app.view.focus, r.d.app.view.hcol), (1, None));
+}
