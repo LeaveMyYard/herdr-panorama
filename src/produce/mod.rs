@@ -33,8 +33,12 @@ pub struct Refreshed {
     pub error: Option<String>,
 }
 
-/// Makes the remote machines' watchers (started on the first refresh).
-pub type StartRemotes = Box<dyn FnOnce() -> Remotes + Send>;
+/// Makes the remote machines' watchers: called on the first refresh, and again on the next one
+/// if it failed (Python leaves `remotes` unset and tries again).
+pub type StartRemotes = Box<dyn FnMut() -> Remotes + Send>;
+
+/// The longest error a failed refresh keeps, in characters (Python's `message[:200]`).
+pub const ERROR_CHARS: usize = 200;
 
 /// The producer: the local source, the remote machines, the unseen tracker, the last result.
 pub struct Producer {
@@ -53,6 +57,20 @@ fn panic_text(p: &(dyn std::any::Any + Send)) -> String {
         .or_else(|| p.downcast_ref::<String>().cloned())
         .unwrap_or_default();
     format!("panic: {what}")
+}
+
+/// `highlight_unseen` from panorama's config, read when a refresh asks (the file is re-read only
+/// when it changed).
+pub fn unseen_enabled(config: ConfigFile) -> Box<dyn Fn() -> bool + Send + Sync> {
+    let config = Mutex::new(config);
+    Box::new(move || {
+        let cfg: Map<String, Value> = config
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .load_as()
+            .unwrap_or_default();
+        unseen::enabled(&cfg)
+    })
 }
 
 impl Producer {
@@ -77,22 +95,16 @@ impl Producer {
     /// saved machines, and the unseen state file of this herdr server (`highlight_unseen`).
     pub fn from_env(env: PluginEnv, self_pane: Option<String>) -> Self {
         let herdr = herdr_agent_kit::herdr_api::blocking::Herdr::from_env().with_client("panorama");
-        let config = Mutex::new(ConfigFile::resolve(&env, || {
-            herdr.plugin_config_dir(PANORAMA_ID).ok().flatten()
-        }));
-        let enabled = move || {
-            let cfg: Map<String, Value> = config
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner)
-                .load_as()
-                .unwrap_or_default();
-            unseen::enabled(&cfg)
-        };
-        let tracker = Arc::new(Tracker::new(unseen::default_path(&env), Box::new(enabled)));
+        let config =
+            ConfigFile::resolve(&env, || herdr.plugin_config_dir(PANORAMA_ID).ok().flatten());
+        let tracker = Arc::new(Tracker::new(
+            unseen::default_path(&env),
+            unseen_enabled(config),
+        ));
         let remote_env = env.clone();
         Self::new(
             Box::new(crate::snapshot::source(env, self_pane)),
-            Some(Box::new(move || remote::start(&remote_env, herdr))),
+            Some(Box::new(move || remote::start(&remote_env, herdr.clone()))),
             tracker,
             Box::new(crate::snapshot::now),
         )
@@ -109,7 +121,9 @@ impl Producer {
         let started = Instant::now();
         let out = catch_unwind(AssertUnwindSafe(|| {
             let mut swarm = (self.source)();
-            if let Some(start) = self.start_remotes.take() {
+            if self.remotes.is_none()
+                && let Some(start) = self.start_remotes.as_mut()
+            {
                 self.remotes = Some(start());
             }
             if let Some(r) = self.remotes.as_mut() {
@@ -128,16 +142,17 @@ impl Producer {
                 }
             }
             Err(p) => {
-                self.last.error = Some(panic_text(&*p));
+                self.last.error = Some(crate::collect::py::chars(&panic_text(&*p), ERROR_CHARS));
                 self.last.took = started.elapsed();
             }
         }
         self.last.clone()
     }
 
-    /// Stop the remote machines' watchers and wait for their threads: a refresh under way
-    /// ends first (its snapshot and rsync are bounded by their timeouts), so no watcher thread
-    /// or rsync child outlives the producer.
+    /// Stop the remote machines' watchers and wait for their threads. A sync under way is
+    /// killed at once (its rsync's own process group), the rest of the refresh is skipped; only
+    /// a forwarded snapshot under way is waited for (herdr's CLI, at most 8 s). So no watcher
+    /// thread or rsync child outlives the producer, and stopping does not wait out a hung ssh.
     pub fn stop(&mut self) {
         if let Some(mut r) = self.remotes.take() {
             r.stop();

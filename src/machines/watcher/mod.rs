@@ -92,7 +92,8 @@ impl Watcher {
                     .lock()
                     .unwrap_or_else(PoisonError::into_inner)
                     .clone();
-                let next = catch_unwind(AssertUnwindSafe(|| refresher.refresh(&last)))
+                let cancelled = || stop.is_set();
+                let next = catch_unwind(AssertUnwindSafe(|| refresher.refresh(&last, &cancelled)))
                     .unwrap_or_else(|p| last.failed(panic_text(&*p)));
                 *outcome.lock().unwrap_or_else(PoisonError::into_inner) = next;
                 if stop.wait(REMOTE_SECONDS) {

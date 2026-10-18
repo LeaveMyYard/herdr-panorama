@@ -1,4 +1,5 @@
 use super::*;
+use crate::machines::Machine;
 use herdr_agent_kit::herdr_api::fake::{CliReply, CliStub, FakeHerdr};
 use std::time::{Duration, Instant};
 
@@ -51,6 +52,9 @@ fn a_saved_machine_gets_a_watcher_that_reports_its_failure() {
         ["box: unreachable (error: unknown machine 'nosuch'; use `herdr machine list`)"]
     );
     r.stop();
+    for w in r.watchers.drain(..) {
+        w.join(); // no watcher thread outlives the test
+    }
     // the snapshot failed before any sync: nothing was mirrored
     assert!(!dir.path().join("state/remote").exists());
 }
@@ -65,4 +69,20 @@ fn machines_none_asks_herdr_nothing() {
         fake.blocking_client().with_bin(stub.bin()),
     );
     assert!(r.watchers.is_empty() && stub.calls().is_empty());
+}
+
+#[test]
+fn a_machine_s_collector_reads_its_mirror_without_process_checks_and_windows_in_order() {
+    let dir = tempfile::tempdir().unwrap();
+    let e = env(dir.path(), "done_window = \"2h\"\nstale_after = \"1h\"\n");
+    let o = mirror_options(
+        &e,
+        &dir.path().join("state"),
+        &Machine::new("ab-1", "box", "box"),
+    );
+    assert!(!o.procs);
+    assert_eq!(o.projects, dir.path().join("state/remote/ab1/projects"));
+    let fake = FakeHerdr::start();
+    let mut w = windows(e, fake.blocking_client());
+    assert_eq!(w(), (7200.0, 3600.0)); // (done window, stale after)
 }

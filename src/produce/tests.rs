@@ -4,6 +4,7 @@ use crate::machines::{
     Collect, Machine, Outcome, Refresher, Selection, SnapshotApi, Source, StopFlag, Watcher,
 };
 use herdr_agent_kit::herdr_api::{Machine as Saved, Snapshot};
+use herdr_agent_kit::plugin_env::PluginEnv;
 use panorama_core::model::{Agent, Orchestrator, Status, Thread};
 use serde_json::json;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -83,7 +84,7 @@ fn a_refresh_merges_the_machines_and_marks_what_changed() {
     let f = flags.clone();
     let start: StartRemotes = Box::new(move || {
         st.fetch_add(1, Ordering::SeqCst);
-        remotes(f)
+        remotes(f.clone())
     });
     let mut p = Producer::new(
         Box::new(source),
@@ -112,6 +113,8 @@ fn a_refresh_merges_the_machines_and_marks_what_changed() {
 
 #[test]
 fn a_panicking_refresh_keeps_the_last_result_with_its_error() {
+    // a panic while another test holds a panic hook would reach that hook
+    let _hook = crate::ui::guard::hook_lock();
     let dir = tempfile::tempdir().unwrap();
     let calls = Arc::new(AtomicUsize::new(0));
     let c = calls.clone();
@@ -153,7 +156,7 @@ impl SnapshotApi for Slow {
 struct NoSync;
 
 impl Syncer for NoSync {
-    fn sync(&self, _: &Machine, _: &[String]) -> Option<String> {
+    fn sync(&self, _: &Machine, _: &[String], _: &dyn Fn() -> bool) -> Option<String> {
         None
     }
 }
@@ -175,6 +178,7 @@ fn slow_producer(dir: &std::path::Path) -> (Producer, Arc<AtomicUsize>, Arc<Mute
     let finished = Arc::new(AtomicUsize::new(0));
     let (r, fin) = (running.clone(), finished.clone());
     let start: StartRemotes = Box::new(move || {
+        let (r, fin) = (r.clone(), fin.clone());
         let spawn = move |m: Machine| {
             let w = Watcher::spawn(Refresher {
                 machine: m,
@@ -218,4 +222,153 @@ fn a_dropped_producer_waits_for_its_watcher_threads_too() {
     drop(p);
     assert!(running.lock().unwrap()[0].is_set());
     assert_eq!(finished.load(Ordering::SeqCst), 1);
+}
+
+/// A forwarded snapshot that names one session, so the watcher syncs.
+struct Names;
+
+impl SnapshotApi for Names {
+    fn machine_snapshot(&self, _: &str) -> Result<Snapshot, String> {
+        let v = json!({"agents": [{"pane_id": "w1:p1", "agent": "claude",
+            "agent_session": {"kind": "id", "value": "11111111-2222-3333-4444-555555555555"}}]});
+        Ok(serde_json::from_value(v).unwrap())
+    }
+}
+
+#[test]
+fn stop_kills_a_hung_rsync_instead_of_waiting_it_out() {
+    use crate::machines::mirror::run;
+    use crate::machines::sync::RsyncSync;
+    let dir = tempfile::tempdir().unwrap();
+    let pidfile = dir.path().join("rsync.pid");
+    let env = PluginEnv::from_vars(
+        [("HERDR_PLUGIN_STATE_DIR", dir.path().join("state"))],
+        None,
+        1000,
+    );
+    let mut syncer = RsyncSync::new(&env, Arc::new(|| 3600.0));
+    let pf = pidfile.clone();
+    // the rsync a hung ssh leaves: it never ends on its own (30 s timeout)
+    syncer.runner = Arc::new(move |_: &[String], t, cancelled: &dyn Fn() -> bool| {
+        let script = format!("sleep 60 & echo $! > {}; wait", pf.display());
+        run(&["sh".to_owned(), "-c".to_owned(), script], t, cancelled)
+    });
+    let syncer = Arc::new(syncer);
+    let start: StartRemotes = Box::new(move || {
+        let syncer = syncer.clone();
+        let spawn = move |m: Machine| {
+            Watcher::spawn(Refresher {
+                machine: m,
+                api: Arc::new(Names),
+                syncer: syncer.clone(),
+                collector: Box::new(NoCollect),
+            })
+        };
+        Remotes::start(Box::new(OneMachine), Box::new(spawn))
+    });
+    let mut p = Producer::new(
+        Box::new(Swarm::default),
+        Some(start),
+        tracker(dir.path()),
+        Box::new(|| 1.0),
+    );
+    p.refresh();
+    let until = Instant::now() + Duration::from_secs(5);
+    while !pidfile.exists() && Instant::now() < until {
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    let child: i32 = std::fs::read_to_string(&pidfile)
+        .unwrap()
+        .trim()
+        .parse()
+        .unwrap();
+    let started = Instant::now();
+    drop(p);
+    assert!(
+        started.elapsed() < Duration::from_secs(1),
+        "{:?}",
+        started.elapsed()
+    );
+    let pid = rustix::process::Pid::from_raw(child).unwrap();
+    let gone = Instant::now() + Duration::from_secs(2);
+    while rustix::process::test_kill_process(pid).is_ok() && Instant::now() < gone {
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    assert!(
+        rustix::process::test_kill_process(pid).is_err(),
+        "the rsync's group is gone"
+    );
+}
+
+#[test]
+fn a_remote_agent_that_fails_is_marked() {
+    let dir = tempfile::tempdir().unwrap();
+    let flags = Arc::new(Mutex::new(Vec::new()));
+    let f = flags.clone();
+    let start: StartRemotes = Box::new(move || remotes(f.clone()));
+    let mut p = Producer::new(
+        Box::new(Swarm::default),
+        Some(start),
+        tracker(dir.path()),
+        Box::new(|| 1.0),
+    );
+    p.refresh();
+    let w = &p.remotes.as_ref().unwrap().watchers[0];
+    let mut out = w.outcome();
+    out.swarm.as_mut().unwrap().orchestrators[0].threads[0].agents[0].status = Status::Failed;
+    w.set_outcome(out);
+    let r = p.refresh();
+    assert_eq!(r.marks.get("m1:w1:p1-a"), Some(&unseen::Event::Fail)); // marks are of the merged swarm
+}
+
+#[test]
+fn a_long_panic_is_kept_as_its_first_200_characters() {
+    // a panic while another test holds a panic hook would reach that hook
+    let _hook = crate::ui::guard::hook_lock();
+    let dir = tempfile::tempdir().unwrap();
+    let source = || -> Swarm { panic!("{}", "x".repeat(500)) };
+    let mut p = Producer::new(
+        Box::new(source),
+        None,
+        tracker(dir.path()),
+        Box::new(|| 1.0),
+    );
+    assert_eq!(p.refresh().error.unwrap().chars().count(), ERROR_CHARS);
+}
+
+#[test]
+fn a_remote_start_that_panics_is_tried_again_next_refresh() {
+    // a panic while another test holds a panic hook would reach that hook
+    let _hook = crate::ui::guard::hook_lock();
+    let dir = tempfile::tempdir().unwrap();
+    let tries = Arc::new(AtomicUsize::new(0));
+    let (t, flags) = (tries.clone(), Arc::new(Mutex::new(Vec::new())));
+    let start: StartRemotes = Box::new(move || {
+        if t.fetch_add(1, Ordering::SeqCst) == 0 {
+            panic!("no thread for the watcher");
+        }
+        remotes(flags.clone())
+    });
+    let mut p = Producer::new(
+        Box::new(Swarm::default),
+        Some(start),
+        tracker(dir.path()),
+        Box::new(|| 1.0),
+    );
+    assert!(p.refresh().error.is_some());
+    let r = p.refresh();
+    assert!(r.error.is_none());
+    assert_eq!(r.swarm.orchestrators.len(), 1);
+    assert_eq!(tries.load(Ordering::SeqCst), 2);
+}
+
+#[test]
+fn highlight_unseen_follows_the_config() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("config.toml");
+    std::fs::write(&file, "highlight_unseen = false\n").unwrap();
+    let enabled = unseen_enabled(ConfigFile::in_dir(dir.path()));
+    assert!(!enabled());
+    std::fs::write(&file, "").unwrap();
+    assert!(enabled()); // the default
 }

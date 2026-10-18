@@ -72,7 +72,7 @@ fn local(src: &Path, dest: &Path) -> (String, PathBuf) {
 
 fn mirror_now(rsync: &Rsync, src: &Path, dest: &Path) -> Option<String> {
     let (source, dest) = local(src, dest);
-    rsync.mirror(&source, &dest, &[SID.to_owned()], run)
+    rsync.mirror(&source, &dest, &[SID.to_owned()], run, &|| false)
 }
 
 #[test]
@@ -154,11 +154,13 @@ fn mirror_caps_the_file_size() {
 #[test]
 fn the_first_failed_pass_stops_the_mirror() {
     let calls = std::sync::Mutex::new(0);
-    let failing = |_: &[String], _: Duration| {
+    let failing = |_: &[String], _: Duration, _: &dyn Fn() -> bool| {
         *calls.lock().unwrap() += 1;
         Some("no route".to_owned())
     };
-    let err = Rsync::new(None).mirror("h:x/", Path::new("/m"), &[SID.to_owned()], failing);
+    let err = Rsync::new(None).mirror("h:x/", Path::new("/m"), &[SID.to_owned()], failing, &|| {
+        false
+    });
     assert_eq!(err.as_deref(), Some("no route"));
     assert_eq!(*calls.lock().unwrap(), 1);
 }
@@ -175,7 +177,10 @@ fn a_mirror_deletes_nothing_already_in_the_dest() {
     fs::write(dest.join("unrelated.txt"), "mine").unwrap();
     let source = format!("{}/", src.display());
     let named = [SID.to_owned(), OTHER.to_owned()];
-    assert_eq!(Rsync::new(None).mirror(&source, &dest, &named, run), None);
+    assert_eq!(
+        Rsync::new(None).mirror(&source, &dest, &named, run, &|| false),
+        None
+    );
     assert_eq!(
         fs::read_to_string(dest.join("p").join(format!("{OTHER}.jsonl"))).unwrap(),
         "mine"

@@ -22,7 +22,7 @@ fn recording(state: &Path, append: bool) -> (RsyncSync, Calls) {
     let seen = calls.clone();
     let mut s = RsyncSync::new(&env(state), Arc::new(|| 3600.0));
     s.rsync.append = Some(append);
-    s.runner = Arc::new(move |argv: &[String], _| {
+    s.runner = Arc::new(move |argv: &[String], _, _: &dyn Fn() -> bool| {
         seen.lock().unwrap().push(argv.to_vec());
         None
     });
@@ -42,7 +42,7 @@ fn sync_mirrors_over_batch_ssh_in_two_passes() {
     let dir = scratch("sync-passes");
     let state = dir.path().join("state");
     let (s, calls) = recording(&state, true);
-    assert_eq!(s.sync(&devbox(), &[SID.to_owned()]), None);
+    assert_eq!(s.sync(&devbox(), &[SID.to_owned()], &|| false), None);
     let seen = calls.lock().unwrap().clone();
     assert_eq!(seen.len(), 2); // .jsonl append-only, then .json normally
     assert!(seen[0].iter().any(|a| a == "--append-verify"));
@@ -59,7 +59,7 @@ fn sync_mirrors_over_batch_ssh_in_two_passes() {
         assert!(ssh.contains("ControlPath=/run/me/panorama-ssh-%C"), "{ssh}");
         assert!(argv[n - 1].starts_with(&state.join("remote").display().to_string()));
     }
-    assert_eq!(s.sync(&devbox(), &[]), None);
+    assert_eq!(s.sync(&devbox(), &[], &|| false), None);
     assert_eq!(calls.lock().unwrap().len(), 2); // nothing to mirror: no ssh at all
 }
 
@@ -67,7 +67,7 @@ fn sync_mirrors_over_batch_ssh_in_two_passes() {
 fn an_rsync_without_append_verify_gets_a_normal_jsonl_pass() {
     let dir = scratch("sync-no-append");
     let (s, calls) = recording(&dir.path().join("state"), false); // e.g. macOS openrsync
-    s.sync(&devbox(), &[SID.to_owned()]);
+    s.sync(&devbox(), &[SID.to_owned()], &|| false);
     let seen = calls.lock().unwrap();
     assert_eq!(seen.len(), 2);
     assert!(!seen.iter().flatten().any(|a| a == "--append-verify"));
@@ -79,7 +79,7 @@ fn unsafe_ssh_targets_are_never_used() {
     let (s, calls) = recording(&dir.path().join("state"), true);
     let bad = Machine::new("b", "opt", "-oProxyCommand=x");
     assert_eq!(
-        s.sync(&bad, &[SID.to_owned()]).as_deref(),
+        s.sync(&bad, &[SID.to_owned()], &|| false).as_deref(),
         Some(UNSAFE_TARGET)
     );
     assert!(calls.lock().unwrap().is_empty());
@@ -90,12 +90,16 @@ fn sessions_are_canonical_each_once_and_only_session_ids() {
     let dir = scratch("sync-canonical");
     let (s, calls) = recording(&dir.path().join("state"), true);
     let upper = SID.to_uppercase();
-    s.sync(&devbox(), &[upper, SID.to_owned(), "../x".to_owned()]);
+    s.sync(
+        &devbox(),
+        &[upper, SID.to_owned(), "../x".to_owned()],
+        &|| false,
+    );
     let jsonl = calls.lock().unwrap()[0].clone();
     let rules: Vec<_> = jsonl.iter().filter(|a| a.contains(SID)).collect();
     assert_eq!(rules.len(), 4, "{jsonl:?}");
     calls.lock().unwrap().clear();
-    s.sync(&devbox(), &["../x".to_owned()]);
+    s.sync(&devbox(), &["../x".to_owned()], &|| false);
     assert!(calls.lock().unwrap().is_empty()); // nothing valid: no ssh
 }
 
@@ -115,7 +119,7 @@ fn one_machine_never_syncs_twice_at_once() {
     let (active, peak) = (Arc::new(AtomicUsize::new(0)), Arc::new(AtomicUsize::new(0)));
     let mut s = RsyncSync::new(&env(&state), Arc::new(|| 3600.0));
     let (a, p) = (active.clone(), peak.clone());
-    s.runner = Arc::new(move |_: &[String], _| {
+    s.runner = Arc::new(move |_: &[String], _, _: &dyn Fn() -> bool| {
         let now = a.fetch_add(1, Ordering::SeqCst) + 1;
         p.fetch_max(now, Ordering::SeqCst);
         std::thread::sleep(Duration::from_millis(100));
@@ -128,7 +132,7 @@ fn one_machine_never_syncs_twice_at_once() {
     let threads: Vec<_> = (0..3)
         .map(|_| {
             let (s, m) = (s.clone(), m.clone());
-            std::thread::spawn(move || s.sync(&m, &[SID.to_owned()]))
+            std::thread::spawn(move || s.sync(&m, &[SID.to_owned()], &|| false))
         })
         .collect();
     for t in threads {
@@ -144,7 +148,7 @@ fn the_rsync_argv_is_pythons_exactly() {
     let dir = scratch("sync-argv");
     let state = dir.path().join("state");
     let (s, calls) = recording(&state, true);
-    s.sync(&devbox(), &[SID.to_owned()]);
+    s.sync(&devbox(), &[SID.to_owned()], &|| false);
     let ssh = "ssh -o BatchMode=yes -o ConnectTimeout=5 -o ServerAliveInterval=5 \
                -o ControlMaster=auto -o ControlPath=/run/me/panorama-ssh-%C -o ControlPersist=60";
     let dest = format!("{}/", state.join("remote/abc123/projects").display());
@@ -192,7 +196,7 @@ fn two_ids_with_one_mirror_share_its_lock() {
     let (active, peak) = (Arc::new(AtomicUsize::new(0)), Arc::new(AtomicUsize::new(0)));
     let mut s = RsyncSync::new(&env(&state), Arc::new(|| 3600.0));
     let (a, p) = (active.clone(), peak.clone());
-    s.runner = Arc::new(move |_: &[String], _| {
+    s.runner = Arc::new(move |_: &[String], _, _: &dyn Fn() -> bool| {
         let now = a.fetch_add(1, Ordering::SeqCst) + 1;
         p.fetch_max(now, Ordering::SeqCst);
         std::thread::sleep(Duration::from_millis(100));
@@ -212,7 +216,7 @@ fn two_ids_with_one_mirror_share_its_lock() {
         .into_iter()
         .map(|m| {
             let s = s.clone();
-            std::thread::spawn(move || s.sync(&m, &[SID.to_owned()]))
+            std::thread::spawn(move || s.sync(&m, &[SID.to_owned()], &|| false))
         })
         .collect();
     for t in threads {

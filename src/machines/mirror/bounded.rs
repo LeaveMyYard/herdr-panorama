@@ -26,12 +26,21 @@ pub enum Ended {
     },
     /// The deadline passed; its group was killed.
     TimedOut,
+    /// The caller cancelled it (a watcher stopping); its group was killed.
+    Cancelled,
     /// It could not start.
     NotStarted(String),
 }
 
-/// Runs `argv` (no stdin) for at most `timeout`; stdout is kept when `stdout` is true.
-pub fn bounded(argv: &[String], timeout: Duration, stdout: bool) -> Ended {
+/// Runs `argv` (no stdin) for at most `timeout`, or until `cancelled()` says so (checked each
+/// poll); stdout is kept when `stdout` is true. Either way the child's own process group is
+/// killed: only what this call started.
+pub fn bounded(
+    argv: &[String],
+    timeout: Duration,
+    stdout: bool,
+    cancelled: &dyn Fn() -> bool,
+) -> Ended {
     let Some((bin, args)) = argv.split_first() else {
         return Ended::NotStarted("no command".into());
     };
@@ -57,6 +66,11 @@ pub fn bounded(argv: &[String], timeout: Duration, stdout: bool) -> Ended {
     let code = loop {
         match child.try_wait() {
             Ok(Some(status)) => break status.code().or(status.signal().map(|s| -s)),
+            Ok(None) if cancelled() => {
+                kill_group(&child);
+                let _ = child.wait();
+                return Ended::Cancelled;
+            }
             Ok(None) if Instant::now() < deadline => std::thread::sleep(POLL),
             _ => {
                 kill_group(&child);

@@ -34,8 +34,20 @@ impl Source for HerdrMachines {
     }
 }
 
+/// How a machine's collector reads its mirror: the mirror as the projects dir, this machine's
+/// events and hooks dirs, and no process checks (its processes are on the other machine).
+pub fn mirror_options(env: &PluginEnv, state: &std::path::Path, m: &Machine) -> Options {
+    Options {
+        projects: mirror_root(state, m),
+        events_dir: events_dir(env),
+        hooks_dir: hooks_dir(env),
+        procs: false,
+        pane_pid: Box::new(|_| None),
+    }
+}
+
 /// The done window and stale time, read from the config when a machine's collect runs.
-fn windows(env: PluginEnv, herdr: blocking::Herdr) -> Box<dyn FnMut() -> (f64, f64) + Send> {
+pub fn windows(env: PluginEnv, herdr: blocking::Herdr) -> Box<dyn FnMut() -> (f64, f64) + Send> {
     let mut config =
         ConfigFile::resolve(&env, || herdr.plugin_config_dir(PANORAMA_ID).ok().flatten());
     Box::new(move || {
@@ -61,15 +73,8 @@ pub fn start(env: &PluginEnv, herdr: blocking::Herdr) -> Remotes {
     let state = herdr_agent_kit::internal::plugin_paths::panorama::state_dir(env);
     let (env2, api) = (env.clone(), Arc::new(herdr.clone()));
     let spawn = move |m: Machine| {
-        let collector = Collector::new(Options {
-            projects: mirror_root(&state, &m),
-            events_dir: events_dir(&env2),
-            hooks_dir: hooks_dir(&env2),
-            procs: false,
-            pane_pid: Box::new(|_| None),
-        });
         let collector = MirrorCollector {
-            collector,
+            collector: Collector::new(mirror_options(&env2, &state, &m)),
             windows: windows(env2.clone(), (*api).clone()),
             clock: Box::new(crate::snapshot::now),
         };
