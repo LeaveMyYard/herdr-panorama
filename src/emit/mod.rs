@@ -2,9 +2,10 @@
 //! `cli.cmd_emit`): the same record a `report_thread` call writes, appended through
 //! [`crate::report::emit`]. Prints the events file's path.
 //!
-//! Stated deviations: `--json` that is not an object is refused (exit 2; Python fails with a
-//! traceback, exit 1), its keys are merged in sorted order, and `@<phase>` in `--agent` counts
-//! ASCII digits only.
+//! Stated deviations: `--json` that is neither an object nor a list of `[key, value]` pairs is
+//! refused (exit 2; Python fails with a traceback, exit 1), an object's keys are merged in
+//! sorted order, and `@<phase>` in `--agent` counts ASCII digits only (Python crashes on
+//! others).
 
 pub mod args;
 pub mod specs;
@@ -51,11 +52,21 @@ pub fn record(a: &args::Args) -> Result<Vec<(String, J)>, String> {
             J::Arr(a.agents.iter().map(|s| specs::agent(s)).collect()),
         ));
     }
-    if let Some(text) = &a.json {
+    // Python's `if args.json: rec.update(json.loads(args.json))`: an empty value is none, and
+    // `update` takes an object or a list of `[key, value]` pairs
+    if let Some(text) = a.json.as_deref().filter(|t| !t.is_empty()) {
         match serde_json::from_str::<Value>(text) {
             Ok(Value::Object(extra)) => {
                 for (k, v) in &extra {
                     set(&mut rec, k, J::from(v));
+                }
+            }
+            Ok(Value::Array(pairs)) => {
+                for pair in &pairs {
+                    match pair.as_array().map(Vec::as_slice) {
+                        Some([Value::String(k), v]) => set(&mut rec, k, J::from(v)),
+                        _ => return Err("--json: a JSON object".to_owned()),
+                    }
                 }
             }
             _ => return Err("--json: a JSON object".to_owned()),
@@ -64,9 +75,21 @@ pub fn record(a: &args::Args) -> Result<Vec<(String, J)>, String> {
     Ok(rec)
 }
 
-/// `panorama emit <argv>` for `env` at `now`: the events file written, or (exit status, why).
-pub fn emit(argv: &[String], env: &PluginEnv, now: f64) -> Result<PathBuf, (i32, String)> {
-    let a = args::parse(argv).map_err(|e| (2, format!("panorama emit: error: {e}")))?;
+/// What a successful `emit` did.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Done {
+    /// The help was asked for.
+    Help,
+    /// Wrote to this events file.
+    Wrote(PathBuf),
+}
+
+/// `panorama emit <argv>` for `env` at `now`: what it did, or (exit status, the error text).
+pub fn emit(argv: &[String], env: &PluginEnv, now: f64) -> Result<Done, (i32, String)> {
+    let a = match args::parse(argv).map_err(|e| (2, e))? {
+        args::Parsed::Help => return Ok(Done::Help),
+        args::Parsed::Emit(a) => a,
+    };
     let session = a
         .session
         .clone()
@@ -81,14 +104,18 @@ pub fn emit(argv: &[String], env: &PluginEnv, now: f64) -> Result<PathBuf, (i32,
     let rec = record(&a).map_err(|e| (2, format!("panorama emit: error: {e}")))?;
     let path = events_path(&events_dir(env), &session);
     crate::report::emit(&path, rec, now).map_err(|e| (1, format!("panorama emit: {e}")))?;
-    Ok(path)
+    Ok(Done::Wrote(path))
 }
 
 /// `panorama emit` on this process; the exit status.
 pub fn run(argv: &[String]) -> i32 {
     match emit(argv, &PluginEnv::from_env(), crate::snapshot::now()) {
-        Ok(path) => {
+        Ok(Done::Wrote(path)) => {
             println!("{}", path.display());
+            0
+        }
+        Ok(Done::Help) => {
+            print!("{}", args::HELP);
             0
         }
         Err((code, why)) => {

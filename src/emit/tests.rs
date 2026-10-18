@@ -36,7 +36,10 @@ fn a_declaration_is_written_where_the_collector_reads_it() {
         "--json",
         r#"{"worktree": "/w", "name": "PR #7 (renamed)"}"#,
     ]);
-    let path = emit(&argv, &env(dir.path(), Some("s1")), 1_791_960_000.0).unwrap();
+    let Done::Wrote(path) = emit(&argv, &env(dir.path(), Some("s1")), 1_791_960_000.0).unwrap()
+    else {
+        panic!("help")
+    };
     assert_eq!(path, dir.path().join("s1.jsonl"));
     let line = std::fs::read_to_string(&path).unwrap();
     assert_eq!(
@@ -61,14 +64,14 @@ fn the_session_comes_from_the_flag_else_claude_code() {
         0.0,
     )
     .unwrap();
-    assert_eq!(p, dir.path().join("s9.jsonl"));
+    assert_eq!(p, Done::Wrote(dir.path().join("s9.jsonl")));
     let p = emit(
         &args(&["--thread", "t", "--session", ""]),
         &env(dir.path(), Some("s1")),
         0.0,
     )
     .unwrap();
-    assert_eq!(p, dir.path().join("s1.jsonl")); // Python's `or`: an empty flag is no flag
+    assert_eq!(p, Done::Wrote(dir.path().join("s1.jsonl"))); // Python's `or`: an empty flag is no flag
     let err = emit(&args(&["--thread", "t"]), &env(dir.path(), None), 0.0).unwrap_err();
     assert_eq!(err.0, 2);
     assert!(err.1.contains("no session"));
@@ -87,5 +90,44 @@ fn the_session_comes_from_the_flag_else_claude_code() {
             .unwrap_err()
             .0,
         2
+    );
+}
+
+fn line(argv: &[&str]) -> String {
+    let dir = tempfile::tempdir().unwrap();
+    emit(&args(argv), &env(dir.path(), Some("s")), 1_791_960_000.0).unwrap();
+    std::fs::read_to_string(dir.path().join("s.jsonl")).unwrap()
+}
+
+const BARE: &str = "{\"v\": 1, \"ts\": \"2026-10-14T06:40:00Z\", \"thread\": \"t\"}\n";
+
+#[test]
+fn json_overrides_v_and_ts_in_place_and_empty_json_is_none() {
+    assert_eq!(
+        line(&["--thread", "t", "--json", r#"{"v": 2}"#]),
+        BARE.replace("\"v\": 1", "\"v\": 2")
+    );
+    assert_eq!(line(&["--thread", "t", "--json", ""]), BARE);
+    assert_eq!(line(&["--thread", "t", "--json", "[]"]), BARE);
+    assert_eq!(
+        line(&["--thread", "t", "--json", r#"[["name", "N"]]"#]),
+        BARE.replace("\"t\"}", "\"t\", \"name\": \"N\"}")
+    );
+}
+
+#[test]
+fn empty_values_are_left_out_as_python_leaves_out_falsy_ones() {
+    assert_eq!(
+        line(&[
+            "--thread",
+            "t",
+            "--name",
+            "",
+            "--worktree",
+            "",
+            "--flavour",
+            ""
+        ]),
+        BARE
     );
 }
