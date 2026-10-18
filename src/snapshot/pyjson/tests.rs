@@ -32,3 +32,9 @@ fn layout_matches_python_indent() {
         "{\n \"a\": 1,\n \"b\": [\n  1.0,\n  null\n ],\n \"c\": [],\n \"d\": {},\n \"e\": \"x\\\"y\\n\\u0001…\"\n}"
     );
 }
+
+#[test]
+fn control_characters_are_escaped_and_del_is_not() {
+    let j = J::str("a\u{1}b\u{1b}[2Jc\u{1f}d\u{7f}e");
+    assert_eq!(dumps(&j, 1), "\"a\\u0001b\\u001b[2Jc\\u001fd\u{7f}e\"");
+}

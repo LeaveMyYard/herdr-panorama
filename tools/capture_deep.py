@@ -39,5 +39,6 @@ doc = {"source": "tests/test_deep.py::test_collector_nests_any_depth_in_one_thre
                                 "agent_session": {"kind": "id", "value": SID}}]}}
 for p in sorted(out.rglob("*")):
     if p.is_file():
+        os.utime(p, (t0 + 60 * M, t0 + 60 * M))  # stable mtimes: a re-capture is byte for byte
         doc["files"][str(p.relative_to(out))] = {"text": p.read_text(), "mtime": os.path.getmtime(p)}
 print(json.dumps(doc, indent=1, ensure_ascii=False))

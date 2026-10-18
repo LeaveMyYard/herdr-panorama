@@ -111,3 +111,26 @@ fn a_waiting_agent_says_so_in_the_model() {
     assert_eq!(ag.activity, "turn ended · 1 task in background");
     assert_eq!(sw.counts().waiting, 2);
 }
+
+#[test]
+fn one_broken_session_never_hides_the_others() {
+    let sc = Scenario::new("background");
+    let mut c = Collector::new(Options {
+        projects: sc.projects(),
+        events_dir: sc.root().join("events"),
+        hooks_dir: sc.root().join("hooks"),
+        procs: true,
+        pane_pid: Box::new(|pane| panic!("no process table for {pane}")),
+    });
+    let sw = c.collect(Some(sc.snapshot()), None, sc.now(), WINDOW, STALE);
+    assert_eq!(sw.errors, ["w1:p1: panic: no process table for w1:p1"]);
+    let panes: Vec<_> = sw
+        .orchestrators
+        .iter()
+        .map(|o| o.pane_id.as_str())
+        .collect();
+    assert_eq!(panes, ["w1:p2"]); // the other session is still collected
+    // and the collector still works on the next collect
+    let again = c.collect(Some(sc.snapshot()), None, sc.now() + 1.0, WINDOW, STALE);
+    assert_eq!(again.orchestrators.len(), 1);
+}

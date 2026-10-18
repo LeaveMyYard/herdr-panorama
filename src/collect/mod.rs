@@ -6,9 +6,14 @@
 //! A [`Collector`] lives as long as the view; each [`Collector::collect`] stats unchanged
 //! files and reads only the appended bytes of changed ones.
 //!
-//! Stated deviations: the kit's fold never fails a record, so there is no "N unreadable
-//! records" error; and an agent's `agent_type` or `tool_use_id` that is not a string in the
-//! transcript reads as its text (Python passes the JSON value through).
+//! Stated deviations:
+//! - the kit's fold never fails a record, so there is no "N unreadable records" error;
+//! - an agent's `agent_type` or `tool_use_id`, or herdr's `agent_session.value`, that is not a
+//!   string reads as its text (Python passes the JSON value through);
+//! - where Python raises inside one orchestrator and reports it in `errors` (a list as an
+//!   agent's `agentType`: unhashable; a non-string `cwd`), Rust shows the orchestrator: those
+//!   values are read as text or as absent. A panic is still contained per orchestrator
+//!   ([`contain`]).
 //!
 //! [`Scanner`]: herdr_agent_kit::agent_session::claude::Scanner
 
@@ -84,6 +89,20 @@ fn tabs_of(snap: &Map<String, Value>) -> Vec<(Value, &Map<String, Value>)> {
 
 fn tab_of(a: &Map<String, Value>) -> Value {
     a.get("tab_id").cloned().unwrap_or(Value::Null)
+}
+
+/// One orchestrator's collect, contained: a panic in it (untrusted transcript text) becomes
+/// an entry in `errors`, `<pane>: panic: <message>` (at most 300 characters), and the other
+/// orchestrators are still collected (Python's `try/except` around `_orchestrator`).
+pub fn contain<T>(pane: &str, f: impl FnOnce() -> T) -> Result<T, String> {
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).map_err(|p| {
+        let msg = p
+            .downcast_ref::<&str>()
+            .map(|s| (*s).to_owned())
+            .or_else(|| p.downcast_ref::<String>().cloned())
+            .unwrap_or_default();
+        py::chars(&format!("{pane}: panic: {msg}"), 300)
+    })
 }
 
 impl Collector {
@@ -163,9 +182,19 @@ impl Collector {
                 .iter()
                 .find(|(k, _)| *k == tab_of(a))
                 .map_or(&empty, |(_, t)| *t);
-            let mut o = self.orchestrator(a, tab, per_tab(a), open_qs.unwrap_or(&[]), now);
-            o.tab_no = tab_no(&tab_of(a));
-            swarm.orchestrators.push(o);
+            let n = per_tab(a);
+            let pane = a
+                .get("pane_id")
+                .map_or_else(|| "None".to_owned(), py::py_str);
+            match contain(&pane, || {
+                self.orchestrator(a, tab, n, open_qs.unwrap_or(&[]), now)
+            }) {
+                Ok(mut o) => {
+                    o.tab_no = tab_no(&tab_of(a));
+                    swarm.orchestrators.push(o);
+                }
+                Err(e) => swarm.errors.push(e),
+            }
         }
         swarm
     }
@@ -188,3 +217,6 @@ impl Collector {
             .map(str::to_owned)
     }
 }
+
+#[cfg(test)]
+mod tests;

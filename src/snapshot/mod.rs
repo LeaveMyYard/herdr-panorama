@@ -67,6 +67,8 @@ pub fn build(env: &PluginEnv) -> Swarm {
     let mut config =
         ConfigFile::resolve(env, || herdr.plugin_config_dir(PANORAMA_ID).ok().flatten());
     let cfg: Map<String, Value> = config.load_as().unwrap_or_default();
+    // no home at all: a relative "~/.claude/projects", which holds nothing (as Python's
+    // expanduser leaves "~" when it finds no home)
     let projects = ProjectsRoot::from_env().map_or_else(
         || PathBuf::from("~/.claude/projects"),
         |r| r.path().to_path_buf(),

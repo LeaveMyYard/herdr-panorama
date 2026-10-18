@@ -22,7 +22,9 @@ fn is_in(b: &[u8], i: usize, set: &[u8]) -> bool {
 fn family_first(low: &str) -> Option<String> {
     let b = low.as_bytes();
     let not_digit = |i: usize| !b.get(i).is_some_and(u8::is_ascii_digit);
-    for i in 0..b.len() {
+    // a model name is untrusted text: only char boundaries start a match (never a byte slice
+    // through a character)
+    for i in (0..b.len()).filter(|&i| low.is_char_boundary(i)) {
         for fam in FAMILIES.iter().filter(|f| low[i..].starts_with(**f)) {
             let after = i + fam.len();
             let seps = if is_in(b, after, b"-_ ") {

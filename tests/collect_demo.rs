@@ -280,10 +280,19 @@ fn a_continuation_loop_is_not_followed_forever() {
         ),
     );
     let sw = collect(&sc, &mut sc.collector(), sc.now(), 6.0 * H, false);
+    let billing = sw
+        .orchestrators
+        .iter()
+        .find(|o| o.pane_id == "w1:p1")
+        .unwrap();
+    assert_eq!(billing.tab_label, "Billing API");
+    assert_eq!(billing.session_id.as_deref(), Some(other)); // the first repeat ends the walk
     assert!(
-        sw.orchestrators
-            .iter()
-            .any(|o| o.tab_label == "Billing API")
+        billing
+            .transcript
+            .as_deref()
+            .unwrap()
+            .ends_with(&format!("{other}.jsonl"))
     );
 }
 
@@ -421,4 +430,28 @@ fn a_continuation_chain_is_followed_at_most_eight_hops() {
         .find(|o| o.pane_id == "w1:p1")
         .unwrap();
     assert_eq!(billing.session_id.as_deref(), Some(ids[7].as_str())); // S1 + 8 hops
+}
+
+#[test]
+fn a_non_ascii_model_in_a_meta_file_is_read_as_python_reads_it() {
+    let sc = Scenario::new("demo");
+    let meta = sc
+        .projects()
+        .join("-home-user-project")
+        .join(S1)
+        .join("subagents/agent-a3explore000000001.meta.json");
+    let text = std::fs::read_to_string(&meta).unwrap().replace(
+        "\"model\": \"haiku\"",
+        "\"model\": \"claude-\u{f6}-opus-4\"",
+    );
+    std::fs::write(&meta, text).unwrap();
+    let sw = collect(&sc, &mut sc.collector(), sc.now(), 6.0 * H, true);
+    assert!(sw.errors.is_empty(), "{:?}", sw.errors);
+    let a3 = sw
+        .orchestrators
+        .iter()
+        .flat_map(agents)
+        .find(|a| a.id.starts_with("a3explore"))
+        .unwrap();
+    assert_eq!(a3.model.as_deref(), Some("opus 4"));
 }

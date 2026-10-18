@@ -36,3 +36,12 @@ fn the_inbox_mark_is_stripped() {
     assert_eq!(strip_inbox_mark("work ❓3 "), "work ❓3 ");
     assert_eq!(strip_inbox_mark("❓3 "), "");
 }
+
+#[test]
+fn a_non_ascii_model_never_panics_and_reads_as_python_reads_it() {
+    let m = |s: &str| short_model(Some(s));
+    assert_eq!(m("claude-ö-opus-4").as_deref(), Some("opus 4"));
+    assert_eq!(m("модель").as_deref(), Some("модель"));
+    assert_eq!(m("xésonnet").as_deref(), Some("sonnet"));
+    assert_eq!(m("ö4-5-haiku").as_deref(), Some("haiku 4.5"));
+}
