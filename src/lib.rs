@@ -11,3 +11,4 @@ pub mod panel;
 pub mod proto;
 pub mod settings;
 pub mod ui;
+pub mod unseen;

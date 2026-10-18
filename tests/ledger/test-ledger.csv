@@ -1150,19 +1150,19 @@ tests/test_unseen.py::test_2a_pulses_the_same_cells_in_the_same_colours_as_the_d
 tests/test_unseen.py::test_2a_pulses_the_same_cells_in_the_same_colours_as_the_design[6],tests/test_unseen.py,crates/panorama-core/tests/design_unseen.rs::design_6_the_2a_graph_pulses_like_the_design,mapped,,P4
 tests/test_unseen.py::test_2a_pulses_the_same_cells_in_the_same_colours_as_the_design[9],tests/test_unseen.py,crates/panorama-core/tests/design_unseen.rs::design_6_the_2a_graph_pulses_like_the_design,mapped,,P4
 tests/test_unseen.py::test_the_pulse_is_slow_and_never_off,tests/test_unseen.py,crates/panorama-core/src/view/anim/tests.rs::the_pulse_is_slow_and_never_off ; crates/panorama-core/src/view/moving/tests.rs::still_unless_something_moves,mapped,,P3
-tests/test_unseen.py::test_the_first_look_marks_nothing_then_changes_are_events,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_most_urgent_wins_and_an_answered_question_clears,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_marks_survive_a_restart_and_are_shared_by_every_panorama,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_what_happened_while_panorama_was_closed_counts,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_focus_moving_onto_the_orchestrator_pane_clears_its_marks,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_review_probe_a_failure_under_resting_focus_is_kept,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_review_probe_the_first_refresh_after_start_never_clears_by_focus,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_review_probe_the_cockpit_focus_on_the_docked_agent_is_not_looking,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_remote_agents_are_keyed_by_machine_in_the_state_file,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_turned_off_marks_nothing,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_a_busy_lock_keeps_the_seen_mark_until_it_is_written,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_a_broken_state_file_starts_over,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_old_agents_are_forgotten,tests/test_unseen.py,,todo,,P4
+tests/test_unseen.py::test_the_first_look_marks_nothing_then_changes_are_events,tests/test_unseen.py,src/unseen/tests.rs::the_first_look_marks_nothing_then_changes_are_events,mapped,,P4
+tests/test_unseen.py::test_most_urgent_wins_and_an_answered_question_clears,tests/test_unseen.py,src/unseen/tests.rs::most_urgent_wins_and_an_answered_question_clears ; src/unseen/rules/tests.rs::events_and_urgency,mapped,,P4
+tests/test_unseen.py::test_marks_survive_a_restart_and_are_shared_by_every_panorama,tests/test_unseen.py,src/unseen/tests.rs::marks_survive_a_restart_and_are_shared_by_every_panorama,mapped,,P4
+tests/test_unseen.py::test_what_happened_while_panorama_was_closed_counts,tests/test_unseen.py,src/unseen/tests.rs::what_happened_while_panorama_was_closed_counts,mapped,,P4
+tests/test_unseen.py::test_focus_moving_onto_the_orchestrator_pane_clears_its_marks,tests/test_unseen.py,src/unseen/tests.rs::focus_moving_onto_the_orchestrator_pane_clears_its_marks,mapped,,P4
+tests/test_unseen.py::test_review_probe_a_failure_under_resting_focus_is_kept,tests/test_unseen.py,src/unseen/tests.rs::review_probe_a_failure_under_resting_focus_is_kept,mapped,,P4
+tests/test_unseen.py::test_review_probe_the_first_refresh_after_start_never_clears_by_focus,tests/test_unseen.py,src/unseen/tests.rs::review_probe_the_first_refresh_after_start_never_clears_by_focus,mapped,,P4
+tests/test_unseen.py::test_review_probe_the_cockpit_focus_on_the_docked_agent_is_not_looking,tests/test_unseen.py,src/unseen/tests.rs::review_probe_the_cockpit_focus_on_the_docked_agent_is_not_looking,mapped,,P4
+tests/test_unseen.py::test_remote_agents_are_keyed_by_machine_in_the_state_file,tests/test_unseen.py,src/unseen/tests.rs::remote_agents_are_keyed_by_machine_in_the_state_file,mapped,,P4
+tests/test_unseen.py::test_turned_off_marks_nothing,tests/test_unseen.py,src/unseen/tests.rs::turned_off_marks_nothing,mapped,,P4
+tests/test_unseen.py::test_a_busy_lock_keeps_the_seen_mark_until_it_is_written,tests/test_unseen.py,src/unseen/tests.rs::a_busy_lock_keeps_the_seen_mark_until_it_is_written,mapped,,P4
+tests/test_unseen.py::test_a_broken_state_file_starts_over,tests/test_unseen.py,src/unseen/tests.rs::a_broken_state_file_starts_over ; src/unseen/store/tests.rs::a_file_that_is_not_the_format_reads_as_none,mapped,,P4
+tests/test_unseen.py::test_old_agents_are_forgotten,tests/test_unseen.py,src/unseen/tests.rs::old_agents_are_forgotten,mapped,,P4
 tests/test_unseen.py::test_click_enter_and_go_to_pane_mark_seen,tests/test_unseen.py,,todo,,P4
 tests/test_unseen.py::test_a_finished_card_clears_its_folded_agents,tests/test_unseen.py,,todo,,P4
 tests/test_unseen.py::test_review_l2_the_state_file_is_read_and_written_off_the_ui_thread,tests/test_unseen.py,,todo,,P4
