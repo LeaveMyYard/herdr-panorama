@@ -2,6 +2,7 @@
 //! panel exits 0 and leaves no crash marker (the core would read a crash).
 
 use rustix::fs::{OFlags, fcntl_getfl, fcntl_setfl};
+use rustix::io::{FdFlags, fcntl_getfd, fcntl_setfd};
 use rustix::pty::{OpenptFlags, grantpt, openpt, ptsname, unlockpt};
 use rustix::termios::{Winsize, tcsetwinsize};
 use std::io::Read;
@@ -13,8 +14,10 @@ fn a_terminal_that_goes_away_is_a_clean_end() {
     let dir = tempfile::tempdir().unwrap();
     let state = dir.path().join("state");
     std::fs::create_dir_all(&state).unwrap();
-    // CLOEXEC: a master the panel inherited would keep its terminal alive
-    let master = openpt(OpenptFlags::RDWR | OpenptFlags::NOCTTY | OpenptFlags::CLOEXEC).unwrap();
+    let master = openpt(OpenptFlags::RDWR | OpenptFlags::NOCTTY).unwrap();
+    // close-on-exec: a master the panel inherited would keep its terminal alive (set after
+    // opening: `OpenptFlags::CLOEXEC` is Linux-only)
+    fcntl_setfd(&master, fcntl_getfd(&master).unwrap() | FdFlags::CLOEXEC).unwrap();
     grantpt(&master).unwrap();
     unlockpt(&master).unwrap();
     let name = ptsname(&master, Vec::new()).unwrap();
