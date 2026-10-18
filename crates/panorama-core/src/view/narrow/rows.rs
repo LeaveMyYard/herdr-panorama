@@ -39,7 +39,7 @@ pub fn orch_row(cv: &mut Screen, y: i32, o: &Orchestrator, view: &View, ages: Ag
     }
     pod(cv, 1, y, &st.st, &st.glyph, false);
     let agents: Vec<_> = o.agents().collect();
-    let mk = marks_of(&agents, o.herdr_status == HerdrStatus::Blocked);
+    let mk = marks_of(&agents, o.herdr_status == HerdrStatus::Blocked, 0);
     let mw = marks_right(cv, w - 2, y, &mk, Some(&o.pane_id));
     let name = trunc(&o.tab_label, (w - 26 - mw).max(8));
     let words = trunc(

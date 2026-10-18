@@ -39,6 +39,24 @@
    ]
   }
  ],
+ "unseen": {
+  "initial": {
+   "a1author0000000001": "done",
+   "a2review0000000001": "done",
+   "b1author0000000001": "done",
+   "b3fixer00000000001": "fail",
+   "c1banner0000000001": "wait",
+   "w1plan000000000001": "done"
+  },
+  "key 1 right": {
+   "a1author0000000001": "done",
+   "a2review0000000001": "done",
+   "b1author0000000001": "done",
+   "b3fixer00000000001": "fail",
+   "c1banner0000000001": "wait",
+   "w1plan000000000001": "done"
+  }
+ },
  "screens": {
   "initial": [
     [[" ","#c3c7cd","#171a1f",false],["herdr","#eceef1","#171a1f",true],[" panorama","#80868f","#171a1f",false],["    ","#c3c7cd","#171a1f",false],["all","#eceef1","#171a1f",true],["   ","#c3c7cd","#171a1f",false],["running","#4d535c","#171a1f",false],["   ","#c3c7cd","#171a1f",false],["needs me","#4d535c","#171a1f",false],["                                                                                              ","#c3c7cd","#171a1f",false],["? 2","#ffb547","#171a1f",true],["  ","#c3c7cd","#171a1f",false],["! 1","#ffb547","#171a1f",true],["  ","#c3c7cd","#171a1f",false],["✗ 1","#ff6b6b","#171a1f",true],["    ","#c3c7cd","#171a1f",false],["10:10","#80868f","#171a1f",false],[" ","#c3c7cd","#171a1f",false]],

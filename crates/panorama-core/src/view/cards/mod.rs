@@ -1,6 +1,7 @@
-//! The graph's card pieces (Python `render.py`, shared by the narrow layout now and the wide
-//! graph in P4): boxes and the lines that join them, the animated edge, the `✗ ! ?N` marks,
-//! a thread's phases, a row of agent pods, an agent's details, and its action hints.
+//! The graph's card pieces (Python `render.py`, shared by the narrow layout and the wide
+//! graph): boxes and the lines that join them, the animated edge and the unseen pulse, the
+//! `✗ ! ?N` marks, the tags, a thread's phases, a row of agent pods, an agent's details, and
+//! its action hints.
 
 pub mod actions;
 pub mod boxes;
@@ -9,6 +10,8 @@ pub mod edge;
 pub mod marks;
 pub mod phases;
 pub mod pods;
+pub mod pulse;
+pub mod tags;
 
 /// A card's box on a screen: `w` × `h` cells at `(x, y)`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
