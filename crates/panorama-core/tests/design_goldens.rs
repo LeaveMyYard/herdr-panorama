@@ -8,7 +8,7 @@ mod support;
 use panorama_core::view::palette::{BG, DIM, DOCK_HOV, FAINT, FG};
 use panorama_core::view::theme::{OwnColours, PanelSettings, Tokens, panel_look};
 use panorama_core::view::{Marks, Target, Unseen, View, render_dock};
-use support::{assert_same, cells, fixture, golden, wire_swarm};
+use support::{NO_SESSIONS, assert_same, cells, fixture, golden, wire_swarm};
 
 /// The design's dataset in wire form, docked next to tab 3, as in the design.
 fn design_swarm() -> panorama_core::model::Swarm {
@@ -56,7 +56,7 @@ fn design_9e_cell_for_cell() {
     let nine = fixture("design_9.json");
     let swarm = design_swarm();
     for (key, frame) in frames(&nine) {
-        let got = render_dock(&swarm, &design_view(frame), 46, 45, None);
+        let got = render_dock(&swarm, &design_view(frame), 46, 45, None, NO_SESSIONS);
         assert_same(
             &format!("9e frame {key}"),
             &golden(&nine["frames"][&key]["E"]),
@@ -74,7 +74,7 @@ fn design_9e_unseen_tiles_pulse_like_the_design() {
             unseen: marks(),
             ..design_view(frame)
         };
-        let got = render_dock(&swarm, &view, 46, 45, None);
+        let got = render_dock(&swarm, &view, 46, 45, None, NO_SESSIONS);
         assert_same(
             &format!("9e unseen frame {key}"),
             &golden(&nine["frames"][&key]["U"]),
@@ -134,7 +134,7 @@ fn design_10_focused_and_not_in_two_themes_cell_for_cell() {
                     panel: Some(panel_look(tokens, focused, OWN, &settings)),
                     ..design_view(frame)
                 };
-                let got = render_dock(&swarm, &view, 46, 45, None);
+                let got = render_dock(&swarm, &view, 46, 45, None, NO_SESSIONS);
                 let want = golden(&ten["frames"][&key][format!("{theme}{mode}")]);
                 assert_same(
                     &format!("turn 10 frame {key} {theme}{mode}"),

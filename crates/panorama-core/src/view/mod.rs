@@ -8,6 +8,7 @@
 //! narrow layout join in P4.
 
 pub mod anim;
+pub mod chrome;
 pub mod colour;
 pub mod dock;
 pub mod empty;
@@ -34,10 +35,23 @@ use crate::model::Swarm;
 
 /// The docked panel as Python's `render(…)` draws it with `view.dock` on: herdr not reachable
 /// and no sessions are the graph's empty pages; otherwise [`dock::dock_panel`]. `stale`: why
-/// the model may be out of date (a failed refresh).
-pub fn render_dock(swarm: &Swarm, view: &View, w: i32, h: i32, stale: Option<&str>) -> Screen {
+/// the model may be out of date (a failed refresh). `no_sessions`: the empty page's words when
+/// herdr shows no agent session; the caller names its harness (required: the core names none).
+///
+/// Every string in `swarm` (and `stale`) is drawn as given: the caller passes them sanitized
+/// (the panel cleans the core's state as it reads it), so no control character reaches the
+/// terminal.
+pub fn render_dock(
+    swarm: &Swarm,
+    view: &View,
+    w: i32,
+    h: i32,
+    stale: Option<&str>,
+    no_sessions: &str,
+) -> Screen {
+    debug_assert!(!no_sessions.is_empty(), "the empty page needs its words");
     if !swarm.herdr_ok || swarm.orchestrators.is_empty() {
-        return empty::page(swarm, view, w, h, stale);
+        return empty::page(swarm, view, w, h, stale, no_sessions);
     }
     dock::dock_panel(swarm, view, w, h, stale.is_some())
 }

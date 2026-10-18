@@ -19,7 +19,6 @@ use super::state::{NEW_ROW, View};
 use super::target::Target;
 use super::text::trunc;
 use crate::model::{Orchestrator, Swarm};
-use herdr_agent_kit::herdr_api::{MAX_ARG, clean};
 use row::{RowLook, dock_row};
 
 /// The list's canvas: entries past this many rows are cut (Python `TALL`).
@@ -102,11 +101,13 @@ fn list(
 /// The machine label when `o` starts another machine's group (local ones have none). Groups
 /// are keyed by the machine's id: two machines may share a label.
 fn group_start<'a>(o: &'a Orchestrator, prev: &mut Option<&'a str>) -> Option<&'a str> {
-    let key = o.machine_id.as_deref().or(o.machine.as_deref());
+    // Python's `or`: an empty id or label counts as none
+    let set = |s: &'a Option<String>| s.as_deref().filter(|s| !s.is_empty());
+    let key = set(&o.machine_id).or(set(&o.machine));
     let starts = key.is_some() && key != *prev;
     *prev = key;
     if starts {
-        o.machine.as_deref().or(key)
+        set(&o.machine).or(key)
     } else {
         None
     }
@@ -114,7 +115,7 @@ fn group_start<'a>(o: &'a Orchestrator, prev: &mut Option<&'a str>) -> Option<&'
 
 /// A faint divider row with a machine's label above its group (the operator's choice).
 fn machine_divider(cv: &mut Screen, y: i32, w: i32, label: &str) {
-    let text = trunc(&format!(" {} ", clean(label, MAX_ARG)), (w - 2).max(0));
+    let text = trunc(&format!(" {label} "), (w - 2).max(0));
     let n = text.chars().count() as i32;
     cv.put(0, y, "─", LINE, None, false);
     cv.put(1, y, &text, FAINT, None, false);

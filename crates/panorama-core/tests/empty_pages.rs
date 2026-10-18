@@ -6,7 +6,7 @@ mod support;
 
 use panorama_core::model::Swarm;
 use panorama_core::view::{View, render_dock};
-use support::{assert_same, cells, fixture, golden};
+use support::{NO_SESSIONS, assert_same, cells, fixture, golden};
 
 #[test]
 fn herdr_down_shows_the_retry_page() {
@@ -22,7 +22,7 @@ fn herdr_down_shows_the_retry_page() {
         now: run["now"].as_f64().unwrap(),
         ..View::default()
     }; // TZ=UTC
-    let got = render_dock(&swarm, &view, 160, 45, None);
+    let got = render_dock(&swarm, &view, 160, 45, None, NO_SESSIONS);
     assert_same(
         "herdr down",
         &golden(&file["screens"]["herdr down"]),
@@ -37,10 +37,9 @@ fn no_sessions_at_panel_width() {
     // caller's: the Claude Code panel passes Python's.
     let view = View {
         now: 1791972600.0,
-        no_sessions: "No Claude Code sessions in herdr".into(),
         ..View::default()
     };
-    let s = render_dock(&Swarm::default(), &view, 46, 45, None);
+    let s = render_dock(&Swarm::default(), &view, 46, 45, None, NO_SESSIONS);
     let text = s.text();
     let rows: Vec<&str> = text.lines().collect();
     assert_eq!(rows[0], " herdr panorama    all   running   needs10:10");

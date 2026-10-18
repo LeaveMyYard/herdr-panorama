@@ -9,12 +9,11 @@ use crate::view::seg::{Seg, width};
 use crate::view::state::View;
 use crate::view::target::Target;
 use crate::view::text::{hhmm, trunc};
-use herdr_agent_kit::herdr_api::{MAX_ARG, clean};
 
 /// Line 0: `herdr panorama`, the filters (click targets), the refresh-failed badge, and the
 /// totals and the clock on the right (only the clock below 60 columns).
 pub fn header(s: &mut Screen, swarm: &Swarm, view: &View, stale: Option<&str>) {
-    s.fill_bg(0, 0, s.w, 1, HDR);
+    s.fill_bg(0, 0, s.w(), 1, HDR);
     let mut x = s.segs(
         1,
         0,
@@ -34,7 +33,7 @@ pub fn header(s: &mut Screen, swarm: &Swarm, view: &View, stale: Option<&str>) {
         let badge = Seg::new(" refresh failed ", ON_LIGHT)
             .bold()
             .on(status(&Status::Waiting));
-        let why = format!(" {}", trunc(&clean(why, MAX_ARG), (s.w - x - 49).max(0)));
+        let why = format!(" {}", trunc(why, (s.w() - x - 49).max(0)));
         s.segs(x, 0, &[badge, Seg::new(why, FAINT)]);
     }
     let c = swarm.counts();
@@ -47,9 +46,9 @@ pub fn header(s: &mut Screen, swarm: &Swarm, view: &View, stale: Option<&str>) {
         Seg::plain("    "),
         Seg::new(hhmm(Some(view.now), view.utc_offset), DIM),
     ];
-    if s.w < 60 {
+    if s.w() < 60 {
         segs.drain(..segs.len() - 1);
     }
-    let x = s.w - width(&segs) - 1;
+    let x = s.w() - width(&segs) - 1;
     s.segs(x, 0, &segs);
 }

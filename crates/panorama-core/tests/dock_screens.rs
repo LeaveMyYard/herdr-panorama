@@ -9,7 +9,7 @@ mod support;
 use panorama_core::view::palette::{BG, DIM, DOCK_HOV, FAINT, FG};
 use panorama_core::view::theme::{OwnColours, PanelSettings, panel_look};
 use panorama_core::view::{Target, View, render_dock};
-use support::{assert_same, cells, fixture, golden, wire_swarm};
+use support::{NO_SESSIONS, assert_same, cells, fixture, golden, wire_swarm};
 
 const OWN: OwnColours = OwnColours {
     fg: FG,
@@ -38,7 +38,7 @@ fn check(file: &str, snap: &str, view: impl FnOnce(&serde_json::Value) -> View) 
         size[0].as_i64().unwrap() as i32,
         size[1].as_i64().unwrap() as i32,
     );
-    let got = render_dock(&swarm, &view(run), w, h, None);
+    let got = render_dock(&swarm, &view(run), w, h, None, NO_SESSIONS);
     assert_same(
         &format!("{file} {snap}"),
         &golden(&golden_file["screens"][snap]),

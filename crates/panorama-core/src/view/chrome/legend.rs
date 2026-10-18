@@ -59,8 +59,8 @@ fn pod(s: &mut Screen, x: i32, y: i32, st: &Status, g: &str) {
 /// narrow one.
 pub fn legend(s: &mut Screen, y: i32) {
     let mut items: Vec<&(Status, &str, &str)> = LEGEND.iter().collect();
-    let gap = if s.w >= 80 { 2 } else { 1 };
-    if s.w < WIDE {
+    let gap = if s.w() >= 80 { 2 } else { 1 };
+    if s.w() < WIDE {
         let len = |t: &str| t.chars().count() as i32;
         let width = |its: &[&(Status, &str, &str)]| {
             1 + its
@@ -69,7 +69,7 @@ pub fn legend(s: &mut Screen, y: i32) {
                 .sum::<i32>()
         };
         for k in &NARROW_DROP {
-            if width(&items) - gap < s.w {
+            if width(&items) - gap < s.w() {
                 break;
             }
             items.retain(|it| it.0 != *k);
@@ -77,7 +77,7 @@ pub fn legend(s: &mut Screen, y: i32) {
     }
     let mut x = 1;
     for (st, g, lab) in items {
-        if s.w >= WIDE {
+        if s.w() >= WIDE {
             pod(s, x, y, st, g);
             x = s.segs(x + 4, y, &[Seg::new(*lab, FAINT)]) + 2;
         } else {
