@@ -3,11 +3,11 @@
 //! thread card on the left.
 
 use super::agent_card::{AgentCtx, agent_card};
+use super::column::Place;
 use super::column::TALL;
 use super::fin_card::fin_card;
 use super::layout::Columns;
 use super::place::{Tree, place_tree};
-use super::thread_card::Place;
 use crate::model::{Thread, TreeKids};
 use crate::view::cards::details::agent_detail_lines;
 use crate::view::cards::link::{Link, link};

@@ -121,6 +121,13 @@ fn pulse(design: &serde_json::Value, frame: f64) -> Pulse {
                     d, a,
                     "({x},{y}): a selected border pulses where the design's does"
                 );
+                // only its colour is set aside: the character and the weight are the design's
+                let (w, g) = (&d_on[y][x], &a_on[y][x]);
+                assert_eq!(
+                    (w.ch, w.bold),
+                    (g.ch, g.bold),
+                    "({x},{y}): a selected border"
+                );
                 if d {
                     selected.push((x, y));
                 }

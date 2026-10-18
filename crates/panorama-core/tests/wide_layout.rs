@@ -607,3 +607,84 @@ fn a_tree_taller_than_the_screen_says_more_below() {
     let want = format!("{}↓ more below", " ".repeat(63));
     assert_eq!(s.text().lines().nth(10).unwrap(), want);
 }
+
+#[test]
+fn a_selected_agent_in_a_column_scrolled_off_does_not_unfold() {
+    // r1 (depth 2) is selected but its column is scrolled off to the left: it keeps a folded
+    // card's height, so b1's children below it stay where Python drew them
+    let v = View {
+        hcol: Some(4),
+        ..deep_view(Some("r1"), 3)
+    };
+    let s = render(&deep(), &v, 160, 45);
+    assert_eq!(s.hlo, 4);
+    let text = s.text();
+    let row = |w: &str| text.lines().position(|r| r.contains(w));
+    let rows: Vec<Option<usize>> = ["checker c1", "shard s1", "shard s8", "3 finished"]
+        .map(row)
+        .into();
+    assert_eq!(rows, [Some(4), Some(16), Some(32), Some(36)]); // captured from Python's render
+}
+
+#[test]
+fn more_below_shows_only_when_the_tree_is_taller_than_the_column() {
+    // the boundary, from Python's render: at 42 rows the tree is one row taller than the
+    // column; at 43 it fits exactly
+    let more = |h| {
+        render(&deep(), &deep_view(Some("l1"), 2), 160, h)
+            .text()
+            .contains("more below")
+    };
+    assert!(more(42));
+    assert!(!more(43));
+}
+
+#[test]
+fn the_path_above_the_columns_cuts_each_name_at_28() {
+    // a 29-character tab label: 27 characters and "…" (captured from Python's render)
+    let mut sw = deep();
+    sw.orchestrators[0].tab_label = "Core Library of plugins 12345".into();
+    let s = render(&sw, &deep_view(Some("c1"), 5), 160, 45);
+    let want = "  ‹ Core Library of plugins 123… › Refactor: plugin loader › lead l1 › researcher r1   4 columns left";
+    assert!(s.text().lines().nth(2).unwrap().starts_with(want));
+}
+
+#[test]
+fn a_selected_agent_scrolled_off_keeps_a_folded_height_for_the_cards_below_it() {
+    // a spawned x (selected) and y, y spawned z; only z's column is shown: x keeps three
+    // rows, so y and z start right below it (z's row captured from Python's render)
+    let o: Orchestrator = serde_json::from_value(json!({
+        "pane_id": "p", "tab_id": "tt", "tab_label": "o", "session_id": null,
+        "threads": [{"id": "t", "name": "n", "source": "turn", "status": "active", "agents": [
+            {"id": "a", "status": "run", "started": 1.0},
+            {"id": "x", "parent": "a", "status": "run", "started": 2.0, "activity": "long ".repeat(20)},
+            {"id": "y", "parent": "a", "status": "run", "started": 3.0},
+            {"id": "z", "parent": "y", "status": "run", "started": 4.0},
+        ]}],
+    }))
+    .unwrap();
+    let sw = Swarm {
+        orchestrators: vec![o],
+        ..Swarm::default()
+    };
+    let v = View {
+        orch: Some("p".into()),
+        thread: Some("t".into()),
+        agent: Some("x".into()),
+        focus: 3,
+        hcol: Some(4),
+        now: 10.0,
+        ..View::default()
+    };
+    let s = render(&sw, &v, 160, 45);
+    assert_eq!(s.hlo, 4);
+    let text = s.text();
+    let z = text.lines().position(|r| r.contains("agent z"));
+    assert_eq!(z, Some(8));
+    assert!(
+        text.lines()
+            .nth(8)
+            .unwrap()
+            .starts_with("────┨  ⠋  agent z   running")
+    );
+}

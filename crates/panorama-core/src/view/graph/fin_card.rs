@@ -1,7 +1,7 @@
 //! A group's "n finished" card (Python `render.fin_card`): up to five pods of the agents it
 //! folds, a count by role, and whether it is unfolded.
 
-use super::thread_card::Place;
+use super::column::Place;
 use crate::model::{Agent, Thread};
 use crate::view::agent_text::role_label;
 use crate::view::cards::Area;

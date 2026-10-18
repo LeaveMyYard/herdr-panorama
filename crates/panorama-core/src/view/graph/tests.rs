@@ -1,7 +1,7 @@
 //! The "n finished" card, drawn on its own (its identity and its five pods).
 
+use super::column::Place;
 use super::fin_card::fin_card;
-use super::thread_card::Place;
 use crate::model::Thread;
 use crate::view::nav::tree_entries;
 use crate::view::screen::Screen;

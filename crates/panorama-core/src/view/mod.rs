@@ -69,6 +69,11 @@ pub fn render_dock(
 /// otherwise the wide graph ([`graph::page`]) from [`empty::WIDE`] columns and the narrow
 /// layout ([`narrow::page`]) below. The arguments are [`render_dock`]'s. The screen's
 /// [`Screen::hlo`] is the wide graph's first column shown, for a sideways scroll.
+///
+/// As for [`render_dock`], every string is drawn as given: the caller cleans the swarm first.
+/// The panel's swarm is cleaned as the core's state is read; the app (P4 8a) renders its own
+/// collector's swarm and must clean it before this (test_render.py's untrusted-text row maps
+/// there).
 pub fn render_graph(
     swarm: &Swarm,
     view: &View,
