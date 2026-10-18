@@ -9,6 +9,7 @@ pub mod app;
 pub mod collect;
 pub mod contract;
 pub mod core;
+pub mod emit;
 pub mod hook;
 pub mod machines;
 pub mod mcp;
