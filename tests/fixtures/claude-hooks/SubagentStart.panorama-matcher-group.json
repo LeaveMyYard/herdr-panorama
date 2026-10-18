@@ -1,0 +1,12 @@
+{
+ "source": "herdr-agent-kit fixtures/claude/hooks/SubagentStart.panorama-matcher-group.json (Claude Code 2.1.302): its stdin, session and agent ids and home paths anonymised",
+ "stdin": {
+  "session_id": "00000001-0000-4000-8000-000000000001",
+  "transcript_path": "/home/u/.claude/projects/-home-u-work-claude-cwd/00000001-0000-4000-8000-000000000001.jsonl",
+  "cwd": "/home/u/work/claude/cwd",
+  "prompt_id": "00000002-0000-4000-8000-000000000002",
+  "agent_id": "abbbbbbbbbbbbbbb3",
+  "agent_type": "general-purpose",
+  "hook_event_name": "SubagentStart"
+ }
+}

@@ -38,3 +38,30 @@ fn control_characters_are_escaped_and_del_is_not() {
     let j = J::str("a\u{1}b\u{1b}[2Jc\u{1f}d\u{7f}e");
     assert_eq!(dumps(&j, 1), "\"a\\u0001b\\u001b[2Jc\\u001fd\u{7f}e\"");
 }
+
+#[test]
+fn one_line_matches_python_separators() {
+    let j = J::obj([
+        ("a", J::Int(1)),
+        ("b", J::Arr(vec![J::Float(1.5), J::Null, J::Obj(vec![])])),
+        ("c", J::str("é")),
+    ]);
+    assert_eq!(
+        dumps_line(&j),
+        r#"{"a": 1, "b": [1.5, null, {}], "c": "é"}"#
+    );
+}
+
+#[test]
+fn ascii_lines_escape_as_python_does() {
+    let j = J::obj([("a", J::str("é😀\"x"))]);
+    assert_eq!(dumps_line_ascii(&j), r#"{"a": "\u00e9\ud83d\ude00\"x"}"#);
+}
+
+#[test]
+fn ascii_lines_escape_del_as_python_does() {
+    assert_eq!(
+        dumps_line_ascii(&J::str("a\u{0}b\u{7f} ")),
+        r#""a\u0000b\u007f ""#
+    );
+}
