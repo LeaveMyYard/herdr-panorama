@@ -1,6 +1,9 @@
 {
  "source": "tests/fixtures/capture_graph_rules.py",
  "now": 1800000000.0,
+ "unseen": {
+  "z1": "done"
+ },
  "swarm": {
   "generated_at": 1800000000.0,
   "herdr_ok": true,
@@ -412,7 +415,35 @@
       "name": "Done one",
       "source": "turn",
       "phases": [],
-      "agents": [],
+      "agents": [
+       {
+        "id": "z1",
+        "description": "",
+        "role": "agent",
+        "agent_type": null,
+        "model": null,
+        "status": "done",
+        "tool_use_id": null,
+        "started": 1799996000.0,
+        "ended": null,
+        "last_at": null,
+        "tool_calls": 0,
+        "activity": "",
+        "last_message": "",
+        "questions": [],
+        "pending": [],
+        "question_ids": [],
+        "error": null,
+        "phases": [],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": null,
+        "seq": 0,
+        "bg": []
+       }
+      ],
       "status": "done",
       "started": null,
       "ended": null,
@@ -425,8 +456,15 @@
     "tab_no": 1,
     "machine": null,
     "machine_id": null,
-    "bg": [],
-    "last_activity": null
+    "bg": [
+     {
+      "id": "ob",
+      "kind": "Monitor",
+      "description": "watch",
+      "started": 1799999880.0
+     }
+    ],
+    "last_activity": 0.0
    },
    {
     "pane_id": "w1:p2",
@@ -829,7 +867,35 @@
       "name": "Done one",
       "source": "turn",
       "phases": [],
-      "agents": [],
+      "agents": [
+       {
+        "id": "z1",
+        "description": "",
+        "role": "agent",
+        "agent_type": null,
+        "model": null,
+        "status": "done",
+        "tool_use_id": null,
+        "started": 1799996000.0,
+        "ended": null,
+        "last_at": null,
+        "tool_calls": 0,
+        "activity": "",
+        "last_message": "",
+        "questions": [],
+        "pending": [],
+        "question_ids": [],
+        "error": null,
+        "phases": [],
+        "parent": null,
+        "depth": 1,
+        "resumes": 0,
+        "inferred": false,
+        "transcript": null,
+        "seq": 0,
+        "bg": []
+       }
+      ],
       "status": "done",
       "started": null,
       "ended": null,
@@ -847,10 +913,1618 @@
    }
   ]
  },
- "orchs": "╭──────────────────────────╮\n┃  ?  A very long orch… ?2 │\n┃     needs you · working… │\n╰━──────────────── agents ─╯\n\n╭──────────────────────────╮\n┃  ⠋  Second               │\n┃     working · 1/11       │\n╰━──────────────── agents ─╯\n\n╭──────────────────────────╮\n│ +  New agent           n │\n╰──────────────────────────╯",
- "threads": "╭────────────────────────────────────────────────╮\n┃ ⠋ Thread one                                   │\n┃   build                                        │\n┃    ⠋   ⠋   ⠙   ⠹   ⠸   ⠼   ⠴   ⠦   ⠧  +2 +1 nest\n┃                                                │\n┃   ✓ plan                                       │\n┃   ⠋ build                                      │\n╰────━━━━─────────────────────────────── queued ─╯\n\n╭────────────────────────────────────────────────╮\n│ ⠋ session                                      │\n│   active                                       │\n│                                                │\n╰─────────────────────────────────────── queued ─╯\n\n╭────────────────────────────────────────────────╮\n│ ✓ 1 complete  Done one                       ▾ │\n╰────────────────────────────────────────────────╯\n\n╭────────────────────────────────────────────────╮",
- "n1": "╭──────────────────────────────────────────╮\n┃  ⠁  agent n1                 waiting 30m │\n┃                                          │\n┃   now  waiting                           │\n┃   ⠈ Bash    x                       10m  │\n┃   ⠐ Bash    y                       30m  │\n┃                                          │\n┃   g open pane   t transcript   a answer  │\n╰──────────────────────────── 50m ─ build ─╯",
- "n1h": 9,
- "a0_fg": "#eceef1",
- "a0_border": "#80868f"
+ "orchs": [
+  [
+   [
+    "╭──────────────────────────╮",
+    "#7e878c",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#7e878c",
+    null,
+    false
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    " ? ",
+    "#1b1203",
+    "#f2a93b",
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "A very long orch…",
+    "#eceef1",
+    null,
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "?2",
+    "#ffb547",
+    null,
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#7e878c",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#7e878c",
+    null,
+    false
+   ],
+   [
+    "     ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "needs you · working",
+    "#ffb547",
+    null,
+    true
+   ],
+   [
+    "…",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#7e878c",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "╰━────────────────",
+    "#7e878c",
+    null,
+    false
+   ],
+   [
+    " agents ",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "─╯",
+    "#7e878c",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "                            ",
+    "#c3c7cd",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "╭──────────────────────────╮",
+    "#364043",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#364043",
+    null,
+    false
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    " ⠋ ",
+    "#d8f2ee",
+    "#1f625c",
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "Second",
+    "#c3c7cd",
+    null,
+    true
+   ],
+   [
+    "               ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#364043",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#364043",
+    null,
+    false
+   ],
+   [
+    "     ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "working",
+    "#68c2b5",
+    null,
+    true
+   ],
+   [
+    " · 1/11",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "       ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#364043",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "╰━────────────────",
+    "#364043",
+    null,
+    false
+   ],
+   [
+    " agents ",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "─╯",
+    "#364043",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "                            ",
+    "#c3c7cd",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "╭──────────────────────────╮",
+    "#2c313a",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "│",
+    "#2c313a",
+    null,
+    false
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "+",
+    "#e2cf9c",
+    null,
+    true
+   ],
+   [
+    "  New agent",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "           ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "n",
+    "#4d535c",
+    null,
+    false
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#2c313a",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "╰──────────────────────────╯",
+    "#2c313a",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "                            ",
+    "#c3c7cd",
+    null,
+    false
+   ]
+  ]
+ ],
+ "threads": [
+  [
+   [
+    "╭────────────────────────────────────────────────╮",
+    "#2c313a",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#b39ddb",
+    null,
+    false
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "⠁",
+    "#b39ddb",
+    null,
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "background",
+    "#c3c7cd",
+    null,
+    true
+   ],
+   [
+    "  1 task · main session",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "            ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#2c313a",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#b39ddb",
+    null,
+    false
+   ],
+   [
+    "   ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "⠈",
+    "#b39ddb",
+    null,
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "Monitor ",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "watch                          ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "2m",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "  ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#2c313a",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "╰────────────────────────────────────────────────╯",
+    "#2c313a",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "                                                  ",
+    "#c3c7cd",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "╭────────────────────────────────────────────────╮",
+    "#80868f",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#68c2b5",
+    null,
+    false
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "⠋",
+    "#68c2b5",
+    null,
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "Thread one",
+    "#eceef1",
+    null,
+    true
+   ],
+   [
+    "                                   ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#80868f",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#68c2b5",
+    null,
+    false
+   ],
+   [
+    "   ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "build",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "                                        ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#80868f",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#68c2b5",
+    null,
+    false
+   ],
+   [
+    "   ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    " ⠋ ",
+    "#d8f2ee",
+    "#1f625c",
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    " ⠋ ",
+    "#d8f2ee",
+    "#1f625c",
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    " ⠙ ",
+    "#d8f2ee",
+    "#1f625c",
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    " ⠹ ",
+    "#d8f2ee",
+    "#1f625c",
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    " ⠸ ",
+    "#d8f2ee",
+    "#1f625c",
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    " ⠼ ",
+    "#d8f2ee",
+    "#1f625c",
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    " ⠴ ",
+    "#d8f2ee",
+    "#1f625c",
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    " ⠦ ",
+    "#d8f2ee",
+    "#1f625c",
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    " ⠧ ",
+    "#d8f2ee",
+    "#1f625c",
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "+2",
+    "#4d535c",
+    null,
+    false
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "+1 nest",
+    "#4d535c",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#68c2b5",
+    null,
+    false
+   ],
+   [
+    "                                                ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#80868f",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#68c2b5",
+    null,
+    false
+   ],
+   [
+    "   ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "✓",
+    "#6c9673",
+    null,
+    true
+   ],
+   [
+    " plan         ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "                    ",
+    "#4d535c",
+    null,
+    false
+   ],
+   [
+    "          ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#80868f",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#68c2b5",
+    null,
+    false
+   ],
+   [
+    "   ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "⠋",
+    "#68c2b5",
+    null,
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "build        ",
+    "#eceef1",
+    null,
+    true
+   ],
+   [
+    "                              ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#80868f",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "╰────────────",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "━━━━",
+    "#68c2b5",
+    null,
+    false
+   ],
+   [
+    "─────────────────────── queued ─╯",
+    "#80868f",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "                                                  ",
+    "#c3c7cd",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "╭────────────────────────────────────────────────╮",
+    "#2c313a",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "│",
+    "#2c313a",
+    null,
+    false
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "⠋",
+    "#68c2b5",
+    null,
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "session",
+    "#c3c7cd",
+    null,
+    true
+   ],
+   [
+    "                                      ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#2c313a",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "│",
+    "#2c313a",
+    null,
+    false
+   ],
+   [
+    "   ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "active",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "                                       ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#2c313a",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "│",
+    "#2c313a",
+    null,
+    false
+   ],
+   [
+    "                                                ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#2c313a",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "╰───────────────────────────────────────",
+    "#2c313a",
+    null,
+    false
+   ],
+   [
+    " queued ",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "─╯",
+    "#2c313a",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "                                                  ",
+    "#c3c7cd",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "╭────────────────────────────────────────────────╮",
+    "#364043",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "│",
+    "#364043",
+    null,
+    false
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "✓",
+    "#6c9673",
+    null,
+    true
+   ],
+   [
+    " 1 complete",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "  Done one",
+    "#4d535c",
+    null,
+    false
+   ],
+   [
+    "                       ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "▾",
+    "#4d535c",
+    null,
+    false
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#364043",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "╰────────────────────────────────────────────────╯",
+    "#364043",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "                                                  ",
+    "#c3c7cd",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "╭────────────────────────────────────────────────╮",
+    "#364043",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "│",
+    "#364043",
+    null,
+    false
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "✓",
+    "#6c9673",
+    null,
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "Done one",
+    "#c3c7cd",
+    null,
+    true
+   ],
+   [
+    "                                     ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#364043",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "│",
+    "#364043",
+    null,
+    false
+   ],
+   [
+    "   ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "done",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "                                         ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#364043",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "│",
+    "#364043",
+    null,
+    false
+   ],
+   [
+    "   ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    " ✓ ",
+    "#e3f2e9",
+    "#2c6b4c",
+    true
+   ],
+   [
+    "                                          ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#364043",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "╰───────────────────────────────────────",
+    "#364043",
+    null,
+    false
+   ],
+   [
+    " queued ",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "─╯",
+    "#364043",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "                                                  ",
+    "#c3c7cd",
+    null,
+    false
+   ]
+  ]
+ ],
+ "n1": [
+  [
+   [
+    "╭──────────────────────────────────────────╮",
+    "#eceef1",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#b39ddb",
+    null,
+    false
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    " ⠁ ",
+    "#e6def8",
+    "#3b3159",
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "agent",
+    "#eceef1",
+    null,
+    true
+   ],
+   [
+    " n1",
+    "#4d535c",
+    null,
+    false
+   ],
+   [
+    "                 ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "waiting 30m",
+    "#b39ddb",
+    null,
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#eceef1",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#b39ddb",
+    null,
+    false
+   ],
+   [
+    "                                          ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#eceef1",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#b39ddb",
+    null,
+    false
+   ],
+   [
+    "   ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "now  ",
+    "#4d535c",
+    null,
+    false
+   ],
+   [
+    "waiting                           ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#eceef1",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#b39ddb",
+    null,
+    false
+   ],
+   [
+    "   ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "⠈",
+    "#b39ddb",
+    null,
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "Bash    ",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "x                       ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "10m",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "  ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#eceef1",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#b39ddb",
+    null,
+    false
+   ],
+   [
+    "   ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "⠐",
+    "#b39ddb",
+    null,
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "Bash    ",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "y                       ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "30m",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "  ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#eceef1",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#b39ddb",
+    null,
+    false
+   ],
+   [
+    "                                          ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#eceef1",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#b39ddb",
+    null,
+    false
+   ],
+   [
+    "   ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "g",
+    "#e2cf9c",
+    null,
+    true
+   ],
+   [
+    " open pane   ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "t",
+    "#e2cf9c",
+    null,
+    true
+   ],
+   [
+    " transcript   ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "a",
+    "#4d535c",
+    null,
+    true
+   ],
+   [
+    " answer",
+    "#4d535c",
+    null,
+    false
+   ],
+   [
+    "  ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#eceef1",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "╰────────────────────────────",
+    "#eceef1",
+    null,
+    false
+   ],
+   [
+    " 50m ",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "─",
+    "#eceef1",
+    null,
+    false
+   ],
+   [
+    " build ",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "─╯",
+    "#eceef1",
+    null,
+    false
+   ]
+  ]
+ ],
+ "a0": [
+  [
+   [
+    "╭──────────────────────────────────────────╮",
+    "#80868f",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "┃",
+    "#68c2b5",
+    null,
+    false
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    " ⠋ ",
+    "#d8f2ee",
+    "#1f625c",
+    true
+   ],
+   [
+    " ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "agent",
+    "#eceef1",
+    null,
+    true
+   ],
+   [
+    " a0",
+    "#4d535c",
+    null,
+    false
+   ],
+   [
+    "   ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "running",
+    "#4d535c",
+    null,
+    false
+   ],
+   [
+    "                   ",
+    "#c3c7cd",
+    null,
+    false
+   ],
+   [
+    "│",
+    "#80868f",
+    null,
+    false
+   ]
+  ],
+  [
+   [
+    "╰",
+    "#80868f",
+    null,
+    false
+   ],
+   [
+    "━",
+    "#68c2b5",
+    null,
+    false
+   ],
+   [
+    "─────────────────────────────────── 10m ─╯",
+    "#80868f",
+    null,
+    false
+   ]
+  ]
+ ]
 }

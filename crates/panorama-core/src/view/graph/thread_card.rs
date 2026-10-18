@@ -2,6 +2,7 @@
 //! state, phase and top-level pods (opened into its phases when selected), and the card of
 //! the orchestrator's own background work above them.
 
+use super::column::Place;
 use crate::model::{Orchestrator, Status, Thread};
 use crate::view::anim::clock;
 use crate::view::cards::Area;
@@ -21,16 +22,6 @@ use crate::view::state::{BG_CARD, View};
 use crate::view::target::Target;
 use crate::view::text::{dur, trunc};
 use crate::view::unseen::mark_of;
-
-/// Where a card goes and how it is selected.
-#[derive(Clone, Copy, Debug)]
-pub struct Place {
-    pub x: i32,
-    pub y: i32,
-    pub w: i32,
-    pub is_sel: bool,
-    pub focus: bool,
-}
 
 /// `t`'s card under orchestrator `pane`; `seed` shifts its sweep. Its height.
 pub fn thread_card(

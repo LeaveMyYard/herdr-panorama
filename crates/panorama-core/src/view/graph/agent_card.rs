@@ -1,7 +1,7 @@
 //! An agent's card in its depth column (Python `render.agent_card`): three rows, or unfolded
 //! with its details and action hints when it is the selected agent.
 
-use super::thread_card::Place;
+use super::column::Place;
 use crate::model::{Agent, Status, Thread};
 use crate::view::agent_text::{age_of, role_label, short_id};
 use crate::view::cards::Area;

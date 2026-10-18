@@ -8,9 +8,8 @@ mod support;
 
 use panorama_core::model::Swarm;
 use panorama_core::view::graph::agent_card::{AgentCtx, agent_card};
-use panorama_core::view::graph::column::Column;
+use panorama_core::view::graph::column::{Column, Place};
 use panorama_core::view::graph::orchs::orch_column;
-use panorama_core::view::graph::thread_card::Place;
 use panorama_core::view::graph::threads::thread_column;
 use panorama_core::view::nav::{default_children, find_agent, find_orch, find_thread};
 use panorama_core::view::state::BG_CARD;
@@ -18,7 +17,7 @@ use panorama_core::view::{Filter, Screen, View};
 use serde_json::Value;
 use std::ops::Range;
 use support::states::{NOW, states_swarm};
-use support::{Shown, cells, fixture, golden, wire_swarm};
+use support::{Shown, assert_same, cells, fixture, golden, wire_swarm};
 
 /// The golden's cell with a link's tee on a card border read as the border.
 fn unjoined(c: &Shown) -> Shown {
@@ -296,9 +295,11 @@ fn the_deep_threads_first_agent_folded_with_its_children_off_to_the_right() {
 
 // -- the columns' rules on a swarm built for them (tests/fixtures/graph_rules.json) ------
 
-/// The first `n` lines of a canvas, as Python's `Screen.text` cuts them.
-fn lines(s: &Screen, n: usize) -> String {
-    s.text().lines().take(n).collect::<Vec<_>>().join("\n")
+/// The first `golden.len()` rows of a canvas against them, cell for cell.
+fn assert_rows(name: &str, want: &Value, canvas: &Screen) {
+    let want = golden(want);
+    let got = cells(canvas);
+    assert_same(name, &want, &got[..want.len()]);
 }
 
 #[test]
@@ -312,21 +313,22 @@ fn the_columns_rules_draw_what_python_drew() {
         agent: Some("n1".into()),
         focus: 2,
         now: rules["now"].as_f64().unwrap(),
+        unseen: serde_json::from_value(rules["unseen"].clone()).unwrap(),
         ..View::default()
     };
     view.done_open.insert("w1:p1".into());
     // questions no agent filed (?2), a long name cut, active/live counts without the
     // session's thread and its own agent (1/11)
     let orchs = orch_column(&swarm, &view, 28);
-    assert_eq!(lines(&orchs.canvas, 13), rules["orchs"].as_str().unwrap());
-    // pods past the room (+2), nested ones (+1 nested), a thread never started (queued),
-    // the done threads unfolded (▾)
+    assert_eq!(orchs.height as usize, golden(&rules["orchs"]).len());
+    assert_rows("orchestrators", &rules["orchs"], &orchs.canvas);
+    // the background card without a turn end, pods past the room (+2), nested ones
+    // (+1 nested), a thread never started (queued), the done threads unfolded (▾) with an
+    // unseen finished agent (the folded card's quiet pulse)
     let o = find_orch(&swarm, Some("w1:p1")).unwrap();
     let threads = thread_column(o, &view, 50);
-    assert_eq!(
-        lines(&threads.canvas, 20),
-        rules["threads"].as_str().unwrap()
-    );
+    assert_eq!(threads.height as usize, golden(&rules["threads"]).len());
+    assert_rows("threads", &rules["threads"], &threads.canvas);
     // waiting on its oldest background task (30m), its phase counted from the end
     let t = find_thread(Some(o), Some("t1")).unwrap();
     let mut cv = Screen::new(44, 20);
@@ -350,8 +352,8 @@ fn the_columns_rules_draw_what_python_drew() {
         ctx,
         &view,
     );
-    assert_eq!(i64::from(h), rules["n1h"].as_i64().unwrap());
-    assert_eq!(lines(&cv, h as usize), rules["n1"].as_str().unwrap());
+    assert_eq!(h as usize, golden(&rules["n1"]).len());
+    assert_rows("n1", &rules["n1"], &cv);
     // a card on the selected agent's path: its title and border as selected
     let mut cv = Screen::new(44, 3);
     let place = Place {
@@ -370,12 +372,5 @@ fn the_columns_rules_draw_what_python_drew() {
         ctx,
         &view,
     );
-    assert_eq!(
-        cv.cell(6, 1).fg.to_string(),
-        rules["a0_fg"].as_str().unwrap()
-    );
-    assert_eq!(
-        cv.cell(3, 0).fg.to_string(),
-        rules["a0_border"].as_str().unwrap()
-    );
+    assert_rows("a0 on the path", &rules["a0"], &cv);
 }
