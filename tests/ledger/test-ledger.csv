@@ -177,6 +177,7 @@ tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_ta
 tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[off],tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[old-moving-setting],tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_the_cores_open_key_brings_a_docked_home_back_to_its_own_tab,tests/test_cockpit.py,,todo,,P4
+tests/test_cockpit.py::test_the_cores_open_key_follows_the_home_panes_new_id,tests/test_cockpit.py,,todo,,P4
 tests/test_collect.py::test_demo_swarm_shape,tests/test_collect.py,,todo,,P4
 tests/test_collect.py::test_done_window_hides_old_threads,tests/test_collect.py,,todo,,P4
 tests/test_collect.py::test_later_ticks_read_only_what_was_appended,tests/test_collect.py,,todo,,P4
