@@ -123,6 +123,28 @@
    ]
   }
  ],
+ "unseen": {
+  "release notes idle 12h01m (stale_after 12h)": {},
+  "release notes idle 30h": {},
+  "release notes idle 48h01m, billing 47h": {},
+  "stale_after 30m, release notes idle 59m": {
+   "a1author0000000001": "done",
+   "a2review0000000001": "done",
+   "b1author0000000001": "done",
+   "b3fixer00000000001": "fail",
+   "c1banner0000000001": "wait",
+   "w1plan000000000001": "done"
+  },
+  "stale_after 30m, release notes idle 60m": {
+   "a1author0000000001": "done",
+   "a2review0000000001": "done",
+   "b1author0000000001": "done",
+   "b3fixer00000000001": "fail",
+   "c1banner0000000001": "wait",
+   "d1guide00000000001": "done",
+   "w1plan000000000001": "done"
+  }
+ },
  "screens": {
   "release notes idle 12h01m (stale_after 12h)": [
     [[" ","#c3c7cd","#171a1f",false],["herdr","#eceef1","#171a1f",true],[" panorama","#80868f","#171a1f",false],["    ","#c3c7cd","#171a1f",false],["all","#eceef1","#171a1f",true],["   ","#c3c7cd","#171a1f",false],["running","#4d535c","#171a1f",false],["   ","#c3c7cd","#171a1f",false],["needs me","#4d535c","#171a1f",false],["                                                                                              ","#c3c7cd","#171a1f",false],["? 2","#ffb547","#171a1f",true],["  ","#c3c7cd","#171a1f",false],["! 1","#ffb547","#171a1f",true],["  ","#c3c7cd","#171a1f",false],["✗ 0","#ff6b6b","#171a1f",true],["    ","#c3c7cd","#171a1f",false],["21:16","#80868f","#171a1f",false],[" ","#c3c7cd","#171a1f",false]],

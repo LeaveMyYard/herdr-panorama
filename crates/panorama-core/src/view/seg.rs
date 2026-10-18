@@ -79,3 +79,20 @@ impl Seg {
 pub fn width(segs: &[Seg]) -> i32 {
     segs.iter().map(Seg::len).sum()
 }
+
+/// Segments cut to `room` cells in all, ending in `…` when cut (Python `fit_segs`): a card's
+/// title never runs into what is right-aligned after it.
+pub fn fit_segs(segs: Vec<Seg>, room: i32) -> Vec<Seg> {
+    let full: String = segs.iter().map(|s| s.text.as_str()).collect();
+    if full.chars().count() as i64 <= i64::from(room) {
+        return segs;
+    }
+    let cut = super::text::trunc(&full, room.max(1));
+    let mut cut = cut.chars();
+    segs.into_iter()
+        .filter_map(|s| {
+            let piece: String = cut.by_ref().take(s.text.chars().count()).collect();
+            (!piece.is_empty()).then_some(Seg { text: piece, ..s })
+        })
+        .collect()
+}
