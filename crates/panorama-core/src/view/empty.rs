@@ -33,6 +33,6 @@ pub fn page(
     // the empty page wears the chrome of the layout its width would show
     let wide = w >= WIDE;
     chrome::legend(&mut s, h - 3, wide);
-    chrome::keys(&mut s, wide, view.zoom_hint, swarm.inbox_ok);
+    chrome::keys(&mut s, wide, false, view.zoom_hint, swarm.inbox_ok);
     s
 }

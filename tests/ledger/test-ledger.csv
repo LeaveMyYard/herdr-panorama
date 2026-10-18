@@ -145,43 +145,13 @@ tests/test_card_title.py::test_an_unselected_title_is_cut_too[160],tests/test_ca
 tests/test_card_title.py::test_fit_segs_keeps_short_titles_and_cuts_long_ones,tests/test_card_title.py,,todo,,P4
 tests/test_cockpit.py::test_config_defaults_off_and_width_is_clamped,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_the_home_pane_is_labelled_and_found_by_content,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_dock_moves_only_panorama_left_of_the_agent,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_dock_keep_focus_puts_the_operator_on_panorama_and_follow_leaves_it,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_dock_keep_focus_moves_the_client_to_the_new_tab,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_dock_keep_focus_leaves_an_operator_who_moved_on,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_an_explicit_dock_shows_the_agents_tab_first,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_an_operator_who_moved_on_before_the_dock_is_not_shown_the_agents_tab,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_the_fake_tab_focus_moves_focus,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_dock_keep_focus_falls_back_to_the_agent_if_its_tab_cannot_be_focused,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_dock_keep_focus_traces_each_focus_step,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_dock_keep_focus_without_a_swap_still_focuses_panorama,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_dock_keep_focus_setting_defaults_on,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_docking_elsewhere_leaves_the_previous_agent_alone_in_its_tab,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_a_failed_move_leaves_panorama_where_it_was,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_non_agents_are_not_docked_to,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_the_key_finds_a_docked_panorama_and_focuses_the_list,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_closing_the_agent_tab_with_panorama_in_it_reopens_a_home,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_cockpit_off_brings_panorama_back_to_its_own_first_tab,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_an_older_home_pane_is_adopted_and_labelled,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_records_are_per_herdr_session,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_fit_sizes_panoramas_split_and_leaves_a_dragged_one,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_split_path_and_side,tests/test_cockpit.py,src/panels/tests/shell.rs::split_path_and_side,mapped,,P4
-tests/test_cockpit.py::test_enter_docks_and_focuses_the_agent,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_docked_enter_browses_and_g_goes_into_the_agent[enter-False-True],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_docked_enter_browses_and_g_goes_into_the_agent[g-False-True],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_docked_enter_browses_and_g_goes_into_the_agent[enter-True-False],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_arrows_switch_the_chats_once_they_settle,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_arrows_do_not_dock_the_docked_one_new_agent_or_a_remote,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_arrows_off_or_the_2a_graph_never_dock_on_arrows,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left_or_a_follow_runs[following],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left_or_a_follow_runs[blurred],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left_or_a_follow_runs[herdr says another pane],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_an_arrow_settling_during_a_dock_runs_after_it_even_if_focus_looks_elsewhere,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_an_arrow_dock_due_during_a_dock_runs_after_it,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_docked_enter_with_keep_focus_off_focuses_the_agent,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_a_failed_keep_focus_dock_still_goes_to_the_agent,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_the_2a_graph_enter_still_focuses_the_agent,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_a_failed_dock_still_goes_to_the_agent,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_r8_lookalikes_are_never_adopted_renamed_moved_or_closed[shell with the label],tests/test_cockpit.py,,todo,,P4
 "tests/test_cockpit.py::test_r8_lookalikes_are_never_adopted_renamed_moved_or_closed[panorama exited, its shell left]",tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_r8_lookalikes_are_never_adopted_renamed_moved_or_closed[another plugin alone in a \u25c6 tab],tests/test_cockpit.py,,todo,,P4
@@ -198,20 +168,15 @@ tests/test_cockpit.py::test_r8_process_match[argv5-False],tests/test_cockpit.py,
 tests/test_cockpit.py::test_r8_process_match[argv6-False],tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_r8f_h1_a_shared_home_tab_is_left_alone_with_the_cockpit_off[False],tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_r8f_h1_a_shared_home_tab_is_left_alone_with_the_cockpit_off[True],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_h1_docking_out_of_a_shared_home_tab_relabels_it_first,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_h1_an_unnamed_agent_left_behind_gives_its_kind,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_h1_a_failed_relabel_refuses_to_dock,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_r8f_l4_duplicates_are_left_alone_not_closed,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_l2_dock_moves_the_instance_whose_key_was_pressed,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_r8f_l3_no_foreground_process_is_unknown,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_nit_dock_follows_a_new_id_across_workspaces,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_nit_dock_holds_the_home_lock,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_m1_l1_fit_waits_for_the_dock_and_uses_a_verified_pane,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_l5_enter_reads_the_cockpit_setting_live,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_dock_with_the_lock_held_elsewhere_gives_up,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_follow_with_the_lock_held_elsewhere_gives_up,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_ensure_with_the_lock_held_elsewhere_gives_up,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_lock_busy_is_its_own_exception,tests/test_cockpit.py,,todo,,P4
+tests/test_cockpit.py::test_the_key_brings_a_left_docked_panorama_home_and_focuses_it,tests/test_cockpit.py,,todo,,P4
+tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[per-tab],tests/test_cockpit.py,,todo,,P4
+tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[off],tests/test_cockpit.py,,todo,,P4
+tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[old-moving-setting],tests/test_cockpit.py,,todo,,P4
+tests/test_cockpit.py::test_the_cores_open_key_brings_a_docked_home_back_to_its_own_tab,tests/test_cockpit.py,,todo,,P4
 tests/test_collect.py::test_demo_swarm_shape,tests/test_collect.py,,todo,,P4
 tests/test_collect.py::test_done_window_hides_old_threads,tests/test_collect.py,,todo,,P4
 tests/test_collect.py::test_later_ticks_read_only_what_was_appended,tests/test_collect.py,,todo,,P4
@@ -245,7 +210,6 @@ tests/test_core.py::test_the_panel_renders_its_tab_exactly_like_the_docked_panel
 tests/test_core.py::test_a_panel_without_a_core_acts_on_nothing,tests/test_core.py,src/panel/input/actions/tests.rs::nothing_acts_before_the_keys_are_armed_or_without_a_core,mapped,,P3
 tests/test_core.py::test_a_hidden_tabs_panel_draws_no_frames,tests/test_core.py,src/panel/pacing/tests.rs::a_hidden_tab_or_a_still_screen_never_ticks ; src/panel/model/tests.rs::the_docked_entry_is_this_tabs_and_the_selected_row_the_shown_one ; src/panel/clock/tests.rs::the_animation_time_is_the_wall_clock_in_quarter_seconds,mapped,,P3
 tests/test_core.py::test_the_panels_focus_look_follows_the_cores_focused_pane,tests/test_core.py,src/panel/model/tests.rs::the_focus_look_follows_herdrs_focus_and_the_terminals ; crates/panorama-core/tests/design_goldens.rs::design_10_focused_and_not_in_two_themes_cell_for_cell,mapped,,P3
-tests/test_core.py::test_the_home_panorama_publishes_only_in_per_tab_mode,tests/test_core.py,,todo,,P4
 tests/test_core.py::test_the_home_panorama_publishes_each_refresh_and_takes_seen_back,tests/test_core.py,,todo,,P4
 tests/test_core.py::test_the_line_reader_is_linear_and_one_read_reports_seen_once,tests/test_core.py,,todo,,P4
 tests/test_core.py::test_an_unsafe_socket_directory_is_refused[symlink],tests/test_core.py,,todo,,P4
@@ -259,29 +223,29 @@ tests/test_core.py::test_a_pane_claim_is_checked_against_the_peers_own_process,t
 tests/test_core.py::test_a_pane_runs_our_panel_only_with_that_pid_and_argv,tests/test_core.py,,todo,,P4
 tests/test_core.py::test_the_rust_panel_is_our_panel_too,tests/test_core.py,,todo,,P4
 tests/test_core.py::test_the_tmp_fallbacks_parent_must_be_safe_too,tests/test_core.py,,todo,,P4
-tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[True-fail],tests/test_current_card.py,,todo,,P4
-tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[True-wait],tests/test_current_card.py,,todo,,P4
-tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[True-done],tests/test_current_card.py,,todo,,P4
-tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[False-fail],tests/test_current_card.py,,todo,,P4
-tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[False-wait],tests/test_current_card.py,,todo,,P4
-tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[False-done],tests/test_current_card.py,,todo,,P4
-tests/test_current_card.py::test_without_a_pulse_the_selection_is_unchanged,tests/test_current_card.py,,todo,,P4
-tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V4-None-89-0],tests/test_deep.py,,todo,,P4
-tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V4-None-89-1],tests/test_deep.py,,todo,,P4
-tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V4-None-89-4],tests/test_deep.py,,todo,,P4
-tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V5-b1-0-0],tests/test_deep.py,,todo,,P4
-tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V5-b1-0-1],tests/test_deep.py,,todo,,P4
-tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V5-b1-0-4],tests/test_deep.py,,todo,,P4
-tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V6-c1-0-0],tests/test_deep.py,,todo,,P4
-tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V6-c1-0-1],tests/test_deep.py,,todo,,P4
-tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V6-c1-0-4],tests/test_deep.py,,todo,,P4
+tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[True-fail],tests/test_current_card.py,crates/panorama-core/tests/wide_layout.rs::the_selected_card_stays_apart_through_a_whole_pulse,mapped,,P4
+tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[True-wait],tests/test_current_card.py,crates/panorama-core/tests/wide_layout.rs::the_selected_card_stays_apart_through_a_whole_pulse,mapped,,P4
+tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[True-done],tests/test_current_card.py,crates/panorama-core/tests/wide_layout.rs::the_selected_card_stays_apart_through_a_whole_pulse,mapped,,P4
+tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[False-fail],tests/test_current_card.py,crates/panorama-core/tests/wide_layout.rs::the_selected_card_stays_apart_through_a_whole_pulse,mapped,,P4
+tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[False-wait],tests/test_current_card.py,crates/panorama-core/tests/wide_layout.rs::the_selected_card_stays_apart_through_a_whole_pulse,mapped,,P4
+tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[False-done],tests/test_current_card.py,crates/panorama-core/tests/wide_layout.rs::the_selected_card_stays_apart_through_a_whole_pulse,mapped,,P4
+tests/test_current_card.py::test_without_a_pulse_the_selection_is_unchanged,tests/test_current_card.py,crates/panorama-core/tests/wide_layout.rs::without_a_pulse_the_selection_is_unchanged,mapped,,P4
+tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V4-None-89-0],tests/test_deep.py,crates/panorama-core/tests/design_wide.rs::design_5d_cell_for_cell,mapped,,P4
+tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V4-None-89-1],tests/test_deep.py,crates/panorama-core/tests/design_wide.rs::design_5d_cell_for_cell,mapped,,P4
+tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V4-None-89-4],tests/test_deep.py,crates/panorama-core/tests/design_wide.rs::design_5d_cell_for_cell,mapped,,P4
+tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V5-b1-0-0],tests/test_deep.py,crates/panorama-core/tests/design_wide.rs::design_5d_cell_for_cell,mapped,,P4
+tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V5-b1-0-1],tests/test_deep.py,crates/panorama-core/tests/design_wide.rs::design_5d_cell_for_cell,mapped,,P4
+tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V5-b1-0-4],tests/test_deep.py,crates/panorama-core/tests/design_wide.rs::design_5d_cell_for_cell,mapped,,P4
+tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V6-c1-0-0],tests/test_deep.py,crates/panorama-core/tests/design_wide.rs::design_5d_cell_for_cell,mapped,,P4
+tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V6-c1-0-1],tests/test_deep.py,crates/panorama-core/tests/design_wide.rs::design_5d_cell_for_cell,mapped,,P4
+tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V6-c1-0-4],tests/test_deep.py,crates/panorama-core/tests/design_wide.rs::design_5d_cell_for_cell,mapped,,P4
 tests/test_deep.py::test_docked_panel_tree_rows_match_the_design[0],tests/test_deep.py,crates/panorama-core/tests/design_deep.rs::the_docked_tree_rows_are_the_designs,mapped,,P3
 tests/test_deep.py::test_docked_panel_tree_rows_match_the_design[1],tests/test_deep.py,crates/panorama-core/tests/design_deep.rs::the_docked_tree_rows_are_the_designs,mapped,,P3
 tests/test_deep.py::test_docked_panel_tree_rows_match_the_design[4],tests/test_deep.py,crates/panorama-core/tests/design_deep.rs::the_docked_tree_rows_are_the_designs,mapped,,P3
 tests/test_deep.py::test_nav_has_one_column_per_depth_in_screen_order,tests/test_deep.py,crates/panorama-core/tests/narrow_layout.rs::nav_has_one_column_per_depth_in_screen_order,mapped,,P3
-tests/test_deep.py::test_columns_keep_their_width_and_align_left,tests/test_deep.py,,todo,,P4
-tests/test_deep.py::test_narrow_screens_shrink_the_last_column_and_keep_the_focus_and_its_parents,tests/test_deep.py,,todo,,P4
-tests/test_deep.py::test_a_flat_thread_draws_like_2a_without_the_scroll_line,tests/test_deep.py,,todo,,P4
+tests/test_deep.py::test_columns_keep_their_width_and_align_left,tests/test_deep.py,crates/panorama-core/tests/wide_layout.rs::columns_keep_their_width_and_align_left,mapped,,P4
+tests/test_deep.py::test_narrow_screens_shrink_the_last_column_and_keep_the_focus_and_its_parents,tests/test_deep.py,crates/panorama-core/tests/wide_layout.rs::a_narrow_screen_shrinks_the_last_column_and_keeps_the_focus_and_its_parents,mapped,,P4
+tests/test_deep.py::test_a_flat_thread_draws_like_2a_without_the_scroll_line,tests/test_deep.py,crates/panorama-core/tests/wide_layout.rs::a_flat_thread_draws_like_2a_without_the_scroll_line,mapped,,P4
 tests/test_deep.py::test_a_parent_loop_or_a_missing_parent_never_hides_an_agent,tests/test_deep.py,crates/panorama-core/src/model/tree/tests.rs::a_parent_loop_or_a_missing_parent_never_hides_an_agent,mapped,,P3
 tests/test_deep.py::test_needs_filter_keeps_the_path_to_an_agent_that_needs_you,tests/test_deep.py,crates/panorama-core/tests/narrow_layout.rs::the_needs_filter_keeps_the_path_to_an_agent_that_needs_you,mapped,,P3
 tests/test_deep.py::test_arrows_walk_the_tree_and_scroll_sideways,tests/test_deep.py,,todo,,P4
@@ -297,10 +261,6 @@ tests/test_dock_panel.py::test_the_cursor_wears_the_hover_look_and_the_docked_en
 tests/test_dock_panel.py::test_docked_panel_scrolls_to_the_cursor,tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::the_docked_panel_scrolls_to_the_cursor,mapped,,P3
 tests/test_dock_panel.py::test_docked_view_uses_the_panel_and_keeps_one_column,tests/test_dock_panel.py,,todo,,P4
 tests/test_dock_panel.py::test_wide_or_undocked_keeps_the_2a_layout,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_one_click_on_an_entry_docks_and_question_marks_answer,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_one_click_on_the_docked_entry_focuses_its_agent_like_enter,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_one_click_still_obeys_arming_and_identity,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_the_2a_graph_keeps_select_first,tests/test_dock_panel.py,,todo,,P4
 tests/test_dock_panel.py::test_a_card_that_moved_ignores_clicks,tests/test_dock_panel.py,,todo,,P4
 tests/test_dock_panel.py::test_collector_finds_the_docked_agent_and_tab_numbers,tests/test_dock_panel.py,,todo,,P4
 tests/test_dock_panel.py::test_r11_a_refresh_that_docks_the_view_rearms_the_keys,tests/test_dock_panel.py,,todo,,P4
@@ -311,18 +271,8 @@ tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[46],tests/test_d
 tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[50],tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::the_panel_lays_out_to_the_width_it_gets,mapped,,P3
 tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[60],tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::the_panel_lays_out_to_the_width_it_gets,mapped,,P3
 tests/test_dock_panel.py::test_3a_at_its_design_width_keeps_every_footer_hint,tests/test_dock_panel.py,crates/panorama-core/tests/design_goldens.rs::design_9e_cell_for_cell,mapped,,P3
-tests/test_dock_panel.py::test_fit_sizes_the_drawable_width_not_the_rect,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_the_view_measures_its_own_frame,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_a_new_frame_measurement_refits_even_at_the_same_tab_width,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_no_graph_flash_while_a_dock_moves_panorama,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_a_successful_dock_shows_at_once_and_a_stale_collect_does_not_undo_it,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_the_workers_report_the_dock_as_soon_as_the_move_succeeds,tests/test_dock_panel.py,,todo,,P4
 tests/test_dock_panel.py::test_trace_records_each_herdr_call,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_r16b_a_dock_report_under_the_lock_and_quit_both_finish,tests/test_dock_panel.py,,todo,,P4
 tests/test_dock_panel.py::test_r16b_the_lock_gives_up_instead_of_hanging,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_a_slow_follow_keeps_the_panel_after_the_holds_expire,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_a_failed_move_clears_the_move_hold,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_the_resize_fit_skips_while_the_lock_is_busy,tests/test_dock_panel.py,,todo,,P4
 tests/test_fixture_privacy.py::test_fixtures_hold_no_real_ids,tests/test_fixture_privacy.py,,todo,,P4
 tests/test_fixture_privacy.py::test_docs_hold_no_real_agent_ids,tests/test_fixture_privacy.py,,todo,,P4
 tests/test_focus_theme.py::test_turn_10_matches_the_design_cell_for_cell[0-yours-A],tests/test_focus_theme.py,crates/panorama-core/tests/design_goldens.rs::design_10_focused_and_not_in_two_themes_cell_for_cell,mapped,,P3
@@ -356,47 +306,14 @@ tests/test_focus_theme.py::test_herdrs_focus_events_switch_the_look_too,tests/te
 tests/test_focus_theme.py::test_the_focus_watcher_forwards_herdrs_pane_focus,tests/test_focus_theme.py,,todo,,P4
 tests/test_focus_theme.py::test_the_hover_row_is_a_step_lighter_than_either_background,tests/test_focus_theme.py,crates/panorama-core/src/view/theme/tests.rs::fixed_is_the_default_and_own_colours_replace_either,mapped,,P3
 tests/test_focus_theme.py::test_a_panorama_started_without_the_keyboard_looks_unfocused,tests/test_focus_theme.py,,todo,,P4
-tests/test_focus_theme.py::test_a_new_pane_id_after_a_dock_is_judged_again,tests/test_focus_theme.py,,todo,,P4
-tests/test_follow.py::test_follow_docks_beside_the_agent_and_the_operator_stays_put,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_follow_skips[shell],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_follow_skips[panorama],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_follow_skips[other workspace],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_follow_skips[already there],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_follow_skips[other agent kind],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_follow_skips[nothing focused],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_follow_reuses_the_rename_before_leaving_a_shared_home_tab,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_a_failed_follow_leaves_everything_as_is,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_if_the_operator_moved_on_mid_dock_the_swap_is_skipped,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_follow_holds_the_home_lock,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_a_burst_of_focus_events_follows_once,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_events_during_a_follow_are_coalesced_into_one_more,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_no_follow_while[form],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_no_follow_while[docking],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_no_follow_while[follow off],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_no_follow_while[cockpit off],tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_a_follow_updates_the_views_own_pane,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_z_zooms_panoramas_own_pane,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_the_docked_panel_and_the_graph_show_the_zoom_key,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_event_stream_yields_focus_events_and_reconnects,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12_m1_a_switch_in_the_swap_window_gets_focus_sent_back,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12_m1_a_tab_switch_in_the_window_goes_to_that_tabs_pane,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12_m1_without_the_event_stream_follow_does_not_swap,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12_m1_no_switch_means_no_refocus,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12_m2_follow_tabs_any_by_default_single_on_request,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12_l2_no_follow_while_panorama_is_zoomed,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_r12_l1_backoff_grows_until_data_arrives,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12f_m1_the_operator_back_in_panorama_before_the_move_stops_it,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12f_l1_a_stream_that_is_not_live_means_no_swap,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_r12f_l1_the_watcher_tracks_liveness,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_r12f_l1_events_marks_connect_and_disconnect,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12f_l2_a_switch_reported_late_still_gets_focus_sent_back,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12f_l3_a_tab_only_switch_refocuses_with_tab_focus,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12f_refocus_rereads_once_for_a_later_switch,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12f_l4_only_the_home_instance_follows,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12f_nit_quiet_reasons_have_one_source,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r16_the_docked_display_is_updated_before_the_settle_wait,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_r16_the_settle_wait_keeps_its_margin,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r16_no_module_wide_last_docked,tests/test_follow.py,,todo,,P4
+tests/test_follow.py::test_a_burst_of_focus_events_makes_one_panel_pass,tests/test_follow.py,,todo,,P4
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 46 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 60 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep dock f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
@@ -709,7 +626,6 @@ tests/test_panels.py::test_a_second_panel_is_closed_keeping_the_connected_one,te
 tests/test_panels.py::test_a_tab_without_its_orchestrator_loses_the_panel_only_after_a_while,tests/test_panels.py,src/panels/tests/closing.rs::a_tab_without_its_orchestrator_loses_the_panel_only_after_a_while,mapped,,P4
 tests/test_panels.py::test_the_open_key_asks_the_core,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_a_panel_switches_by_tab_and_panel_focus,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_per_tab_keeps_the_home_panorama_home,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_new_agent_builds_its_tab_with_the_panel_on_the_left,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_a_viewer_exits_on_the_cores_shutdown,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_a_viewer_without_a_core_for_long_exits,tests/test_panels.py,,todo,,P4
@@ -766,23 +682,25 @@ tests/test_panels.py::test_without_a_live_focus_stream_nothing_is_closed[none],t
 tests/test_panels.py::test_without_a_live_focus_stream_nothing_is_closed[not-live],tests/test_panels.py,src/panels/tests/restore.rs::without_a_live_focus_stream_nothing_is_closed,mapped,,P4
 tests/test_panels.py::test_a_click_during_the_looks_stops_the_close,tests/test_panels.py,src/panels/tests/restore.rs::a_click_during_the_looks_stops_the_close,mapped,,P4
 tests/test_panels.py::test_a_focus_stream_that_connects_within_the_passes_lets_the_core_decide,tests/test_panels.py,src/panels/tests/restore.rs::a_focus_stream_that_connects_within_the_passes_lets_the_core_decide,mapped,,P4
+tests/test_panels.py::test_follow_tabs_single_gives_panels_only_to_tabs_of_one_orchestrator,tests/test_panels.py,,todo,,P4
+tests/test_panels.py::test_the_cockpit_is_per_tab_panels_and_an_old_moving_setting_reads_as_per_tab,tests/test_panels.py,,todo,,P4
 tests/test_plugin_copy.py::test_hooks_run_from_the_copy,tests/test_plugin_copy.py,,todo,,P4
 tests/test_plugin_copy.py::test_mcp_server_runs_from_the_copy,tests/test_plugin_copy.py,,todo,,P4
-tests/test_render.py::test_wide_layout_has_the_three_columns_and_links,tests/test_render.py,,todo,,P4
+tests/test_render.py::test_wide_layout_has_the_three_columns_and_links,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::the_wide_layout_has_the_three_columns_and_links,mapped,,P4
 tests/test_render.py::test_narrow_layout_is_an_indented_list_with_only_the_selected_orchestrator_open,tests/test_render.py,crates/panorama-core/tests/narrow_layout.rs::the_narrow_layout_is_an_indented_list_with_only_the_selected_orchestrator_open,mapped,,P3
-tests/test_render.py::test_question_and_blocked_detail_lines,tests/test_render.py,,todo,,P4
-tests/test_render.py::test_explicit_thread_shows_pct_and_worktree,tests/test_render.py,,todo,,P4
+tests/test_render.py::test_question_and_blocked_detail_lines,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::question_and_blocked_detail_lines,mapped,,P4
+tests/test_render.py::test_explicit_thread_shows_pct_and_worktree,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::an_explicit_thread_shows_its_pct_and_worktree,mapped,,P4
 tests/test_render.py::test_nav_lists_identities_per_column,tests/test_render.py,crates/panorama-core/tests/narrow_layout.rs::nav_lists_identities_per_column,mapped,,P3
-tests/test_render.py::test_filters,tests/test_render.py,,todo,,P4
+tests/test_render.py::test_filters,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::filters,mapped,,P4
 tests/test_render.py::test_untrusted_text_is_stripped_of_control_characters,tests/test_render.py,,todo,,P4
 tests/test_render.py::test_empty_and_unreachable_states,tests/test_render.py,crates/panorama-core/tests/empty_pages.rs::herdr_down_shows_the_retry_page ; crates/panorama-core/tests/empty_pages.rs::no_sessions_at_panel_width,mapped,,P3
-tests/test_render.py::test_long_columns_scroll_to_keep_the_selection_visible,tests/test_render.py,,todo,,P4
-tests/test_render.py::test_inferred_and_lost_agents_are_marked,tests/test_render.py,,todo,,P4
-tests/test_render.py::test_animation_frames_step_the_bar_blink_and_spinner_without_changing_widths,tests/test_render.py,,todo,,P4
-tests/test_render.py::test_quiet_orchestrators_do_not_animate,tests/test_render.py,,todo,,P4
-tests/test_render.py::test_r4_thread_and_agent_cards_have_animated_edges,tests/test_render.py,,todo,,P4
-tests/test_render.py::test_r4_sweeps_are_all_running_colour_and_offset_per_card,tests/test_render.py,,todo,,P4
-tests/test_render.py::test_r4_links_join_animated_edges,tests/test_render.py,,todo,,P4
+tests/test_render.py::test_long_columns_scroll_to_keep_the_selection_visible,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::long_columns_scroll_to_keep_the_selection_visible,mapped,,P4
+tests/test_render.py::test_inferred_and_lost_agents_are_marked,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::inferred_and_lost_agents_are_marked,mapped,,P4
+tests/test_render.py::test_animation_frames_step_the_bar_blink_and_spinner_without_changing_widths,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::animation_frames_step_the_bar_blink_and_spinner_without_changing_widths,mapped,,P4
+tests/test_render.py::test_quiet_orchestrators_do_not_animate,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::quiet_orchestrators_do_not_animate,mapped,,P4
+tests/test_render.py::test_r4_thread_and_agent_cards_have_animated_edges,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::every_card_has_an_animated_edge,mapped,,P4
+tests/test_render.py::test_r4_sweeps_are_all_running_colour_and_offset_per_card,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::sweeps_are_all_running_colour_and_offset_per_card,mapped,,P4
+tests/test_render.py::test_r4_links_join_animated_edges,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::links_join_animated_edges,mapped,,P4
 tests/test_report_thread.py::test_report_merges_phases_and_keeps_times,tests/test_report_thread.py,,todo,,P4
 tests/test_report_thread.py::test_tool_uses_the_session_from_the_environment,tests/test_report_thread.py,,todo,,P4
 tests/test_report_thread.py::test_tool_prefers_the_panes_current_session,tests/test_report_thread.py,,todo,,P4
@@ -1050,47 +968,47 @@ tests/test_smooth.py::test_9e_glides_exactly_like_the_design_between_frames[9e u
 tests/test_smooth.py::test_9e_glides_exactly_like_the_design_between_frames[9e unseen-3.5],tests/test_smooth.py,crates/panorama-core/tests/design_goldens.rs::design_9e_glides_like_the_design_between_frames,mapped,,P3
 tests/test_smooth.py::test_9e_glides_exactly_like_the_design_between_frames[9e unseen-6.2],tests/test_smooth.py,crates/panorama-core/tests/design_goldens.rs::design_9e_glides_like_the_design_between_frames,mapped,,P3
 tests/test_smooth.py::test_9e_glides_exactly_like_the_design_between_frames[9e unseen-9.8],tests/test_smooth.py,crates/panorama-core/tests/design_goldens.rs::design_9e_glides_like_the_design_between_frames,mapped,,P3
-tests/test_smooth.py::test_2a_glides_like_the_design_between_frames[1.4],tests/test_smooth.py,,todo,,P4
-tests/test_smooth.py::test_2a_glides_like_the_design_between_frames[1.75],tests/test_smooth.py,,todo,,P4
-tests/test_smooth.py::test_2a_glides_like_the_design_between_frames[3.5],tests/test_smooth.py,,todo,,P4
-tests/test_smooth.py::test_2a_glides_like_the_design_between_frames[6.2],tests/test_smooth.py,,todo,,P4
-tests/test_smooth.py::test_2a_glides_like_the_design_between_frames[9.8],tests/test_smooth.py,,todo,,P4
+tests/test_smooth.py::test_2a_glides_like_the_design_between_frames[1.4],tests/test_smooth.py,crates/panorama-core/tests/design_unseen.rs::design_smooth_the_2a_graph_glides_like_the_design,mapped,,P4
+tests/test_smooth.py::test_2a_glides_like_the_design_between_frames[1.75],tests/test_smooth.py,crates/panorama-core/tests/design_unseen.rs::design_smooth_the_2a_graph_glides_like_the_design,mapped,,P4
+tests/test_smooth.py::test_2a_glides_like_the_design_between_frames[3.5],tests/test_smooth.py,crates/panorama-core/tests/design_unseen.rs::design_smooth_the_2a_graph_glides_like_the_design,mapped,,P4
+tests/test_smooth.py::test_2a_glides_like_the_design_between_frames[6.2],tests/test_smooth.py,crates/panorama-core/tests/design_unseen.rs::design_smooth_the_2a_graph_glides_like_the_design,mapped,,P4
+tests/test_smooth.py::test_2a_glides_like_the_design_between_frames[9.8],tests/test_smooth.py,crates/panorama-core/tests/design_unseen.rs::design_smooth_the_2a_graph_glides_like_the_design,mapped,,P4
 tests/test_states.py::test_3a_panel_is_the_design_cell_for_cell[0],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_panel_cell_for_cell_at_whole_and_fractional_frames,mapped,,P3
 tests/test_states.py::test_3a_panel_is_the_design_cell_for_cell[1.5],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_panel_cell_for_cell_at_whole_and_fractional_frames,mapped,,P3
 tests/test_states.py::test_3a_panel_is_the_design_cell_for_cell[3.4],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_panel_cell_for_cell_at_whole_and_fractional_frames,mapped,,P3
 tests/test_states.py::test_3a_panel_is_the_design_cell_for_cell[4],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_panel_cell_for_cell_at_whole_and_fractional_frames,mapped,,P3
 tests/test_states.py::test_3a_panel_is_the_design_cell_for_cell[7],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_panel_cell_for_cell_at_whole_and_fractional_frames,mapped,,P3
 tests/test_states.py::test_3a_panel_is_the_design_cell_for_cell[12],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_panel_cell_for_cell_at_whole_and_fractional_frames,mapped,,P3
-tests/test_states.py::test_2a_orchestrators_and_background_card_are_the_design[0],tests/test_states.py,,todo,,P4
-tests/test_states.py::test_2a_orchestrators_and_background_card_are_the_design[1.5],tests/test_states.py,,todo,,P4
-tests/test_states.py::test_2a_orchestrators_and_background_card_are_the_design[3.4],tests/test_states.py,,todo,,P4
-tests/test_states.py::test_2a_orchestrators_and_background_card_are_the_design[4],tests/test_states.py,,todo,,P4
-tests/test_states.py::test_2a_orchestrators_and_background_card_are_the_design[7],tests/test_states.py,,todo,,P4
-tests/test_states.py::test_2a_orchestrators_and_background_card_are_the_design[12],tests/test_states.py,,todo,,P4
-tests/test_states.py::test_2a_waiting_agent_card_is_the_design[0],tests/test_states.py,,todo,,P4
-tests/test_states.py::test_2a_waiting_agent_card_is_the_design[1.5],tests/test_states.py,,todo,,P4
-tests/test_states.py::test_2a_waiting_agent_card_is_the_design[3.4],tests/test_states.py,,todo,,P4
-tests/test_states.py::test_2a_waiting_agent_card_is_the_design[4],tests/test_states.py,,todo,,P4
-tests/test_states.py::test_2a_waiting_agent_card_is_the_design[7],tests/test_states.py,,todo,,P4
-tests/test_states.py::test_2a_waiting_agent_card_is_the_design[12],tests/test_states.py,,todo,,P4
-tests/test_states.py::test_running_filter_keeps_waiting_and_drops_stale_like_the_design[0],tests/test_states.py,,todo,,P4
-tests/test_states.py::test_running_filter_keeps_waiting_and_drops_stale_like_the_design[1.5],tests/test_states.py,,todo,,P4
-tests/test_states.py::test_running_filter_keeps_waiting_and_drops_stale_like_the_design[3.4],tests/test_states.py,,todo,,P4
-tests/test_states.py::test_running_filter_keeps_waiting_and_drops_stale_like_the_design[4],tests/test_states.py,,todo,,P4
-tests/test_states.py::test_running_filter_keeps_waiting_and_drops_stale_like_the_design[7],tests/test_states.py,,todo,,P4
-tests/test_states.py::test_running_filter_keeps_waiting_and_drops_stale_like_the_design[12],tests/test_states.py,,todo,,P4
+tests/test_states.py::test_2a_orchestrators_and_background_card_are_the_design[0],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_2a_orchestrators_and_background_card,mapped,,P4
+tests/test_states.py::test_2a_orchestrators_and_background_card_are_the_design[1.5],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_2a_orchestrators_and_background_card,mapped,,P4
+tests/test_states.py::test_2a_orchestrators_and_background_card_are_the_design[3.4],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_2a_orchestrators_and_background_card,mapped,,P4
+tests/test_states.py::test_2a_orchestrators_and_background_card_are_the_design[4],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_2a_orchestrators_and_background_card,mapped,,P4
+tests/test_states.py::test_2a_orchestrators_and_background_card_are_the_design[7],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_2a_orchestrators_and_background_card,mapped,,P4
+tests/test_states.py::test_2a_orchestrators_and_background_card_are_the_design[12],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_2a_orchestrators_and_background_card,mapped,,P4
+tests/test_states.py::test_2a_waiting_agent_card_is_the_design[0],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_2a_waiting_agent_card,mapped,,P4
+tests/test_states.py::test_2a_waiting_agent_card_is_the_design[1.5],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_2a_waiting_agent_card,mapped,,P4
+tests/test_states.py::test_2a_waiting_agent_card_is_the_design[3.4],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_2a_waiting_agent_card,mapped,,P4
+tests/test_states.py::test_2a_waiting_agent_card_is_the_design[4],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_2a_waiting_agent_card,mapped,,P4
+tests/test_states.py::test_2a_waiting_agent_card_is_the_design[7],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_2a_waiting_agent_card,mapped,,P4
+tests/test_states.py::test_2a_waiting_agent_card_is_the_design[12],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_2a_waiting_agent_card,mapped,,P4
+tests/test_states.py::test_running_filter_keeps_waiting_and_drops_stale_like_the_design[0],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_running_filter_keeps_waiting_and_drops_stale,mapped,,P4
+tests/test_states.py::test_running_filter_keeps_waiting_and_drops_stale_like_the_design[1.5],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_running_filter_keeps_waiting_and_drops_stale,mapped,,P4
+tests/test_states.py::test_running_filter_keeps_waiting_and_drops_stale_like_the_design[3.4],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_running_filter_keeps_waiting_and_drops_stale,mapped,,P4
+tests/test_states.py::test_running_filter_keeps_waiting_and_drops_stale_like_the_design[4],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_running_filter_keeps_waiting_and_drops_stale,mapped,,P4
+tests/test_states.py::test_running_filter_keeps_waiting_and_drops_stale_like_the_design[7],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_running_filter_keeps_waiting_and_drops_stale,mapped,,P4
+tests/test_states.py::test_running_filter_keeps_waiting_and_drops_stale_like_the_design[12],tests/test_states.py,crates/panorama-core/tests/design_states.rs::turn_8_running_filter_keeps_waiting_and_drops_stale,mapped,,P4
 tests/test_states.py::test_idle_turns_stale_after_stale_after,tests/test_states.py,crates/panorama-core/tests/narrow_layout.rs::idle_turns_stale_after_stale_after,mapped,,P3
 tests/test_states.py::test_waiting_wins_over_stale_and_says_its_age_once_older_than_stale_after,tests/test_states.py,crates/panorama-core/tests/narrow_layout.rs::waiting_wins_over_stale_and_says_its_age_once_older_than_stale_after,mapped,,P3
 tests/test_states.py::test_working_and_attention_win_over_waiting,tests/test_states.py,crates/panorama-core/tests/narrow_layout.rs::working_and_attention_win_over_waiting,mapped,,P3
 tests/test_states.py::test_all_done_threads_go_stale_too,tests/test_states.py,crates/panorama-core/tests/narrow_layout.rs::all_done_threads_go_stale_too,mapped,,P3
 tests/test_states.py::test_needs_me_shows_neither_waiting_nor_stale,tests/test_states.py,crates/panorama-core/tests/narrow_layout.rs::needs_me_shows_neither_waiting_nor_stale,mapped,,P3
 tests/test_states.py::test_the_clock_turns_once_a_second_and_keeps_frames_running,tests/test_states.py,crates/panorama-core/src/view/anim/tests.rs::the_spinner_and_the_clock_are_braille_cycles ; crates/panorama-core/src/view/moving/tests.rs::still_unless_something_moves,mapped,,P3
-tests/test_states.py::test_the_background_card_is_selectable_in_the_thread_column,tests/test_states.py,,todo,,P4
+tests/test_states.py::test_the_background_card_is_selectable_in_the_thread_column,tests/test_states.py,crates/panorama-core/tests/wide_layout.rs::the_background_card_is_selectable_in_the_thread_column,mapped,,P4
 tests/test_states.py::test_the_background_card_is_reached_with_right_and_enter_does_nothing_else,tests/test_states.py,,todo,,P4
 tests/test_states.py::test_the_waiting_clock_steps_on_the_restyle_path,tests/test_states.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision), so 'restyle equals a full render' holds by construction; the fractional frames themselves are pinned by the design goldens",P3
-tests/test_states.py::test_the_background_card_takes_the_wide_thread_column[160],tests/test_states.py,,todo,,P4
-tests/test_states.py::test_the_background_card_takes_the_wide_thread_column[240],tests/test_states.py,,todo,,P4
-tests/test_states.py::test_the_background_card_takes_the_wide_thread_column[320],tests/test_states.py,,todo,,P4
+tests/test_states.py::test_the_background_card_takes_the_wide_thread_column[160],tests/test_states.py,crates/panorama-core/tests/design_states.rs::the_background_card_takes_the_wide_thread_column,mapped,,P4
+tests/test_states.py::test_the_background_card_takes_the_wide_thread_column[240],tests/test_states.py,crates/panorama-core/tests/design_states.rs::the_background_card_takes_the_wide_thread_column,mapped,,P4
+tests/test_states.py::test_the_background_card_takes_the_wide_thread_column[320],tests/test_states.py,crates/panorama-core/tests/design_states.rs::the_background_card_takes_the_wide_thread_column,mapped,,P4
 tests/test_tiles.py::test_9e_matches_the_design_cell_for_cell[0],tests/test_tiles.py,crates/panorama-core/tests/design_goldens.rs::design_9e_cell_for_cell,mapped,,P3
 tests/test_tiles.py::test_9e_matches_the_design_cell_for_cell[1],tests/test_tiles.py,crates/panorama-core/tests/design_goldens.rs::design_9e_cell_for_cell,mapped,,P3
 tests/test_tiles.py::test_9e_matches_the_design_cell_for_cell[2],tests/test_tiles.py,crates/panorama-core/tests/design_goldens.rs::design_9e_cell_for_cell,mapped,,P3
@@ -1145,10 +1063,10 @@ tests/test_tui.py::test_an_unanswered_popup_that_never_starts_says_so,tests/test
 tests/test_tui.py::test_a_reply_that_is_missing_or_garbled_after_sending_is_no_reply[],tests/test_tui.py,,todo,,P4
 tests/test_tui.py::test_a_reply_that_is_missing_or_garbled_after_sending_is_no_reply[not json\n],tests/test_tui.py,,todo,,P4
 tests/test_tui.py::test_the_popup_shows_the_same_form_and_closes_with_it,tests/test_tui.py,,todo,,P4
-tests/test_unseen.py::test_2a_pulses_the_same_cells_in_the_same_colours_as_the_design[0],tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_2a_pulses_the_same_cells_in_the_same_colours_as_the_design[3],tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_2a_pulses_the_same_cells_in_the_same_colours_as_the_design[6],tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_2a_pulses_the_same_cells_in_the_same_colours_as_the_design[9],tests/test_unseen.py,,todo,,P4
+tests/test_unseen.py::test_2a_pulses_the_same_cells_in_the_same_colours_as_the_design[0],tests/test_unseen.py,crates/panorama-core/tests/design_unseen.rs::design_6_the_2a_graph_pulses_like_the_design,mapped,,P4
+tests/test_unseen.py::test_2a_pulses_the_same_cells_in_the_same_colours_as_the_design[3],tests/test_unseen.py,crates/panorama-core/tests/design_unseen.rs::design_6_the_2a_graph_pulses_like_the_design,mapped,,P4
+tests/test_unseen.py::test_2a_pulses_the_same_cells_in_the_same_colours_as_the_design[6],tests/test_unseen.py,crates/panorama-core/tests/design_unseen.rs::design_6_the_2a_graph_pulses_like_the_design,mapped,,P4
+tests/test_unseen.py::test_2a_pulses_the_same_cells_in_the_same_colours_as_the_design[9],tests/test_unseen.py,crates/panorama-core/tests/design_unseen.rs::design_6_the_2a_graph_pulses_like_the_design,mapped,,P4
 tests/test_unseen.py::test_the_pulse_is_slow_and_never_off,tests/test_unseen.py,crates/panorama-core/src/view/anim/tests.rs::the_pulse_is_slow_and_never_off ; crates/panorama-core/src/view/moving/tests.rs::still_unless_something_moves,mapped,,P3
 tests/test_unseen.py::test_the_first_look_marks_nothing_then_changes_are_events,tests/test_unseen.py,,todo,,P4
 tests/test_unseen.py::test_most_urgent_wins_and_an_answered_question_clears,tests/test_unseen.py,,todo,,P4
@@ -1166,27 +1084,27 @@ tests/test_unseen.py::test_old_agents_are_forgotten,tests/test_unseen.py,,todo,,
 tests/test_unseen.py::test_click_enter_and_go_to_pane_mark_seen,tests/test_unseen.py,,todo,,P4
 tests/test_unseen.py::test_a_finished_card_clears_its_folded_agents,tests/test_unseen.py,,todo,,P4
 tests/test_unseen.py::test_review_l2_the_state_file_is_read_and_written_off_the_ui_thread,tests/test_unseen.py,,todo,,P4
-tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[W160-160-thread-89-4],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[W160-160-thread-89-9],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[W240-240-thread-99-4],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[W240-240-thread-99-9],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[W320-320-thread-111-4],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[W320-320-thread-111-9],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[R160-160-r1-0-4],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[R160-160-r1-0-9],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[R320-320-r1-0-4],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[R320-320-r1-0-9],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_sweep_strip_matches_the_design[4],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_sweep_strip_matches_the_design[9],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_a_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged,tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_tiers[120-expect0],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_tiers[160-expect1],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_tiers[219-expect2],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_tiers[220-expect3],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_tiers[299-expect4],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_tiers[300-expect5],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_tiers[500-expect6],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_full_title_fits_from_240_columns,tests/test_wide.py,,todo,,P4
+tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[W160-160-thread-89-4],tests/test_wide.py,crates/panorama-core/tests/design_wide.rs::design_7_wide_cards_cell_for_cell,mapped,,P4
+tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[W160-160-thread-89-9],tests/test_wide.py,crates/panorama-core/tests/design_wide.rs::design_7_wide_cards_cell_for_cell,mapped,,P4
+tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[W240-240-thread-99-4],tests/test_wide.py,crates/panorama-core/tests/design_wide.rs::design_7_wide_cards_cell_for_cell,mapped,,P4
+tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[W240-240-thread-99-9],tests/test_wide.py,crates/panorama-core/tests/design_wide.rs::design_7_wide_cards_cell_for_cell,mapped,,P4
+tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[W320-320-thread-111-4],tests/test_wide.py,crates/panorama-core/tests/design_wide.rs::design_7_wide_cards_cell_for_cell,mapped,,P4
+tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[W320-320-thread-111-9],tests/test_wide.py,crates/panorama-core/tests/design_wide.rs::design_7_wide_cards_cell_for_cell,mapped,,P4
+tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[R160-160-r1-0-4],tests/test_wide.py,crates/panorama-core/tests/design_wide.rs::design_7_wide_cards_cell_for_cell,mapped,,P4
+tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[R160-160-r1-0-9],tests/test_wide.py,crates/panorama-core/tests/design_wide.rs::design_7_wide_cards_cell_for_cell,mapped,,P4
+tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[R320-320-r1-0-4],tests/test_wide.py,crates/panorama-core/tests/design_wide.rs::design_7_wide_cards_cell_for_cell,mapped,,P4
+tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[R320-320-r1-0-9],tests/test_wide.py,crates/panorama-core/tests/design_wide.rs::design_7_wide_cards_cell_for_cell,mapped,,P4
+tests/test_wide.py::test_the_sweep_strip_matches_the_design[4],tests/test_wide.py,crates/panorama-core/tests/design_wide.rs::design_7_sweep_strip,mapped,,P4
+tests/test_wide.py::test_the_sweep_strip_matches_the_design[9],tests/test_wide.py,crates/panorama-core/tests/design_wide.rs::design_7_sweep_strip,mapped,,P4
+tests/test_wide.py::test_a_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged,tests/test_wide.py,crates/panorama-core/src/view/cards/tests.rs::a_sweep_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged,mapped,,P4
+tests/test_wide.py::test_tiers[120-expect0],tests/test_wide.py,crates/panorama-core/src/view/graph/layout/tests.rs::tiers,mapped,,P4
+tests/test_wide.py::test_tiers[160-expect1],tests/test_wide.py,crates/panorama-core/src/view/graph/layout/tests.rs::tiers,mapped,,P4
+tests/test_wide.py::test_tiers[219-expect2],tests/test_wide.py,crates/panorama-core/src/view/graph/layout/tests.rs::tiers,mapped,,P4
+tests/test_wide.py::test_tiers[220-expect3],tests/test_wide.py,crates/panorama-core/src/view/graph/layout/tests.rs::tiers,mapped,,P4
+tests/test_wide.py::test_tiers[299-expect4],tests/test_wide.py,crates/panorama-core/src/view/graph/layout/tests.rs::tiers,mapped,,P4
+tests/test_wide.py::test_tiers[300-expect5],tests/test_wide.py,crates/panorama-core/src/view/graph/layout/tests.rs::tiers,mapped,,P4
+tests/test_wide.py::test_tiers[500-expect6],tests/test_wide.py,crates/panorama-core/src/view/graph/layout/tests.rs::tiers,mapped,,P4
+tests/test_wide.py::test_the_full_title_fits_from_240_columns,tests/test_wide.py,crates/panorama-core/tests/wide_layout.rs::the_full_title_fits_from_240_columns,mapped,,P4
 tests/test_wide.py::test_the_model_keeps_its_version[claude-opus-4-5-20251101-opus 4.5],tests/test_wide.py,,todo,,P4
 tests/test_wide.py::test_the_model_keeps_its_version[claude-sonnet-4-5-sonnet 4.5],tests/test_wide.py,,todo,,P4
 tests/test_wide.py::test_the_model_keeps_its_version[claude-3-5-sonnet-20241022-sonnet 3.5],tests/test_wide.py,,todo,,P4
@@ -1195,6 +1113,24 @@ tests/test_wide.py::test_the_model_keeps_its_version[claude-haiku-4-5-20251001-h
 tests/test_wide.py::test_the_model_keeps_its_version[opus-opus],tests/test_wide.py,,todo,,P4
 tests/test_wide.py::test_the_model_keeps_its_version[None-None],tests/test_wide.py,,todo,,P4
 tests/test_wide.py::test_the_model_keeps_its_version[some-other-model-some-other-model],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[44],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[60],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[64],tests/test_wide.py,,todo,,P4
+tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[44],tests/test_wide.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision, kept by the wide graph in P4), so 'restyle equals a full render' holds by construction; the sweep's lap is pinned by cards/tests.rs::a_sweep_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged",P4
+tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[60],tests/test_wide.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision, kept by the wide graph in P4), so 'restyle equals a full render' holds by construction; the sweep's lap is pinned by cards/tests.rs::a_sweep_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged",P4
+tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[64],tests/test_wide.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision, kept by the wide graph in P4), so 'restyle equals a full render' holds by construction; the sweep's lap is pinned by cards/tests.rs::a_sweep_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged",P4
+tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[enter-False-True],tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[g-False-True],tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[enter-True-False],tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_docked_enter_with_keep_focus_off_focuses_the_agent,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_the_2a_graph_enter_still_focuses_the_agent,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_arrows_switch_the_chats_once_they_settle,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_arrows_do_not_dock_the_docked_one_new_agent_or_a_remote,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_arrows_off_or_the_2a_graph_never_dock_on_arrows,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left[blurred],tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left[herdr says another pane],tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_an_arrow_settling_during_a_dock_runs_after_it_even_if_focus_looks_elsewhere,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_an_arrow_dock_due_during_a_dock_runs_after_it,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_one_click_on_an_entry_docks_and_question_marks_answer,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_one_click_on_the_docked_entry_focuses_its_agent_like_enter,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_one_click_still_obeys_arming_and_identity,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_the_2a_graph_keeps_select_first,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_no_graph_flash_while_a_switch_runs,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_a_switch_that_ends_judges_the_focus_again,tests/test_panel_keys.py,,todo,,P4

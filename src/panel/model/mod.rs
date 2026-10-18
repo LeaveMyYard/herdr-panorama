@@ -12,6 +12,7 @@ use super::input::{ARM, FILTER_ECHO, InputState};
 use std::time::Instant;
 
 use crate::proto::state::State;
+use crate::ui::selection::initial;
 use panorama_core::model::Swarm;
 use panorama_core::view::nav::default_children;
 use panorama_core::view::{Filter, Marks, View};
@@ -134,12 +135,7 @@ impl Panel {
         self.view.unseen = marks;
         if !self.loaded {
             self.loaded = true;
-            let ids = self.shown_ids();
-            self.view.orch = focus_pane
-                .filter(|p| ids.contains(p))
-                .or_else(|| ids.first().cloned());
-            self.view.focus = 0;
-            default_children(&self.swarm, &mut self.view);
+            initial(&self.swarm, &mut self.view, focus_pane.as_deref());
             self.input.armed_at = now + ARM;
         } else {
             self.resolve();

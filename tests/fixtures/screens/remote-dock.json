@@ -25,6 +25,9 @@
    ]
   }
  ],
+ "unseen": {
+  "initial": {}
+ },
  "screens": {
   "initial": [
     [[" ","#c3c7cd","#14161b",false],["SWARM","#80868f","#14161b",true],["  5 orchestrators","#4d535c","#14161b",false],["              ","#c3c7cd","#14161b",false],["?1","#ffb547","#14161b",true],[" ","#c3c7cd","#14161b",false],["!1","#ffb547","#14161b",true],[" ","#c3c7cd","#14161b",false],["✗2","#ff6b6b","#14161b",true],[" ","#c3c7cd","#14161b",false]],

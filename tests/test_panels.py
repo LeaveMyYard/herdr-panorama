@@ -253,6 +253,22 @@ def test_only_provable_panels_are_closed(world, tmp_path):
     assert verified.remove_all(world.snapshot()) == 1 and "w1:p50" not in world.order("w1:t2")
 
 
+def test_follow_tabs_single_gives_panels_only_to_tabs_of_one_orchestrator(world, tmp_path, monkeypatch):
+    """``cockpit_follow_tabs = "single"``: a tab the operator split (Claude beside an editor)
+    gets no panel; "any", the default, gives every orchestrator tab one."""
+    from herdr_panorama import config
+    world.tabs["w1:t3"].append({"pane_id": "w1:p60"})  # an editor beside the agent
+    monkeypatch.setattr(cockpit, "follow_tabs", lambda: "single")
+    m = manager(world, tmp_path)
+    m.reconcile(world.snapshot(), orch("w1:p2", "w1:p3"), start=True)
+    assert world.order("w1:t3") == ["w1:p3", "w1:p60"] and len(world.order("w1:t2")) == 2
+    monkeypatch.undo()
+    for cfg, want in (({}, "any"), ({"cockpit_follow_tabs": "Single"}, "single"),
+                      ({"cockpit_follow_tabs": "nonsense"}, "any")):
+        monkeypatch.setattr(config, "load", lambda cfg=cfg: cfg)
+        assert cockpit.follow_tabs() == want
+
+
 def test_a_tab_herdr_could_not_check_gets_no_panel(world, tmp_path, monkeypatch):
     world.tabs["w1:t2"].append({"pane_id": "w1:p60"})
     monkeypatch.setattr(herdr, "runs_panorama", lambda pane, cmd="tui", pid=None: None if pane == "w1:p60" else False)
@@ -346,13 +362,18 @@ async def test_a_panel_switches_by_tab_and_panel_focus(paths, monkeypatch):
         assert calls == [("agent", target.pane_id)]
 
 
-def test_per_tab_keeps_the_home_panorama_home(monkeypatch):
+def test_the_cockpit_is_per_tab_panels_and_an_old_moving_setting_reads_as_per_tab(monkeypatch):
+    """The moving cockpit is gone (Q187): with the cockpit on, the home panorama stays home and
+    feeds per-tab panels, whatever an old config says in ``cockpit_panels``."""
     from herdr_panorama import config
     monkeypatch.setattr(home, "enabled", lambda: True)
-    monkeypatch.setattr(config, "load", lambda: {"cockpit": True, "cockpit_panels": "per-tab"})
-    assert cockpit.per_tab() and not cockpit.moving()
-    monkeypatch.setattr(config, "load", lambda: {"cockpit": True})
-    assert cockpit.moving() and not cockpit.per_tab()
+    for cfg in ({"cockpit": True}, {"cockpit": True, "cockpit_panels": "per-tab"},
+                {"cockpit": True, "cockpit_panels": "moving"}, {"cockpit": True, "cockpit_panels": "nonsense"}):
+        monkeypatch.setattr(config, "load", lambda cfg=cfg: cfg)
+        assert cockpit.per_tab(), cfg
+    monkeypatch.setattr(config, "load", lambda: {"cockpit_panels": "per-tab"})
+    assert not cockpit.per_tab()  # the cockpit itself off
+    assert not hasattr(cockpit, "moving") and not hasattr(cockpit, "dock") and not hasattr(cockpit, "follow")
 
 
 def test_new_agent_builds_its_tab_with_the_panel_on_the_left(monkeypatch):

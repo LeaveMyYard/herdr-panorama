@@ -26,6 +26,13 @@ pub enum Target {
     },
     /// An agent's card or pod (`agent`).
     Agent(AgentRef),
+    /// A "n finished" card in the wide graph (`fin`): the thread's own group (`group`
+    /// `None`) or the group of the agent `group` spawned.
+    Fin {
+        pane: String,
+        thread: String,
+        group: Option<String>,
+    },
     /// An agent's `g open pane` (`goto`), `t transcript` (`transcript`), `a answer` (`answer`).
     Goto(AgentRef),
     Transcript(AgentRef),
@@ -45,7 +52,12 @@ impl Target {
     pub fn is_card(&self) -> bool {
         matches!(
             self,
-            Self::Orch(_) | Self::NewAgent | Self::Done(_) | Self::Thread { .. } | Self::Agent(_)
+            Self::Orch(_)
+                | Self::NewAgent
+                | Self::Done(_)
+                | Self::Thread { .. }
+                | Self::Agent(_)
+                | Self::Fin { .. }
         )
     }
 }

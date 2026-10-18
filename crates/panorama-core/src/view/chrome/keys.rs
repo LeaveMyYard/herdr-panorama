@@ -24,18 +24,31 @@ const NARROW_KEYS: [(&str, &str); 6] = [
     ("?", "help"),
 ];
 
+/// The wide layout's hint when some of its columns are off-screen, after its third.
+const SIDEWAYS: (&str, &str) = ("shift+wheel", "scroll");
+
 /// The key hints on the last row, the wide layout's or the narrow one's (no `i` without the
-/// inbox; `z panel` when zoomable).
-pub fn keys(s: &mut Screen, wide: bool, zoom_hint: bool, inbox_ok: bool) {
-    let base: &[(&str, &str)] = if wide { &WIDE_KEYS } else { &NARROW_KEYS };
-    let zoom = [("z", "panel")];
-    let items = base.iter().chain(if zoom_hint { &zoom[..] } else { &[] });
+/// inbox; `shift+wheel scroll` when the wide layout scrolls `sideways`; `z panel` when
+/// zoomable).
+pub fn keys(s: &mut Screen, wide: bool, sideways: bool, zoom_hint: bool, inbox_ok: bool) {
+    let mut items: Vec<(&str, &str)> = if wide {
+        &WIDE_KEYS[..]
+    } else {
+        &NARROW_KEYS[..]
+    }
+    .to_vec();
+    if wide && sideways {
+        items.insert(3, SIDEWAYS);
+    }
+    if zoom_hint {
+        items.push(("z", "panel"));
+    }
     let (y, mut x) = (s.h() - 1, 1);
-    for (k, lab) in items.filter(|(k, _)| *k != "i" || inbox_ok) {
+    for (k, lab) in items.into_iter().filter(|(k, _)| *k != "i" || inbox_ok) {
         x = s.segs(
             x,
             y,
-            &[Seg::new(*k, FG).bold(), Seg::new(format!(" {lab}"), FAINT)],
+            &[Seg::new(k, FG).bold(), Seg::new(format!(" {lab}"), FAINT)],
         ) + 3;
     }
 }
