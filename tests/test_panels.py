@@ -346,13 +346,18 @@ async def test_a_panel_switches_by_tab_and_panel_focus(paths, monkeypatch):
         assert calls == [("agent", target.pane_id)]
 
 
-def test_per_tab_keeps_the_home_panorama_home(monkeypatch):
+def test_the_cockpit_is_per_tab_panels_and_an_old_moving_setting_reads_as_per_tab(monkeypatch):
+    """The moving cockpit is gone (Q187): with the cockpit on, the home panorama stays home and
+    feeds per-tab panels, whatever an old config says in ``cockpit_panels``."""
     from herdr_panorama import config
     monkeypatch.setattr(home, "enabled", lambda: True)
-    monkeypatch.setattr(config, "load", lambda: {"cockpit": True, "cockpit_panels": "per-tab"})
-    assert cockpit.per_tab() and not cockpit.moving()
-    monkeypatch.setattr(config, "load", lambda: {"cockpit": True})
-    assert cockpit.moving() and not cockpit.per_tab()
+    for cfg in ({"cockpit": True}, {"cockpit": True, "cockpit_panels": "per-tab"},
+                {"cockpit": True, "cockpit_panels": "moving"}, {"cockpit": True, "cockpit_panels": "nonsense"}):
+        monkeypatch.setattr(config, "load", lambda cfg=cfg: cfg)
+        assert cockpit.per_tab(), cfg
+    monkeypatch.setattr(config, "load", lambda: {"cockpit_panels": "per-tab"})
+    assert not cockpit.per_tab()  # the cockpit itself off
+    assert not hasattr(cockpit, "moving") and not hasattr(cockpit, "dock") and not hasattr(cockpit, "follow")
 
 
 def test_new_agent_builds_its_tab_with_the_panel_on_the_left(monkeypatch):

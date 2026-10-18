@@ -401,9 +401,6 @@ class PanelApp(SwarmApp):
 
     # -- switching chats: a tab switch, the panel already there --------------------------
 
-    def _fit(self) -> None:  # the core sizes the panels when it places them
-        return
-
     def _dock(self, pane_id: str, keep_focus: bool = False) -> None:
         """Instead of moving a pane: show the target's tab, the keyboard on its panel
         (``keep_focus``) or on the agent. Re-checked against a fresh herdr snapshot."""

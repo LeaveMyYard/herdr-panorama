@@ -57,11 +57,10 @@ cockpit = false    # the default
 
 ### 🧭 Cockpit: a slim list beside the agent you are working with
 
-Panorama docks as a narrow panel on the left of an agent's tab, with that agent's chat on the
-right. ↑/↓ in the panel switch the chat beside it while the keyboard stays in the panel; Enter
-goes into the agent, and your open key brings you back. It also follows you when you switch to
-another orchestrator's tab some other way. With herdr's own sidebar hidden, it becomes the agent
-list. The panel's background shows where the keyboard is: `#14161b` while panorama has it,
+Every orchestrator's tab gets a narrow panorama panel on its left, with that agent's chat on the
+right. ↑/↓ in a panel switch to the next chat, its tab and its panel, while the keyboard stays in
+the panels; Enter goes into the agent, and your open key brings you back. With herdr's own
+sidebar hidden, the panels become the agent list. The panel's background shows where the keyboard is: `#14161b` while panorama has it,
 `#101215` when the agent does. Still experimental; details in [Cockpit](#cockpit-experimental).
 
 <div align="center">
@@ -73,8 +72,7 @@ list. The panel's background shows where the keyboard is: `#14161b` while panora
 home_tab = true
 cockpit = true
 cockpit_width = 46            # panorama's columns on the left
-cockpit_follow = true         # move with you to the orchestrator tab you switch to
-cockpit_follow_tabs = "any"   # "single": only into tabs where the agent is the only pane
+cockpit_follow_tabs = "any"   # "single": a panel only in tabs where the agent is the only pane
 dock_keep_focus = true        # switching chats keeps the keyboard on panorama
 dock_on_arrows = true         # ↑/↓ switch the chats (after 0.2 s); Enter goes into the agent
 panel_colors = "fixed"        # or "herdr": take the panel colours from herdr's theme
@@ -201,41 +199,34 @@ To use the popup instead, set `home_tab = false` in the plugin's `config.toml`. 
 
 ### Cockpit (experimental)
 
-With herdr's sidebar hidden, panorama can sit as the agent list on the left of the agent
-you are working with. Turn it on in the plugin's `config.toml`:
+With herdr's sidebar hidden, panorama can sit as the agent list on the left of every
+orchestrator's tab: one panel per tab, drawn from the home panorama (which stays in its own
+tab). Turn it on in the plugin's `config.toml`:
 
 ```toml
 cockpit = true        # default false while experimental
-cockpit_width = 46    # panorama's columns on the left
-cockpit_follow = true # follow you to whichever orchestrator tab you switch to (default true)
-cockpit_follow_tabs = "any" # "single": only into tabs where the orchestrator is the only pane
-dock_keep_focus = true # switching chats leaves the keyboard on panorama (default true)
-dock_on_arrows = true  # ↑/↓ in the docked panel switch the chats (default true)
+cockpit_width = 46    # the panels' columns on the left
+cockpit_follow_tabs = "any" # "single": a panel only in tabs where the orchestrator is the only pane
+dock_keep_focus = true # switching chats leaves the keyboard in the panels (default true)
+dock_on_arrows = true  # ↑/↓ in a panel switch the chats (default true)
 ```
 
-- **Enter** on an orchestrator in the full view (or **g**, or a click on the selected card)
-  moves panorama's own pane into that agent's tab, on its left, and focuses the agent. The
-  agent never moves: closing a tab closes that agent's tab, as always, and panorama with it.
-- **Browse the chats.** In the docked panel, ↑/↓ switch the chats themselves: once the
-  arrows rest for 0.2 s (holding one docks once), panorama docks next to the highlighted
-  orchestrator and keeps the keyboard. A click on another orchestrator does the same at once.
-  **Enter** (or **g**) goes into the highlighted agent; your open key brings you back.
+The single panel that moved between tabs (`cockpit_panels = "moving"`, and `cockpit_follow`) is
+gone: an old `cockpit_panels` setting is ignored, and every tab gets its own panel.
+
+- **Panels.** When the home panorama starts, every orchestrator tab gets its panel on the left
+  of the agent. A tab that gets an orchestrator later gets its panel when you visit it. Agents
+  never move; closing a tab closes its panel with it.
+- **Browse the chats.** In a panel, ↑/↓ switch the chats themselves: once the arrows rest for
+  0.2 s, herdr shows the highlighted orchestrator's tab with the keyboard on its panel. A click
+  on another orchestrator does the same at once. **Enter** (or **g**) goes into the highlighted
+  agent; your open key brings you back.
 - `dock_on_arrows = false`: the arrows only move the highlight, and Enter on another
-  orchestrator docks next to it, keeping the keyboard (Enter on the docked one goes into it).
-  `dock_keep_focus = false`: Enter always goes into the agent, and the arrows never dock
-  (they would leave the keyboard in an agent).
-- **It follows you.** Switch tabs any other way (the tab bar, `prefix+1..9`, a
-  notification, `herdr agent focus`), and when you land on a Claude orchestrator's tab the
-  panel moves there too, beside the agent. You stay exactly where you clicked. It never
-  moves for tabs without an orchestrator, other workspaces, while you are in panorama
-  itself, in the New agent form or zoomed, and it acts once per switch. By default it
-  also docks into tabs you split (`cockpit_follow_tabs = "single"` keeps it out of those).
-  With two clients attached to one herdr session, either one's tab switches move it, so
-  turn `cockpit_follow` off there.
-- **z** zooms panorama to the whole tab (the full graph) and back to the panel.
-- `prefix+space` takes you back to the list wherever it is; if panorama was closed, it
-  opens again in its home tab.
-- In a tab with several panes, panorama docks left of the agent's own pane.
+  orchestrator switches to it, keeping the keyboard in the panels (Enter on this tab's own one
+  goes into it). `dock_keep_focus = false`: Enter always goes into the agent, and the arrows
+  never switch (they would leave the keyboard in an agent).
+- **Closed stays closed.** Close a tab's panel and that tab stays without one; your open key in
+  that tab makes and focuses a new one. Elsewhere the open key takes you to the home tab.
 - Docked, panorama shows the compact list from design 3a with design 9e's coloured tiles:
   per orchestrator its tab number, a state tile, `?N` and one tile per thread; the docked one
   lists its threads (a tile each) with their agents instead.
@@ -245,10 +236,7 @@ dock_on_arrows = true  # ↑/↓ in the docked panel switch the chats (default t
   `[theme.custom]` in herdr's `config.toml`, with `focus_tint`).
 
   <img src="docs/screenshots/dock-app.png" alt="The docked cockpit panel" width="300">
-- `cockpit = false` stops docking at the next Enter, and brings panorama back to its own
-  first tab at the next `prefix+space` or start.
-- If you split the home tab and run something next to panorama, docking renames that tab
-  to the agent's name first, so nothing is left under panorama's label.
+- `cockpit = false` closes every panel.
 
 ## Optional: Claude Code plugin
 
@@ -277,13 +265,11 @@ costs its 60–75 ms once, not on every hook. The MCP server needs `uv`.
 ```toml
 done_window = "1h"   # how long finished threads stay visible (seconds, or "90m", "2h30m")
 home_tab = true      # panorama in its own first tab (false: the key opens a popup)
-cockpit = false      # experimental: panorama docked left of the selected agent (see above)
-cockpit_width = 46   # the list's width in the cockpit
-cockpit_follow = true # the cockpit follows you to the orchestrator tab you switch to
-cockpit_follow_tabs = "any" # or "single": follow only into one-pane orchestrator tabs
-cockpit_panels = "moving"  # or "per-tab" (experimental): every orchestrator tab its own panel
-dock_keep_focus = true # docked list: switching chats keeps the keyboard on panorama
-dock_on_arrows = true  # docked list: ↑/↓ switch the chats; Enter goes into the agent
+cockpit = false      # experimental: a panorama panel left of every orchestrator (see above)
+cockpit_width = 46   # the panels' width
+cockpit_follow_tabs = "any" # or "single": panels only in one-pane orchestrator tabs
+dock_keep_focus = true # panels: switching chats keeps the keyboard in the panels
+dock_on_arrows = true  # panels: ↑/↓ switch the chats; Enter goes into the agent
 panel_colors = "fixed" # docked panel background: "fixed" (#14161b focused, #101215 not) or "herdr" (herdr's theme)
 # panel_bg = "#101215"  # the unfocused background, in either mode
 # focus_bg = "#14161b"  # the focused background, in either mode
