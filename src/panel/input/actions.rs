@@ -4,11 +4,10 @@
 
 use super::effect::{Effect, Toast};
 use crate::panel::model::Panel;
-use crate::panel::paint::NOTICE;
-use panorama_core::model::{Agent, HerdrStatus, Orchestrator, Status, Thread};
-use panorama_core::view::nav::{find_agent, find_orch, find_thread, tree_entries};
+use panorama_core::model::{HerdrStatus, Status};
+use panorama_core::view::NEW_ROW;
+use panorama_core::view::nav::{find_orch, find_thread, tree_entries};
 use panorama_core::view::state::{DONE_CARD, FIN_CARD};
-use panorama_core::view::{Filter, NEW_ROW};
 use std::time::Instant;
 
 /// The keys (Python `HELP`).
@@ -17,53 +16,6 @@ a answer (inbox) · i inbox · f filter · q/esc close · mouse: click a card to
 to its pane; wheel scrolls a column, shift+wheel scrolls the columns sideways";
 
 impl Panel {
-    /// Keys act: nothing changed under them in the last [`super::ARM`].
-    pub(crate) fn armed(&self, now: Instant) -> bool {
-        now >= self.input.armed_at
-    }
-
-    /// Without a core the panel acts on nothing that needs one, and says so.
-    fn usable(&self, out: &mut Vec<Effect>) -> bool {
-        if !self.connected {
-            out.push(Effect::Toast(Toast::new(None, NOTICE, 3)));
-        }
-        self.connected
-    }
-
-    /// The operator looked at these agents (the actor, after a confirmed switch): their marks
-    /// clear here, and the core hears.
-    pub fn seen_now(&mut self, ids: Vec<String>) -> Vec<Effect> {
-        let mut out = vec![];
-        self.seen(ids, &mut out);
-        out
-    }
-
-    /// The operator looked at these agents: their marks clear here at once, and the core hears.
-    pub(crate) fn seen(&mut self, ids: Vec<String>, out: &mut Vec<Effect>) {
-        for id in &ids {
-            self.view.unseen.remove(id);
-        }
-        if !ids.is_empty() {
-            out.push(Effect::Seen(ids));
-        }
-    }
-
-    /// What the action keys act on: (orchestrator, thread, agent); nothing while the focused
-    /// column's cursor is parked, or on + New agent.
-    pub(crate) fn selection(&self) -> (Option<&Orchestrator>, Option<&Thread>, Option<&Agent>) {
-        if self.cur(self.view.focus).is_none() || self.view.orch.as_deref() == Some(NEW_ROW) {
-            return (None, None, None);
-        }
-        let o = find_orch(&self.swarm, self.view.orch.as_deref());
-        let t = find_thread(o, self.view.thread.as_deref());
-        let a = if self.view.focus >= 2 || t.is_some() {
-            find_agent(t, self.view.agent.as_deref())
-        } else {
-            None
-        };
-        (o, t, a)
-    }
-
     /// Enter: + New agent; an orchestrator: into its agent (the arrows switch the chats, so
     /// Enter is the way in); a done or finished card: unfold it; else open the next column.
     pub fn enter(&mut self, now: Instant) -> Vec<Effect> {
@@ -226,28 +178,6 @@ impl Panel {
             .or_else(|| self.swarm.orchestrators.iter().find_map(|o| o.cwd.clone()));
         out.push(Effect::NewAgent { cwd });
         out
-    }
-
-    /// f: the next filter, shown here at once and sent to the core for every other view.
-    pub fn next_filter(&mut self, now: Instant) -> Vec<Effect> {
-        let i = Filter::ALL
-            .iter()
-            .position(|f| *f == self.view.filter)
-            .unwrap_or(0);
-        self.set_filter(Filter::ALL[(i + 1) % Filter::ALL.len()], now)
-    }
-
-    /// The operator chose `f` here (f, or a click on a filter): shown at once, and sent to the
-    /// core for every other view; kept against the core's older word until it echoes.
-    pub(crate) fn set_filter(&mut self, f: Filter, now: Instant) -> Vec<Effect> {
-        self.apply_filter(f);
-        self.input.filter_sent = Some((f, now));
-        vec![Effect::SendFilter(f)]
-    }
-
-    /// The filter did not go out (no core): the next core's state decides.
-    pub fn filter_not_sent(&mut self) {
-        self.input.filter_sent = None;
     }
 }
 

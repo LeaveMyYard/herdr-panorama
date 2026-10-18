@@ -105,3 +105,6 @@ impl Panel {
         out
     }
 }
+
+#[cfg(test)]
+mod tests;
