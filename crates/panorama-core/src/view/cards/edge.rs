@@ -19,23 +19,11 @@ pub fn sweep_pos(frame: f64, seed: i64, n: i64) -> i64 {
     ((frame.floor() as i64 + seed * 7).rem_euclid(lap)) * (n + 6) / lap - 3
 }
 
-fn quiet(st: &Status) -> bool {
-    matches!(
-        st,
-        Status::Queued
-            | Status::Done
-            | Status::Cancelled
-            | Status::Inferred
-            | Status::Lost
-            | Status::Stale
-    )
-}
-
 /// The edge of `card` in state `st`; `seed` shifts its sweep so cards do not move in
 /// lockstep.
 pub fn edge(cv: &mut Screen, card: Area, st: &OrchState, frame: f64, seed: i64) {
     let Area { x, y, w, h } = card;
-    if quiet(&st.st) {
+    if st.quiet() {
         return;
     }
     let attention = st.st.needs_operator();

@@ -1,12 +1,13 @@
 //! The card pieces' rules, case by case (the narrow goldens cover them as drawn).
 
 use super::actions::actions;
-use super::boxes::{LINE_COL, jn};
+use super::boxes::jn;
 use super::details::agent_detail_lines;
 use super::edge::sweep_pos;
 use super::phases::cur_idx;
 use super::pods::{Pods, pods_row};
 use crate::model::{Agent, Thread};
+use crate::view::palette::LINE;
 use crate::view::screen::Screen;
 use crate::view::state::View;
 use serde_json::{Value, json};
@@ -36,6 +37,23 @@ fn text(lines: &[Vec<crate::view::seg::Seg>]) -> Vec<String> {
         .iter()
         .map(|l| l.iter().map(|s| s.text.as_str()).collect())
         .collect()
+}
+
+#[test]
+fn a_current_phase_with_an_end_still_counts_from_its_start() {
+    // Python's phase_sub: `now` uses now - start even when an end is set
+    let t =
+        thread(json!({"phases": [{"name": "p", "state": "now", "start": 100.0, "end": 200.0}]}));
+    assert_eq!(
+        super::phases::phase_sub(
+            &t,
+            &View {
+                now: 1000.0,
+                ..View::default()
+            }
+        ),
+        "p · 15m"
+    );
 }
 
 #[test]
@@ -152,13 +170,16 @@ fn actions_close_their_gaps_then_shorten_in_a_narrow_card() {
 #[test]
 fn lines_merge_into_tees_and_join_an_animated_edge() {
     let mut s = Screen::new(3, 1);
-    s.put(1, 0, "│", LINE_COL, None, false);
-    jn(&mut s, 1, 0, 8, LINE_COL);
+    s.put(1, 0, "│", LINE, None, false);
+    jn(&mut s, 1, 0, 8, LINE);
     assert_eq!(s.cell(1, 0).ch, '├');
-    s.put(2, 0, "┃", LINE_COL, None, false);
-    jn(&mut s, 2, 0, 4, LINE_COL);
+    s.put(2, 0, "┃", LINE, None, false);
+    jn(&mut s, 2, 0, 4, LINE);
     assert_eq!(s.cell(2, 0).ch, '┨');
-    jn(&mut s, 0, 0, 12, LINE_COL);
+    s.put(2, 0, "┃", LINE, None, false);
+    jn(&mut s, 2, 0, 8, LINE);
+    assert_eq!(s.cell(2, 0).ch, '┠');
+    jn(&mut s, 0, 0, 12, LINE);
     assert_eq!(s.cell(0, 0).ch, '─');
 }
 

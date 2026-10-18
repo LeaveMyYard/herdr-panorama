@@ -93,6 +93,3 @@ pub fn jn(s: &mut Screen, x: i32, y: i32, bits: u8, col: Rgb) {
         c.bold = false;
     }
 }
-
-/// Default colour for [`jn`].
-pub const LINE_COL: Rgb = LINE;
