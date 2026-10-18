@@ -32,10 +32,12 @@ fn herdr_down_shows_the_retry_page() {
 
 #[test]
 fn no_sessions_at_panel_width() {
-    // the rows Python's render.render draws for this (TZ=UTC; checked by hand against it, no
-    // golden holds a 46-column empty page without the panel's notice over it)
+    // the rows Python's render.render draws for this (TZ=UTC; read from it once: no golden
+    // holds a 46-column empty page without the panel's notice over it). The words are the
+    // caller's: the Claude Code panel passes Python's.
     let view = View {
         now: 1791972600.0,
+        no_sessions: "No Claude Code sessions in herdr".into(),
         ..View::default()
     };
     let s = render_dock(&Swarm::default(), &view, 46, 45, None);

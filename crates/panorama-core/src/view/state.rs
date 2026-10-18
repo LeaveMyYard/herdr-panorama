@@ -39,6 +39,9 @@ pub struct View {
     pub offsets: BTreeMap<usize, i32>,
     /// Columns the wheel scrolled: they no longer follow the selection.
     pub wheel: BTreeSet<usize>,
+    /// The empty page's words when herdr shows no agent session. The caller names its
+    /// harness here (the core is harness-neutral); empty by default.
+    pub no_sessions: String,
 }
 
 impl Default for View {
@@ -57,6 +60,7 @@ impl Default for View {
             frame: 0.0,
             offsets: BTreeMap::new(),
             wheel: BTreeSet::new(),
+            no_sessions: String::new(),
         }
     }
 }
