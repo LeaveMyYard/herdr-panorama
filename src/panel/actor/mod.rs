@@ -4,7 +4,7 @@
 //! - the core client's events: a state, connected or not, shutdown ([`client`]);
 //! - the terminal: keys, the mouse, resizes, focus in and out ([`terminal`]);
 //! - the colour tick (`animation_fps`, default 20 a second): a new frame only while this tab
-//!   is shown, something moves, and the frame differs ([`super::pacing`]);
+//!   is shown, something moves, and the frame differs ([`crate::ui::pacing`]);
 //! - the arrows coming to rest, a notice's time running out;
 //! - what the herdr side reports back ([`effects`]): a switch done, a pane checked;
 //! - every 10 s: no core for 10 minutes and the panel exits ([`super::no_core`]);
@@ -18,7 +18,6 @@ mod client;
 mod draw;
 pub mod driver;
 mod effects;
-pub mod guard;
 mod terminal;
 
 pub use announce::Announcer;
@@ -27,11 +26,11 @@ pub use effects::Done;
 
 use super::input::Painted;
 use super::no_core::{NO_CORE_CHECK, NoCoreClock};
-use super::pacing::{Pacing, ticking};
 use super::paint::Frame;
-use super::term::Term;
 use crate::proto::client::{Client, Event};
 use crate::settings::Settings;
+use crate::ui::pacing::{Pacing, ticking};
+use crate::ui::term::Term;
 use crossterm::event::EventStream;
 use futures_util::StreamExt;
 use herdr_agent_kit::herdr_api::Herdr;
@@ -163,7 +162,7 @@ impl Actor {
                     self.repaint(Painted::Other).map(|()| None)?
                 }
                 _ = no_core.tick() => self.no_core.expired(Instant::now()).then_some(End::NoCore),
-                _ = hangup.tick() => super::term::hung_up().then_some(End::Hangup),
+                _ = hangup.tick() => crate::ui::term::hung_up().then_some(End::Hangup),
                 _ = term_sig.recv() => Some(End::Signal),
                 _ = hup.recv() => Some(End::Signal),
             };

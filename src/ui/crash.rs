@@ -52,7 +52,7 @@ pub fn hook(
     next: Box<dyn Fn(&PanicHookInfo<'_>) + Send + Sync>,
 ) -> Box<dyn Fn(&PanicHookInfo<'_>) + Send + Sync> {
     Box::new(move |info| {
-        if super::actor::guard::in_task() {
+        if super::guard::in_task() {
             return;
         }
         restore();
