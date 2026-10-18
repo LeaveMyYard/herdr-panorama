@@ -3,7 +3,8 @@
 //! "n complete" card (unfolded below it on request).
 
 use super::column::Column;
-use super::thread_card::{Place, bg_card, thread_card};
+use super::column::Place;
+use super::thread_card::{bg_card, thread_card};
 use crate::model::{Orchestrator, Status, Thread};
 use crate::view::cards::Area;
 use crate::view::cards::boxes::{border, rbox};

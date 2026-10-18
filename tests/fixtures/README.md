@@ -42,6 +42,12 @@ Design references (not wire formats), both captured from the design's own code i
   four frames) and the theme tokens used; the golden for `tests/test_focus_theme.py`.
 Regenerate with `uv run python tests/fixtures/capture_design.py` (needs node).
 
+- `graph_rules.json`: Python's wide-graph columns (`render.orch_column`, `thread_column`,
+  `agent_card`) on a small swarm built for their rules (the swarm is in the file, in wire form,
+  with the view's unseen marks), each canvas as runs of `[text, fg, bg, bold]` per row; the
+  golden for `crates/panorama-core/tests/graph_columns.rs`. Captured by
+  `uv run python tests/fixtures/capture_graph_rules.py > tests/fixtures/graph_rules.json`.
+
 Behaviour goldens (`docs/plans/rust-rewrite.md` §5.2, items 2 and 3). They were captured from the
 running Python code by `tools/capture_goldens.py`, and none of them is written by hand.
 Anchor: the Python bridge release on main at merge commit `b142c7b` (0.1.1, PR #56), plus the

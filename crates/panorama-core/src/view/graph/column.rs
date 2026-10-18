@@ -39,3 +39,14 @@ impl Column {
         }
     }
 }
+
+/// Where a card goes in its column, and how it is selected (`focus`: the keyboard is in
+/// its column, on it).
+#[derive(Clone, Copy, Debug)]
+pub struct Place {
+    pub x: i32,
+    pub y: i32,
+    pub w: i32,
+    pub is_sel: bool,
+    pub focus: bool,
+}
