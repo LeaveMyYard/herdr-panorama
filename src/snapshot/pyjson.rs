@@ -195,7 +195,8 @@ pub fn dumps_line(j: &J) -> String {
 pub fn dumps_line_ascii(j: &J) -> String {
     let mut out = String::new();
     for c in dumps_line(j).chars() {
-        if c.is_ascii() {
+        // DEL too: Python's ensure_ascii escapes everything past 0x7e
+        if c.is_ascii() && c != '\x7f' {
             out.push(c);
         } else {
             let mut units = [0u16; 2];

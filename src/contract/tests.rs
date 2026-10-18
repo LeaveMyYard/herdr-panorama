@@ -29,3 +29,16 @@ fn the_claude_side_launchers_ask_for_this_contract() {
         assert_eq!(line, format!("CLAUDE_CONTRACT={CLAUDE}"));
     }
 }
+
+#[test]
+fn the_claude_answer_is_one_no_older_binary_prints() {
+    assert_eq!(answer(None).as_deref(), Some("1"));
+    assert_eq!(answer(Some("claude")), Some(format!("claude {CLAUDE}")));
+    assert_eq!(answer(Some("bogus")), None);
+    for script in [
+        include_str!("../../hooks/run-hook.sh"),
+        include_str!("../../scripts/mcp"),
+    ] {
+        assert!(script.contains(r#"[ "$got" = "claude $CLAUDE_CONTRACT" ]"#));
+    }
+}

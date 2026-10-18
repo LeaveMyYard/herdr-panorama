@@ -7,6 +7,11 @@
 //! Exit status 0 always: for SubagentStop, exit 2 would keep the subagent running and feed its
 //! stderr back to the agent, so nothing on this path may ever exit 2. Bad input, an unwritable
 //! dir, a panic: all exit 0 with nothing on stdout.
+//!
+//! Stated deviations (payloads Claude Code does not send): JSON that only Python's `json.loads`
+//! takes (`NaN`, `Infinity`, `1E400`, a lone surrogate) is no payload here, so nothing is
+//! recorded or said; an integer past 64 bits in `source` is written as a float, and an object
+//! `source` with its keys sorted.
 
 pub mod record;
 pub mod session;

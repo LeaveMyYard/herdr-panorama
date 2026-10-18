@@ -294,3 +294,11 @@ fn concurrent_hooks_keep_every_line_whole() {
         .collect();
     assert_eq!(agents.len(), 16);
 }
+
+#[test]
+fn an_empty_herdr_pane_id_is_not_inside_herdr() {
+    let env = |vars: &[(&str, &str)]| PluginEnv::from_vars(vars.iter().copied(), None, 1000);
+    assert!(!Ctx::from_env(&env(&[("HERDR_PANE_ID", "")])).in_herdr);
+    assert!(Ctx::from_env(&env(&[("HERDR_PANE_ID", "w1:p1")])).in_herdr);
+    assert!(Ctx::from_env(&env(&[("HERDR_ENV", "1")])).in_herdr);
+}

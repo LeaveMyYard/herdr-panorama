@@ -57,3 +57,11 @@ fn ascii_lines_escape_as_python_does() {
     let j = J::obj([("a", J::str("é😀\"x"))]);
     assert_eq!(dumps_line_ascii(&j), r#"{"a": "\u00e9\ud83d\ude00\"x"}"#);
 }
+
+#[test]
+fn ascii_lines_escape_del_as_python_does() {
+    assert_eq!(
+        dumps_line_ascii(&J::str("a\u{0}b\u{7f} ")),
+        r#""a\u0000b\u007f ""#
+    );
+}

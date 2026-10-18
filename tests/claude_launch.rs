@@ -236,3 +236,51 @@ fn a_probe_that_hangs_or_fails_or_a_directory_falls_back_to_python() {
             .starts_with("python3 ")
     );
 }
+
+#[test]
+fn a_binary_from_before_the_claude_contract_is_passed_over() {
+    let dir = tempfile::tempdir().unwrap();
+    let (root, bin) = plugin(dir.path());
+    let exe = root.join("target/release/panorama");
+    // one that ignores its argument and prints 1, and the operator's binary from before this
+    // contract exactly: `contract` (any argument) prints the panel's 1, anything unknown prints
+    // its version and exits 0
+    for body in [
+        "echo 1",
+        "case \"$1\" in contract) echo 1 ;; panel) exit 0 ;; *) echo \"panorama 0.1.0\" ;; esac",
+    ] {
+        write_exe(&exe, body);
+        let out = run(&hook_argv(&root, "SessionStart"), dir.path(), &bin, "{}");
+        let text = String::from_utf8(out.stdout).unwrap();
+        assert!(
+            text.starts_with("python3 ") && !text.contains("panorama 0.1.0"),
+            "{body}: {text}"
+        );
+        let out = run(&hook_argv(&root, "SubagentStart"), dir.path(), &bin, STOP);
+        assert_eq!(out.status.code(), Some(0));
+        let out = run(&mcp_argv(&root), dir.path(), &bin, "");
+        assert!(
+            String::from_utf8(out.stdout)
+                .unwrap()
+                .starts_with("uv run "),
+            "{body}"
+        );
+    }
+}
+
+#[test]
+fn the_binary_answers_only_what_it_knows() {
+    let ask = |args: &[&str]| {
+        let out = Command::new(env!("CARGO_BIN_EXE_panorama"))
+            .env_clear()
+            .args(args)
+            .output()
+            .unwrap();
+        (out.status.code(), String::from_utf8(out.stdout).unwrap())
+    };
+    assert_eq!(ask(&["contract"]), (Some(0), "1\n".into()));
+    assert_eq!(ask(&["contract", "claude"]), (Some(0), "claude 1\n".into()));
+    assert_eq!(ask(&["contract", "bogus"]), (Some(2), String::new()));
+    assert_eq!(ask(&["bogus"]), (Some(2), String::new()));
+    assert!(ask(&[]).1.starts_with("panorama "));
+}

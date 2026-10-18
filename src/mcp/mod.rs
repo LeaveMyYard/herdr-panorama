@@ -10,7 +10,10 @@
 //! Stated deviations: a call the schema refuses (no `thread_id`, a wrong type) says so in its
 //! own words, not pydantic's; an events file that cannot be written answers `status: error`
 //! instead of a tool error. The protocol envelope (capabilities, the 2026-07-28 cache fields)
-//! is rmcp's.
+//! is rmcp's. JSON-RPC edges no client sends are answered as rmcp answers them: a batch array
+//! or a request without `"jsonrpc"` is refused (-32600; Python ignores or answers them),
+//! `tools/call` without params and `completion/complete` are -32601 (Python: -32602), and end
+//! of input before `initialize` exits 1 with a line on stderr (Python: 0).
 
 pub mod call;
 pub mod server;
