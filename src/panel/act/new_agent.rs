@@ -4,7 +4,7 @@
 //! same: the popup's process marks that it started, and only if it never does is the
 //! operator told to press n again.
 
-use herdr_agent_kit::herdr_api::{Herdr, HerdrError, OpenPluginPane, Placement};
+use herdr_agent_kit::herdr_api::{Herdr, OpenPluginPane, Placement};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -52,7 +52,8 @@ pub async fn open(
     open.cwd = root.map(Path::to_path_buf);
     match h.open_plugin_pane(&open).await {
         Ok(_) => None,
-        Err(HerdrError::NoReply(_)) => {
+        // no reply, or one that does not read: herdr may have opened it all the same
+        Err(e) if e.maybe_done() => {
             // it may be open: look for the popup's own mark before saying anything
             let deadline = tokio::time::Instant::now() + POPUP_START;
             while tokio::time::Instant::now() < deadline {

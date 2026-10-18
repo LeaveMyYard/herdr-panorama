@@ -37,28 +37,36 @@ pub trait Runner {
 #[derive(Debug, Default)]
 pub struct UvRunner;
 
+/// The command that runs `inbox <args>` from the plugin root `root`: `uv run` in the
+/// inbox's project, with the inbox's plugin id and root, without `UV_*`, `VIRTUAL_ENV*` or
+/// panorama's own invocation context (`STRIP`), which would make it act on panorama's pane.
+pub fn command(root: &str, args: &[&str], env: impl IntoIterator<Item = String>) -> Command {
+    let mut cmd = Command::new("uv");
+    cmd.args([
+        "run",
+        "--quiet",
+        "--frozen",
+        "--no-dev",
+        "--project",
+        root,
+        "inbox",
+    ]);
+    cmd.args(args.iter().map(|a| clean(a, MAX_ARG)));
+    cmd.current_dir(root).kill_on_drop(true);
+    for k in env {
+        if k.starts_with("UV_") || k.starts_with("VIRTUAL_ENV") || STRIP.contains(&k.as_str()) {
+            cmd.env_remove(&k);
+        }
+    }
+    cmd.env("HERDR_PLUGIN_ID", super::INBOX_ID)
+        .env("HERDR_PLUGIN_ROOT", root);
+    cmd
+}
+
 impl Runner for UvRunner {
     async fn inbox(&self, root: &str, args: &[&str]) -> Ran {
-        let mut cmd = Command::new("uv");
-        cmd.args([
-            "run",
-            "--quiet",
-            "--frozen",
-            "--no-dev",
-            "--project",
-            root,
-            "inbox",
-        ]);
-        cmd.args(args.iter().map(|a| clean(a, MAX_ARG)));
-        cmd.current_dir(root).kill_on_drop(true);
-        for (k, _) in std::env::vars_os() {
-            let k = k.to_string_lossy().into_owned();
-            if k.starts_with("UV_") || k.starts_with("VIRTUAL_ENV") || STRIP.contains(&k.as_str()) {
-                cmd.env_remove(&k);
-            }
-        }
-        cmd.env("HERDR_PLUGIN_ID", super::INBOX_ID)
-            .env("HERDR_PLUGIN_ROOT", root);
+        let env = std::env::vars_os().map(|(k, _)| k.to_string_lossy().into_owned());
+        let mut cmd = command(root, args, env);
         match tokio::time::timeout(TIMEOUT, cmd.output()).await {
             // it may have opened the popup: no fallback
             Err(_) => Ran {
