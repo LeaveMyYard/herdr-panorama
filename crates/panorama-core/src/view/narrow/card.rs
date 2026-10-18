@@ -138,7 +138,7 @@ fn frame(cv: &mut Screen, card: Area, c: &CardCtx, t: &Thread, exp: bool, seed: 
     let agents: Vec<_> = t.agents.iter().collect();
     let state = state_of(&agents, t.is_done(), view.frame, &Extras::default(), None);
     edge(cv, card, &state, view.frame, seed);
-    let mw = marks_right(cv, w - 3, y + 1, &marks_of(&agents, false), None);
+    let mw = marks_right(cv, w - 3, y + 1, &marks_of(&agents, false, 0), None);
     let (g, gc) = thread_glyph(t, view);
     let name = Seg::new(trunc(&t.name, w - 13 - mw), if exp { HI } else { FG }).bold();
     cv.segs(5, y + 1, &[Seg::new(g, gc).bold(), Seg::plain(" "), name]);
@@ -153,6 +153,7 @@ fn frame(cv: &mut Screen, card: Area, c: &CardCtx, t: &Thread, exp: bool, seed: 
             max_n: 6,
             sel_agent,
             orch: Some(&c.o.pane_id),
+            top_only: false,
         },
     );
     let sub = trunc(&phase_sub(t, view), w - 40);

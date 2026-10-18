@@ -81,6 +81,10 @@ inputs, so another implementation can replay it without Python:
     goldens use the same rule.
   - Fixed: TZ=UTC, panorama's default theme, animation frame 0 unless a screen's name says
     otherwise.
+  - `unseen`: the unseen marks (agent id → `fail`, `wait` or `done`) the view drew each snap
+    with, by the snap's name. They are an input, not part of the screen: the tracker's state
+    file is shared by every run of one capture, so a run's marks depend on the runs before it
+    (agents of different inputs share ids). A port renders a snap with them.
 
 How to compare, for a port:
 

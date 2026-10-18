@@ -192,3 +192,182 @@ fn the_sweep_laps_in_at_most_48_frames() {
     assert_eq!(sweep_pos(1.0, 0, 90), -1); // 96 cells over 48 frames: 2 a frame
     assert_eq!(sweep_pos(0.0, 1, 42), 4); // seed 1: 7 frames on
 }
+
+#[test]
+fn tags_sit_right_aligned_on_the_border_and_skip_empty_ones() {
+    use super::tags::tags;
+    let mut s = Screen::new(30, 3);
+    let items = [
+        Some("42m".into()),
+        None,
+        Some(String::new()),
+        Some("wt/x".into()),
+    ];
+    tags(&mut s, 0, 2, 30, &items);
+    assert_eq!(s.text(), "\n\n                 42m   wt/x");
+}
+
+#[test]
+fn fit_segs_cut_a_title_across_its_segments() {
+    use crate::view::palette::{DIM, FAINT, FG};
+    use crate::view::seg::{Seg, fit_segs};
+    let title = vec![
+        Seg::new("general", FG).bold(),
+        Seg::new(" 1234567", FAINT),
+        Seg::new(" · opus", DIM),
+    ];
+    let cut = fit_segs(title.clone(), 12);
+    assert_eq!(
+        cut,
+        vec![Seg::new("general", FG).bold(), Seg::new(" 123…", FAINT)]
+    );
+    assert_eq!(fit_segs(title.clone(), 99), title);
+    assert_eq!(
+        fit_segs(vec![Seg::new("abc", FG)], 0),
+        vec![Seg::new("…", FG)]
+    );
+}
+
+#[test]
+fn marks_count_the_questions_no_agent_filed() {
+    use super::marks::marks_of;
+    let a = agent(json!({"id": "a", "status": "wait", "question_ids": [1, 2]}));
+    let words = |extra| -> Vec<String> {
+        marks_of(&[&a], false, extra)
+            .into_iter()
+            .map(|m| m.text)
+            .collect()
+    };
+    assert_eq!(words(0), ["?2"]);
+    assert_eq!(words(3), ["?5"]);
+    let idle = agent(json!({"id": "b", "status": "done"}));
+    let loose: Vec<String> = marks_of(&[&idle], false, 1)
+        .into_iter()
+        .map(|m| m.text)
+        .collect();
+    assert_eq!(loose, ["?1"]);
+}
+
+#[test]
+fn top_only_pods_are_the_threads_own_then_nested() {
+    // Python's pods_row(top_only=True) on the same thread (captured): the pod on the
+    // selected agent's path is bracketed
+    use crate::view::target::Target;
+    let t = thread(json!({"agents": [
+        {"id": "a", "status": "run"}, {"id": "b", "status": "done"},
+        {"id": "c", "parent": "a", "status": "run"}, {"id": "d", "parent": "c", "status": "run"},
+    ]}));
+    let mut s = Screen::new(40, 1);
+    let p = Pods {
+        max_n: 6,
+        sel_agent: Some("d"),
+        orch: Some("p"),
+        top_only: true,
+    };
+    pods_row(&mut s, 1, 0, &t, &View::default(), p);
+    assert_eq!(s.text(), "[ ⠋ ] ✓  +2 nested");
+    let agents: Vec<(i32, i32, String)> = s
+        .targets
+        .iter()
+        .map(|h| match &h.target {
+            Target::Agent(r) => (h.x0, h.x1, r.agent.clone()),
+            other => panic!("{other:?}"),
+        })
+        .collect();
+    assert_eq!(agents, [(1, 4, "a".into()), (5, 8, "b".into())]);
+    let mut s = Screen::new(40, 1);
+    let p = Pods {
+        max_n: 1,
+        top_only: true,
+        ..Pods::default()
+    };
+    pods_row(&mut s, 1, 0, &t, &View::default(), p);
+    assert_eq!(s.text(), "  ⠋  +1 done +2 nested");
+}
+
+#[test]
+fn a_sweep_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged() {
+    // test_wide.py::test_a_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged
+    use super::Area;
+    use super::edge::{SWEEP_LAP, edge};
+    use crate::model::Status;
+    use crate::view::orch_state::OrchState;
+    assert_eq!(SWEEP_LAP, 48); // 250 ms frames
+    let working = OrchState {
+        st: Status::Running,
+        glyph: "⠋".into(),
+        label: "working".into(),
+        working: true,
+        bg: 0,
+    };
+    let bar_start = |w: i32, frame: i64| {
+        let mut s = Screen::new(w, 3);
+        edge(
+            &mut s,
+            Area {
+                x: 0,
+                y: 0,
+                w,
+                h: 3,
+            },
+            &working,
+            frame as f64,
+            0,
+        );
+        (0..w).find(|x| s.cell(*x, 2).ch == '━')
+    };
+    for w in [44, 56, 60, 64] {
+        for f in 0..48 {
+            assert_eq!(bar_start(w, f), bar_start(w, f + 48), "{w} {f}"); // one lap: 48
+        }
+    }
+    for f in 0..32 {
+        assert_eq!(bar_start(28, f), bar_start(28, f + 32)); // as before
+    }
+}
+
+#[test]
+fn the_pulse_runs_over_the_whole_border_capped_on_a_selected_card() {
+    use super::Area;
+    use super::pulse::{SELECTED_PULSE, pulse_box};
+    use crate::view::anim::pulse;
+    use crate::view::palette::{DIM, HI};
+    use crate::view::unseen::{Mark, Unseen};
+    let m = Mark {
+        event: Unseen::Fail,
+        quiet: false,
+    };
+    let card = Area {
+        x: 1,
+        y: 0,
+        w: 5,
+        h: 3,
+    };
+    for (base, cap) in [(LINE, 1.0), (DIM, SELECTED_PULSE), (HI, SELECTED_PULSE)] {
+        let mut s = Screen::new(8, 4);
+        super::boxes::rbox(&mut s, 1, 0, 5, 3, base);
+        pulse_box(&mut s, card, Some(m), 6.0, base);
+        let want = pulse(6.0, m, base, cap);
+        let border = [
+            (1, 0),
+            (5, 0),
+            (3, 0),
+            (1, 1),
+            (5, 1),
+            (1, 2),
+            (5, 2),
+            (3, 2),
+        ];
+        for (x, y) in border {
+            assert_eq!(
+                (s.cell(x, y).fg, s.cell(x, y).fg_moves),
+                (want, true),
+                "{x},{y}"
+            );
+        }
+        assert!(!s.drawn(3) && s.cell(3, 1).ch == ' ');
+    }
+    let mut s = Screen::new(8, 4);
+    pulse_box(&mut s, card, None, 6.0, LINE);
+    assert!(!s.drawn(0));
+}

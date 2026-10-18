@@ -1178,7 +1178,7 @@ tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[R320-320-r1-0
 tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[R320-320-r1-0-9],tests/test_wide.py,,todo,,P4
 tests/test_wide.py::test_the_sweep_strip_matches_the_design[4],tests/test_wide.py,,todo,,P4
 tests/test_wide.py::test_the_sweep_strip_matches_the_design[9],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_a_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged,tests/test_wide.py,,todo,,P4
+tests/test_wide.py::test_a_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged,tests/test_wide.py,crates/panorama-core/src/view/cards/tests.rs::a_sweep_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged,mapped,,P4
 tests/test_wide.py::test_tiers[120-expect0],tests/test_wide.py,,todo,,P4
 tests/test_wide.py::test_tiers[160-expect1],tests/test_wide.py,,todo,,P4
 tests/test_wide.py::test_tiers[219-expect2],tests/test_wide.py,,todo,,P4
