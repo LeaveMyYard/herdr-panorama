@@ -302,3 +302,50 @@ fn an_empty_herdr_pane_id_is_not_inside_herdr() {
     assert!(Ctx::from_env(&env(&[("HERDR_PANE_ID", "w1:p1")])).in_herdr);
     assert!(Ctx::from_env(&env(&[("HERDR_ENV", "1")])).in_herdr);
 }
+
+#[test]
+fn a_lone_surrogate_escape_never_loses_a_record() {
+    // Node cuts a string inside an emoji: Claude Code sends `\ud83d` with no partner
+    let dir = tempfile::tempdir().unwrap();
+    let c = cx(dir.path(), true);
+    let stop = r#"{"session_id": "s1", "agent_id": "a1", "agent_type": "Explore", "last_assistant_message": "done \ud83d"}"#;
+    let start = r#"{"session_id": "s1", "agent_id": "a1", "agent_type": "x\udc00"}"#;
+    assert_eq!(hook("subagent-start", start, &c), (0, String::new()));
+    assert_eq!(hook("subagent-stop", stop, &c), (0, String::new()));
+    let recs = records(&c, "s1");
+    let got: Vec<_> = recs
+        .iter()
+        .map(|r| {
+            (
+                r["event"].as_str().unwrap(),
+                r["agent_type"].as_str().unwrap(),
+            )
+        })
+        .collect();
+    assert_eq!(got, [("start", "x\u{fffd}"), ("stop", "Explore")]);
+    let said = hook(
+        "session-start",
+        r#"{"session_id": "s1", "source": "startup \ud83d"}"#,
+        &c,
+    )
+    .1;
+    assert!(said.contains("report_thread"));
+    assert_eq!(records(&c, "s1")[2]["source"], "startup \u{fffd}");
+}
+
+#[test]
+fn a_bom_is_refused_as_python_refuses_it() {
+    let dir = tempfile::tempdir().unwrap();
+    let c = cx(dir.path(), true);
+    assert_eq!(
+        hook(
+            "subagent-stop",
+            "\u{feff}{\"session_id\": \"s1\", \"agent_id\": \"a\"}",
+            &c
+        ),
+        (0, String::new())
+    );
+    assert!(records(&c, "s1").is_empty());
+    assert!(payload("  {\"a\": 1}\r\n").contains_key("a"));
+    assert!(payload("[1]").is_empty());
+}

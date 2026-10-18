@@ -7,8 +7,10 @@
 # (target/release/panorama: a linked checkout's `cargo build --release`, or Claude Code's copy
 # of one) and it speaks this checkout's Claude-side contract (`panorama contract claude`: the
 # tool's name, text and schemas, the events format). Anything else (no binary, a stale one, one
-# that fails on the probe, or hangs on it: 2 s with timeout(1), then KILL; 2 s with perl's alarm
-# where there is no timeout(1), as on stock macOS; unbounded with neither) runs the Python
+# that fails on the probe, or hangs on it: 2 s with timeout(1), then KILL; where there is no
+# timeout(1), as on stock macOS, perl's alarm ends the probed process after 2 s (only that
+# process: a child it left holding the output would keep the probe waiting); unbounded with
+# neither) runs the Python
 # server through uv, as before, in the plugin data dir's venv (plugin.json's
 # UV_PROJECT_ENVIRONMENT). The answer is `claude <n>`: a binary from before the contract
 # answers a bare number and is passed over.

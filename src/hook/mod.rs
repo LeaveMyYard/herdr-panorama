@@ -9,8 +9,9 @@
 //! dir, a panic: all exit 0 with nothing on stdout.
 //!
 //! Stated deviations (payloads Claude Code does not send): JSON that only Python's `json.loads`
-//! takes (`NaN`, `Infinity`, `1E400`, a lone surrogate) is no payload here, so nothing is
-//! recorded or said; an integer past 64 bits in `source` is written as a float, and an object
+//! takes (`NaN`, `Infinity`, `1E400`) is no payload here, so nothing is
+//! recorded or said; a lone surrogate escape reads as U+FFFD (Python keeps the surrogate and
+//! writes it back escaped); an integer past 64 bits in `source` is written as a float, and an object
 //! `source` with its keys sorted.
 
 pub mod record;
@@ -18,6 +19,7 @@ pub mod session;
 
 use herdr_agent_kit::agent_procs::claude::claude_process_here;
 use herdr_agent_kit::agent_procs::own_pidns;
+use herdr_agent_kit::agent_session::claude::wire::Line;
 use herdr_agent_kit::plugin_env::PluginEnv;
 use serde_json::{Map, Value};
 use std::io::{Read, Write};
@@ -52,15 +54,24 @@ impl Ctx {
     }
 }
 
+/// The payload as Python's `json.loads` reads it: an object, else nothing. A lone UTF-16
+/// surrogate escape (Node writes one when it cuts a string inside an emoji) is read through
+/// the kit's repair, as U+FFFD; a leading BOM is refused, as `json.loads` refuses it.
+pub fn payload(raw: &str) -> Map<String, Value> {
+    if raw.starts_with('\u{feff}') {
+        return Map::new();
+    }
+    Line::parse(raw.as_bytes())
+        .map(Line::into_map)
+        .unwrap_or_default()
+}
+
 /// One hook run: the payload on `input`, the output (if any) on `output`. Always 0.
 pub fn run(kind: &str, input: &mut dyn Read, output: &mut dyn Write, cx: &Ctx) -> i32 {
     let out = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         let mut raw = String::new();
         input.read_to_string(&mut raw).ok()?;
-        let payload = match serde_json::from_str::<Value>(&raw) {
-            Ok(Value::Object(m)) => m,
-            _ => Map::new(),
-        };
+        let payload = payload(&raw);
         match kind {
             "subagent-start" => record::record("start", &payload, cx),
             "subagent-stop" => record::record("stop", &payload, cx),

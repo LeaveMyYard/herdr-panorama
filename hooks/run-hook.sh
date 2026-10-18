@@ -25,8 +25,9 @@ shift
 # `claude <n>`: a binary from before the contract answers a bare number and is passed over),
 # it runs the hook (`panorama hook <kind>`, same records, same output, exit 0). Anything else
 # (no binary, a stale one, one that fails on the probe, or hangs on it: 2 s with timeout(1),
-# then KILL; 2 s with perl's alarm where there is no timeout(1), as on stock macOS; unbounded
-# with neither) falls through to Python.
+# then KILL; where there is no timeout(1), as on stock macOS, perl's alarm ends the probed
+# process after 2 s (only that process: a child it left holding the output would keep the
+# probe waiting); unbounded with neither) falls through to Python.
 CLAUDE_CONTRACT=1
 case $0 in
 */*) here=${0%/*} ;;
