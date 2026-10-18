@@ -21,7 +21,7 @@ fn recording(state: &Path, append: bool) -> (RsyncSync, Calls) {
     let calls: Calls = Arc::default();
     let seen = calls.clone();
     let mut s = RsyncSync::new(&env(state), Arc::new(|| 3600.0));
-    s.rsync.append = append;
+    s.rsync.append = Some(append);
     s.runner = Arc::new(move |argv: &[String], _| {
         seen.lock().unwrap().push(argv.to_vec());
         None

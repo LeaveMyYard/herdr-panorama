@@ -1,5 +1,6 @@
 use super::*;
 use std::path::Path;
+use std::time::Instant;
 
 fn sh(script: &str) -> Vec<String> {
     vec!["sh".into(), "-c".into(), script.into()]
