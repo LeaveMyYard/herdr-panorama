@@ -256,7 +256,7 @@ async fn a_panorama_left_docked_goes_back_to_its_own_first_tab() {
     );
     let s = w.s();
     assert_eq!(s.tabs[0].label, label());
-    assert_eq!(s.in_tab(&h2.tab_id), [h.pane_id.clone()]);
+    assert_eq!(s.in_tab(&h2.tab_id), std::slice::from_ref(&h.pane_id));
     assert_eq!(s.in_tab(&ta), [a]);
     assert!(
         s.moves_of_others(&h.pane_id).is_empty(),

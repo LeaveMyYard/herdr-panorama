@@ -143,35 +143,35 @@ tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-32
 tests/test_card_title.py::test_an_unselected_title_is_cut_too[120],tests/test_card_title.py,,todo,,P4
 tests/test_card_title.py::test_an_unselected_title_is_cut_too[160],tests/test_card_title.py,,todo,,P4
 tests/test_card_title.py::test_fit_segs_keeps_short_titles_and_cuts_long_ones,tests/test_card_title.py,,todo,,P4
-tests/test_cockpit.py::test_config_defaults_off_and_width_is_clamped,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_the_home_pane_is_labelled_and_found_by_content,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_the_fake_tab_focus_moves_focus,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_dock_keep_focus_setting_defaults_on,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_closing_the_agent_tab_with_panorama_in_it_reopens_a_home,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_an_older_home_pane_is_adopted_and_labelled,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_records_are_per_herdr_session,tests/test_cockpit.py,,todo,,P4
+tests/test_cockpit.py::test_config_defaults_off_and_width_is_clamped,tests/test_cockpit.py,src/home/tests/lookalikes.rs::config_defaults_and_python_truthiness,mapped,,P4
+tests/test_cockpit.py::test_the_home_pane_is_labelled_and_found_by_content,tests/test_cockpit.py,src/home/tests/ensure.rs::the_home_pane_is_labelled_and_found_by_content,mapped,,P4
+tests/test_cockpit.py::test_the_fake_tab_focus_moves_focus,tests/test_cockpit.py,src/home/tests/ensure.rs::the_fake_tab_focus_moves_focus,mapped,,P4
+tests/test_cockpit.py::test_dock_keep_focus_setting_defaults_on,tests/test_cockpit.py,src/home/tests/lookalikes.rs::dock_keep_focus_and_arrows_default_on,mapped,,P4
+tests/test_cockpit.py::test_closing_the_agent_tab_with_panorama_in_it_reopens_a_home,tests/test_cockpit.py,src/home/tests/ensure.rs::closing_the_agent_tab_with_panorama_in_it_reopens_a_home,mapped,,P4
+tests/test_cockpit.py::test_an_older_home_pane_is_adopted_and_labelled,tests/test_cockpit.py,src/home/tests/ensure.rs::an_older_home_pane_is_adopted_and_labelled,mapped,,P4
+tests/test_cockpit.py::test_records_are_per_herdr_session,tests/test_cockpit.py,src/home/tests/ensure.rs::records_are_per_herdr_session,mapped,,P4
 tests/test_cockpit.py::test_fit_sizes_panoramas_split_and_leaves_a_dragged_one,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_split_path_and_side,tests/test_cockpit.py,src/panels/tests/shell.rs::split_path_and_side,mapped,,P4
-tests/test_cockpit.py::test_r8_lookalikes_are_never_adopted_renamed_moved_or_closed[shell with the label],tests/test_cockpit.py,,todo,,P4
-"tests/test_cockpit.py::test_r8_lookalikes_are_never_adopted_renamed_moved_or_closed[panorama exited, its shell left]",tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8_lookalikes_are_never_adopted_renamed_moved_or_closed[another plugin alone in a \u25c6 tab],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8_lookalikes_are_never_adopted_renamed_moved_or_closed[label restored without its process],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8_lookalikes_are_never_adopted_renamed_moved_or_closed[an agent that just exited],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8_only_a_lookalike_left_means_a_new_panorama_not_an_adoption,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8_unverifiable_lookalikes_open_nothing,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8_process_match[argv0-True],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8_process_match[argv1-True],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8_process_match[argv2-True],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8_process_match[argv3-False],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8_process_match[argv4-False],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8_process_match[argv5-False],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8_process_match[argv6-False],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_h1_a_shared_home_tab_is_left_alone_with_the_cockpit_off[False],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_h1_a_shared_home_tab_is_left_alone_with_the_cockpit_off[True],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_l4_duplicates_are_left_alone_not_closed,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_r8f_l3_no_foreground_process_is_unknown,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_ensure_with_the_lock_held_elsewhere_gives_up,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_lock_busy_is_its_own_exception,tests/test_cockpit.py,,todo,,P4
+tests/test_cockpit.py::test_r8_lookalikes_are_never_adopted_renamed_moved_or_closed[shell with the label],tests/test_cockpit.py,src/home/tests/lookalikes.rs::lookalikes_are_never_adopted_renamed_moved_or_closed,mapped,,P4
+"tests/test_cockpit.py::test_r8_lookalikes_are_never_adopted_renamed_moved_or_closed[panorama exited, its shell left]",tests/test_cockpit.py,src/home/tests/lookalikes.rs::lookalikes_are_never_adopted_renamed_moved_or_closed,mapped,,P4
+tests/test_cockpit.py::test_r8_lookalikes_are_never_adopted_renamed_moved_or_closed[another plugin alone in a \u25c6 tab],tests/test_cockpit.py,src/home/tests/lookalikes.rs::lookalikes_are_never_adopted_renamed_moved_or_closed,mapped,,P4
+tests/test_cockpit.py::test_r8_lookalikes_are_never_adopted_renamed_moved_or_closed[label restored without its process],tests/test_cockpit.py,src/home/tests/lookalikes.rs::lookalikes_are_never_adopted_renamed_moved_or_closed,mapped,,P4
+tests/test_cockpit.py::test_r8_lookalikes_are_never_adopted_renamed_moved_or_closed[an agent that just exited],tests/test_cockpit.py,src/home/tests/lookalikes.rs::lookalikes_are_never_adopted_renamed_moved_or_closed,mapped,,P4
+tests/test_cockpit.py::test_r8_only_a_lookalike_left_means_a_new_panorama_not_an_adoption,tests/test_cockpit.py,src/home/tests/lookalikes.rs::only_a_lookalike_left_means_a_new_panorama_not_an_adoption,mapped,,P4
+tests/test_cockpit.py::test_r8_unverifiable_lookalikes_open_nothing,tests/test_cockpit.py,src/home/tests/lookalikes.rs::unverifiable_lookalikes_open_nothing,mapped,,P4
+tests/test_cockpit.py::test_r8_process_match[argv0-True],tests/test_cockpit.py,src/home/tests/lookalikes.rs::the_process_match_is_panorama_then_tui,mapped,,P4
+tests/test_cockpit.py::test_r8_process_match[argv1-True],tests/test_cockpit.py,src/home/tests/lookalikes.rs::the_process_match_is_panorama_then_tui,mapped,,P4
+tests/test_cockpit.py::test_r8_process_match[argv2-True],tests/test_cockpit.py,src/home/tests/lookalikes.rs::the_process_match_is_panorama_then_tui,mapped,,P4
+tests/test_cockpit.py::test_r8_process_match[argv3-False],tests/test_cockpit.py,src/home/tests/lookalikes.rs::the_process_match_is_panorama_then_tui,mapped,,P4
+tests/test_cockpit.py::test_r8_process_match[argv4-False],tests/test_cockpit.py,src/home/tests/lookalikes.rs::the_process_match_is_panorama_then_tui,mapped,,P4
+tests/test_cockpit.py::test_r8_process_match[argv5-False],tests/test_cockpit.py,src/home/tests/lookalikes.rs::the_process_match_is_panorama_then_tui,mapped,,P4
+tests/test_cockpit.py::test_r8_process_match[argv6-False],tests/test_cockpit.py,src/home/tests/lookalikes.rs::the_process_match_is_panorama_then_tui,mapped,,P4
+tests/test_cockpit.py::test_r8f_h1_a_shared_home_tab_is_left_alone_with_the_cockpit_off[False],tests/test_cockpit.py,src/home/tests/lookalikes.rs::a_shared_home_tab_is_left_alone,mapped,,P4
+tests/test_cockpit.py::test_r8f_h1_a_shared_home_tab_is_left_alone_with_the_cockpit_off[True],tests/test_cockpit.py,src/home/tests/lookalikes.rs::a_shared_home_tab_is_left_alone,mapped,,P4
+tests/test_cockpit.py::test_r8f_l4_duplicates_are_left_alone_not_closed,tests/test_cockpit.py,src/home/tests/lookalikes.rs::duplicates_are_left_alone_not_closed,mapped,,P4
+tests/test_cockpit.py::test_r8f_l3_no_foreground_process_is_unknown,tests/test_cockpit.py,src/home/tests/lookalikes.rs::the_process_match_is_panorama_then_tui,mapped,,P4
+tests/test_cockpit.py::test_ensure_with_the_lock_held_elsewhere_gives_up,tests/test_cockpit.py,src/home/tests/ensure.rs::ensure_with_the_lock_held_elsewhere_gives_up,mapped,,P4
+tests/test_cockpit.py::test_lock_busy_is_its_own_exception,tests/test_cockpit.py,,retired,Python's exception class; the Rust ensure returns an error (tested by ensure_with_the_lock_held_elsewhere_gives_up),P4
 tests/test_collect.py::test_demo_swarm_shape,tests/test_collect.py,tests/collect_demo.rs::demo_swarm_shape ; tests/model_goldens.rs::the_demo_model_matches_its_golden ; tests/model_goldens.rs::the_continued_model_matches_its_golden ; tests/model_goldens.rs::the_background_model_matches_its_golden,mapped,,P4
 tests/test_collect.py::test_done_window_hides_old_threads,tests/test_collect.py,tests/collect_demo.rs::done_window_hides_old_threads,mapped,,P4
 tests/test_collect.py::test_later_ticks_read_only_what_was_appended,tests/test_collect.py,tests/collect_demo.rs::later_ticks_read_only_what_was_appended,mapped,,P4
@@ -409,12 +409,12 @@ tests/test_herdr.py::test_clean_strips_controls_and_caps,tests/test_herdr.py,her
 tests/test_herdr.py::test_missing_binary_is_an_error_not_an_exception,tests/test_herdr.py,herdr-agent-kit@v0.1.0:tests/herdr_api/cli.rs::a_missing_binary_is_unreachable,mapped,,P1
 tests/test_herdr.py::test_snapshot_and_focus_through_the_fake,tests/test_herdr.py,,todo,,P4
 tests/test_herdr.py::test_open_view_split_targets_the_invoking_pane,tests/test_herdr.py,,todo,,P4
-tests/test_home.py::test_home_opens_once_renamed_first_and_focused_on_demand,tests/test_home.py,,todo,,P4
-tests/test_home.py::test_concurrent_openers_make_one_home,tests/test_home.py,,todo,,P4
-tests/test_home.py::test_lost_record_adopts_the_labelled_tab_and_a_gone_home_is_reopened,tests/test_home.py,,todo,,P4
-tests/test_home.py::test_open_action_focuses_home_and_popup_stays_available,tests/test_home.py,,todo,,P4
-tests/test_home.py::test_home_tab_off_means_popup_and_no_startup_tab,tests/test_home.py,,todo,,P4
-tests/test_home.py::test_startup_does_not_take_focus,tests/test_home.py,,todo,,P4
+tests/test_home.py::test_home_opens_once_renamed_first_and_focused_on_demand,tests/test_home.py,src/home/tests/ensure.rs::home_opens_once_renamed_first_and_focused_on_demand,mapped,,P4
+tests/test_home.py::test_concurrent_openers_make_one_home,tests/test_home.py,src/home/tests/ensure.rs::concurrent_openers_make_one_home,mapped,,P4
+tests/test_home.py::test_lost_record_adopts_the_labelled_tab_and_a_gone_home_is_reopened,tests/test_home.py,src/home/tests/ensure.rs::lost_record_adopts_the_labelled_tab_and_a_gone_home_is_reopened,mapped,,P4
+tests/test_home.py::test_open_action_focuses_home_and_popup_stays_available,tests/test_home.py,src/home/tests/ensure.rs::open_action_focuses_home_and_the_popup_stays_available,mapped,,P4
+tests/test_home.py::test_home_tab_off_means_popup_and_no_startup_tab,tests/test_home.py,src/home/tests/ensure.rs::home_tab_off_means_popup_and_no_startup_tab,mapped,,P4
+tests/test_home.py::test_startup_does_not_take_focus,tests/test_home.py,src/home/tests/ensure.rs::startup_does_not_take_focus,mapped,,P4
 tests/test_home.py::test_slugify[Billing API!-billing-api],tests/test_home.py,,todo,,P4
 tests/test_home.py::test_slugify[  9 lives -a-9-lives],tests/test_home.py,,todo,,P4
 tests/test_home.py::test_slugify[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx],tests/test_home.py,,todo,,P4
@@ -423,19 +423,19 @@ tests/test_home.py::test_slugify[!!!-],tests/test_home.py,,todo,,P4
 tests/test_home.py::test_slugify[fix_auth--flow-fix_auth-flow],tests/test_home.py,,todo,,P4
 tests/test_home.py::test_new_agent_flow_sanitises_and_prompts_once,tests/test_home.py,,todo,,P4
 tests/test_home.py::test_new_agent_without_prompt_and_failures,tests/test_home.py,,todo,,P4
-tests/test_home.py::test_r5_h1_a_failed_snapshot_never_opens_a_second_home,tests/test_home.py,,todo,,P4
-tests/test_home.py::test_r5_m5_a_record_is_trusted_only_if_it_still_looks_like_home,tests/test_home.py,,todo,,P4
+tests/test_home.py::test_r5_h1_a_failed_snapshot_never_opens_a_second_home,tests/test_home.py,src/home/tests/ensure.rs::a_failed_snapshot_never_opens_a_second_home,mapped,,P4
+tests/test_home.py::test_r5_m5_a_record_is_trusted_only_if_it_still_looks_like_home,tests/test_home.py,src/home/tests/ensure.rs::a_record_is_trusted_only_if_it_still_looks_like_home,mapped,,P4
 tests/test_home.py::test_r5_m1_prompt_goes_to_the_new_pane_and_cannot_be_a_flag,tests/test_home.py,,todo,,P4
 tests/test_home.py::test_r5_m1_an_existing_agent_name_is_refused,tests/test_home.py,,todo,,P4
 tests/test_home.py::test_r5_m2_a_failed_start_closes_its_tab,tests/test_home.py,,todo,,P4
 tests/test_home.py::test_r5_l3_a_missing_directory_is_refused,tests/test_home.py,,todo,,P4
 tests/test_home.py::test_r5b_h1_the_prompt_is_the_word_after_the_target_as_herdr_parses_it,tests/test_home.py,,todo,,P4
-tests/test_home_label.py::test_crash_sweep_renames_a_home_tab_left_with_an_agent,tests/test_home_label.py,,todo,,P4
-tests/test_home_label.py::test_sweep_falls_back_to_the_kind_then_tab,tests/test_home_label.py,,todo,,P4
-tests/test_home_label.py::test_sweep_keeps_a_live_or_unverifiable_panorama_tab,tests/test_home_label.py,,todo,,P4
-tests/test_home_label.py::test_sweep_ignores_other_tabs,tests/test_home_label.py,,todo,,P4
-tests/test_home_label.py::test_quit_renames_the_shared_home_tab_first,tests/test_home_label.py,,todo,,P4
-tests/test_home_label.py::test_quit_alone_in_the_home_tab_renames_nothing,tests/test_home_label.py,,todo,,P4
+tests/test_home_label.py::test_crash_sweep_renames_a_home_tab_left_with_an_agent,tests/test_home_label.py,src/home/tests/label.rs::crash_sweep_renames_a_home_tab_left_with_an_agent,mapped,,P4
+tests/test_home_label.py::test_sweep_falls_back_to_the_kind_then_tab,tests/test_home_label.py,src/home/tests/label.rs::sweep_falls_back_to_the_kind_then_tab,mapped,,P4
+tests/test_home_label.py::test_sweep_keeps_a_live_or_unverifiable_panorama_tab,tests/test_home_label.py,src/home/tests/label.rs::sweep_keeps_a_live_or_unverifiable_panorama_tab,mapped,,P4
+tests/test_home_label.py::test_sweep_ignores_other_tabs,tests/test_home_label.py,src/home/tests/label.rs::sweep_ignores_other_tabs,mapped,,P4
+tests/test_home_label.py::test_quit_renames_the_shared_home_tab_first,tests/test_home_label.py,src/home/tests/label.rs::quit_renames_the_shared_home_tab_first,mapped,,P4
+tests/test_home_label.py::test_quit_alone_in_the_home_tab_renames_nothing,tests/test_home_label.py,src/home/tests/label.rs::quit_alone_in_the_home_tab_renames_nothing,mapped,,P4
 tests/test_hook_interp.py::test_cold_cache_resolves_once_and_writes_the_real_interpreter,tests/test_hook_interp.py,,retired,Pins run-hook.sh's Python interpreter resolution and cache; the Rust hook is a native binary with no interpreter to resolve.,P0b
 tests/test_hook_interp.py::test_warm_cache_never_touches_python3,tests/test_hook_interp.py,,retired,Pins run-hook.sh's Python interpreter resolution and cache; the Rust hook is a native binary with no interpreter to resolve.,P0b
 tests/test_hook_interp.py::test_warm_cache_session_start_output_passes_through,tests/test_hook_interp.py,,retired,Pins that the interpreter shim leaks nothing around SessionStart's JSON; the shim does not exist in Rust (SessionStart output belongs to the hooks port).,P0b
@@ -1108,10 +1108,10 @@ tests/test_wide.py::test_the_model_keeps_its_version[some-other-model-some-other
 tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[44],tests/test_wide.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision, kept by the wide graph in P4), so 'restyle equals a full render' holds by construction; the sweep's lap is pinned by cards/tests.rs::a_sweep_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged",P4
 tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[60],tests/test_wide.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision, kept by the wide graph in P4), so 'restyle equals a full render' holds by construction; the sweep's lap is pinned by cards/tests.rs::a_sweep_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged",P4
 tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[64],tests/test_wide.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision, kept by the wide graph in P4), so 'restyle equals a full render' holds by construction; the sweep's lap is pinned by cards/tests.rs::a_sweep_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged",P4
-tests/test_cockpit.py::test_the_key_brings_a_left_docked_panorama_home_and_focuses_it,tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[per-tab],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[off],tests/test_cockpit.py,,todo,,P4
-tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[old-moving-setting],tests/test_cockpit.py,,todo,,P4
+tests/test_cockpit.py::test_the_key_brings_a_left_docked_panorama_home_and_focuses_it,tests/test_cockpit.py,src/home/tests/ensure.rs::the_key_brings_a_left_docked_panorama_home_and_focuses_it,mapped,,P4
+tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[per-tab],tests/test_cockpit.py,src/home/tests/ensure.rs::a_panorama_left_docked_goes_back_to_its_own_first_tab,mapped,,P4
+tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[off],tests/test_cockpit.py,src/home/tests/ensure.rs::a_panorama_left_docked_goes_back_to_its_own_first_tab,mapped,,P4
+tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[old-moving-setting],tests/test_cockpit.py,src/home/tests/ensure.rs::a_panorama_left_docked_goes_back_to_its_own_first_tab,mapped,,P4
 tests/test_cockpit.py::test_the_cores_open_key_brings_a_docked_home_back_to_its_own_tab,tests/test_cockpit.py,,todo,,P4
 tests/test_follow.py::test_a_burst_of_focus_events_makes_one_panel_pass,tests/test_follow.py,,todo,,P4
 tests/test_panels.py::test_follow_tabs_single_gives_panels_only_to_tabs_of_one_orchestrator,tests/test_panels.py,,todo,,P4

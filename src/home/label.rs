@@ -6,10 +6,7 @@ use crate::panels::snap::{Snap, SnapPane};
 /// `◆ panorama`, also behind herdr-inbox's `❓N ` prefixes (`^(?:❓\d+\s+)+`).
 pub fn is_home_label(label: &str) -> bool {
     let mut rest = label;
-    loop {
-        let Some(after) = rest.strip_prefix('❓') else {
-            break;
-        };
+    while let Some(after) = rest.strip_prefix('❓') {
         let digits = after.len() - after.trim_start_matches(|c: char| c.is_ascii_digit()).len();
         let spaced = after[digits..].trim_start();
         if digits == 0 || spaced.len() == after[digits..].len() {
