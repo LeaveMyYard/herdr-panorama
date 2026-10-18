@@ -30,3 +30,6 @@ pub fn stamp() -> String {
         .format("%Y-%m-%d %H:%M:%S %z")
         .to_string()
 }
+
+#[cfg(test)]
+mod tests;

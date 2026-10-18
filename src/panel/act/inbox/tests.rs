@@ -250,3 +250,75 @@ fn versions_and_failure_words_read_as_python_reads_them() {
     assert!(before_popup("Error: Unrecognized arguments: --pane"));
     assert!(!before_popup("Traceback: boom"));
 }
+
+fn help_calls(run: &Inbox) -> usize {
+    run.calls
+        .borrow()
+        .iter()
+        .filter(|c| c.contains(&"--help".to_owned()))
+        .count()
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn an_older_version_probes_its_help_for_pane() {
+    // test_older_version_probes_help_for_pane: a dev build of 0.5.9 that already has deep links
+    let fake = listed("0.5.9");
+    let run = inbox("usage: --pane --question", (0, ""));
+    InboxLink::default()
+        .open(&fake.client(), &run, None, Some("w1:p1"))
+        .await;
+    assert_eq!(
+        run.calls.borrow().last().unwrap(),
+        &["open", "--pane", "w1:p1"]
+    );
+    assert_eq!(plain(&fake), 0);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn no_second_popup_after_an_unclear_failure() {
+    // test_r6_l3_no_second_popup_after_an_unclear_failure[all three cases]
+    for (rc, out, plains) in [
+        (1, "Traceback: something after the popup opened", 0),
+        (2, "error: unrecognized arguments: --question", 1),
+        (1, "could not open the inbox popup: herdr down", 1),
+    ] {
+        let fake = listed("0.6.0");
+        let run = inbox("--pane --question", (rc, out));
+        InboxLink::default()
+            .open(&fake.client(), &run, Some(2), None)
+            .await;
+        assert_eq!(plain(&fake), plains, "{out}");
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_failed_help_probe_means_no_no_hold() {
+    // test_a_failed_help_probe_means_no_no_hold
+    let fake = listed("0.6.1");
+    let mut run = inbox("boom --no-hold", (0, ""));
+    run.help.code = 1; // the probe failed
+    InboxLink::default()
+        .open(&fake.client(), &run, Some(2), None)
+        .await;
+    assert_eq!(
+        run.calls.borrow().last().unwrap(),
+        &["open", "--question", "Q2"]
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_help_text_is_read_once_for_both_checks() {
+    // test_the_help_text_is_read_once_for_both_checks: an older version, deep links and
+    // --no-hold both read from one probe; a second open asks no more
+    let fake = listed("0.5.9");
+    let run = inbox("usage: --pane --question --no-hold", (0, ""));
+    let link = InboxLink::default();
+    link.open(&fake.client(), &run, Some(2), None).await;
+    assert_eq!(
+        run.calls.borrow().last().unwrap(),
+        &["open", "--question", "Q2", "--no-hold"]
+    );
+    assert_eq!(help_calls(&run), 1);
+    link.open(&fake.client(), &run, Some(3), None).await;
+    assert_eq!(help_calls(&run), 1);
+}
