@@ -10,6 +10,9 @@ use std::time::{Duration, Instant};
 
 /// How often the child is checked for its end.
 const POLL: Duration = Duration::from_millis(10);
+/// How often a spawn of a busy binary is retried, and how long apart.
+const SPAWN_TRIES: u32 = 5;
+const SPAWN_RETRY: Duration = Duration::from_millis(20);
 
 /// How a bounded run ended.
 #[derive(Debug, PartialEq, Eq)]
@@ -32,18 +35,19 @@ pub fn bounded(argv: &[String], timeout: Duration, stdout: bool) -> Ended {
     let Some((bin, args)) = argv.split_first() else {
         return Ended::NotStarted("no command".into());
     };
-    let spawned = Command::new(bin)
+    let mut command = Command::new(bin);
+    let out_pipe = if stdout {
+        Stdio::piped()
+    } else {
+        Stdio::null()
+    };
+    command
         .args(args)
         .stdin(Stdio::null())
-        .stdout(if stdout {
-            Stdio::piped()
-        } else {
-            Stdio::null()
-        })
+        .stdout(out_pipe)
         .stderr(Stdio::piped())
-        .process_group(0)
-        .spawn();
-    let mut child = match spawned {
+        .process_group(0);
+    let mut child = match spawn(&mut command) {
         Ok(child) => child,
         Err(e) => return Ended::NotStarted(e.to_string()),
     };
@@ -69,6 +73,22 @@ pub fn bounded(argv: &[String], timeout: Duration, stdout: bool) -> Ended {
         code,
         stdout: collect(out),
         stderr: collect(err),
+    }
+}
+
+/// Spawns, retrying a few times while the binary is busy being written (`ETXTBSY`: an
+/// update in progress, or a file another thread's fork briefly holds open). Nothing ran, so a
+/// retry is safe (the kit's CLI runner does the same).
+fn spawn(command: &mut Command) -> std::io::Result<Child> {
+    let mut tries = 0;
+    loop {
+        match command.spawn() {
+            Err(e) if e.kind() == std::io::ErrorKind::ExecutableFileBusy && tries < SPAWN_TRIES => {
+                tries += 1;
+                std::thread::sleep(SPAWN_RETRY);
+            }
+            spawned => return spawned,
+        }
     }
 }
 
