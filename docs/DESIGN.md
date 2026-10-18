@@ -1778,18 +1778,24 @@ has proven itself (the operator, Q140).
   parent.
 - **The Rust viewer (rewrite P3, docs/plans/rust-rewrite.md §5.4).** The manifest's `panel` pane
   and `herdr.PANEL_COMMAND` run `scripts/panel`, which picks the viewer:
-  - the Rust binary when there is one (`${CARGO_TARGET_DIR}/release/panorama` when that is set,
-    else `target/release/panorama` from `cargo build --release` in a linked checkout) **and** it
-    answers `panorama contract` with the number the script carries (the panel contract: the
-    `panel` subcommand, the protocol's major, the plugin environment, the crash marker), within
-    2 s;
+  - the Rust binary when the plugin root has one (`target/release/panorama`, from `cargo build
+    --release` in a linked checkout) **and** it answers `panorama contract` with the number the
+    script carries (the panel contract: the `panel` subcommand, the protocol's major, the plugin
+    environment, the crash marker), within 2 s (`timeout -k 1 2`; its answer goes to a file, so
+    a child it leaves behind cannot hold the panel);
   - else the venv's viewer, else `uv run`.
 
   A binary that is stale, fails to start, panics or hangs on the probe is passed over (said on
   stderr and in `<state dir>/panel-launch.log`), so it can no longer make the panel die at start
   three times and give the tab up for the core's life (#78 review). A `herdr plugin install`
   builds no binary (its build step is `uv sync`), so it runs the venv's viewer until the
-  release work ships binaries. Removing the binary rolls back, panel by panel (old and new
+  release work ships binaries. `CARGO_TARGET_DIR` is not looked at (it is often shared by
+  every checkout, so it would run another checkout's build): a dev setup with it set gets the
+  venv's viewer unless it builds in the checkout (`CARGO_TARGET_DIR= cargo build --release`) or
+  links `target/release/panorama`. While the probe runs (about 10 ms, at most 3 s) the pane is
+  not yet `panorama panel` to `process-info`; the core's own panels count by id, so only a +
+  New agent tab's panel (started by `layout.apply`) is in that window, and the duplicate rule
+  covers it. Removing the binary rolls back, panel by panel (old and new
   viewers share one core). The core knows the Rust process as a panel as before: `pane
   process-info` shows `…/panorama panel`. Checked on an isolated herdr
   0.9.3 (own HOME and socket), with two then eight orchestrator tabs:

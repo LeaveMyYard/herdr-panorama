@@ -91,12 +91,14 @@ def test_the_panel_runs_the_rust_viewer_when_built_else_the_venv_else_uv(tmp_pat
     assert _launch(tmp_path)[0] == "venv panel"
 
 
-def test_cargo_target_dir_is_honoured_first(tmp_path):
+def test_a_shared_cargo_target_dir_is_not_looked_at(tmp_path):
+    """#78 review M-2: CARGO_TARGET_DIR is often shared by every checkout; its build may be
+    another worktree's. Only the plugin root's own target/release counts."""
     _stub(tmp_path / ".venv" / "bin" / "panorama", 'echo venv "$@"')
-    _stub(tmp_path / "target" / "release" / "panorama", RUST_OK)
     _stub(tmp_path / "elsewhere" / "release" / "panorama", RUST_OK.replace("echo rust", "echo other"))
-    assert _launch(tmp_path, {"CARGO_TARGET_DIR": str(tmp_path / "elsewhere")})[0] == "other panel"
-    assert _launch(tmp_path)[0] == "rust panel"
+    assert _launch(tmp_path, {"CARGO_TARGET_DIR": str(tmp_path / "elsewhere")})[0] == "venv panel"
+    _stub(tmp_path / "target" / "release" / "panorama", RUST_OK)
+    assert _launch(tmp_path, {"CARGO_TARGET_DIR": str(tmp_path / "elsewhere")})[0] == "rust panel"
 
 
 @pytest.mark.parametrize("case,body", [
@@ -124,13 +126,31 @@ def test_a_directory_named_like_the_binary_is_not_run(tmp_path):
     assert _launch(tmp_path) == ("venv panel", "")
 
 
-def test_a_binary_that_hangs_on_the_probe_is_given_two_seconds(tmp_path):
+def _bounded(tmp_path, body):
     import shutil
     import time
     if not (shutil.which("timeout") or shutil.which("perl")):
         pytest.skip("neither timeout(1) nor perl: the probe is unbounded here")
     _stub(tmp_path / ".venv" / "bin" / "panorama", 'echo venv "$@"')
-    _stub(tmp_path / "target" / "release" / "panorama", "exec sleep 30")
+    _stub(tmp_path / "target" / "release" / "panorama", body)
     t = time.monotonic()
-    assert _launch(tmp_path, timeout=20)[0] == "venv panel"
-    assert time.monotonic() - t < 10
+    out = _launch(tmp_path, timeout=20)[0]
+    return out, time.monotonic() - t
+
+
+def test_a_binary_that_hangs_on_the_probe_is_given_two_seconds(tmp_path):
+    out, took = _bounded(tmp_path, "exec sleep 30")
+    assert out == "venv panel" and took < 6
+
+
+def test_a_probe_that_ignores_term_is_killed_a_second_later(tmp_path):
+    # #78 review L-3: `timeout 2` sent TERM only
+    out, took = _bounded(tmp_path, "trap '' TERM; sleep 30")
+    assert out == "venv panel" and took < 6
+
+
+def test_a_probe_child_holding_the_output_cannot_keep_the_panel_waiting(tmp_path):
+    # #78 review L-3: a child left behind with the probe's stdout no longer holds the read
+    body = 'if [ "$1" = contract ]; then sleep 30 & echo 1; exit 0; fi; echo rust "$@"'
+    out, took = _bounded(tmp_path, body)
+    assert out == "rust panel" and took < 6

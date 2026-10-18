@@ -2,35 +2,47 @@
 #
 #   sh scripts/panel        the manifest's `panel` pane and herdr.PANEL_COMMAND
 #
-# It runs the Rust viewer only when it is there AND speaks this checkout's panel contract:
-# `panorama contract` prints the number of the panel contract it implements (the `panel`
-# subcommand, the core protocol's major, the plugin environment it reads, the crash marker),
-# and this script carries the number the Python core next to it expects. A binary that is
-# stale (from before `panel`), fails to start (126/127), panics, or does not answer within
-# 2 s is passed over, so the panel never dies at start for it. The candidates, in order:
-#   1. ${CARGO_TARGET_DIR}/release/panorama, when CARGO_TARGET_DIR is set;
-#   2. <plugin root>/target/release/panorama (`cargo build --release` in a linked checkout).
-# Otherwise the venv's viewer (the plugin's build ran `uv sync`), and `uv run` without one.
-# A binary that is there but does not match is reported on stderr and in
-# <state dir>/panel-launch.log (the latest only), so a silent fallback to Python can be noticed.
+# It runs the Rust viewer only when this plugin root has one built (target/release/panorama,
+# from `cargo build --release` in a linked checkout) AND it speaks this checkout's panel
+# contract: `panorama contract` prints the number of the panel contract it implements (the
+# `panel` subcommand, the core protocol's major, the plugin environment it reads, the crash
+# marker), and this script carries the number the Python core next to it expects. Otherwise
+# the venv's viewer (the plugin's build ran `uv sync`), and `uv run` without one.
+#
+# Only the plugin root's own build counts. CARGO_TARGET_DIR is not looked at: it is often one
+# target dir shared by every checkout, so it would run whichever checkout built last. A dev
+# setup with CARGO_TARGET_DIR set gets the venv's viewer unless it builds here
+# (`CARGO_TARGET_DIR= cargo build --release`) or links target/release/panorama.
+#
+# The probe: stdin from /dev/null, its answer written to a file (a child it leaves behind
+# holding the output cannot keep the panel waiting), and at most 2 s (`timeout -k 1 2`: TERM,
+# then KILL a second later; perl's alarm where timeout(1) is missing). A binary that is stale
+# (from before `panel`), fails to start, panics, hangs or speaks another contract is passed
+# over, said on stderr and in <state dir>/panel-launch.log (the latest only). The probe still
+# reaches the pane's terminal (no setsid: not on macOS); a binary that passes gets it anyway.
+# While it runs (about 10 ms; at most 3 s) the pane answers "not a panel" to `process-info`
+# (the core places its own panels by id, so only a + New agent tab's panel is in that window).
 CONTRACT=1
 
 R=${HERDR_PLUGIN_ROOT:-.}
+B="$R/target/release/panorama"
 
-# Prints what `$1 contract` says, given at most 2 s (timeout(1), else perl's alarm).
+# What `$B contract` says, or nothing.
 contract_of() {
+	out=$(mktemp "${TMPDIR:-/tmp}/panorama-contract.XXXXXX") || return
 	if command -v timeout >/dev/null 2>&1; then
-		timeout 2 "$1" contract
+		timeout -k 1 2 "$B" contract
 	elif command -v perl >/dev/null 2>&1; then
-		perl -e 'alarm shift; exec @ARGV or exit 127' 2 "$1" contract
+		perl -e 'alarm shift; exec @ARGV or exit 127' 2 "$B" contract
 	else
-		"$1" contract
-	fi </dev/null 2>/dev/null
+		"$B" contract
+	fi </dev/null >"$out" 2>/dev/null
+	head -n 1 "$out"
+	rm -f "$out"
 }
 
-for B in ${CARGO_TARGET_DIR:+"$CARGO_TARGET_DIR/release/panorama"} "$R/target/release/panorama"; do
-	[ -f "$B" ] && [ -x "$B" ] || continue
-	got=$(contract_of "$B")
+if [ -f "$B" ] && [ -x "$B" ]; then
+	got=$(contract_of)
 	if [ "$got" = "$CONTRACT" ]; then
 		exec "$B" panel
 	fi
@@ -39,6 +51,6 @@ for B in ${CARGO_TARGET_DIR:+"$CARGO_TARGET_DIR/release/panorama"} "$R/target/re
 	if [ -n "${HERDR_PLUGIN_STATE_DIR:-}" ]; then
 		printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$msg" >"$HERDR_PLUGIN_STATE_DIR/panel-launch.log" 2>/dev/null
 	fi
-done
+fi
 [ -f "$R/.venv/bin/panorama" ] && [ -x "$R/.venv/bin/panorama" ] && exec "$R/.venv/bin/panorama" panel
 exec uv run --quiet --frozen --no-dev --project "$R" panorama panel
