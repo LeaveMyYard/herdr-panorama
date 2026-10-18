@@ -12,7 +12,7 @@ use std::collections::BTreeSet;
 impl<O: Ops> Manager<O> {
     /// One pass over `snap`. `start`: the core just started (the start batch). `verified`: the
     /// panes whose viewers said a verified hello (the core's). `single`: see `survey`.
-    pub async fn reconcile_unlocked(
+    pub(super) async fn reconcile_unlocked(
         &mut self,
         snap: Snap,
         swarm: &Swarm,
@@ -160,6 +160,7 @@ impl<O: Ops> Manager<O> {
                     sv.panels.entry(tab).or_default().push(panel);
                 }
             } else if self.right.contains(&tab)
+                // as Python: the tab's first panel, which is a look-alike if ours went (#101)
                 && let (Some(agent), Some(panel)) = (
                     sv.targets.get(&tab).cloned(),
                     sv.panels.get(&tab).and_then(|p| p.first()).cloned(),

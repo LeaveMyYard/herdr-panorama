@@ -33,7 +33,7 @@ impl<O: Ops> Manager<O> {
         single: bool,
     ) -> OpenKey {
         let panel = {
-            let Ok(_held) = self.lock().await else {
+            let Some(_held) = self.lock().await else {
                 return OpenKey::Busy;
             };
             let sv = self.survey(snap, swarm, home, single).await;

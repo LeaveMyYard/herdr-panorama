@@ -63,9 +63,18 @@ pub struct State {
     pub fail_open: Option<String>,
     /// Panes herdr refuses to close.
     pub fail_close: BTreeSet<String>,
+    /// Plugin panes: `plugin pane close` refuses any other pane (herdr 0.9.3); a session
+    /// restore brings panes back as plain panes.
+    pub plugin: BTreeSet<String>,
 }
 
 impl State {
+    /// A plugin pane running our viewer that this test put there (not opened by the manager).
+    pub fn viewer(&mut self, id: &str) {
+        self.argv.insert(id.into(), "panel".into());
+        self.plugin.insert(id.into());
+    }
+
     pub fn tab_of(&self, pane: &str) -> String {
         self.tabs
             .iter()
@@ -111,6 +120,7 @@ impl State {
     /// herdr stopped and restored its session: every pane keeps its id and label but gets a new
     /// terminal running a plain login shell.
     pub fn restart_herdr(&mut self) {
+        self.plugin.clear();
         let mut n = self.n;
         for (_, ps) in &mut self.tabs {
             for p in ps {
@@ -155,6 +165,7 @@ impl World {
             ages: None,
             fail_open: None,
             fail_close: BTreeSet::new(),
+            plugin: BTreeSet::new(),
         })))
     }
 
@@ -239,6 +250,7 @@ impl Ops for World {
             },
         );
         s.argv.insert(id.clone(), "panel".into());
+        s.plugin.insert(id.clone());
         s.calls.push(format!("open {target}"));
         if let Some(mut hook) = s.on_open.take() {
             hook(&mut s);
@@ -250,6 +262,9 @@ impl Ops for World {
     async fn swap(&self, source: &str, target: &str) -> Result<(), String> {
         let mut s = self.s();
         let tab = s.tab_of(source);
+        if s.tab_of(target) != tab {
+            return Err("not swapped: cross_tab".into()); // herdr 0.9.3 swaps within a tab only
+        }
         let ps = s.tab(&tab);
         let i = ps.iter().position(|p| p.id == source).unwrap();
         let j = ps.iter().position(|p| p.id == target).unwrap();
@@ -269,6 +284,9 @@ impl Ops for World {
         let mut s = self.s();
         if s.fail_close.contains(pane) {
             return Err("refused".into());
+        }
+        if !s.plugin.contains(pane) {
+            return Err("plugin_pane_not_found".into()); // herdr 0.9.3: not a plugin pane
         }
         let tab = s.tab_of(pane);
         s.tab(&tab).retain(|p| p.id != pane);
@@ -365,7 +383,7 @@ pub fn places(dir: &Path) -> Places {
     Places {
         state_path: Some(dir.join("panels.json")),
         marker_dir: Some(dir.join("state")),
-        home_lock: None,
+        home_lock: dir.join("home.lock"),
     }
 }
 

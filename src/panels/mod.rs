@@ -79,7 +79,7 @@ pub struct Manager<O: Ops> {
     state_path: Option<PathBuf>,
     /// The panels' crash markers live here (the viewers' state dir).
     marker_dir: Option<PathBuf>,
-    home_lock: Option<LockFile>,
+    home_lock: LockFile,
     /// Panel pane → tab, opened (or adopted) by this core.
     pub created: BTreeMap<String, String>,
     /// tab → until when a create counts as in flight.
@@ -108,14 +108,16 @@ pub struct Manager<O: Ops> {
 }
 
 /// Where the manager keeps its state and finds the crash markers and the home lock.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct Places {
     /// `panels-<session>.json` in the state dir.
     pub state_path: Option<PathBuf>,
-    /// The viewers' state dir (`panel-crash-<pane>` markers).
+    /// The viewers' state dir (`panel-crash-<pane>` markers): the same directory the viewers
+    /// write them in, or every crash of a connected viewer reads as the operator closing it.
     pub marker_dir: Option<PathBuf>,
-    /// The home lock (`home-<session>.lock`): a pass holds it.
-    pub home_lock: Option<PathBuf>,
+    /// The home lock (`home-<session>.lock`): every pass and the open key hold it, as
+    /// Python's `home._lock`.
+    pub home_lock: PathBuf,
 }
 
 impl<O: Ops> Manager<O> {
@@ -127,7 +129,7 @@ impl<O: Ops> Manager<O> {
             clock,
             state_path: places.state_path,
             marker_dir: places.marker_dir,
-            home_lock: places.home_lock.map(LockFile::new),
+            home_lock: LockFile::new(places.home_lock).mode(0o644), // Python: 0644
             created: BTreeMap::new(),
             creating: BTreeMap::new(),
             right: BTreeSet::new(),
@@ -209,19 +211,15 @@ impl<O: Ops> Manager<O> {
         }
     }
 
-    /// The home lock for up to `LOCK`; `Err(())` when it stayed busy (or no lock is set: `Ok(None)`).
-    async fn lock(&self) -> Result<Option<herdr_agent_kit::plugin_env::lock::HeldLock>, ()> {
-        let Some(lock) = self.home_lock.clone() else {
-            return Ok(None);
-        };
-        match tokio::task::spawn_blocking(move || {
+    /// The home lock for up to `LOCK`; `None` when it stayed busy (or could not be opened).
+    async fn lock(&self) -> Option<herdr_agent_kit::plugin_env::lock::HeldLock> {
+        let lock = self.home_lock.clone();
+        tokio::task::spawn_blocking(move || {
             lock.exclusive_within(LOCK, Duration::from_millis(20), || true)
         })
         .await
-        {
-            Ok(Ok(Some(held))) => Ok(Some(held)),
-            _ => Err(()),
-        }
+        .ok()?
+        .ok()?
     }
 
     /// One pass under the home lock; `None` when the lock stayed busy.
@@ -234,7 +232,7 @@ impl<O: Ops> Manager<O> {
         start: bool,
         single: bool,
     ) -> Option<Survey> {
-        let _held = self.lock().await.ok()?;
+        let _held = self.lock().await?;
         Some(
             self.reconcile_unlocked(snap, swarm, home, verified, start, single)
                 .await,
