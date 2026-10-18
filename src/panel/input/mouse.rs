@@ -138,7 +138,8 @@ impl Panel {
     }
 
     /// The wheel over `(x, y)` by `rows`: the column there scrolls and stops following the
-    /// selection until it changes. Whether there was a column.
+    /// selection until it changes. Whether there was a column; if so, the actor repaints and
+    /// calls [`Panel::painted`] with `Painted::Wheel`, which holds the cells it slid.
     pub fn wheel(&mut self, x: i32, y: i32, rows: i32, screen: &Screen) -> bool {
         let Some(col) = screen
             .columns

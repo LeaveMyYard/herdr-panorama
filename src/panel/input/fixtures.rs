@@ -19,9 +19,21 @@ pub fn state(extra: Value) -> State {
     State::read(st.as_object().unwrap()).unwrap()
 }
 
-/// A connected panel in `tab` that got a state showing `visible` at `t0`, painted once at
-/// 46 columns (so it knows whether it is docked); returns it and a time when keys act.
-pub fn panel(tab: &str, visible: &str) -> (Panel, Instant) {
+/// A frame at time 0, panorama's own colours, the open key unbound.
+pub fn frame() -> crate::panel::paint::Frame {
+    crate::panel::paint::Frame {
+        now: 0.0,
+        frame: 0.0,
+        utc_offset: 0,
+        theme: None,
+        settings: Default::default(),
+        open_key: ("pfx+spc".into(), "pfx+spc".into()),
+    }
+}
+
+/// A connected panel in `tab` that got a state showing `visible` at the returned instant
+/// (its keys arm [`super::ARM`] after it), painted once at 46 columns.
+pub fn loaded_at(tab: &str, visible: &str) -> (Panel, Instant) {
     let t0 = Instant::now();
     let mut p = Panel::new(Some("w1:p90".into()), Some(tab.into()));
     p.on_connected(true);
@@ -29,14 +41,12 @@ pub fn panel(tab: &str, visible: &str) -> (Panel, Instant) {
         state(json!({"visible_tabs": [visible], "focused_pane": "w1:p90"})),
         t0,
     );
-    let f = crate::panel::paint::Frame {
-        now: 0.0,
-        frame: 0.0,
-        utc_offset: 0,
-        theme: None,
-        settings: Default::default(),
-        open_key: ("pfx+spc".into(), "pfx+spc".into()),
-    };
-    p.paint(46, 45, &f);
+    p.paint(46, 45, &frame());
+    (p, t0)
+}
+
+/// The same, with a time when its keys act.
+pub fn panel(tab: &str, visible: &str) -> (Panel, Instant) {
+    let (p, t0) = loaded_at(tab, visible);
     (p, t0 + Duration::from_secs(1))
 }

@@ -44,3 +44,41 @@ fn arrows_that_rest_during_a_switch_are_looked_at_again_when_it_ends() {
         matches!(&out[1], Effect::Toast(toast) if toast.warning && toast.title.as_deref() == Some("cockpit"))
     );
 }
+
+#[test]
+fn the_rest_comes_due_at_200_ms_not_a_tick_before() {
+    let (mut p, t) = panel("w1:t2", "w1:t2");
+    p.on_key(Key::Move(1), t);
+    assert!(
+        p.arrows_rested(t + ARROW_REST - Duration::from_millis(1))
+            .is_empty()
+    );
+    assert!(!p.arrows_rested(t + ARROW_REST).is_empty());
+}
+
+#[test]
+fn g_cancels_a_pending_arrow_switch() {
+    let (mut p, t) = panel("w1:t2", "w1:t2");
+    p.on_key(Key::Move(1), t);
+    p.on_key(Key::Goto, t);
+    assert!(p.arrows_rested(t + ARROW_REST).is_empty());
+}
+
+#[test]
+fn without_dock_keep_focus_the_arrows_only_move() {
+    // Python's arrows_setting needs keep_focus: an arrow never moves the keyboard into an agent
+    let (mut p, t) = panel("w1:t2", "w1:t2");
+    p.input.settings.keep_focus = false;
+    assert!(p.on_key(Key::Move(1), t).is_empty());
+    assert!(p.arrows_rested(t + ARROW_REST).is_empty());
+}
+
+#[test]
+fn g_during_a_switch_still_marks_the_agents_seen() {
+    // Python's action_goto marks them seen before _dock returns on `docking`
+    let (mut p, t) = panel("w1:t2", "w1:t2");
+    p.switch("w1:p4".into(), true);
+    p.view.orch = Some("w1:p3".into());
+    assert!(matches!(&p.on_key(Key::Goto, t)[..], [Effect::Goto { seen, .. }] if !seen.is_empty()));
+    assert!(p.switch("w1:p3".into(), false).is_empty()); // and no second switch
+}

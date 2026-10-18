@@ -69,7 +69,8 @@ impl Panel {
         }
     }
 
-    /// A state from the core, at `now`.
+    /// A state from the core, at `now`. The actor then repaints and calls `Panel::painted`
+    /// with `Painted::Refresh`, which holds the cells whose click target changed.
     pub fn on_state(&mut self, st: State, now: Instant) {
         let mut swarm = st.swarm;
         let mine = swarm
@@ -136,6 +137,8 @@ impl Panel {
             self.input.armed_at = now + ARM;
         } else {
             self.resolve();
+            // before the comparison: a refresh that switches the layout re-arms the keys
+            self.update_dock();
             if self.selected_card() != before {
                 self.input.armed_at = now + ARM;
             }

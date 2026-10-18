@@ -71,5 +71,31 @@ impl ClickArming {
     }
 }
 
+/// What caused a repaint, for the click arming (Python stamps cells in `apply` and in
+/// `wheel`, never on a frame or a hover).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Painted {
+    /// A state from the core.
+    Refresh,
+    /// The wheel scrolled a column.
+    Wheel,
+    /// An animation frame, a hover, a key: no cell is stamped.
+    Other,
+}
+
+impl crate::panel::model::Panel {
+    /// The actor repainted, `old` (the screen before, if any) to `new`, because of `cause`:
+    /// the cells whose click target changed wait before a click acts there. The actor calls
+    /// it after every paint; only a refresh or a wheel stamps cells.
+    pub fn painted(&mut self, old: Option<&Screen>, new: &Screen, cause: Painted, now: Instant) {
+        let Some(old) = old else { return };
+        match cause {
+            Painted::Refresh => self.input.clicks.refreshed(old, new, now),
+            Painted::Wheel => self.input.clicks.scrolled(old, new, now),
+            Painted::Other => {}
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests;

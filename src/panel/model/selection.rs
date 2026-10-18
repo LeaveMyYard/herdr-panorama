@@ -4,6 +4,7 @@
 use super::Panel;
 use panorama_core::model::Swarm;
 use panorama_core::model::{HerdrStatus, Status};
+use panorama_core::view::empty::WIDE;
 use panorama_core::view::filter::visible_orchs;
 use panorama_core::view::nav::{default_children, find_agent, find_orch, find_thread, nav};
 use panorama_core::view::{Filter, NEW_ROW};
@@ -110,6 +111,17 @@ pub(crate) struct SelectedCard {
 }
 
 impl Panel {
+    /// Docked or narrow (Python `_update_dock`): docked while this tab has an orchestrator
+    /// and the pane (as last painted) is narrower than the wide layout; the docked list is
+    /// one column. Decided on each refresh before the arming comparison, and on each paint.
+    pub(crate) fn update_dock(&mut self) {
+        self.input.dock =
+            self.swarm.docked.is_some() && self.input.width > 0 && self.input.width < WIDE;
+        if self.input.dock {
+            self.view.focus = 0;
+        }
+    }
+
     pub(crate) fn selected_card(&self) -> SelectedCard {
         let o = find_orch(&self.swarm, self.view.orch.as_deref());
         let t = find_thread(o, self.view.thread.as_deref());

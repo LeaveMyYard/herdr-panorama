@@ -21,7 +21,8 @@ impl InputState {
 impl Panel {
     /// The docked list with `dock_on_arrows`: the arrows switch the chats.
     pub(crate) fn arrows_mode(&self) -> bool {
-        self.input.dock && self.input.settings.arrows
+        let s = self.input.settings;
+        self.input.dock && s.arrows && s.keep_focus
     }
 
     /// ↑/↓.
