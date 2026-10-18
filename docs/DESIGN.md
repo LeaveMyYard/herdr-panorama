@@ -1791,8 +1791,10 @@ has proven itself (the operator, Q140).
   builds no binary (its build step is `uv sync`), so it runs the venv's viewer until the
   release work ships binaries. `CARGO_TARGET_DIR` is not looked at (it is often shared by
   every checkout, so it would run another checkout's build): a dev setup with it set gets the
-  venv's viewer unless it builds in the checkout (`CARGO_TARGET_DIR= cargo build --release`) or
-  links `target/release/panorama`. While the probe runs (about 10 ms, at most 3 s) the pane is
+  venv's viewer unless it builds in the checkout, `cargo build --release --target-dir target`
+  in the plugin root (the flag also beats a `build.target-dir` in `~/.cargo/config.toml`), or
+  links `target/release/panorama`. `<state dir>/panel-launch.log` holds the last fallback; a
+  start that runs the Rust viewer removes it. While the probe runs (about 10 ms, at most 3 s) the pane is
   not yet `panorama panel` to `process-info`; the core's own panels count by id, so only a +
   New agent tab's panel (started by `layout.apply`) is in that window, and the duplicate rule
   covers it. Removing the binary rolls back, panel by panel (old and new

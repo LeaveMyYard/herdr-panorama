@@ -53,19 +53,23 @@ def test_claude_plugin_manifests():
         assert spec["timeout"] <= 10
 
 
-def _launch(root, env_extra=None, timeout=10):
-    """Runs herdr.PANEL_COMMAND for a plugin root whose stubs echo who ran; (stdout, stderr)."""
+def _launch(root, env_extra=None, timeout=10, stdin=None):
+    """Runs herdr.PANEL_COMMAND for a plugin root whose stubs echo who ran; (stdout, stderr).
+    The probe's temp files must all be gone afterwards (#78 final pass, L-2)."""
     import os
     import subprocess
 
     from herdr_panorama import herdr
     env = {k: v for k, v in os.environ.items() if not k.startswith("HERDR_") and k != "CARGO_TARGET_DIR"}
     env.update({"HERDR_PLUGIN_ROOT": str(root), "HERDR_PLUGIN_STATE_DIR": str(root / "state"),
-                "PATH": f"{root / 'bin'}:/usr/bin:/bin"}, **(env_extra or {}))
+                "PATH": f"{root / 'bin'}:/usr/bin:/bin", "TMPDIR": str(root / "tmp")}, **(env_extra or {}))
     (root / "state").mkdir(exist_ok=True)
+    (root / "tmp").mkdir(exist_ok=True)
     (root / "scripts").mkdir(exist_ok=True)  # the plugin root holds this checkout's launcher
     (root / "scripts" / "panel").write_text((ROOT / "scripts" / "panel").read_text())
-    out = subprocess.run(herdr.PANEL_COMMAND, env=env, capture_output=True, text=True, timeout=timeout, check=True)
+    out = subprocess.run(herdr.PANEL_COMMAND, env=env, capture_output=True, text=True, timeout=timeout,
+                         check=True, stdin=stdin)
+    assert list((root / "tmp").iterdir()) == [], "the probe left its temp file"
     return out.stdout.strip(), out.stderr.strip()
 
 
@@ -105,9 +109,12 @@ def test_a_shared_cargo_target_dir_is_not_looked_at(tmp_path):
     # #78 M-1: a build from before `panel` (main.rs printed its version for anything)
     ("stale", 'echo "panorama 0.1.0"'),
     ("another contract", 'if [ "$1" = contract ]; then echo 2; exit 0; fi; echo rust "$@"'),
+    # #78 final pass L-3: the compare is exact, not a prefix ("11", "1.5" are not contract 1)
+    ("contract 11", 'if [ "$1" = contract ]; then echo 11; exit 0; fi; echo rust "$@"'),
+    ("contract 1.5", 'if [ "$1" = contract ]; then echo 1.5; exit 0; fi; echo rust "$@"'),
     ("panics at start", 'echo "thread main panicked" >&2; exit 101'),
     ("cannot exec", "exit 126"),
-], ids=["stale", "another-contract", "panics", "cannot-exec"])
+], ids=["stale", "another-contract", "contract-11", "contract-1.5", "panics", "cannot-exec"])
 def test_a_binary_that_does_not_speak_the_contract_falls_back_to_the_venv(tmp_path, case, body):
     """The reviewer's case: such a binary used to be exec'd as the panel, died at once, and three
     deaths gave the tab up for the core's life. Now the venv's viewer runs, and the fallback is
@@ -154,3 +161,29 @@ def test_a_probe_child_holding_the_output_cannot_keep_the_panel_waiting(tmp_path
     body = 'if [ "$1" = contract ]; then sleep 30 & echo 1; exit 0; fi; echo rust "$@"'
     out, took = _bounded(tmp_path, body)
     assert out == "rust panel" and took < 6
+
+
+def test_the_probe_never_reads_the_panes_input(tmp_path):
+    """#78 final pass N-8: the probe's stdin is /dev/null, so a binary that reads it can never
+    take what the operator types into a new panel (here: an open, silent stdin)."""
+    import os
+    _stub(tmp_path / ".venv" / "bin" / "panorama", 'echo venv "$@"')
+    _stub(tmp_path / "target" / "release" / "panorama",
+          'if [ "$1" = contract ]; then read x; echo 1; exit 0; fi; echo rust "$@"')
+    r, w = os.pipe()  # the write end stays open: a probe reading it would wait out its 2 s
+    try:
+        assert _launch(tmp_path, stdin=r)[0] == "rust panel"
+    finally:
+        os.close(r)
+        os.close(w)
+
+
+def test_a_start_that_runs_rust_clears_the_last_fallback(tmp_path):
+    """#78 final pass N-9: panel-launch.log says the last fallback, not an old one."""
+    _stub(tmp_path / ".venv" / "bin" / "panorama", 'echo venv "$@"')
+    _stub(tmp_path / "target" / "release" / "panorama", 'echo "panorama 0.1.0"')
+    assert _launch(tmp_path)[0] == "venv panel"
+    assert (tmp_path / "state" / "panel-launch.log").exists()
+    _stub(tmp_path / "target" / "release" / "panorama", RUST_OK)
+    assert _launch(tmp_path)[0] == "rust panel"
+    assert not (tmp_path / "state" / "panel-launch.log").exists()

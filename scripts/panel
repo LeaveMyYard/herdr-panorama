@@ -11,14 +11,16 @@
 #
 # Only the plugin root's own build counts. CARGO_TARGET_DIR is not looked at: it is often one
 # target dir shared by every checkout, so it would run whichever checkout built last. A dev
-# setup with CARGO_TARGET_DIR set gets the venv's viewer unless it builds here
-# (`CARGO_TARGET_DIR= cargo build --release`) or links target/release/panorama.
+# setup with CARGO_TARGET_DIR set (or `build.target-dir` in ~/.cargo/config.toml) gets the
+# venv's viewer unless it builds here: `cargo build --release --target-dir target` in the
+# plugin root (that flag beats both), or links target/release/panorama.
 #
 # The probe: stdin from /dev/null, its answer written to a file (a child it leaves behind
 # holding the output cannot keep the panel waiting), and at most 2 s (`timeout -k 1 2`: TERM,
 # then KILL a second later; perl's alarm where timeout(1) is missing). A binary that is stale
 # (from before `panel`), fails to start, panics, hangs or speaks another contract is passed
-# over, said on stderr and in <state dir>/panel-launch.log (the latest only). The probe still
+# over, said on stderr and in <state dir>/panel-launch.log (the latest fallback; a later start
+# that runs the Rust viewer removes it). The probe still
 # reaches the pane's terminal (no setsid: not on macOS); a binary that passes gets it anyway.
 # While it runs (about 10 ms; at most 3 s) the pane answers "not a panel" to `process-info`
 # (the core places its own panels by id, so only a + New agent tab's panel is in that window).
@@ -44,6 +46,7 @@ contract_of() {
 if [ -f "$B" ] && [ -x "$B" ]; then
 	got=$(contract_of)
 	if [ "$got" = "$CONTRACT" ]; then
+		[ -n "${HERDR_PLUGIN_STATE_DIR:-}" ] && rm -f "$HERDR_PLUGIN_STATE_DIR/panel-launch.log"
 		exec "$B" panel
 	fi
 	msg="panorama: $B speaks panel contract '${got:-none}', this checkout needs $CONTRACT: using the Python viewer"

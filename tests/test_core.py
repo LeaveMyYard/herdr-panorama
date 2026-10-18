@@ -501,6 +501,7 @@ def test_the_rust_panel_is_our_panel_too(monkeypatch):
     # #78 L-1: what recognition must reject (a word that only contains or starts with panorama)
     for argv in (["/x/panorama-foo", "panel"], ["/home/u/panorama/bin/vim", "panel"],
                  ["vim", "/home/u/notes/panorama", "panel.md"], ["panorama-cli", "panel"],
+                 ["/x/mypanorama", "panel"],
                  ["sh", "-c", herdr.PANEL_COMMAND[-1]]):
         procs[0]["argv"] = argv
         assert herdr.runs_panorama("w1:p9", "panel") is False, argv
