@@ -13,14 +13,14 @@
 
 use super::collect::{Collected, Worker};
 use super::model::App;
-use crate::ui::end::End;
-use crate::ui::term::{HANGUP_CHECK, hung_up_error};
 use crate::panel::input::keys::key;
 use crate::settings::Settings;
 use crate::ui::clock;
+use crate::ui::end::End;
 use crate::ui::frame::Frame;
 use crate::ui::pacing::{Pacing, ticking};
 use crate::ui::term::{self, Term};
+use crate::ui::term::{HANGUP_CHECK, hung_up_error};
 use crossterm::event::{Event as TermEvent, EventStream};
 use futures_util::StreamExt;
 use panorama_core::view::Marks;

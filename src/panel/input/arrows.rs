@@ -5,6 +5,7 @@
 use super::effect::{Effect, Toast};
 use super::{ARROW_REST, InputState};
 use crate::panel::model::Panel;
+use crate::ui::input::Host;
 use panorama_core::view::NEW_ROW;
 use panorama_core::view::nav::find_orch;
 use std::time::Instant;
@@ -62,9 +63,9 @@ impl Panel {
             &self.graph.swarm,
             self.graph.view.orch.as_deref().filter(|o| *o != NEW_ROW),
         );
-        let Some(o) =
-            o.filter(|o| o.machine.is_none() && self.graph.swarm.docked.as_deref() != Some(&o.pane_id))
-        else {
+        let Some(o) = o.filter(|o| {
+            o.machine.is_none() && self.graph.swarm.docked.as_deref() != Some(&o.pane_id)
+        }) else {
             return vec![];
         };
         let (pane, ids): (String, Vec<String>) = (

@@ -4,6 +4,7 @@
 use super::effect::{Effect, Toast};
 use crate::panel::model::Panel;
 use crate::panel::paint::NOTICE;
+use crate::ui::input::Host;
 use std::time::Instant;
 
 impl Panel {
@@ -27,17 +28,6 @@ impl Panel {
         self.seen(ids, &mut out);
         out
     }
-
-    /// The operator looked at these agents: their marks clear here at once, and the core hears.
-    pub(crate) fn seen(&mut self, ids: Vec<String>, out: &mut Vec<Effect>) {
-        for id in &ids {
-            self.graph.view.unseen.remove(id);
-        }
-        if !ids.is_empty() {
-            out.push(Effect::Seen(ids));
-        }
-    }
-
 }
 
 #[cfg(test)]

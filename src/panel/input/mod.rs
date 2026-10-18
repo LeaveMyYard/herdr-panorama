@@ -9,10 +9,11 @@
 pub mod actions;
 pub mod arming;
 pub mod arrows;
-pub mod effect;
+pub use crate::ui::input::effect;
 pub mod filter;
 #[cfg(test)]
 pub(crate) mod fixtures;
+pub mod host;
 pub mod keys;
 pub mod mouse;
 pub mod moves;

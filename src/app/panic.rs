@@ -10,14 +10,19 @@ use crate::ui::{clock, crash, guard};
 use std::fs;
 use std::panic::PanicHookInfo;
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, PoisonError};
 
 /// The log, in panorama's state dir.
 pub fn log_path(state_dir: &Path) -> PathBuf {
     state_dir.join("tui.log")
 }
 
+/// One writer at a time: panics on two threads must not lose each other's lines.
+static LOG: Mutex<()> = Mutex::new(());
+
 /// Appends `text` to the log, which keeps its last `crash::LOG_BYTES`. Never fails.
 pub fn log(path: &Path, text: &str) {
+    let _one = LOG.lock().unwrap_or_else(PoisonError::into_inner);
     let old = fs::read_to_string(path).unwrap_or_default();
     let all = format!("{old}{text}\n");
     if let Some(dir) = path.parent() {

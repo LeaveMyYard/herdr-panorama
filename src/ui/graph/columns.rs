@@ -6,8 +6,8 @@ use panorama_core::view::nav::{find_orch, find_thread, nav, parent_key, path_ids
 use panorama_core::view::state::FIN_CARD;
 
 impl Graph {
-    /// →: into the next column (the docked list has one: its view does not call this).
-    pub(crate) fn right(&mut self) {
+    /// →: into the next column (a view's `right` guards the docked list's one column).
+    pub(crate) fn step_right(&mut self) {
         let cols = nav(&self.swarm, &self.view);
         let nxt = self.view.focus + 1;
         if cols.get(nxt).is_none_or(|c| c.is_empty()) {
@@ -54,7 +54,7 @@ impl Graph {
     }
 
     /// ←: back a column; from a spawned agent, up to the agent that spawned it.
-    pub(crate) fn left(&mut self) {
+    pub(crate) fn step_left(&mut self) {
         let focus = self.view.focus;
         if focus >= 3 {
             let o = find_orch(&self.swarm, self.view.orch.as_deref());

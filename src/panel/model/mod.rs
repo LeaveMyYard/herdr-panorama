@@ -134,7 +134,11 @@ impl Panel {
         self.graph.view.unseen = marks;
         if !self.loaded {
             self.loaded = true;
-            initial(&self.graph.swarm, &mut self.graph.view, focus_pane.as_deref());
+            initial(
+                &self.graph.swarm,
+                &mut self.graph.view,
+                focus_pane.as_deref(),
+            );
             self.input.armed_at = now + ARM;
         } else {
             self.resolve();

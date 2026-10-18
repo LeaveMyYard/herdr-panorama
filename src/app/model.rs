@@ -66,7 +66,11 @@ impl App {
         self.graph.view.unseen = marks;
         if !self.loaded {
             self.loaded = true;
-            selection::initial(&self.graph.swarm, &mut self.graph.view, self.focus_pane.as_deref());
+            selection::initial(
+                &self.graph.swarm,
+                &mut self.graph.view,
+                self.focus_pane.as_deref(),
+            );
             self.armed_at = now + ARM;
             return;
         }
@@ -144,7 +148,6 @@ impl App {
     pub fn quits(&self, key: Key) -> bool {
         key == Key::Quit || (key == Key::Escape && !self.home_mode)
     }
-
 }
 
 impl std::ops::Deref for App {

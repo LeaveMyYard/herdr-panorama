@@ -56,7 +56,6 @@ impl Panel {
         default_children(&self.graph.swarm, &mut self.graph.view);
         true
     }
-
 }
 
 impl Panel {
