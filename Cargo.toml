@@ -64,7 +64,7 @@ panorama-core = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 # The interactive processes run one current_thread runtime (plan §2.5).
-tokio = { version = "1", features = ["rt", "net", "io-util", "time", "sync", "macros", "signal"] }
+tokio = { version = "1", features = ["rt", "net", "io-util", "time", "sync", "macros", "signal", "process"] }
 # The terminal (plan §2.6, D5): ratatui's diffing buffer over crossterm, with its
 # event stream for keys, mouse, focus and resizes.
 ratatui = { version = "0.30", default-features = false, features = ["crossterm"] }
@@ -74,6 +74,8 @@ futures-util = { version = "0.3", default-features = false }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 
 [dev-dependencies]
+# FakeHerdr, a scripted herdr socket, for the effects' tests.
+herdr-agent-kit = { workspace = true, features = ["internal", "test-support"] }
 tempfile = "3"
 
 [lints]
