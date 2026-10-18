@@ -12,6 +12,9 @@ use std::time::Duration;
 use tokio::net::{UnixListener, UnixStream};
 use tokio::sync::mpsc;
 
+/// The pause after a failed `accept`.
+const ACCEPT_BACKOFF: Duration = Duration::from_millis(100);
+
 /// Why the core did not start.
 #[derive(Debug)]
 pub enum NotStarted {
@@ -43,7 +46,7 @@ impl std::fmt::Display for NotStarted {
 pub async fn start(
     cfg: Config,
     verify: impl Verify,
-    events: mpsc::UnboundedSender<Event>,
+    events: mpsc::Sender<Event>,
 ) -> Result<Core, NotStarted> {
     let dir = cfg.sock.parent().unwrap_or(std::path::Path::new("."));
     make_private_dir(dir, cfg.uid).map_err(|e| NotStarted::Dir(e.to_string()))?;
@@ -65,11 +68,12 @@ pub async fn start(
         .map_err(NotStarted::Io)?;
     let shared = Arc::new(Shared {
         limits: cfg.limits,
-        uid: cfg.peer_uid,
+        peer_uid: cfg.peer_uid,
         viewers: Mutex::new(vec![]),
         last: Mutex::new(None),
         events,
         refusing: false.into(),
+        shut: false.into(),
     });
     let verify = Arc::new(verify);
     let tasks = vec![
@@ -86,14 +90,18 @@ pub async fn start(
 
 async fn accept(listener: UnixListener, shared: Arc<Shared>, verify: Arc<impl Verify>) {
     loop {
-        let Ok((stream, _)) = listener.accept().await else {
-            continue;
+        let stream = match listener.accept().await {
+            Ok((stream, _)) => stream,
+            Err(e) => {
+                // e.g. out of descriptors: the listener stays readable, so never spin on it
+                shared.note(format!("accept failed: {e}"));
+                tokio::time::sleep(ACCEPT_BACKOFF).await;
+                continue;
+            }
         };
         let cred = stream.peer_cred().ok();
-        if cred.map(|c| c.uid()) != Some(shared.uid) {
-            let _ = shared
-                .events
-                .send(Event::Note("refused a connection from another user".into()));
+        if cred.map(|c| c.uid()) != Some(shared.peer_uid) {
+            shared.note("refused a connection from another user".into());
             continue;
         }
         let v = {
@@ -111,9 +119,7 @@ async fn accept(listener: UnixListener, shared: Arc<Shared>, verify: Arc<impl Ve
             // once per full spell, not once per connection
             if !shared.refusing.swap(true, Ordering::SeqCst) {
                 let n = shared.limits.max_viewers;
-                let _ = shared.events.send(Event::Note(format!(
-                    "refusing connections: {n} open already"
-                )));
+                shared.note(format!("refusing connections: {n} open already"));
             }
             continue;
         };

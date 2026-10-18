@@ -5,6 +5,7 @@ use super::{Event, Verify};
 use crate::proto::{PROTOCOL, compatible};
 use serde_json::{Map, Value, json};
 use tokio::sync::{mpsc, oneshot};
+use tokio::time::Instant;
 
 /// What the connection does after a message.
 #[derive(Debug, PartialEq, Eq)]
@@ -36,13 +37,24 @@ fn object(v: Option<&Value>) -> Map<String, Value> {
     v.and_then(Value::as_object).cloned().unwrap_or_default()
 }
 
-/// Handles `msg` from `v`; `seen` collects a read's worth of seen ids.
+/// Hands `ev` to the app, waiting while the channel is full (that slows this viewer's reader
+/// down, as Python's reader thread is); false when the app is gone or the viewer closed.
+pub async fn emit(v: &Viewer, events: &mpsc::Sender<Event>, ev: Event) -> bool {
+    tokio::select! {
+        r = events.send(ev) => r.is_ok(),
+        () = v.closed() => false,
+    }
+}
+
+/// Handles `msg` from `v`; `seen` collects a read's worth of seen ids. A pane check that has
+/// not answered by `verify_by` (the hello deadline) reads as unverified.
 pub async fn handle(
     v: &Viewer,
     msg: Map<String, Value>,
     seen: &mut Vec<String>,
     verify: &impl Verify,
-    events: &mpsc::UnboundedSender<Event>,
+    verify_by: Instant,
+    events: &mpsc::Sender<Event>,
 ) -> Next {
     if let Some(hello) = msg.get("hello") {
         let hello = object(Some(hello));
@@ -53,8 +65,15 @@ pub async fn handle(
             return Next::Refuse(line.unwrap_or_default());
         }
         let claim = str_of(hello.get("pane_id"));
-        let pane = match (claim, v.pid) {
-            (Some(p), Some(pid)) if verify.verify(&p, pid).await => Some(p),
+        // a pid of 0 (a peer in another pid namespace) is never checked, as Python's `v.pid and`
+        let pane = match (claim, v.pid.filter(|pid| *pid > 0)) {
+            (Some(p), Some(pid))
+                if tokio::time::timeout_at(verify_by, verify.verify(&p, pid))
+                    .await
+                    .unwrap_or(false) =>
+            {
+                Some(p)
+            }
             _ => None,
         };
         let role = if hello.get("role").and_then(Value::as_str) == Some("key") {
@@ -79,7 +98,7 @@ pub async fn handle(
         if let (Some(_), Some(pane)) = (v.verified_pane(), str_of(object(Some(req)).get("pane_id")))
             && !pane.is_empty()
         {
-            let _ = events.send(Event::Focusing(pane));
+            emit(v, events, Event::Focusing(pane)).await;
         }
         return Next::Go;
     }
@@ -87,19 +106,17 @@ pub async fn handle(
         if let Some(name) = str_of(object(Some(req)).get("name")).filter(|n| !n.is_empty())
             && v.role() == Role::Panel
         {
-            let _ = events.send(Event::Filter(name));
+            emit(v, events, Event::Filter(name)).await;
         }
         return Next::Go;
     }
     if let Some(req) = msg.get("open") {
         let (reply, answer) = oneshot::channel();
-        let did = if events
-            .send(Event::Open {
-                req: object(Some(req)),
-                reply,
-            })
-            .is_ok()
-        {
+        let open = Event::Open {
+            req: object(Some(req)),
+            reply,
+        };
+        let did = if emit(v, events, open).await {
             answer.await.unwrap_or_else(|_| "failed".into()) // a broken request never takes the core down
         } else {
             "failed".into()

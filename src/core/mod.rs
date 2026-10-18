@@ -15,6 +15,11 @@
 //! - a viewer's `hello.pane_id` is only a claim: [`Verify`] decides whether it is trusted, and
 //!   it is never authority to close anything.
 //!
+//! - what the viewers say reaches the app on a bounded channel ([`events`]): a reader waits
+//!   while it is full, so a chatty viewer is slowed down, never queued without bound (Python
+//!   calls the app on the reader's thread); the core's own notes are dropped when it is full;
+//! - after [`Core::shutdown`] a panel that says hello is told to go at once: no state or ping.
+//!
 //! What the viewers say reaches the app as [`Event`]s; the app answers the open key's request.
 
 mod conn;
@@ -83,6 +88,14 @@ impl Config {
     }
 }
 
+/// How many events wait for the app before the viewers' readers wait too.
+pub const EVENTS: usize = 256;
+
+/// The channel [`start`] sends its events on, [`EVENTS`] deep.
+pub fn events() -> (mpsc::Sender<Event>, mpsc::Receiver<Event>) {
+    mpsc::channel(EVENTS)
+}
+
 /// What the viewers say, for the app.
 #[derive(Debug)]
 pub enum Event {
@@ -110,6 +123,8 @@ pub trait Verify: Send + Sync + 'static {
 /// A connected viewer, as the app sees it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Connected {
+    /// The pane [`Verify`] confirmed for this viewer, never its unchecked claim: `None` when
+    /// it claimed none or the claim failed. Only this may be trusted.
     pub pane_id: Option<String>,
     pub tab_id: Option<String>,
     pub role: Role,
@@ -118,12 +133,22 @@ pub struct Connected {
 /// What every task of the core shares.
 struct Shared {
     limits: Limits,
-    uid: u32,
+    /// The uid a peer must have.
+    peer_uid: u32,
     viewers: Mutex<Vec<Arc<Viewer>>>,
     /// The last state, for viewers that connect later.
     last: Mutex<Option<Arc<Vec<u8>>>>,
-    events: mpsc::UnboundedSender<Event>,
+    events: mpsc::Sender<Event>,
     refusing: std::sync::atomic::AtomicBool,
+    /// [`Core::shutdown`] ran: a later hello is told to go at once.
+    shut: std::sync::atomic::AtomicBool,
+}
+
+impl Shared {
+    /// A note for the app's log; dropped when the channel is full (the core never waits on it).
+    fn note(&self, line: String) {
+        let _ = self.events.try_send(Event::Note(line));
+    }
 }
 
 /// The running core. Dropping it (or [`Core::stop`]) closes every viewer, removes the socket
@@ -139,9 +164,8 @@ impl Core {
     /// Sends `msg` to every viewer that said hello as a panel (a `state` is kept for later ones).
     pub fn publish(&self, msg: &Value) {
         let Ok(line) = crate::proto::framing::encode(msg) else {
-            let _ = self.shared.events.send(Event::Note(
-                "a message over the line limit was not sent".into(),
-            ));
+            self.shared
+                .note("a message over the line limit was not sent".into());
             return;
         };
         let line = Arc::new(line);
@@ -155,11 +179,14 @@ impl Core {
         }
     }
 
-    /// The panels go (quit, per-tab off): every viewer is told and exits. Waits up to `wait`
-    /// for the writers to take it, so it is said before the core stops.
+    /// The panels go (quit, per-tab off): every viewer is told and exits, and so is any panel
+    /// that says hello later. Waits up to `wait` for the writers to take it, so it is said
+    /// before the core stops.
     pub async fn shutdown(&self, wait: Duration) {
-        let line =
-            Arc::new(crate::proto::framing::encode(&serde_json::json!({"shutdown": {}})).unwrap());
+        self.shared
+            .shut
+            .store(true, std::sync::atomic::Ordering::SeqCst);
+        let line = shutdown_line();
         let told: Vec<Arc<Viewer>> = self
             .shared
             .viewers
@@ -217,3 +244,7 @@ impl Drop for Core {
 }
 
 pub use start::start;
+
+fn shutdown_line() -> Arc<Vec<u8>> {
+    Arc::new(crate::proto::framing::encode(&serde_json::json!({"shutdown": {}})).unwrap())
+}

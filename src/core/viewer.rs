@@ -24,6 +24,8 @@ struct Said {
     tab_id: Option<String>,
     /// Shutdown is queued: nothing after it may push it out of the outbox.
     told_to_go: bool,
+    /// Its last line is queued: the writer closes it once that is written.
+    finishing: bool,
 }
 
 #[derive(Debug)]
@@ -47,6 +49,7 @@ impl Viewer {
                 pane_id: None,
                 tab_id: None,
                 told_to_go: false,
+                finishing: false,
             }),
             outbox: Mutex::new(Outbox::new(outbox)),
             wake: Notify::new(),
@@ -104,6 +107,20 @@ impl Viewer {
     pub fn tell_to_go(&self, line: Arc<Vec<u8>>) {
         self.said.lock().unwrap().told_to_go = true;
         self.send(line);
+    }
+
+    /// Queues `line` as the last thing it gets; the writer then closes it (a refused second
+    /// hello's error).
+    pub fn finish(&self, line: Arc<Vec<u8>>) {
+        {
+            let mut s = self.said.lock().unwrap();
+            (s.told_to_go, s.finishing) = (true, true);
+        }
+        self.send(line);
+    }
+
+    pub fn finishing(&self) -> bool {
+        self.said.lock().unwrap().finishing
     }
 
     pub fn connected(&self) -> Option<Connected> {

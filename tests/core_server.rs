@@ -1,125 +1,23 @@
 //! The core's server side against real sockets: Python's tests/test_core.py server cases,
 //! ported (the core's own process plays every viewer).
 
-use panorama::core::{Config, Core, Event, Limits, Role, Verify, start};
-use serde_json::{Value, json};
-use std::os::unix::fs::{DirBuilderExt, MetadataExt, PermissionsExt};
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+mod core_common;
+
+use core_common::*;
+use panorama::core::{Event, Limits, NotStarted, Role, events, start};
+use serde_json::json;
+use std::os::unix::fs::{DirBuilderExt, PermissionsExt};
 use std::time::Duration;
-use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::UnixStream;
-use tokio::sync::mpsc;
-
-/// A pane check answering from a table, recording what it was asked.
-#[derive(Clone, Default)]
-struct Panes {
-    ours: Vec<&'static str>,
-    asked: Arc<Mutex<Vec<(String, i32)>>>,
-}
-
-impl Verify for Panes {
-    async fn verify(&self, pane: &str, pid: i32) -> bool {
-        self.asked.lock().unwrap().push((pane.to_owned(), pid));
-        self.ours.contains(&pane)
-    }
-}
-
-/// This process's uid: the owner of a directory it just made.
-fn uid() -> u32 {
-    std::fs::metadata(tempfile::tempdir().unwrap().path())
-        .unwrap()
-        .uid()
-}
-
-fn paths(dir: &Path) -> (PathBuf, PathBuf) {
-    (
-        dir.join("s").join("core.sock"),
-        dir.join("s").join("core.lock"),
-    )
-}
-
-fn cfg(dir: &Path) -> Config {
-    let (sock, lock) = paths(dir);
-    Config::new(sock, lock, uid())
-}
-
-async fn up(c: Config, verify: Panes) -> (Core, mpsc::UnboundedReceiver<Event>) {
-    let (tx, rx) = mpsc::unbounded_channel();
-    (start(c, verify, tx).await.expect("the core starts"), rx)
-}
-
-async fn connect(sock: &Path) -> UnixStream {
-    UnixStream::connect(sock).await.unwrap()
-}
-
-fn line(v: Value) -> Vec<u8> {
-    let mut l = serde_json::to_vec(&v).unwrap();
-    l.push(b'\n');
-    l
-}
-
-async fn hello(s: &mut UnixStream, extra: Value) {
-    let mut h = json!({"protocol": "1.3"});
-    h.as_object_mut()
-        .unwrap()
-        .extend(extra.as_object().unwrap().clone());
-    s.write_all(&line(json!({ "hello": h }))).await.unwrap();
-}
-
-/// The next `n` messages.
-async fn lines(s: &mut UnixStream, n: usize) -> Vec<Value> {
-    let mut r = BufReader::new(s);
-    let mut out = vec![];
-    while out.len() < n {
-        let mut l = String::new();
-        let got = tokio::time::timeout(Duration::from_secs(5), r.read_line(&mut l))
-            .await
-            .unwrap()
-            .unwrap();
-        assert!(got > 0, "closed after {} lines", out.len());
-        out.push(serde_json::from_str(&l).unwrap());
-    }
-    out
-}
-
-/// The connection ends without another word.
-async fn closed(s: &mut UnixStream) -> bool {
-    let mut b = [0u8; 100];
-    matches!(
-        tokio::time::timeout(Duration::from_secs(5), s.read(&mut b)).await,
-        Ok(Ok(0)) | Ok(Err(_))
-    )
-}
-
-async fn wait(mut f: impl FnMut() -> bool) -> bool {
-    for _ in 0..200 {
-        if f() {
-            return true;
-        }
-        tokio::time::sleep(Duration::from_millis(10)).await;
-    }
-    false
-}
-
-fn swarm_state() -> Value {
-    let path = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/tests/fixtures/inputs/swarm-design9.json"
-    );
-    let fixture: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-    json!({"state": {"protocol": "1.3", "swarm": fixture["swarm"], "unseen": {"a5": "done"},
-        "focused_pane": "w1:p3", "visible_tabs": ["w1:t3"], "panels": {}}})
-}
 
 #[tokio::test(flavor = "current_thread")]
 async fn one_core_per_session_and_its_socket_is_private() {
     let dir = tempfile::tempdir().unwrap();
     let (first, _rx) = up(cfg(dir.path()), Panes::default()).await;
-    let (tx, _rx2) = mpsc::unbounded_channel();
     assert!(matches!(
-        start(cfg(dir.path()), Panes::default(), tx).await,
-        Err(panorama::core::NotStarted::Locked)
+        start_within(cfg(dir.path()), 5),
+        Err(NotStarted::Locked)
     ));
     let (sock, _) = paths(dir.path());
     assert_eq!(
@@ -349,7 +247,7 @@ async fn an_unsafe_socket_directory_is_refused() {
             _ => std::fs::set_permissions(dir.path(), std::fs::Permissions::from_mode(0o777))
                 .unwrap(),
         }
-        let (tx, _rx) = mpsc::unbounded_channel();
+        let (tx, _rx) = events();
         assert!(
             matches!(
                 start(c, Panes::default(), tx).await,
@@ -364,10 +262,6 @@ async fn an_unsafe_socket_directory_is_refused() {
     std::fs::set_permissions(dir.path(), std::fs::Permissions::from_mode(0o1777)).unwrap();
     let (c, _rx) = up(cfg(dir.path()), Panes::default()).await;
     c.stop();
-}
-
-fn quick(dir: &Path, limits: Limits) -> Config {
-    Config { limits, ..cfg(dir) }
 }
 
 #[tokio::test(flavor = "current_thread")]
