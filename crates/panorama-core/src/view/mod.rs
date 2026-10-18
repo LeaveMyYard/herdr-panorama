@@ -7,15 +7,23 @@
 //! The docked panel ([`render_dock`]) is the per-tab panel's view (P3); the graph and the
 //! narrow layout join in P4.
 
+pub mod agent_text;
 pub mod anim;
+pub mod cards;
 pub mod chrome;
 pub mod colour;
 pub mod dock;
 pub mod empty;
 pub mod filter;
+pub mod machines;
+pub mod moving;
+pub mod narrow;
+pub mod nav;
 pub mod orch_state;
 pub mod palette;
+pub mod pod;
 pub mod screen;
+pub mod scroll;
 pub mod seg;
 pub mod state;
 pub mod target;
@@ -54,4 +62,21 @@ pub fn render_dock(
         return empty::page(swarm, view, w, h, stale, no_sessions);
     }
     dock::dock_panel(swarm, view, w, h, stale.is_some())
+}
+
+/// The narrow layout as Python's `render(…)` draws it below 120 columns with `view.dock` off:
+/// the same empty pages, otherwise [`narrow::page`]. The arguments are [`render_dock`]'s.
+pub fn render_narrow(
+    swarm: &Swarm,
+    view: &View,
+    w: i32,
+    h: i32,
+    stale: Option<&str>,
+    no_sessions: &str,
+) -> Screen {
+    debug_assert!(!no_sessions.is_empty(), "the empty page needs its words");
+    if !swarm.herdr_ok || swarm.orchestrators.is_empty() {
+        return empty::page(swarm, view, w, h, stale, no_sessions);
+    }
+    narrow::page(swarm, view, w, h, stale)
 }

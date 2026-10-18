@@ -25,45 +25,6 @@ fn the_theme_leaves_animated_colours_as_drawn() {
 }
 
 #[test]
-fn the_list_follows_the_selection_unless_the_wheel_moved_it() {
-    let mut v = View::default();
-    assert_eq!(scroll(&v, Some((50, 54)), 41, 80), 13);
-    assert_eq!(scroll(&v, Some((0, 2)), 41, 80), 0);
-    v.offsets.insert(COLUMN, 30);
-    assert_eq!(scroll(&v, Some((0, 2)), 41, 80), 0);
-    v.wheel.insert(COLUMN);
-    assert_eq!(scroll(&v, Some((0, 2)), 41, 80), 30);
-    assert_eq!(scroll(&v, None, 41, 50), 9); // never past the content
-}
-
-#[test]
-fn machine_groups_start_once_per_machine_id() {
-    let o = |id: Option<&str>, label: Option<&str>| -> Orchestrator {
-        serde_json::from_value(
-            serde_json::json!({"pane_id": "p", "tab_id": null, "tab_label": "x",
-            "session_id": null, "machine_id": id, "machine": label}),
-        )
-        .unwrap()
-    };
-    let (local, a1, a2, b) = (
-        o(None, None),
-        o(Some("m1"), Some("box")),
-        o(Some("m1"), Some("box")),
-        o(Some("m2"), Some("box")),
-    );
-    let mut prev = None;
-    let starts: Vec<Option<&str>> = [&local, &a1, &a2, &b]
-        .into_iter()
-        .map(|o| group_start(o, &mut prev))
-        .collect();
-    // two machines may share a label: each still gets its divider
-    assert_eq!(starts, [None, Some("box"), None, Some("box")]);
-    let mut cv = Screen::new(12, 1);
-    machine_divider(&mut cv, 0, 12, "box");
-    assert_eq!(cv.text(), "─ box ──────");
-}
-
-#[test]
 fn the_footer_fills_in_the_open_key_and_drops_whole_hints_when_narrow() {
     let line = |w: i32, key: (&str, &str)| {
         let v = View {

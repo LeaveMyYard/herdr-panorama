@@ -30,7 +30,9 @@ pub fn page(
     } else {
         s.segs(2, 2, &[Seg::new(no_sessions, DIM)]);
     }
-    chrome::legend(&mut s, h - 3);
-    chrome::keys(&mut s, view.zoom_hint, swarm.inbox_ok);
+    // the empty page wears the chrome of the layout its width would show
+    let wide = w >= WIDE;
+    chrome::legend(&mut s, h - 3, wide);
+    chrome::keys(&mut s, wide, view.zoom_hint, swarm.inbox_ok);
     s
 }

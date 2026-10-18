@@ -42,6 +42,12 @@ pub struct OrchState {
 }
 
 impl OrchState {
+    /// A quiet state: nothing to watch (Python `OrchState.quiet` / `QUIET`): queued, done,
+    /// cancelled, inferred done, lost, stale.
+    pub fn quiet(&self) -> bool {
+        is_quiet(&self.st)
+    }
+
     fn new(st: Status, glyph: impl Into<String>, label: impl Into<String>) -> Self {
         Self {
             st,
@@ -51,6 +57,19 @@ impl OrchState {
             bg: 0,
         }
     }
+}
+
+/// Whether `st` is one of the quiet states (Python `QUIET`).
+pub fn is_quiet(st: &Status) -> bool {
+    matches!(
+        st,
+        Status::Queued
+            | Status::Done
+            | Status::Cancelled
+            | Status::Inferred
+            | Status::Lost
+            | Status::Stale
+    )
 }
 
 /// What the session itself adds to its agents' state (herdr's word, its questions, its own
