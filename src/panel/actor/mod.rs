@@ -8,17 +8,21 @@
 //! - the arrows coming to rest, a notice's time running out;
 //! - what the herdr side reports back ([`effects`]): a switch done, a pane checked;
 //! - every 10 s: no core for 10 minutes and the panel exits ([`super::no_core`]);
-//! - SIGTERM and SIGHUP: exit.
+//! - SIGTERM and SIGHUP: exit; a terminal that hung up (looked at every second): exit, cleanly.
 //!
-//! Drawing ([`draw`]) puts the notices over the view and feeds the click arming.
+//! The decisions are the [`Driver`]'s; drawing ([`draw`]) puts the notices over the view and
+//! feeds the click arming. A terminal that hung up (its pane closed) ends the panel cleanly.
 
 mod announce;
 mod client;
 mod draw;
+pub mod driver;
 mod effects;
+pub mod guard;
 mod terminal;
 
 pub use announce::Announcer;
+pub use driver::Driver;
 pub use effects::Done;
 
 use super::input::Painted;
@@ -26,18 +30,20 @@ use super::no_core::{NO_CORE_CHECK, NoCoreClock};
 use super::pacing::{Pacing, ticking};
 use super::paint::Frame;
 use super::term::Term;
-use super::toast::{Placed, Toasts};
 use crate::proto::client::{Client, Event};
 use crate::settings::Settings;
 use crossterm::event::EventStream;
 use futures_util::StreamExt;
 use herdr_agent_kit::herdr_api::Herdr;
-use panorama_core::view::Screen;
 use std::io;
+use std::mem::ManuallyDrop;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 use tokio::signal::unix::{SignalKind, signal};
 use tokio::sync::{mpsc, watch};
+
+/// How often the panel looks whether its terminal hung up (crossterm does not say).
+pub const HANGUP_CHECK: Duration = Duration::from_secs(1);
 
 /// Why the panel ended (a clean end: herdr closes the pane with the viewer).
 #[derive(Debug, PartialEq, Eq)]
@@ -54,6 +60,8 @@ pub enum End {
     ClientGone,
     /// The operator closed the panel (q).
     Quit,
+    /// The terminal went away (the pane closed): reads and writes fail.
+    Hangup,
 }
 
 /// Where the panel's herdr side runs: its plugin, its root, the new-agent popup's mark, the
@@ -68,9 +76,11 @@ pub struct Place {
 
 /// The actor's state.
 pub struct Actor {
-    panel: super::model::Panel,
+    driver: Driver,
     settings: Settings,
-    term: Term,
+    /// Never dropped: ratatui's drop writes to the terminal and panics when it is gone (the
+    /// pane closed); `term::restore` puts it back instead.
+    term: ManuallyDrop<Term>,
     events: mpsc::UnboundedReceiver<Event>,
     client: Client,
     herdr: Herdr,
@@ -84,10 +94,6 @@ pub struct Actor {
     look: Option<Frame>,
     pacing: Pacing,
     no_core: NoCoreClock,
-    toasts: Toasts,
-    toast_rects: Vec<Placed>,
-    /// The view as last drawn (its click targets), without the notices.
-    shown: Option<Screen>,
     arrow_at: Option<Instant>,
 }
 
@@ -103,9 +109,9 @@ impl Actor {
     ) -> Self {
         let (done_tx, done_rx) = mpsc::unbounded_channel();
         Self {
-            panel,
+            driver: Driver::new(panel),
             settings,
-            term,
+            term: ManuallyDrop::new(term),
             events,
             client,
             herdr,
@@ -117,20 +123,25 @@ impl Actor {
             look: None,
             pacing: Pacing::default(),
             no_core: NoCoreClock::started(Instant::now()),
-            toasts: Toasts::default(),
-            toast_rects: vec![],
-            shown: None,
             arrow_at: None,
         }
     }
 
-    /// Runs until the panel ends.
+    /// Runs until the panel ends; a terminal that hung up is an end, not an error.
     pub async fn run(&mut self) -> io::Result<End> {
+        match self.serve().await {
+            Err(e) if hung_up(&e) => Ok(End::Hangup),
+            r => r,
+        }
+    }
+
+    async fn serve(&mut self) -> io::Result<End> {
         // read when the view starts, as Python does
         let period = Duration::from_secs_f64(1.0 / self.settings.read().animation_fps);
         let mut tick = tokio::time::interval(period);
         tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
         let mut no_core = tokio::time::interval(NO_CORE_CHECK);
+        let mut hangup = tokio::time::interval(HANGUP_CHECK);
         let mut input = EventStream::new();
         let (mut term_sig, mut hup) = (
             signal(SignalKind::terminate())?,
@@ -139,7 +150,7 @@ impl Actor {
         self.repaint(Painted::Refresh)?;
         loop {
             let arrow_at = self.arrow_at;
-            let toast_at = self.toasts.next_expiry();
+            let toast_at = self.driver.toasts.next_expiry();
             let end = tokio::select! {
                 ev = self.events.recv() => self.on_client(ev).await?,
                 ev = input.next() => self.on_terminal(ev).await?,
@@ -148,10 +159,11 @@ impl Actor {
                 _ = tick.tick(), if self.moving() => self.animate().map(|()| None)?,
                 () = sleep_until(arrow_at), if arrow_at.is_some() => self.on_arrows_rest().await?,
                 () = sleep_until(toast_at), if toast_at.is_some() => {
-                    self.toasts.expire(Instant::now());
+                    self.driver.toasts.expire(Instant::now());
                     self.repaint(Painted::Other).map(|()| None)?
                 }
                 _ = no_core.tick() => self.no_core.expired(Instant::now()).then_some(End::NoCore),
+                _ = hangup.tick() => super::term::hung_up().then_some(End::Hangup),
                 _ = term_sig.recv() => Some(End::Signal),
                 _ = hup.recv() => Some(End::Signal),
             };
@@ -163,18 +175,18 @@ impl Actor {
 
     /// Whether the tick has anything to do (`pacing::ticking`).
     fn moving(&self) -> bool {
-        ticking(
-            self.panel.tab_shown,
-            &self.panel.swarm,
-            &self.panel.view.unseen,
-        )
+        let p = &self.driver.panel;
+        ticking(p.tab_shown, &p.swarm, &p.view.unseen)
     }
 
-    /// The arrows came to rest.
+    /// The arrows came to rest: their switch goes out, and the marks they cleared go.
     async fn on_arrows_rest(&mut self) -> io::Result<Option<End>> {
         self.arrow_at = None;
-        let effects = self.panel.arrows_rested(Instant::now());
-        self.act(effects).await
+        let effects = self.driver.panel.arrows_rested(Instant::now());
+        if let Some(end) = self.act(effects).await? {
+            return Ok(Some(end));
+        }
+        self.repaint(Painted::Other).map(|()| None)
     }
 }
 
@@ -183,4 +195,11 @@ async fn sleep_until(at: Option<Instant>) {
         Some(at) => tokio::time::sleep_until(at.into()).await,
         None => std::future::pending().await,
     }
+}
+
+/// Whether `e` says the terminal is gone (its pane closed): EIO, a broken pipe, no device.
+pub fn hung_up(e: &io::Error) -> bool {
+    const EIO: i32 = 5;
+    const ENXIO: i32 = 6;
+    e.kind() == io::ErrorKind::BrokenPipe || matches!(e.raw_os_error(), Some(EIO | ENXIO))
 }

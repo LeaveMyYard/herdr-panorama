@@ -44,6 +44,9 @@ pub fn run() -> i32 {
     let hook_state = state.clone();
     let default_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
+        if actor::guard::in_task() {
+            return; // a task of the herdr side: it reports its own failure
+        }
         term::restore();
         crash::mark(
             &hook_state,

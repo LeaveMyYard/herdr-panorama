@@ -57,3 +57,15 @@ async fn an_echo_since_the_announcement_counts_an_older_one_does_not() {
     focus.send_replace(Some("w1:p2".into()));
     assert!(!a.echoed("w1:p94", Duration::from_millis(30)).await);
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_state_before_the_announcement_is_no_echo() {
+    // the reviewer's case (#77 M3): a state arrives between the switch's spawn and `focusing`
+    let (client, mut core, _dir) = connected().await;
+    let (focus, rx) = watch::channel(None);
+    let a = Announcer::new(client, rx);
+    focus.send_replace(Some("w1:p94".into()));
+    assert!(a.focusing("w1:p94").await);
+    core.next_line().await.unwrap();
+    assert!(!a.echoed("w1:p94", Duration::from_millis(30)).await);
+}

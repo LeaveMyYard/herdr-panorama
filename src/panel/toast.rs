@@ -7,6 +7,7 @@
 use super::input::Toast;
 use panorama_core::view::{Rgb, Screen};
 use std::time::{Duration, Instant};
+use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 /// Textual's `$panel-lighten-1`, `$foreground`, `$success`/`$text-success`, `$warning`/`$text-warning`.
 const BG: Rgb = Rgb::hex(0x343f49);
@@ -37,23 +38,30 @@ pub struct Placed {
 /// a line cut into pieces of `w`.
 pub fn fold(text: &str, w: usize) -> Vec<String> {
     let w = w.max(1);
+    let cells = |c: char| c.width().unwrap_or(0);
     let mut out: Vec<String> = vec![];
-    let mut cur = String::new();
+    let (mut cur, mut cur_w) = (String::new(), 0);
     for word in text.split_whitespace() {
-        let mut word: Vec<char> = word.chars().collect();
-        let len = |s: &String| s.chars().count();
-        if !cur.is_empty() && len(&cur) + 1 + word.len() <= w {
+        let word_w = word.width();
+        if !cur.is_empty() && cur_w + 1 + word_w <= w {
             cur.push(' ');
-            cur.extend(word);
+            cur.push_str(word);
+            cur_w += 1 + word_w;
             continue;
         }
         if !cur.is_empty() {
             out.push(std::mem::take(&mut cur));
         }
-        while word.len() > w {
-            out.push(word.drain(..w).collect());
+        cur_w = 0;
+        // a word wider than the line is cut where it fills it (a wide glyph never splits)
+        for c in word.chars() {
+            if cur_w + cells(c) > w && !cur.is_empty() {
+                out.push(std::mem::take(&mut cur));
+                cur_w = 0;
+            }
+            cur.push(c);
+            cur_w += cells(c);
         }
-        cur = word.into_iter().collect();
     }
     if !cur.is_empty() {
         out.push(cur);

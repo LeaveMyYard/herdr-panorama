@@ -43,15 +43,9 @@ impl Actor {
         look.now = now;
         look.frame = clock::frame_at(now);
         let size = self.term.size()?;
-        let view = self
-            .panel
-            .paint(i32::from(size.width), i32::from(size.height), look);
-        self.pacing.drawn(look.frame, &view);
-        self.panel
-            .painted(self.shown.as_ref(), &view, cause, Instant::now());
-        let mut screen = view.clone();
-        self.toast_rects = self.toasts.draw(&mut screen);
-        self.shown = Some(view);
+        let (w, h) = (i32::from(size.width), i32::from(size.height));
+        let screen = self.driver.paint(w, h, look, cause, Instant::now());
+        self.pacing.drawn(look.frame, &screen);
         self.term.draw(|f| term::copy(&screen, f.buffer_mut()))?;
         Ok(())
     }

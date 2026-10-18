@@ -12,7 +12,7 @@ pub mod arrows;
 pub mod effect;
 pub mod filter;
 #[cfg(test)]
-mod fixtures;
+pub(crate) mod fixtures;
 pub mod keys;
 pub mod mouse;
 pub mod moves;

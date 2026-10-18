@@ -82,3 +82,22 @@ fn g_during_a_switch_still_marks_the_agents_seen() {
     assert!(matches!(&p.on_key(Key::Goto, t)[..], [Effect::Goto { seen, .. }] if !seen.is_empty()));
     assert!(p.switch("w1:p3".into(), false).is_empty()); // and no second switch
 }
+
+#[test]
+fn a_switch_that_took_its_announcement_back_leaves_this_panel_focused() {
+    // Python's worker: `herdr_focused_pane = my_pane` after a take-back; the arrows then act
+    for (took_back, switches) in [(true, true), (false, false)] {
+        let (mut p, t) = panel("w1:t2", "w1:t2");
+        assert!(!p.switch("w1:p4".into(), true).is_empty());
+        p.herdr_focus("w1:p4"); // the announcement's echo moved herdr's focus there
+        p.switched(Some("w1:p4 is gone".into()), took_back, t);
+        assert_eq!(p.herdr_focused_pane.as_deref() == Some("w1:p90"), took_back);
+        p.on_key(Key::Move(1), t);
+        let out = p.arrows_rested(t + ARROW_REST);
+        assert_eq!(
+            out.iter().any(|e| matches!(e, Effect::Switch { .. })),
+            switches,
+            "took_back {took_back}"
+        );
+    }
+}

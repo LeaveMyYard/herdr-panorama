@@ -147,3 +147,10 @@ fn rich_folds_long_words() {
     assert_eq!(fold("ab cd ef", 5), ["ab cd", "ef"]);
     assert_eq!(fold("abcdefghij k", 4), ["abcd", "efgh", "ij k"]);
 }
+
+#[test]
+fn wide_glyphs_fold_by_their_cells() {
+    assert_eq!(fold("漢字漢字 ab", 5), ["漢字", "漢字", "ab"]);
+    assert_eq!(fold("漢字 ab", 7), ["漢字 ab"]);
+    assert_eq!(fold("漢字 abc", 7), ["漢字", "abc"]);
+}

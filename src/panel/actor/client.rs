@@ -13,11 +13,10 @@ impl Actor {
             Some(Event::State(st)) => {
                 // a switch waits for this echo of its announcement
                 self.focus.send_replace(st.focused_pane.clone());
-                self.panel.on_state(*st, Instant::now());
-                Painted::Refresh
+                self.driver.state(*st, Instant::now())
             }
             Some(Event::Connected(on)) => {
-                self.panel.on_connected(on);
+                self.driver.panel.on_connected(on);
                 self.no_core.connected(on, Instant::now());
                 Painted::Other
             }
