@@ -134,6 +134,8 @@ fn welcome(v: &Viewer, shared: &Shared) {
 /// A close cuts a write short, so the socket goes at once (Python's `shutdown(SHUT_RDWR)`).
 async fn write(mut wr: OwnedWriteHalf, v: Arc<Viewer>, shared: Arc<Shared>) {
     loop {
+        // read before the drain: a finish queued during it is written on the next round
+        let last = v.finishing();
         while let Some(line) = v.next() {
             let sent = tokio::select! {
                 r = tokio::time::timeout(shared.limits.send, wr.write_all(&line)) => matches!(r, Ok(Ok(()))),
@@ -144,7 +146,7 @@ async fn write(mut wr: OwnedWriteHalf, v: Arc<Viewer>, shared: Arc<Shared>) {
                 return;
             }
         }
-        if v.finishing() {
+        if last {
             break; // its last line is written
         }
         tokio::select! {

@@ -131,3 +131,6 @@ pub async fn handle(
     }
     Next::Go // unknown: ignored (a newer minor)
 }
+
+#[cfg(test)]
+mod tests;
