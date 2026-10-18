@@ -8,6 +8,7 @@ pub mod app;
 pub mod contract;
 pub mod machines;
 pub mod panel;
+pub mod home;
 pub mod panels;
 pub mod proto;
 pub mod settings;
