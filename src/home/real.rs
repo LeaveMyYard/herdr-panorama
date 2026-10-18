@@ -55,28 +55,60 @@ impl HomeOps for RealHome {
     }
 
     async fn open_popup(&self) -> Result<(), String> {
-        self.herdr.open_plugin_pane(&self.pane()).await.map(drop).map_err(err)
+        self.herdr
+            .open_plugin_pane(&self.pane())
+            .await
+            .map(drop)
+            .map_err(err)
     }
 
     async fn rename_pane(&self, pane: &str, label: &str) -> Result<(), String> {
-        self.herdr.rename_pane(&PaneId::new(pane), &Sanitized::new(label)).await.map(drop).map_err(err)
+        self.herdr
+            .rename_pane(&PaneId::new(pane), &Sanitized::new(label))
+            .await
+            .map(drop)
+            .map_err(err)
     }
 
     async fn rename_tab(&self, tab: &str, label: &str) -> Result<(), String> {
-        self.herdr.rename_tab(&TabId::new(tab), &Sanitized::new(label)).await.map(drop).map_err(err)
+        self.herdr
+            .rename_tab(&TabId::new(tab), &Sanitized::new(label))
+            .await
+            .map(drop)
+            .map_err(err)
     }
 
     async fn move_tab_first(&self, tab: &str) -> Result<(), String> {
-        self.herdr.move_tab(&TabId::new(tab), 0).await.map(drop).map_err(err)
+        self.herdr
+            .move_tab(&TabId::new(tab), 0)
+            .await
+            .map(drop)
+            .map_err(err)
     }
 
-    async fn move_to_new_tab(&self, pane: &str, workspace: &str, label: &str) -> Result<At, String> {
-        let to = MoveTo::NewTab { workspace: Some(WorkspaceId::new(workspace)), label: Sanitized::new(label) };
-        let moved = self.herdr.move_pane(&PaneId::new(pane), &to, false).await.map_err(err)?;
+    async fn move_to_new_tab(
+        &self,
+        pane: &str,
+        workspace: &str,
+        label: &str,
+    ) -> Result<At, String> {
+        let to = MoveTo::NewTab {
+            workspace: Some(WorkspaceId::new(workspace)),
+            label: Sanitized::new(label),
+        };
+        let moved = self
+            .herdr
+            .move_pane(&PaneId::new(pane), &to, false)
+            .await
+            .map_err(err)?;
         at(moved.pane)
     }
 
     async fn focus_tab(&self, tab: &str) -> Result<(), String> {
-        self.herdr.focus_tab(&TabId::new(tab)).await.map(drop).map_err(err)
+        self.herdr
+            .focus_tab(&TabId::new(tab))
+            .await
+            .map(drop)
+            .map_err(err)
     }
 }

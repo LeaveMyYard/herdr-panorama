@@ -17,7 +17,8 @@ fn py_str(v: &Value) -> String {
 
 /// On unless it says off (`false`, `0`, `no`, `off`); missing is on.
 fn on_unless_off(cfg: &Map<String, Value>, key: &str) -> bool {
-    cfg.get(key).is_none_or(|v| !matches!(py_str(v).as_str(), "false" | "0" | "no" | "off"))
+    cfg.get(key)
+        .is_none_or(|v| !matches!(py_str(v).as_str(), "false" | "0" | "no" | "off"))
 }
 
 /// `home_tab` (default true): the open key shows a home tab; off, the popup.
@@ -28,7 +29,9 @@ pub fn home_enabled(cfg: &Map<String, Value>) -> bool {
 /// `cockpit` (default false, experimental), and only with the home tab: per-tab panels, the
 /// only kind of cockpit (Q187; `cockpit_panels` is not read).
 pub fn per_tab(cfg: &Map<String, Value>) -> bool {
-    let on = cfg.get("cockpit").is_some_and(|v| matches!(py_str(v).as_str(), "true" | "1" | "yes" | "on"));
+    let on = cfg
+        .get("cockpit")
+        .is_some_and(|v| matches!(py_str(v).as_str(), "true" | "1" | "yes" | "on"));
     home_enabled(cfg) && on
 }
 
@@ -45,5 +48,6 @@ pub fn arrows(cfg: &Map<String, Value>) -> bool {
 /// `cockpit_follow_tabs = "single"`: panels only in tabs where the orchestrator is the only
 /// pane ("any", the default, otherwise).
 pub fn follow_tabs_single(cfg: &Map<String, Value>) -> bool {
-    cfg.get("cockpit_follow_tabs").is_some_and(|v| py_str(v) == "single")
+    cfg.get("cockpit_follow_tabs")
+        .is_some_and(|v| py_str(v) == "single")
 }

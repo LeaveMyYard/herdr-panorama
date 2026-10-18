@@ -18,7 +18,10 @@ pub fn save(path: &Path, home: &Home) -> Result<(), String> {
             std::fs::create_dir_all(d)?;
         }
         let tmp = path.with_extension("json.tmp");
-        std::fs::write(&tmp, json!({"pane_id": home.pane_id, "tab_id": home.tab_id}).to_string())?;
+        std::fs::write(
+            &tmp,
+            json!({"pane_id": home.pane_id, "tab_id": home.tab_id}).to_string(),
+        )?;
         std::fs::rename(&tmp, path)
     };
     write().map_err(|e| format!("could not save the home record: {e}"))

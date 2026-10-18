@@ -11,8 +11,22 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-pub const PANORAMA: &[&str] = &["uv", "run", "--quiet", "--frozen", "--no-dev", "--project", "/plugins/panorama", "panorama", "tui"];
-pub const VENV_PANORAMA: &[&str] = &["/plugins/panorama/.venv/bin/python3", "/plugins/panorama/.venv/bin/panorama", "tui"];
+pub const PANORAMA: &[&str] = &[
+    "uv",
+    "run",
+    "--quiet",
+    "--frozen",
+    "--no-dev",
+    "--project",
+    "/plugins/panorama",
+    "panorama",
+    "tui",
+];
+pub const VENV_PANORAMA: &[&str] = &[
+    "/plugins/panorama/.venv/bin/python3",
+    "/plugins/panorama/.venv/bin/panorama",
+    "tui",
+];
 
 #[derive(Clone, Debug, Default)]
 pub struct Pane {
@@ -48,8 +62,17 @@ impl State {
     fn new_tab(&mut self, label: &str, ws: &str) -> (String, String) {
         self.n += 1;
         let (t, p) = (format!("{ws}:t{}", self.n), format!("{ws}:p{}", self.n));
-        self.tabs.push(Tab { id: t.clone(), label: label.into(), ws: ws.into() });
-        self.panes.push(Pane { id: p.clone(), tab: t.clone(), ws: ws.into(), ..Pane::default() });
+        self.tabs.push(Tab {
+            id: t.clone(),
+            label: label.into(),
+            ws: ws.into(),
+        });
+        self.panes.push(Pane {
+            id: p.clone(),
+            tab: t.clone(),
+            ws: ws.into(),
+            ..Pane::default()
+        });
         (t, p)
     }
 
@@ -58,7 +81,12 @@ impl State {
         let (t, p) = self.new_tab(label, "w1");
         self.panes.last_mut().unwrap().agent = Some("claude".into());
         for i in 0..extra {
-            self.panes.push(Pane { id: format!("{p}x{i}"), tab: t.clone(), ws: "w1".into(), ..Pane::default() });
+            self.panes.push(Pane {
+                id: format!("{p}x{i}"),
+                tab: t.clone(),
+                ws: "w1".into(),
+                ..Pane::default()
+            });
         }
         (p, t)
     }
@@ -68,15 +96,25 @@ impl State {
     }
 
     pub fn tab_of(&self, pane: &str) -> Option<String> {
-        self.panes.iter().find(|p| p.id == pane).map(|p| p.tab.clone())
+        self.panes
+            .iter()
+            .find(|p| p.id == pane)
+            .map(|p| p.tab.clone())
     }
 
     pub fn in_tab(&self, tab: &str) -> Vec<String> {
-        self.panes.iter().filter(|p| p.tab == tab).map(|p| p.id.clone()).collect()
+        self.panes
+            .iter()
+            .filter(|p| p.tab == tab)
+            .map(|p| p.id.clone())
+            .collect()
     }
 
     pub fn label(&self, tab: &str) -> Option<String> {
-        self.tabs.iter().find(|t| t.id == tab).map(|t| t.label.clone())
+        self.tabs
+            .iter()
+            .find(|t| t.id == tab)
+            .map(|t| t.label.clone())
     }
 
     /// Panorama's pane left beside `agent` in its tab by an older version's moving cockpit:
@@ -95,7 +133,12 @@ impl State {
     /// A pane the operator split off in the home tab (Claude named `billing` in it, or a shell).
     pub fn beside_home(&mut self, home: &str, agent: bool) -> (String, String) {
         let tab = self.tab_of(home).unwrap();
-        let mut pane = Pane { id: "w1:p50".into(), tab: tab.clone(), ws: "w1".into(), ..Pane::default() };
+        let mut pane = Pane {
+            id: "w1:p50".into(),
+            tab: tab.clone(),
+            ws: "w1".into(),
+            ..Pane::default()
+        };
         if agent {
             pane.agent = Some("claude".into());
             pane.name = Some("billing".into());
@@ -109,7 +152,11 @@ impl State {
     }
 
     pub fn moves_of_others(&self, me: &str) -> Vec<String> {
-        self.calls.iter().filter(|c| c.starts_with("move_pane ") && !c.starts_with(&format!("move_pane {me} "))).cloned().collect()
+        self.calls
+            .iter()
+            .filter(|c| c.starts_with("move_pane ") && !c.starts_with(&format!("move_pane {me} ")))
+            .cloned()
+            .collect()
     }
 
     pub fn count(&self, prefix: &str) -> usize {
@@ -132,6 +179,7 @@ impl World {
 
 impl HomeOps for World {
     async fn snapshot(&self) -> Option<Snap> {
+        tokio::task::yield_now().await; // a real herdr call: other tasks run meanwhile
         let mut s = self.s();
         s.calls.push("snapshot".into());
         if s.fail.contains("snapshot") {
@@ -155,10 +203,20 @@ impl HomeOps for World {
         let tabs = s
             .tabs
             .iter()
-            .map(|t| SnapTab { tab_id: t.id.clone(), label: Some(t.label.clone()), workspace_id: Some(t.ws.clone()) })
+            .map(|t| SnapTab {
+                tab_id: t.id.clone(),
+                label: Some(t.label.clone()),
+                workspace_id: Some(t.ws.clone()),
+            })
             .collect();
         let focused_tab = focus.as_ref().and_then(|f| s.tab_of(f));
-        Some(Snap { panes, tabs, focused_pane: focus, focused_tab, ..Snap::default() })
+        Some(Snap {
+            panes,
+            tabs,
+            focused_pane: focus,
+            focused_tab,
+            ..Snap::default()
+        })
     }
 
     async fn runs_tui(&self, pane: &str) -> Option<bool> {
@@ -169,22 +227,38 @@ impl HomeOps for World {
         }
         let p = s.panes.iter().find(|p| p.id == pane)?;
         let argv: Vec<String> = p.argv.clone().unwrap_or_else(|| {
-            vec![if p.agent.is_some() { "claude".to_string() } else { "zsh".to_string() }]
+            vec![if p.agent.is_some() {
+                "claude".to_string()
+            } else {
+                "zsh".to_string()
+            }]
         });
-        let procs = if argv.is_empty() { json!([]) } else { json!([{"argv": argv, "name": argv[0]}]) };
-        let info = serde_json::from_value(json!({"pane_id": pane, "foreground_processes": procs})).unwrap();
+        let procs = if argv.is_empty() {
+            json!([])
+        } else {
+            json!([{"argv": argv, "name": argv[0]}])
+        };
+        let info = serde_json::from_value(json!({"pane_id": pane, "foreground_processes": procs}))
+            .unwrap();
         runs_panorama(&info, "tui")
     }
 
     async fn open_home_pane(&self, focus: bool) -> Result<At, String> {
+        tokio::task::yield_now().await;
         let mut s = self.s();
-        s.calls.push(format!("open_home {}", if focus { "focus" } else { "no-focus" }));
+        s.calls.push(format!(
+            "open_home {}",
+            if focus { "focus" } else { "no-focus" }
+        ));
         if s.fail.contains("open_home") {
             return Err("boom".into());
         }
         let (t, p) = s.new_tab("Panorama", "w1");
         s.panes.last_mut().unwrap().argv = Some(PANORAMA.iter().map(|a| a.to_string()).collect());
-        Ok(At { pane_id: p, tab_id: t })
+        Ok(At {
+            pane_id: p,
+            tab_id: t,
+        })
     }
 
     async fn open_popup(&self) -> Result<(), String> {
@@ -220,16 +294,27 @@ impl HomeOps for World {
         Ok(())
     }
 
-    async fn move_to_new_tab(&self, pane: &str, workspace: &str, label: &str) -> Result<At, String> {
+    async fn move_to_new_tab(
+        &self,
+        pane: &str,
+        workspace: &str,
+        label: &str,
+    ) -> Result<At, String> {
         let mut s = self.s();
-        s.calls.push(format!("move_pane {pane} --new-tab {label} --no-focus {workspace}"));
+        s.calls.push(format!(
+            "move_pane {pane} --new-tab {label} --no-focus {workspace}"
+        ));
         if s.fail.contains("move") {
             return Err("boom".into());
         }
         let old = s.tab_of(pane).ok_or("pane_not_found")?;
         s.n += 1;
         let t = format!("{workspace}:t{}", s.n);
-        s.tabs.push(Tab { id: t.clone(), label: label.into(), ws: workspace.into() });
+        s.tabs.push(Tab {
+            id: t.clone(),
+            label: label.into(),
+            ws: workspace.into(),
+        });
         let src_ws = s.pane(pane).ws.clone();
         s.pane(pane).tab = t.clone();
         let mut id = pane.to_string();
@@ -247,7 +332,10 @@ impl HomeOps for World {
         if s.in_tab(&old).is_empty() {
             s.tabs.retain(|x| x.id != old); // a tab left empty is closed
         }
-        Ok(At { pane_id: id, tab_id: t })
+        Ok(At {
+            pane_id: id,
+            tab_id: t,
+        })
     }
 
     async fn focus_tab(&self, tab: &str) -> Result<(), String> {
@@ -262,7 +350,11 @@ impl HomeOps for World {
 }
 
 pub fn places(dir: &Path) -> Places {
-    Places { record: dir.join("home-k.json"), lock: dir.join("home-k.lock"), wait: Duration::from_secs(2) }
+    Places {
+        record: dir.join("home-k.json"),
+        lock: dir.join("home-k.lock"),
+        wait: Duration::from_secs(2),
+    }
 }
 
 pub fn label() -> String {

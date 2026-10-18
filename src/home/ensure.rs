@@ -12,12 +12,17 @@ use std::time::Duration;
 pub type Ensured = Result<Home, String>;
 
 /// The home lock for up to `wait`; `None` when it stayed busy.
-async fn lock(places: &Places, wait: Duration) -> Option<herdr_agent_kit::plugin_env::lock::HeldLock> {
+async fn lock(
+    places: &Places,
+    wait: Duration,
+) -> Option<herdr_agent_kit::plugin_env::lock::HeldLock> {
     let lock = herdr_agent_kit::plugin_env::lock::LockFile::new(places.lock.clone()).mode(0o644);
-    tokio::task::spawn_blocking(move || lock.exclusive_within(wait, Duration::from_millis(20), || true))
-        .await
-        .ok()?
-        .ok()?
+    tokio::task::spawn_blocking(move || {
+        lock.exclusive_within(wait, Duration::from_millis(20), || true)
+    })
+    .await
+    .ok()?
+    .ok()?
 }
 
 /// Panorama's home pane, opened if missing (never a second one), focused when asked. One
@@ -39,7 +44,11 @@ pub async fn ensure(ops: &impl HomeOps, places: &Places, focus: bool) -> Ensured
 
 /// `ensure` under the lock: (the home, whether nothing is left to do: a fresh tab opened
 /// with the focus asked for).
-async fn ensure_locked(ops: &impl HomeOps, places: &Places, focus: bool) -> Result<(Home, bool), String> {
+async fn ensure_locked(
+    ops: &impl HomeOps,
+    places: &Places,
+    focus: bool,
+) -> Result<(Home, bool), String> {
     // unknown is not "missing": opening now could make a second home tab (a slow herdr)
     let Some(snap) = ops.snapshot().await else {
         return Err("herdr did not answer; not opening the home tab".into());
@@ -52,7 +61,10 @@ async fn ensure_locked(ops: &impl HomeOps, places: &Places, focus: bool) -> Resu
             return Err("could not verify panorama's pane; not opening the home tab".into());
         }
         let at = ops.open_home_pane(focus).await?;
-        let home = Home { pane_id: at.pane_id, tab_id: at.tab_id };
+        let home = Home {
+            pane_id: at.pane_id,
+            tab_id: at.tab_id,
+        };
         let _ = record::save(&places.record, &home);
         let _ = ops.rename_pane(&home.pane_id, HOME_LABEL).await;
         let _ = ops.rename_tab(&home.tab_id, HOME_LABEL).await;
@@ -80,8 +92,14 @@ async fn undock(
     me: &Home,
 ) -> Option<Home> {
     let ws = snap.pane(&me.pane_id)?.workspace_id.clone()?;
-    let at = ops.move_to_new_tab(&me.pane_id, &ws, HOME_LABEL).await.ok()?;
-    let moved = Home { pane_id: at.pane_id, tab_id: at.tab_id };
+    let at = ops
+        .move_to_new_tab(&me.pane_id, &ws, HOME_LABEL)
+        .await
+        .ok()?;
+    let moved = Home {
+        pane_id: at.pane_id,
+        tab_id: at.tab_id,
+    };
     if !moved.tab_id.is_empty() {
         let _ = ops.move_tab_first(&moved.tab_id).await;
     }
@@ -96,7 +114,9 @@ pub async fn leave(ops: &impl HomeOps, places: &Places, pane: &str) -> Result<()
         return Err("busy: relabel skipped (the next start sweeps it)".into());
     };
     let snap = ops.snapshot().await.ok_or("herdr did not answer")?;
-    let Some(tab) = snap.pane(pane).and_then(|p| p.tab_id.clone()) else { return Ok(()) };
+    let Some(tab) = snap.pane(pane).and_then(|p| p.tab_id.clone()) else {
+        return Ok(());
+    };
     release_tab(ops, &snap, &tab, pane).await
 }
 

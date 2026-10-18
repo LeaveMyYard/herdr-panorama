@@ -14,9 +14,17 @@ fn no_agent(p: &SnapPane) -> bool {
 /// Panes that look like the home pane, wherever they are: labelled `◆ panorama` with no
 /// agent, or the only agent-less pane of a tab labelled `◆ panorama` (an older home pane).
 pub fn lookalikes(snap: &Snap) -> Vec<SnapPane> {
-    let mut out: Vec<SnapPane> =
-        snap.panes.iter().filter(|p| p.label.as_deref() == Some(HOME_LABEL) && no_agent(p)).cloned().collect();
-    for t in snap.tabs.iter().filter(|t| is_home_label(t.label.as_deref().unwrap_or(""))) {
+    let mut out: Vec<SnapPane> = snap
+        .panes
+        .iter()
+        .filter(|p| p.label.as_deref() == Some(HOME_LABEL) && no_agent(p))
+        .cloned()
+        .collect();
+    for t in snap
+        .tabs
+        .iter()
+        .filter(|t| is_home_label(t.label.as_deref().unwrap_or("")))
+    {
         let mine: Vec<&SnapPane> = snap.in_tab(&t.tab_id).filter(|p| no_agent(p)).collect();
         if let [only] = mine[..]
             && !out.iter().any(|o| o.pane_id == only.pane_id)
@@ -49,7 +57,10 @@ pub fn find(found: &[SnapPane], prefer: Option<&str>, places: &Places) -> Option
         .find(|c| Some(c.pane_id.as_str()) == prefer)
         .or_else(|| found.iter().find(|c| Some(&c.pane_id) == known.as_ref()))
         .or_else(|| found.first())?;
-    let home = Home { pane_id: p.pane_id.clone(), tab_id: p.tab_id.clone().unwrap_or_default() };
+    let home = Home {
+        pane_id: p.pane_id.clone(),
+        tab_id: p.tab_id.clone().unwrap_or_default(),
+    };
     if Some(&p.pane_id) != known.as_ref() {
         let _ = record::save(&places.record, &home);
     }
@@ -60,7 +71,11 @@ pub fn find(found: &[SnapPane], prefer: Option<&str>, places: &Places) -> Option
 /// could not). A tab keeps the label while any agent-less pane in it is panorama or cannot
 /// be checked.
 pub async fn sweep(ops: &impl HomeOps, snap: &Snap) {
-    for t in snap.tabs.iter().filter(|t| is_home_label(t.label.as_deref().unwrap_or(""))) {
+    for t in snap
+        .tabs
+        .iter()
+        .filter(|t| is_home_label(t.label.as_deref().unwrap_or("")))
+    {
         let panes: Vec<&SnapPane> = snap.in_tab(&t.tab_id).collect();
         let mut maybe = false;
         for p in panes.iter().filter(|p| no_agent(p)) {
@@ -70,14 +85,21 @@ pub async fn sweep(ops: &impl HomeOps, snap: &Snap) {
             }
         }
         if !maybe {
-            let _ = ops.rename_tab(&t.tab_id, &neutral_label(snap, &panes)).await;
+            let _ = ops
+                .rename_tab(&t.tab_id, &neutral_label(snap, &panes))
+                .await;
         }
     }
 }
 
 /// Panorama's pane `leaving` is about to leave or close: a home tab that still holds other
 /// panes loses the `◆ panorama` label first. Why not, if the rename failed.
-pub async fn release_tab(ops: &impl HomeOps, snap: &Snap, tab: &str, leaving: &str) -> Result<(), String> {
+pub async fn release_tab(
+    ops: &impl HomeOps,
+    snap: &Snap,
+    tab: &str,
+    leaving: &str,
+) -> Result<(), String> {
     if !is_home_label(snap.tab_label(tab)) {
         return Ok(());
     }

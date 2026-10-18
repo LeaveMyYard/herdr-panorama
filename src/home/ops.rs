@@ -20,8 +20,13 @@ pub trait HomeOps: Send + Sync {
     fn open_home_pane(&self, focus: bool) -> impl Future<Output = Result<At, String>> + Send;
     /// The plugin's `panorama` pane at its own placement (the popup).
     fn open_popup(&self) -> impl Future<Output = Result<(), String>> + Send;
-    fn rename_pane(&self, pane: &str, label: &str) -> impl Future<Output = Result<(), String>> + Send;
-    fn rename_tab(&self, tab: &str, label: &str) -> impl Future<Output = Result<(), String>> + Send;
+    fn rename_pane(
+        &self,
+        pane: &str,
+        label: &str,
+    ) -> impl Future<Output = Result<(), String>> + Send;
+    fn rename_tab(&self, tab: &str, label: &str)
+    -> impl Future<Output = Result<(), String>> + Send;
     /// The tab to the first position (best effort: an older herdr has no `tab.move`).
     fn move_tab_first(&self, tab: &str) -> impl Future<Output = Result<(), String>> + Send;
     /// The pane into a new tab with `label` in `workspace`, without focus: where it is now.

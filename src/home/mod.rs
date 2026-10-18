@@ -21,8 +21,8 @@ pub mod config;
 mod ensure;
 mod find;
 pub mod label;
-pub mod ops;
 mod open;
+pub mod ops;
 pub mod real;
 mod record;
 

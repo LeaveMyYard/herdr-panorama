@@ -50,12 +50,18 @@ impl Snap {
 
     /// A tab's label ("" when it has none or is not there).
     pub fn tab_label(&self, tab: &str) -> &str {
-        self.tabs.iter().find(|t| t.tab_id == tab).and_then(|t| t.label.as_deref()).unwrap_or("")
+        self.tabs
+            .iter()
+            .find(|t| t.tab_id == tab)
+            .and_then(|t| t.label.as_deref())
+            .unwrap_or("")
     }
 
     /// The panes of a tab, in herdr's order.
     pub fn in_tab<'a>(&'a self, tab: &'a str) -> impl Iterator<Item = &'a SnapPane> + 'a {
-        self.panes.iter().filter(move |p| p.tab_id.as_deref() == Some(tab))
+        self.panes
+            .iter()
+            .filter(move |p| p.tab_id.as_deref() == Some(tab))
     }
 
     /// The tab remembers `pane` as its focused one: the operator was last in it.
