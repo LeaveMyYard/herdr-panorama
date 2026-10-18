@@ -1,5 +1,5 @@
-"""Panorama as the operator's home surface: a dedicated tab, first in the tab bar (or,
-with the experimental cockpit, docked left of the selected agent; see cockpit.py).
+"""Panorama as the operator's home surface: a dedicated tab, first in the tab bar. (With the
+experimental cockpit, per-tab panels sit left of each orchestrator; the home view stays here.)
 
 - **Single instance, found by content.** The home pane carries the pane label
   ``◆ panorama``, runs no agent, and herdr's ``pane process-info`` shows ``panorama tui``
@@ -110,7 +110,7 @@ def _tab_label(snapshot: dict, tab_id) -> str:
 
 def _lookalikes(snapshot: dict) -> list[dict]:
     """Panes that *look* like panorama's home pane, wherever they are (its own tab, or
-    docked next to an agent in the cockpit):
+    docked next to an agent by an older version's moving cockpit):
 
     - a pane labelled ``◆ panorama`` (the pane label, set when it is opened) that runs
       no agent;
@@ -253,9 +253,9 @@ def ensure(focus: bool) -> tuple[Home | None, str | None]:
     """Panorama's home pane, opened if missing (never a second one); focused when asked.
 
     Reconciles by content first: one verified panorama is kept (a second one is left alone,
-    never adopted or closed), and when the cockpit is off a pane docked next to an agent
-    (in a tab that is not a home tab) goes back to a home tab of its own. A home tab the
-    operator split is left as it is."""
+    never adopted or closed), and a pane docked next to an agent (in a tab that is not a home
+    tab; the moving cockpit of an older version left it there) goes back to a home tab of its
+    own. A home tab the operator split is left as it is."""
     from . import cockpit
     try:
         with _lock():
@@ -268,8 +268,6 @@ def ensure(focus: bool) -> tuple[Home | None, str | None]:
         err = herdr.focus_tab(home.tab_id)
         if err:
             return home, err
-        if cockpit.moving():
-            herdr.focus_pane(home.pane_id)  # the list side of the tab, not the agent
     return home, None
 
 
@@ -300,9 +298,9 @@ def _ensure_locked(focus: bool, cockpit):
         return home, None, True
     if herdr.pane_label(snapshot, home.pane_id) != HOME_LABEL:
         herdr.rename_pane(home.pane_id, HOME_LABEL)  # an older home pane: label it once
-    if not cockpit.moving() and not is_home_label(_tab_label(snapshot, home.tab_id)):
-        # cockpit off, or per-tab panels (the home panorama stays home): a pane docked by an
-        # agent goes back to its own tab
+    if not is_home_label(_tab_label(snapshot, home.tab_id)):
+        # the home panorama stays home: a pane docked next to an agent (the moving cockpit of
+        # an older version) goes back to its own tab
         moved = cockpit.undock(home)
         if moved is not None:
             home = moved

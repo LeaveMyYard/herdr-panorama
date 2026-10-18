@@ -74,8 +74,10 @@ pub fn valid_session(sid: &str) -> bool {
     SessionId::parse(sid).is_some()
 }
 
-/// An ssh target that can never become an rsync or ssh option: not empty, no leading `-`, no
-/// whitespace (as Python's `isspace` counts it: `\x1c`..`\x1f` too).
+/// An ssh target that does not read as an option itself: not empty, no leading `-`, no
+/// whitespace (as Python's `isspace` counts it: `\x1c`..`\x1f` too). As in Python, a
+/// `user@-host` target passes; rsync's own host check refuses it ("hostnames may not start
+/// with '-'").
 pub fn safe_target(target: &str) -> bool {
     let space = |c: char| c.is_whitespace() || ('\x1c'..='\x1f').contains(&c);
     !target.is_empty() && !target.starts_with('-') && !target.chars().any(space)
