@@ -489,6 +489,24 @@ def test_a_pane_runs_our_panel_only_with_that_pid_and_argv(monkeypatch):
     assert herdr.runs_panorama("w1:p9", "panel", pid=11) is False
 
 
+def test_the_rust_panel_is_our_panel_too(monkeypatch):
+    """docs/plans/rust-rewrite.md §5.4: the manifest runs target/release/panorama panel when it
+    is built; the core's pane check (hello's pid, the survey) knows it as a panel."""
+    from herdr_panorama import herdr
+    procs = [{"argv": ["/plugins/panorama/target/release/panorama", "panel"], "pid": 21}]
+    monkeypatch.setattr(herdr, "call", lambda *a, **k: ({"process_info": {"foreground_processes": procs}}, None))
+    assert herdr.runs_panorama("w1:p9", "panel", pid=21) is True
+    assert herdr.runs_panorama("w1:p9", "panel") is True
+    assert herdr.runs_panorama("w1:p9", "tui") is False
+    # #78 L-1: what recognition must reject (a word that only contains or starts with panorama)
+    for argv in (["/x/panorama-foo", "panel"], ["/home/u/panorama/bin/vim", "panel"],
+                 ["vim", "/home/u/notes/panorama", "panel.md"], ["panorama-cli", "panel"],
+                 ["/x/mypanorama", "panel"],
+                 ["sh", "-c", herdr.PANEL_COMMAND[-1]]):
+        procs[0]["argv"] = argv
+        assert herdr.runs_panorama("w1:p9", "panel") is False, argv
+
+
 def test_the_tmp_fallbacks_parent_must_be_safe_too(paths, monkeypatch):
     """Low (#30 review): the socket directory's parent is checked too: ours, or root's with the
     sticky bit (/tmp); a parent another user can write in (without sticky) is refused."""

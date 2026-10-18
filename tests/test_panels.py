@@ -428,10 +428,12 @@ async def test_a_connected_viewer_does_not_time_out(paths, monkeypatch):
 
 def test_viewers_start_from_the_venv_not_uv_run():
     """Low: a panel's process is the venv's own entry point (uv run adds a ~31 MB parent per
-    panel); uv run only when there is no venv."""
-    cmd = herdr.PANEL_COMMAND[-1]
-    assert cmd.index('.venv/bin/panorama" panel') < cmd.index("uv run")
-    assert cmd.startswith('R="${HERDR_PLUGIN_ROOT:-.}"; [ -x "$R/.venv/bin/panorama" ] && exec ')
+    panel); uv run only when there is no venv. The Rust viewer comes first when it speaks the
+    contract (scripts/panel)."""
+    from pathlib import Path
+    script = (Path(__file__).resolve().parent.parent / "scripts" / "panel").read_text()
+    assert herdr.PANEL_COMMAND == ["sh", "-c", 'exec sh "${HERDR_PLUGIN_ROOT:-.}/scripts/panel"']
+    assert script.index('exec "$B" panel') < script.index('.venv/bin/panorama" panel') < script.index("exec uv run")
 
 
 def test_a_panel_that_dies_before_its_viewer_connected_is_a_crash_not_a_close(world, tmp_path):

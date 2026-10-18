@@ -3,6 +3,8 @@
 import tomllib
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -49,3 +51,139 @@ def test_claude_plugin_manifests():
         assert spec["args"][2] == "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.sh"
         assert spec["args"][3] == "${CLAUDE_PLUGIN_ROOT}/src/herdr_panorama/hooks.py"
         assert spec["timeout"] <= 10
+
+
+def _launch(root, env_extra=None, timeout=10, stdin=None):
+    """Runs herdr.PANEL_COMMAND for a plugin root whose stubs echo who ran; (stdout, stderr).
+    The probe's temp files must all be gone afterwards (#78 final pass, L-2)."""
+    import os
+    import subprocess
+
+    from herdr_panorama import herdr
+    env = {k: v for k, v in os.environ.items() if not k.startswith("HERDR_") and k != "CARGO_TARGET_DIR"}
+    env.update({"HERDR_PLUGIN_ROOT": str(root), "HERDR_PLUGIN_STATE_DIR": str(root / "state"),
+                "PATH": f"{root / 'bin'}:/usr/bin:/bin", "TMPDIR": str(root / "tmp")}, **(env_extra or {}))
+    (root / "state").mkdir(exist_ok=True)
+    (root / "tmp").mkdir(exist_ok=True)
+    (root / "scripts").mkdir(exist_ok=True)  # the plugin root holds this checkout's launcher
+    (root / "scripts" / "panel").write_text((ROOT / "scripts" / "panel").read_text())
+    out = subprocess.run(herdr.PANEL_COMMAND, env=env, capture_output=True, text=True, timeout=timeout,
+                         check=True, stdin=stdin)
+    assert list((root / "tmp").iterdir()) == [], "the probe left its temp file"
+    return out.stdout.strip(), out.stderr.strip()
+
+
+def _stub(path, body):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("#!/bin/sh\n" + body + "\n")
+    path.chmod(0o755)
+
+
+RUST_OK = 'if [ "$1" = contract ]; then echo 1; exit 0; fi; echo rust "$@"'
+
+
+def test_the_panel_runs_the_rust_viewer_when_built_else_the_venv_else_uv(tmp_path):
+    """docs/plans/rust-rewrite.md §5.4: a ported entrypoint runs the Rust binary when it is built
+    (and speaks this checkout's contract), the Python command otherwise."""
+    _stub(tmp_path / "bin" / "uv", 'echo uv "$@"')
+    assert _launch(tmp_path)[0].startswith("uv run --quiet --frozen --no-dev --project")
+    _stub(tmp_path / ".venv" / "bin" / "panorama", 'echo venv "$@"')
+    assert _launch(tmp_path)[0] == "venv panel"
+    _stub(tmp_path / "target" / "release" / "panorama", RUST_OK)
+    assert _launch(tmp_path) == ("rust panel", "")
+    (tmp_path / "target" / "release" / "panorama").chmod(0o644)  # not executable: not used
+    assert _launch(tmp_path)[0] == "venv panel"
+
+
+def test_a_shared_cargo_target_dir_is_not_looked_at(tmp_path):
+    """#78 review M-2: CARGO_TARGET_DIR is often shared by every checkout; its build may be
+    another worktree's. Only the plugin root's own target/release counts."""
+    _stub(tmp_path / ".venv" / "bin" / "panorama", 'echo venv "$@"')
+    _stub(tmp_path / "elsewhere" / "release" / "panorama", RUST_OK.replace("echo rust", "echo other"))
+    assert _launch(tmp_path, {"CARGO_TARGET_DIR": str(tmp_path / "elsewhere")})[0] == "venv panel"
+    _stub(tmp_path / "target" / "release" / "panorama", RUST_OK)
+    assert _launch(tmp_path, {"CARGO_TARGET_DIR": str(tmp_path / "elsewhere")})[0] == "rust panel"
+
+
+@pytest.mark.parametrize("case,body", [
+    # #78 M-1: a build from before `panel` (main.rs printed its version for anything)
+    ("stale", 'echo "panorama 0.1.0"'),
+    ("another contract", 'if [ "$1" = contract ]; then echo 2; exit 0; fi; echo rust "$@"'),
+    # #78 final pass L-3: the compare is exact, not a prefix ("11", "1.5" are not contract 1)
+    ("contract 11", 'if [ "$1" = contract ]; then echo 11; exit 0; fi; echo rust "$@"'),
+    ("contract 1.5", 'if [ "$1" = contract ]; then echo 1.5; exit 0; fi; echo rust "$@"'),
+    ("panics at start", 'echo "thread main panicked" >&2; exit 101'),
+    ("cannot exec", "exit 126"),
+], ids=["stale", "another-contract", "contract-11", "contract-1.5", "panics", "cannot-exec"])
+def test_a_binary_that_does_not_speak_the_contract_falls_back_to_the_venv(tmp_path, case, body):
+    """The reviewer's case: such a binary used to be exec'd as the panel, died at once, and three
+    deaths gave the tab up for the core's life. Now the venv's viewer runs, and the fallback is
+    said once (stderr and <state dir>/panel-launch.log)."""
+    _stub(tmp_path / ".venv" / "bin" / "panorama", 'echo venv "$@"')
+    _stub(tmp_path / "target" / "release" / "panorama", body)
+    out, err = _launch(tmp_path)
+    assert out == "venv panel", case
+    assert "using the Python viewer" in err and "needs 1" in err
+    assert "using the Python viewer" in (tmp_path / "state" / "panel-launch.log").read_text()
+
+
+def test_a_directory_named_like_the_binary_is_not_run(tmp_path):
+    _stub(tmp_path / ".venv" / "bin" / "panorama", 'echo venv "$@"')
+    (tmp_path / "target" / "release" / "panorama").mkdir(parents=True)
+    assert _launch(tmp_path) == ("venv panel", "")
+
+
+def _bounded(tmp_path, body):
+    import shutil
+    import time
+    if not (shutil.which("timeout") or shutil.which("perl")):
+        pytest.skip("neither timeout(1) nor perl: the probe is unbounded here")
+    _stub(tmp_path / ".venv" / "bin" / "panorama", 'echo venv "$@"')
+    _stub(tmp_path / "target" / "release" / "panorama", body)
+    t = time.monotonic()
+    out = _launch(tmp_path, timeout=20)[0]
+    return out, time.monotonic() - t
+
+
+def test_a_binary_that_hangs_on_the_probe_is_given_two_seconds(tmp_path):
+    out, took = _bounded(tmp_path, "exec sleep 30")
+    assert out == "venv panel" and took < 6
+
+
+def test_a_probe_that_ignores_term_is_killed_a_second_later(tmp_path):
+    # #78 review L-3: `timeout 2` sent TERM only
+    out, took = _bounded(tmp_path, "trap '' TERM; sleep 30")
+    assert out == "venv panel" and took < 6
+
+
+def test_a_probe_child_holding_the_output_cannot_keep_the_panel_waiting(tmp_path):
+    # #78 review L-3: a child left behind with the probe's stdout no longer holds the read
+    body = 'if [ "$1" = contract ]; then sleep 30 & echo 1; exit 0; fi; echo rust "$@"'
+    out, took = _bounded(tmp_path, body)
+    assert out == "rust panel" and took < 6
+
+
+def test_the_probe_never_reads_the_panes_input(tmp_path):
+    """#78 final pass N-8: the probe's stdin is /dev/null, so a binary that reads it can never
+    take what the operator types into a new panel (here: an open, silent stdin)."""
+    import os
+    _stub(tmp_path / ".venv" / "bin" / "panorama", 'echo venv "$@"')
+    _stub(tmp_path / "target" / "release" / "panorama",
+          'if [ "$1" = contract ]; then read x; echo 1; exit 0; fi; echo rust "$@"')
+    r, w = os.pipe()  # the write end stays open: a probe reading it would wait out its 2 s
+    try:
+        assert _launch(tmp_path, stdin=r)[0] == "rust panel"
+    finally:
+        os.close(r)
+        os.close(w)
+
+
+def test_a_start_that_runs_rust_clears_the_last_fallback(tmp_path):
+    """#78 final pass N-9: panel-launch.log says the last fallback, not an old one."""
+    _stub(tmp_path / ".venv" / "bin" / "panorama", 'echo venv "$@"')
+    _stub(tmp_path / "target" / "release" / "panorama", 'echo "panorama 0.1.0"')
+    assert _launch(tmp_path)[0] == "venv panel"
+    assert (tmp_path / "state" / "panel-launch.log").exists()
+    _stub(tmp_path / "target" / "release" / "panorama", RUST_OK)
+    assert _launch(tmp_path)[0] == "rust panel"
+    assert not (tmp_path / "state" / "panel-launch.log").exists()

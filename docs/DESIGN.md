@@ -1776,6 +1776,52 @@ has proven itself (the operator, Q140).
   `.venv/bin/panorama panel` and falls back to `uv run` only when there is no venv. Measured
   on the isolated herdr: one process of about 41 MB RSS per panel, with no ~31 MB `uv`
   parent.
+- **The Rust viewer (rewrite P3, docs/plans/rust-rewrite.md §5.4).** The manifest's `panel` pane
+  and `herdr.PANEL_COMMAND` run `scripts/panel`, which picks the viewer:
+  - the Rust binary when the plugin root has one (`target/release/panorama`, from `cargo build
+    --release` in a linked checkout) **and** it answers `panorama contract` with the number the
+    script carries (the panel contract: the `panel` subcommand, the protocol's major, the plugin
+    environment, the crash marker), within 2 s (`timeout -k 1 2`; its answer goes to a file, so
+    a child it leaves behind cannot hold the panel);
+  - else the venv's viewer, else `uv run`.
+
+  A binary that is stale, fails to start, panics or hangs on the probe is passed over (said on
+  stderr and in `<state dir>/panel-launch.log`), so it can no longer make the panel die at start
+  three times and give the tab up for the core's life (#78 review). A `herdr plugin install`
+  builds no binary (its build step is `uv sync`), so it runs the venv's viewer until the
+  release work ships binaries. `CARGO_TARGET_DIR` is not looked at (it is often shared by
+  every checkout, so it would run another checkout's build): a dev setup with it set gets the
+  venv's viewer unless it builds in the checkout, `cargo build --release --target-dir target`
+  in the plugin root (the flag also beats a `build.target-dir` in `~/.cargo/config.toml`), or
+  links `target/release/panorama`. `<state dir>/panel-launch.log` holds the last fallback; a
+  start that runs the Rust viewer removes it. While the probe runs (about 10 ms, at most 3 s) the pane is
+  not yet `panorama panel` to `process-info`; the core's own panels count by id, so only a +
+  New agent tab's panel (started by `layout.apply`) is in that window, and the duplicate rule
+  covers it. Removing the binary rolls back, panel by panel (old and new
+  viewers share one core). The core knows the Rust process as a panel as before: `pane
+  process-info` shows `…/panorama panel`. Checked on an isolated herdr
+  0.9.3 (own HOME and socket), with two then eight orchestrator tabs:
+  - placement (left of the agent, 46 columns plus the frame), the record, no doubling;
+  - Enter and `g` go into the agent; ↑/↓ switch to the next tab's panel; `?` shows the keys
+    notice; `f` changes the filter in every panel and the home view;
+  - closing a panel's pane: the viewer exits 0 with no crash marker, and the tab stays closed;
+    the open key makes and focuses a new one; a crash marker in the Rust format makes it
+    again;
+  - per-tab off: every viewer exits and its pane closes; after `kill -9` of herdr and every
+    panorama process, the restored panels are closed and new ones made on the left;
+  - without the binary a new panel runs the venv's viewer, beside Rust ones.
+
+  Eight panels, 0.0 to 0.1 % CPU each, shown or hidden. Memory per panel, PSS (its real
+  cost) and RSS:
+  - the dev build (`cargo build --release`, glibc): 1.4 to 2.1 MB PSS, 5.4 to 6.1 MB RSS
+    (the shared libc and binary pages count in every process's RSS);
+  - the musl build the release workflow ships on Linux: 3.1 MB PSS, 4.8 MB RSS; 1.1 MB and
+    2.8 MB where the kernel did not back a 2 MB region with a huge page
+    (`transparent_hugepage=always`), 3.6 MB and 5.3 MB for one that got two.
+
+  The P3 exit bar ("8 panels at under 5 MB each") is measured as decided at P3: **PSS for a
+  dev build, RSS for a release (musl) build**; both are met, the release build's give or take
+  one huge page.
 - **Open key.** In per-tab mode the open key asks the core over its socket (`role: "key"`,
   `{"open": {}}`, answered with `{"opened": {"result": …}}`):
   - a panel in the operator's tab: it is focused;
