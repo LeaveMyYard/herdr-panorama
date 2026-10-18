@@ -34,7 +34,6 @@ from textual.geometry import Region
 from textual.screen import ModalScreen
 from textual.widgets import Input, Label, Static
 from textual.binding import Binding
-from textual.message import Message
 from textual.strip import Strip
 from textual.widget import Widget
 
@@ -95,12 +94,10 @@ if _textual_render_segments is not None and textual.__version__.startswith(TEXTU
     _compositor.ChopsUpdate.render_segments = _render_segments
 
 REFRESH_SECONDS = 1.5
-DOCK_HOLD_SECONDS = 1.0  # after a dock or follow: keep the docked panel while herdr settles the split
 FRAME_SECONDS = 0.25  # a design frame: spinners turn and sweeps move one step
 COLOUR_SECONDS = 0.05  # the colour tick (config animation_fps, default 20): pulses and blinks between frames
 ARM_SECONDS = 0.4
-QUIET_FOLLOW = cockpit.QUIET  # follow's normal "no"s: not logged
-FOLLOW_DEBOUNCE = 0.15  # cockpit follow: act on the last of a burst of focus events
+FOLLOW_DEBOUNCE = 0.15  # per-tab panels: act on the last of a burst of focus events
 ARROW_DOCK_SECONDS = 0.2  # docked panel: dock once the arrows rest this long (holding one docks once)
 CLICK_ARM_SECONDS = 1.0  # a click target that appeared or moved in a refresh (herdr-inbox's row rule)
 SCROLL_ARM_SECONDS = 0.3  # a click target the wheel moved under the pointer (trackpad momentum)
@@ -269,10 +266,6 @@ class SwarmApp(App):
         self.pane_focused = True  # panorama's pane has the keyboard (the terminal's focus in/out)
         self.herdr_focused_pane: str | None = None  # the pane herdr last reported focused
         self._unconfirmed: str | None = None  # a panel's announced focus, not yet confirmed by herdr
-        self.dock_hold_until = 0.0  # keep the docked panel until herdr has settled the split
-        self.docked_hint: tuple[str, float] | None = None  # (agent pane, when) set by a dock
-        self.following = False  # one follow at a time
-        self._follow_again = False  # a focus event arrived while following: re-evaluate after
         self._follow_timer = None
         self._arrow_timer = None  # docked panel: the pending dock after the arrows settle
         self._arrow_again = False  # an arrow dock came due while a dock ran: look again after it
@@ -283,7 +276,6 @@ class SwarmApp(App):
         self.panels: panels.Manager | None = None  # per-tab panels: the panel manager (with the core)
         self.panel_panes: dict[str, str] = {}  # tab -> its panel, published to the viewers
         self.focus_log: cockpit.FocusLog | None = None  # set while the event stream is up
-        self.fit_total: int | None = None  # the shared split's width at the last fit
         # the animation's clock: the WALL clock, so the frame is a pure function of the time of
         # day and every panorama window (the home view, each tab's panel) shows an animation in
         # the same phase at the same moment, whenever it started and however long it was hidden
@@ -353,12 +345,6 @@ class SwarmApp(App):
         self.error = None
         before = self.selected_card()
         old_cells = self._cells()
-        if self.docked_hint and started is not None and swarm is not None:
-            pane, at = self.docked_hint
-            if started < at:
-                swarm.docked = pane  # collected before the dock finished: the dock is newer
-            else:
-                self.docked_hint = None  # a collect from after the dock: herdr's word wins
         self.swarm = swarm
         self.view.unseen = dict(self.tracker.update(swarm, self.clock()) if marks is None else marks)
         if not self.loaded:
@@ -441,11 +427,20 @@ class SwarmApp(App):
             snap = herdr.snapshot() or {}
             did = self.panels.open_key(snap, self.swarm)
         if did == "home" and self.my_pane:
-            me = home.find(herdr.snapshot() or {}, prefer=self.my_pane)
-            if me is not None:
-                err = herdr.focus_tab(me.tab_id) or herdr.focus_pane(me.pane_id)
-                return "failed" if err else "home"
-            return "failed"
+            snap = herdr.snapshot() or {}
+            me = home.find(snap, prefer=self.my_pane)
+            if me is None:
+                return "failed"
+            if not home.is_home_label(home._tab_label(snap, me.tab_id)):
+                # left docked beside an agent by an older version's moving cockpit: back to a
+                # home tab of its own first (``home.ensure`` undocks it), then shown there
+                moved, err = home.ensure(focus=True)
+                if moved is None or err:
+                    return "failed"
+                self.my_pane = self.collector.self_pane = moved.pane_id
+                me = moved
+            err = herdr.focus_tab(me.tab_id) or herdr.focus_pane(me.pane_id)
+            return "failed" if err else "home"
         return did
 
     def _tab_shown(self, tab_id: str) -> None:
@@ -636,64 +631,22 @@ class SwarmApp(App):
         self.repaint()
 
     def _update_dock(self) -> None:
-        """Docked next to an agent (cockpit) and narrower than the wide layout: the 3a panel,
-        one column of orchestrator cards (focus on it). Decided in ``apply`` before the arming
-        comparison, so a refresh that switches panels re-arms the keys."""
+        """Docked next to an agent (a per-tab panel) and narrower than the wide layout: the 3a
+        panel, one column of orchestrator cards (focus on it). Decided in ``apply`` before the
+        arming comparison, so a refresh that switches panels re-arms the keys. While a switch
+        runs the panel is kept (herdr may resize the pane meanwhile)."""
         width = self.grid.size.width if hasattr(self, "grid") else 0
-        # While a dock or follow runs, and briefly after, herdr resizes this pane in steps (a
-        # move gives it half the tab before the split ratio is set): keep the docked panel
-        # instead of flashing the wide graph. When that hold expires inside a plain repaint
-        # (a frame or resize, not apply), view.dock can flip back to the graph without
-        # re-arming the keys. That is accepted: only panel -> graph can happen there, focus
-        # stays on column 0, and Enter on an orchestrator means the same in both layouts.
-        now = time.monotonic()
-        holding = (self.docking or self.following or now < self.dock_hold_until
-                   or now < cockpit.moving_until)
-        self.view.dock = bool(self.swarm.docked) and width > 0 and (width < render.WIDE or holding)
+        self.view.dock = bool(self.swarm.docked) and width > 0 and (width < render.WIDE or self.docking)
         if self.view.dock and self.view.focus:
             self.view.focus = 0
 
     def cockpit_mode(self) -> bool:
-        if self._cockpit_override is not None:
-            return self._cockpit_override
-        return self.home_mode and cockpit.moving()  # per-tab: the panels do the docking
+        """Enter, a click and the arrows switch chats: a per-tab panel (PanelApp). The home
+        panorama never docks: the moving cockpit is gone (Q187), per-tab panels do the docking."""
+        return bool(self._cockpit_override)
 
     def on_resize(self, event) -> None:
         self.call_after_refresh(self.repaint)
-        if self.live_refresh and self.cockpit_mode():
-            self.run_worker(self._fit, thread=True, group="fit", exclusive=True)
-
-    def _fit(self) -> None:
-        """Re-fit the width after a resize: never while a dock is under way (its own moves
-        resize this pane), under the dock's lock, on a verified panorama pane only."""
-        if self.docking:
-            return
-        try:
-            self._fit_locked()
-        except home.LockBusy:
-            pass  # a dock or follow holds the lock; it fits the width itself
-
-    def _fit_locked(self) -> None:
-        with home._lock(2.0):
-            snap = herdr.snapshot()
-            me = home.find(snap, prefer=self.my_pane) if snap else None
-            if me is None:
-                return
-            frame_before = cockpit.frame()
-            self.measure_frame(me.pane_id)
-            last = self.fit_total if cockpit.frame() == frame_before else None  # a new frame: re-fit
-            self.fit_total = cockpit.fit(me.pane_id, me.tab_id, last)
-
-    def measure_frame(self, pane_id: str) -> None:
-        """herdr's pane frame, as this view sees it: its pane's layout rect minus the width the
-        view is actually drawn at (the terminal herdr gives it)."""
-        lay = herdr.pane_layout(pane_id) or {}
-        if len(lay.get("panes") or []) < 2:
-            return  # alone in its tab: that frame is not the docked one
-        rect = next((p.get("rect") or {} for p in lay.get("panes") or [] if p.get("pane_id") == pane_id), {})
-        drawn = self.size.width
-        if rect.get("width") and drawn > 0 and 0 <= rect["width"] - drawn <= 6:
-            cockpit.pane_frame = rect["width"] - drawn
 
     # -- navigation (operator-caused: never armed) -------------------------------------
 
@@ -770,9 +723,8 @@ class SwarmApp(App):
             self._arrow_again = True
             return
         # the keyboard must still be on panorama: an arrow typed here, then the operator went into
-        # a pane (the terminal's blur, or herdr reporting another pane focused) or a follow is
-        # moving panorama: no dock
-        if self.following or not self.pane_focused:
+        # a pane (the terminal's blur, or herdr reporting another pane focused): no switch
+        if not self.pane_focused:
             return
         if self.herdr_focused_pane and self.my_pane and self.herdr_focused_pane != self.my_pane:
             return
@@ -997,50 +949,6 @@ class SwarmApp(App):
     def _follow_now(self) -> None:
         self._follow_timer = None
         self.panels_pass()  # per-tab: the operator may have entered a tab that has no panel yet
-        if not (self.home_mode and self.cockpit_mode() and cockpit.follow_setting()):
-            return
-        if self.docking or isinstance(self.screen, NewAgentForm):
-            return  # an explicit dock is under way, or the operator is typing in the form
-        if self.following:
-            self._follow_again = True  # coalesce: one more look once this one is done
-            return
-        self.following = True
-        self.run_worker(self._follow_worker, thread=True, group="follow")
-
-    def _follow_worker(self) -> None:
-        try:
-            if self.my_pane:
-                self.measure_frame(self.my_pane)
-            mine, why = cockpit.follow(self.my_pane, self.focus_log, on_docked=self._docked_now)
-        except Exception as exc:  # noqa: BLE001 - never kill the view; a failed follow moves nothing
-            mine, why = None, f"{type(exc).__name__}: {exc}"
-        self._to_ui(self._followed, mine, why)
-
-    def _followed(self, mine: str | None, why: str) -> None:
-        self.following = False
-        if mine:
-            self.my_pane = mine
-            self.collector.self_pane = mine
-            self.fit_total = None
-            self._refocus()
-            if self.live_refresh:
-                self.refresh_model()
-        elif why not in QUIET_FOLLOW:
-            self.log.warning(f"cockpit follow: {why}")
-        if self._follow_again:
-            self._follow_again = False
-            self._follow_now()
-
-    def show_docked(self, agent: str) -> None:
-        """A dock just succeeded: show it now (the docked bar on that agent, the panel held
-        while herdr settles the split) instead of after the next collect; a collect that
-        started before this keeps it, one that started after reconciles with herdr."""
-        self.docked_hint = (agent, time.monotonic())
-        self.swarm.docked = agent
-        self.dock_hold_until = time.monotonic() + DOCK_HOLD_SECONDS
-        self.repaint()
-        if self.live_refresh:
-            self.refresh_model()
 
     def action_zoom(self) -> None:
         """z: panorama full-screen in its tab (the 2a graph) and back to the docked panel."""
@@ -1050,33 +958,8 @@ class SwarmApp(App):
                 self.notify(herdr.clean(err, 200), title="zoom", severity="warning")
 
     def _dock(self, pane_id: str, keep_focus: bool = False) -> None:
-        if self.docking:
-            return
-        self.docking = True
-        self.dock_hold_until = time.monotonic() + DOCK_HOLD_SECONDS
-        self.run_worker(lambda: self._dock_worker(pane_id, keep_focus), thread=True, group="dock")
-
-    def _dock_worker(self, pane_id: str, keep_focus: bool = False) -> None:
-        err, mine = None, None
-        try:
-            if self.my_pane:
-                self.measure_frame(self.my_pane)
-            if keep_focus:
-                mine, err = cockpit.dock(pane_id, self.my_pane, on_docked=self._docked_now, focus_me=True)
-            else:
-                mine, err = cockpit.dock(pane_id, self.my_pane, on_docked=self._docked_now)
-            if mine:
-                self.my_pane = mine  # an id changes when panorama moves across workspaces
-                self.collector.self_pane = mine
-            # focus goes to the agent (with dock_keep_focus it stays on panorama, which the dock
-            # swap put there); if panorama could not move, still go to the agent, as without
-            # the cockpit (the agent never moved, so this is always safe)
-            if not (keep_focus and mine):
-                ferr = herdr.focus_agent(pane_id)
-                err = err or ferr
-        except Exception as exc:  # noqa: BLE001 - never kill the view
-            err = f"{type(exc).__name__}: {exc}"
-        self._to_ui(self._docked, err)
+        """Switch to ``pane_id``'s chat: only a per-tab panel switches (PanelApp overrides
+        this); the home panorama never docks (the moving cockpit is gone, Q187)."""
 
     def _to_ui(self, fn, *args) -> None:
         """A worker's result back to the UI thread; nothing if the view has closed meanwhile."""
@@ -1085,25 +968,8 @@ class SwarmApp(App):
         except (RuntimeError, concurrent.futures.CancelledError):
             pass  # the app is shutting down (a panel's client thread can call in as it closes)
 
-    class DockedNow(Message):
-        def __init__(self, agent: str) -> None:
-            super().__init__()
-            self.agent = agent
-
-    def _docked_now(self, agent: str) -> None:
-        """From the dock or follow worker, right after panorama's move succeeded (before the
-        swap and the follow's settle wait): show the new docked agent at once. The worker
-        holds the home lock here, so this must not wait for the UI thread (which may itself
-        be waiting for that lock, in quit): a message, posted thread-safely, not
-        call_from_thread."""
-        self.post_message(self.DockedNow(agent))
-
-    def on_swarm_app_docked_now(self, message: "SwarmApp.DockedNow") -> None:
-        self.show_docked(message.agent)
-
     def _docked(self, err: str | None) -> None:
         self.docking = False
-        self.fit_total = None
         self._refocus()  # the dock may have given panorama a new pane id
         if self._arrow_again:  # the arrows settled elsewhere during this dock
             self._arrow_again = False

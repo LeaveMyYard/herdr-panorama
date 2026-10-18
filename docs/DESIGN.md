@@ -1036,6 +1036,17 @@ label, and the form uses the same palette. `◆ panorama` is the herdr tab label
 
 ## Cockpit (experimental)
 
+> **The moving cockpit is removed (operator decision Q187, 2026-10-18).** The cockpit is now
+> only the per-tab panels ("Per-tab panels" below): every orchestrator tab its own panel, the
+> home panorama staying in its home tab and feeding them. Moving panorama's pane between tabs
+> (the dock, "Follow", `cockpit_follow`) is gone from the code; `cockpit_panels` is not read
+> (an old `"moving"` reads as per-tab), and a home panorama an older version left docked next
+> to an agent goes back to its home tab (`home.ensure` → `cockpit.undock`) at the next start or
+> open key, also when the key goes through a running core (`_open_key`). The sections below
+> on docking and following are the history of that design, kept for the measurements and the
+> reasons; the docked panel's look (3a/9e) and the herdr measurements still hold for the
+> per-tab panels.
+
 The operator hides herdr's own sidebar and wants panorama as an agent list on the left of
 the agent they are working with. `cockpit = true` in the plugin config turns that on;
 `false` (the default while experimental) keeps the plain home tab.
@@ -1144,7 +1155,7 @@ created and closed; no pane of the operator's was touched.
   - The 2a layouts already draw to the size they get; nothing else assumed rect equals
     drawable width.
 
-### Follow (`cockpit_follow`, default true)
+### Follow (`cockpit_follow`; removed with the moving cockpit, Q187)
 
 The panel used to exist only in the tab it docked into. If the operator switched tabs
 another way (the tab bar, `prefix+1..9`, a notification, `herdr agent focus`), the new tab
@@ -1174,7 +1185,7 @@ press, the rules are strict:
   - other workspaces;
   - panorama itself;
   - nothing focused.
-- **The move** is the same path as an explicit dock (`_move_next_to`):
+- **The move** was the same path as an explicit dock (`_move_next_to`, removed):
   1. the rename before leaving a shared home tab;
   2. `pane move --no-focus`;
   3. the split ratio.
@@ -1252,17 +1263,17 @@ they stay CLI calls. The lag came from the view:
 
 - **The graph flash.** `pane move` first gives panorama half the agent's tab, then the
   ratio shrinks it. In between the view saw a wide pane and drew the 2a graph.
-  - Now the docked panel is kept while a dock runs, while a move of panorama's pane is
-    under way (`cockpit.moving_until`, which covers the follow path too), and for 1 s
-    after a successful dock or follow.
-  - The layout is re-decided after that, so a deliberate zoom (`z`) still shows the graph.
+  - The fix then kept the docked panel while a dock ran, while a move of panorama's pane
+    was under way (`cockpit.moving_until`, removed with the moving cockpit), and for 1 s
+    after a successful dock or follow. Today only a running switch keeps it.
+  - The layout was re-decided after that, so a deliberate zoom (`z`) still showed the graph.
 - **The stale highlight.** Which agent is docked came only from the next collect (up to
   1.5 s).
-  - Now a successful dock or follow shows it at once: the worker calls `on_docked` right
-    after the move, the view runs `show_docked`, and a collect starts immediately. The
-    agent comes from that call, not from a process-wide variable.
-  - A collect that began *before* the dock keeps the new value. One that began after it
-    reconciles with herdr.
+  - The fix made a successful dock or follow show it at once: the worker called `on_docked`
+    right after the move, the view ran `show_docked` (removed), and a collect started
+    immediately. The agent came from that call, not from a process-wide variable.
+  - A collect that began *before* the dock kept the new value. One that began after it
+    reconciled with herdr.
 - **The follow settle wait stays at 0.3 s, but nobody waits for it.** On an isolated
   server, herdr delivered focus events ~50 ms (median) and up to ~100 ms after the action
   (a ~100 ms flush tick), so the guard needs that margin. The view is told about the new
@@ -1434,7 +1445,7 @@ tile in its off phase.
   - `a answer` is left out of the footer when there is no inbox.
   - `z graph` sits on the footer's rule (see Follow).
 
-## Per-tab panels (built, off by default)
+## Per-tab panels (built, off by default; the only cockpit since Q187)
 
 The operator's option 1 for the switching blink: give every orchestrator tab its own docked
 panel, so switching chats is a plain tab switch with the panel already in place. Revised after
@@ -1596,8 +1607,7 @@ It is the natural first Rust component: small, render-only, its own input handli
   - Anywhere else: the home tab, as today.
 - **Removal, with hysteresis.** A tab's panel is removed only after the tab has had no
   orchestrator for a while (proposed: 30 s), so Claude exiting and re-launching keeps its
-  panel. On cockpit off, or with `cockpit_panels = "moving"`, the core removes the per-tab
-  panels it can prove are ours.
+  panel. On cockpit off the core removes the per-tab panels it can prove are ours.
 - **Width.** Each viewer keeps its own split at `cockpit_width` (today's `fit` and measured
   frame), so every tab's panel has the same width.
 
@@ -1650,9 +1660,10 @@ It is the natural first Rust component: small, render-only, its own input handli
 
 ### Migration and the fallback
 
-`cockpit_panels = "per-tab"` or `"moving"` (today's single moving panel, still the default).
-The blink measurement holds (below); making per-tab the default is the operator's call. The moving code stays for now and is to be removed once per-tab
-has proven itself (the operator, Q140).
+Per-tab is the only cockpit since Q187 (2026-10-18): the moving panel and its code are
+removed, and `cockpit_panels` is no longer read (an old `"moving"` reads as per-tab). Before
+that, `cockpit_panels` chose between `"per-tab"` and `"moving"` (Q140: drop the fallback once
+per-tab had proven itself).
 
 ### The operator's answers
 
@@ -1669,8 +1680,8 @@ has proven itself (the operator, Q140).
      detected cheaply. Otherwise this check is skipped.
    - Placement sits behind one function.
 2. **Notice (Q139):** `panorama is restarting…`
-3. **Fallback (Q140): drop it later.** `cockpit_panels = "moving"` stays for now, and its
-   removal is planned once per-tab has proven itself.
+3. **Fallback (Q140): drop it later.** Dropped in Q187 (2026-10-18): the moving panel is
+   removed.
 
 ### As built
 
@@ -1938,11 +1949,9 @@ changes; the same pattern as herdr-inbox's `tab_prefix`:
 done_window = "1h"   # how long finished threads stay visible: seconds or "90m", "2h30m"
 stale_after = "12h"  # an orchestrator idle this long reads "stale" (PANORAMA_STALE_AFTER overrides)
 home_tab = true      # the home tab (false: the key opens the popup)
-cockpit = false      # experimental: panorama docked left of the selected agent (see Cockpit)
-cockpit_width = 46   # the list's drawable columns in the cockpit (36..119)
-cockpit_follow = true # re-dock beside the orchestrator the operator switches to (see Follow)
-cockpit_follow_tabs = "any" # "single": follow only into tabs whose one pane is the orchestrator
-cockpit_panels = "moving"  # "per-tab": every orchestrator tab its own panel (see Per-tab panels)
+cockpit = false      # experimental: a panel left of every orchestrator (see Per-tab panels)
+cockpit_width = 46   # the panels' drawable columns (36..119)
+cockpit_follow_tabs = "any" # "single": panels only in tabs whose one pane is the orchestrator
 machines = "all"     # saved herdr SSH machines to show: "all", "none", ["label", ...] (docs/REMOTE.md)
 highlight_unseen = true # pulse what changed since the operator looked (see Unseen)
 animation_fps = 20   # the colour tick, 2..30 (see Smooth animation); read when the view starts
