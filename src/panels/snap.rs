@@ -17,6 +17,16 @@ pub struct SnapPane {
     pub focused: bool,
     /// herdr's terminal id: a new one after a restore or a live handoff.
     pub terminal_id: Option<String>,
+    /// The agent's herdr name, as the pane reports it.
+    pub name: Option<String>,
+}
+
+/// One tab.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct SnapTab {
+    pub tab_id: String,
+    pub label: Option<String>,
+    pub workspace_id: Option<String>,
 }
 
 /// A snapshot, as the manager reads it.
@@ -27,11 +37,25 @@ pub struct Snap {
     pub focused_pane: Option<String>,
     /// The pane each tab remembers as focused.
     pub tab_focus: Vec<String>,
+    /// Every tab, in herdr's order.
+    pub tabs: Vec<SnapTab>,
+    /// pane → its agent's herdr name (`agents[]`).
+    pub agent_names: Vec<(String, String)>,
 }
 
 impl Snap {
     pub fn pane(&self, id: &str) -> Option<&SnapPane> {
         self.panes.iter().find(|p| p.pane_id == id)
+    }
+
+    /// A tab's label ("" when it has none or is not there).
+    pub fn tab_label(&self, tab: &str) -> &str {
+        self.tabs.iter().find(|t| t.tab_id == tab).and_then(|t| t.label.as_deref()).unwrap_or("")
+    }
+
+    /// The panes of a tab, in herdr's order.
+    pub fn in_tab<'a>(&'a self, tab: &'a str) -> impl Iterator<Item = &'a SnapPane> + 'a {
+        self.panes.iter().filter(move |p| p.tab_id.as_deref() == Some(tab))
     }
 
     /// The tab remembers `pane` as its focused one: the operator was last in it.
@@ -55,6 +79,7 @@ impl From<Snapshot> for Snap {
                     agent: p.agent,
                     focused: p.focused,
                     terminal_id: text(p.extra.get("terminal_id")),
+                    name: text(p.extra.get("name")),
                 })
             })
             .collect();
@@ -68,6 +93,22 @@ impl From<Snapshot> for Snap {
             focused_tab: s.focused_tab_id.map(|t| t.as_str().to_owned()),
             focused_pane: s.focused_pane_id.map(|p| p.as_str().to_owned()),
             tab_focus,
+            tabs: s
+                .tabs
+                .into_iter()
+                .filter_map(|t| {
+                    Some(SnapTab {
+                        tab_id: t.tab_id?.as_str().to_owned(),
+                        label: t.label,
+                        workspace_id: t.workspace_id.map(|w| w.as_str().to_owned()),
+                    })
+                })
+                .collect(),
+            agent_names: s
+                .agents
+                .into_iter()
+                .filter_map(|a| Some((a.pane_id?.as_str().to_owned(), a.name?)))
+                .collect(),
         }
     }
 }

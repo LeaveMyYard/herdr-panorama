@@ -176,6 +176,7 @@ impl World {
                     agent: p.agent.clone(),
                     focused: p.focused,
                     terminal_id: p.terminal.clone(),
+                    name: None,
                 })
             })
             .collect();
@@ -184,6 +185,7 @@ impl World {
             focused_tab: Some(s.focus.0.clone()),
             focused_pane: Some(s.focus.1.clone()),
             tab_focus: s.tab_focus.values().cloned().collect(),
+            ..Snap::default()
         }
     }
 
