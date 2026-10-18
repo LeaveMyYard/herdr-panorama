@@ -7,10 +7,12 @@
 //! - [`layout`]: whether the view is the docked panel at its width.
 //! - [`term`]: the terminal; [`clock`]: the wall clock and the animation time; [`pacing`]:
 //!   when a colour tick draws; [`guard`]: tasks whose panic is caught and reported;
-//!   [`crash`]: the crash marker and the panic hook.
+//!   [`crash`]: the crash marker and the panic hook; [`frame`]: what a frame reads from
+//!   outside the view.
 
 pub mod clock;
 pub mod crash;
+pub mod frame;
 pub mod guard;
 pub mod layout;
 pub mod pacing;

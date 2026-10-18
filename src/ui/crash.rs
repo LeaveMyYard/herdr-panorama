@@ -16,7 +16,7 @@ pub fn marker(state_dir: &Path, pane: &str) -> PathBuf {
 }
 
 /// The last `LOG_BYTES` of `text`, cut at a character boundary.
-fn tail(text: &str) -> &str {
+pub fn tail(text: &str) -> &str {
     let mut start = text.len().saturating_sub(LOG_BYTES);
     while !text.is_char_boundary(start) {
         start += 1;
