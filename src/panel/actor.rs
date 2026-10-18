@@ -92,46 +92,52 @@ impl Actor {
         );
         self.repaint()?;
         loop {
-            tokio::select! {
-                ev = self.events.recv() => match ev {
-                    Some(Event::State(st)) => {
-                        self.panel.on_state(*st);
-                        self.repaint()?;
-                    }
-                    Some(Event::Connected(on)) => {
-                        self.panel.on_connected(on);
-                        self.no_core_since = if on { None } else { self.no_core_since.or(Some(Instant::now())) };
-                        self.repaint()?;
-                    }
-                    Some(Event::Shutdown) => return Ok(End::Shutdown),
-                    Some(Event::Refused(_)) => {}
-                    None => return Ok(End::ClientGone),
-                },
-                ev = input.next() => match ev {
-                    Some(Ok(TermEvent::Resize(..))) => self.repaint()?,
-                    Some(Ok(TermEvent::FocusGained)) => {
-                        self.panel.on_terminal_focus(true);
-                        self.repaint()?;
-                    }
-                    Some(Ok(TermEvent::FocusLost)) => {
-                        self.panel.on_terminal_focus(false);
-                        self.repaint()?;
-                    }
-                    Some(Ok(_)) => {}
-                    Some(Err(e)) => return Err(e),
-                    None => return Ok(End::Input),
-                },
+            let end = tokio::select! {
+                ev = self.events.recv() => self.on_client(ev)?,
+                ev = input.next() => self.on_terminal(ev)?,
                 // a hidden tab, or a still screen, does not even wake for the tick
-                _ = tick.tick(), if self.moving() => self.animate()?,
-                _ = no_core.tick() => {
-                    if self.no_core_since.is_some_and(|t| t.elapsed() >= NO_CORE) {
-                        return Ok(End::NoCore);
-                    }
-                }
-                _ = term_sig.recv() => return Ok(End::Signal),
-                _ = hup.recv() => return Ok(End::Signal),
+                _ = tick.tick(), if self.moving() => self.animate().map(|()| None)?,
+                _ = no_core.tick() => self.no_core_since.filter(|t| t.elapsed() >= NO_CORE).map(|_| End::NoCore),
+                _ = term_sig.recv() => Some(End::Signal),
+                _ = hup.recv() => Some(End::Signal),
+            };
+            if let Some(end) = end {
+                return Ok(end);
             }
         }
+    }
+
+    /// The core client's event; `Some` when the panel ends.
+    fn on_client(&mut self, ev: Option<Event>) -> io::Result<Option<End>> {
+        match ev {
+            Some(Event::State(st)) => self.panel.on_state(*st),
+            Some(Event::Connected(on)) => {
+                self.panel.on_connected(on);
+                self.no_core_since = if on {
+                    None
+                } else {
+                    self.no_core_since.or(Some(Instant::now()))
+                };
+            }
+            Some(Event::Shutdown) => return Ok(Some(End::Shutdown)),
+            Some(Event::Refused(_)) => return Ok(None),
+            None => return Ok(Some(End::ClientGone)),
+        }
+        self.repaint().map(|()| None)
+    }
+
+    /// A terminal event (keys and the mouse join with the panel's input); `Some` when the
+    /// panel ends.
+    fn on_terminal(&mut self, ev: Option<io::Result<TermEvent>>) -> io::Result<Option<End>> {
+        match ev {
+            Some(Ok(TermEvent::Resize(..))) => {}
+            Some(Ok(TermEvent::FocusGained)) => self.panel.on_terminal_focus(true),
+            Some(Ok(TermEvent::FocusLost)) => self.panel.on_terminal_focus(false),
+            Some(Ok(_)) => return Ok(None),
+            Some(Err(e)) => return Err(e),
+            None => return Ok(Some(End::Input)),
+        }
+        self.repaint().map(|()| None)
     }
 
     /// A full repaint: the settings read again, the frame of the clock now.
