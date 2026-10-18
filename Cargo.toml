@@ -31,6 +31,8 @@ all = { level = "warn", priority = -1 }
 [workspace.dependencies]
 panorama-core = { path = "crates/panorama-core" }
 herdr-agent-kit = { git = "https://github.com/LeaveMyYard/herdr-agent-kit", tag = "v0.1.0" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 # The `panorama` binary: one binary, subcommands keep today's CLI names (§2.2).
 # Its version is the Rust binary's own; pyproject.toml versions the Python
