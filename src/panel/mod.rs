@@ -27,9 +27,12 @@ use crate::proto::client::{BACKOFF, Client, Config};
 use crate::proto::socket;
 use crate::settings::Settings;
 use actor::Actor;
-use herdr_agent_kit::internal::plugin_paths::panorama::state_dir;
+use herdr_agent_kit::herdr_api::Herdr;
+use herdr_agent_kit::internal::plugin_paths::PANORAMA_ID;
+use herdr_agent_kit::internal::plugin_paths::panorama::{session_key, state_dir};
 use herdr_agent_kit::plugin_env::PluginEnv;
 use model::Panel;
+use std::path::Path;
 use tokio::sync::mpsc;
 
 /// Runs the panel until it ends; the process's exit code.
@@ -81,8 +84,25 @@ async fn serve(env: &PluginEnv) -> std::io::Result<actor::End> {
     let panel = Panel::new(cfg.pane_id.clone(), cfg.tab_id.clone());
     let (tx, rx) = mpsc::unbounded_channel();
     let client = Client::spawn(cfg, tx);
+    let place = actor::Place {
+        plugin_id: env.plugin_id(PANORAMA_ID).to_owned(),
+        root: env.plugin_root().map(Path::to_path_buf),
+        new_agent_mark: act::new_agent::marker(&state_dir(env), &session_key(env)),
+        home: env
+            .home()
+            .map_or_else(|| "~".to_owned(), |h| h.to_string_lossy().into_owned()),
+    };
+    let herdr = Herdr::from_env().with_client("panorama");
     let term = term::setup()?;
-    let mut actor = Actor::new(panel, Settings::from_env(env), term, rx);
+    let mut actor = Actor::new(
+        panel,
+        Settings::from_env(env),
+        term,
+        rx,
+        client.clone(),
+        herdr,
+        place,
+    );
     let end = actor.run().await;
     client.stop().await;
     end

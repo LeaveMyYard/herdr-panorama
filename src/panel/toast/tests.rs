@@ -5,7 +5,10 @@
 use super::*;
 use serde_json::Value;
 
-fn golden(name: &str) -> Vec<Vec<(char, Option<String>, Option<String>, bool)>> {
+/// A golden cell: character, colour, background, bold.
+type Cell = (char, Option<String>, Option<String>, bool);
+
+fn golden(name: &str) -> Vec<Vec<Cell>> {
     let path = concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/tests/fixtures/screens/demo-wide.json"
@@ -40,7 +43,7 @@ fn help() -> Toast {
     Toast::new(Some("keys"), crate::panel::input::actions::HELP, 10)
 }
 
-fn check(s: &Screen, want: &[Vec<(char, Option<String>, Option<String>, bool)>], p: Placed) {
+fn check(s: &Screen, want: &[Vec<Cell>], p: Placed) {
     for y in p.y0..p.y1 {
         for x in p.x0..p.x1 {
             let (ch, fg, bg, bold) = &want[y as usize][x as usize];

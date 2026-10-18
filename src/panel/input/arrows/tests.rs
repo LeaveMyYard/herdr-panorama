@@ -38,7 +38,7 @@ fn arrows_that_rest_during_a_switch_are_looked_at_again_when_it_ends() {
     assert!(p.switch("w1:p5".into(), true).is_empty()); // one at a time
     p.on_key(Key::Move(1), t);
     assert!(p.arrows_rested(t + ARROW_REST).is_empty());
-    let out = p.switched(Some("w1:p4 is gone".into()), t + ARROW_REST);
+    let out = p.switched(Some("w1:p4 is gone".into()), false, t + ARROW_REST);
     assert!(matches!(out[0], Effect::ArrowsRestAt(_)));
     assert!(
         matches!(&out[1], Effect::Toast(toast) if toast.warning && toast.title.as_deref() == Some("cockpit"))
