@@ -31,7 +31,7 @@ width = 84
 height = 26
 command = ["sh", "-c", "exec uv run --quiet --frozen --no-dev --project \"${HERDR_PLUGIN_ROOT:-.}\" panorama new-agent"]
 
-# A per-tab panel (cockpit_panels = "per-tab"): this tab's docked panel, drawn from the core's
+# A per-tab panel (cockpit = true): this tab's docked panel, drawn from the core's
 # state (the home panorama). Opened by the core as a split beside an orchestrator's pane.
 # scripts/panel picks the viewer: the Rust one when this root has it built (its own
 # target/release, never CARGO_TARGET_DIR) and it speaks this checkout's panel contract

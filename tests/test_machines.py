@@ -232,12 +232,9 @@ def mixed_swarm():
 async def test_enter_on_a_remote_orchestrator_focuses_it_there_and_says_where(fake_herdr, monkeypatch):
     """The operator's choice: herdr cannot switch this TUI to another machine, so Enter focuses
     the pane on that machine's server and says where it is. Never a dock, never a local focus."""
-    from herdr_panorama import cockpit
     from herdr_panorama.tui import SwarmApp
 
     from .demo import NOW
-    docked = []
-    monkeypatch.setattr(cockpit, "dock", lambda *a, **k: (docked.append(a), (None, None))[1])
     for cockpit_on in (False, True):
         app = SwarmApp(source=mixed_swarm, live_refresh=False, clock=lambda: NOW, focus_pane="abc123:w1:p1",
                        home_mode=True, cockpit_mode=cockpit_on)
@@ -259,7 +256,7 @@ async def test_enter_on_a_remote_orchestrator_focuses_it_there_and_says_where(fa
         assert "answering" in notes[0] and "switch herdr to devbox" in notes[1]
     remote = [c for c in fake_herdr.calls() if c[:1] == ["--machine"]]
     assert remote == [["--machine", "abc123", "agent", "focus", "w1:p1"]] * 2  # by id, not label
-    assert docked == [] and fake_herdr.calls_of("agent", "focus") == []  # nothing local
+    assert fake_herdr.calls_of("agent", "focus") == [] and fake_herdr.calls_of("pane", "move") == []  # nothing local
 
 
 def test_remote_groups_get_a_divider_and_it_is_not_clickable():
