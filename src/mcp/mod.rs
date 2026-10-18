@@ -7,6 +7,10 @@
 //! - [`session`]: which session a call reports for.
 //! - [`server`]: the rmcp adapter.
 //!
+//! A `report_thread` call waits for the events file's lock (`report::emit`) on the server's one
+//! thread, so while another writer holds it the server answers nothing else; Python's server
+//! blocks the same way. The lock is held only for one append (and a compaction).
+//!
 //! Stated deviations: a call the schema refuses (no `thread_id`, a wrong type) says so in its
 //! own words, not pydantic's; an events file that cannot be written answers `status: error`
 //! instead of a tool error. The protocol envelope (capabilities, the 2026-07-28 cache fields)
