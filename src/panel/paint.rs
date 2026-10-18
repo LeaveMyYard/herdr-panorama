@@ -49,6 +49,7 @@ impl Panel {
         v.open_key = f.open_key.clone();
         let stale = self.swarm.errors.first().map(String::as_str);
         let docked = self.swarm.docked.is_some() && w < WIDE;
+        self.input.dock = docked;
         let mut s = if docked {
             v.focus = 0; // the docked list is one column
             v.panel = Some(panel_look(

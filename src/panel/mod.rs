@@ -14,6 +14,7 @@
 pub mod actor;
 pub mod clock;
 pub mod crash;
+pub mod input;
 pub mod model;
 pub mod paint;
 pub mod term;

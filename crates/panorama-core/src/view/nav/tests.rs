@@ -139,3 +139,37 @@ fn the_path_to_an_agent_runs_from_the_threads_own() {
     assert!(path_ids(Some(&t), Some("x")).is_empty());
     assert!(path_ids(None, Some("c")).is_empty());
 }
+
+#[test]
+fn an_agents_group_and_depth() {
+    let t: Thread = serde_json::from_value(th(
+        "t",
+        "active",
+        json!([
+            {"id": "a"}, {"id": "b", "parent": "a"}, {"id": "c", "parent": "b"},
+        ]),
+    ))
+    .unwrap();
+    assert_eq!(parent_key(&t, "a"), "t");
+    assert_eq!(parent_key(&t, "c"), "b");
+    assert_eq!(parent_key(&t, &format!("{FIN_CARD}b")), "b");
+    assert_eq!(agent_depth(Some(&t), Some("c")), 3);
+    assert_eq!(agent_depth(Some(&t), Some(&format!("{FIN_CARD}t"))), 1);
+    assert_eq!(agent_depth(Some(&t), Some(&format!("{FIN_CARD}b"))), 3);
+    assert_eq!(agent_depth(Some(&t), Some("x")), 1);
+    assert_eq!(agent_depth(None, Some("c")), 1);
+}
+
+#[test]
+fn a_finished_card_knows_what_it_folds() {
+    let t: Thread = serde_json::from_value(th("t", "active", json!([
+        {"id": "a", "status": "run"}, {"id": "d1", "status": "done"}, {"id": "d2", "status": "fail"},
+    ])))
+    .unwrap();
+    let entries = tree_entries(&t, &View::default());
+    let fin = entries
+        .iter()
+        .find(|e| e.ident.starts_with(FIN_CARD))
+        .unwrap();
+    assert_eq!(fin.fin, ["d1"]); // a failed agent stays shown
+}

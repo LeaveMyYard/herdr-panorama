@@ -87,7 +87,10 @@ fn the_panels_screens_are_pythons() {
                 if let Some(name) = step.get("filter") {
                     st["filter"] = name.clone();
                 }
-                panel.on_state(State::read(st.as_object().unwrap()).unwrap());
+                panel.on_state(
+                    State::read(st.as_object().unwrap()).unwrap(),
+                    std::time::Instant::now(),
+                );
             }
             "frame" => f.frame = step["n"].as_f64().unwrap(),
             "snap" => {

@@ -110,7 +110,7 @@ impl Actor {
     /// The core client's event; `Some` when the panel ends.
     fn on_client(&mut self, ev: Option<Event>) -> io::Result<Option<End>> {
         match ev {
-            Some(Event::State(st)) => self.panel.on_state(*st),
+            Some(Event::State(st)) => self.panel.on_state(*st, Instant::now()),
             Some(Event::Connected(on)) => {
                 self.panel.on_connected(on);
                 self.no_core_since = if on {
