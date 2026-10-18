@@ -91,3 +91,6 @@ pub(crate) fn toggle(set: &mut std::collections::BTreeSet<String>, key: &str) {
         set.insert(key.to_owned());
     }
 }
+
+#[cfg(test)]
+mod tests;

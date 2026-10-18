@@ -20,8 +20,19 @@ pub fn log_path(state_dir: &Path) -> PathBuf {
 /// One writer at a time: panics on two threads must not lose each other's lines.
 static LOG: Mutex<()> = Mutex::new(());
 
-/// Appends `text` to the log, which keeps its last `crash::LOG_BYTES`. Never fails.
+thread_local! {
+    /// This thread is writing the log: a panic inside the write skips logging instead of
+    /// waiting on its own lock.
+    static WRITING: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Appends `text` to the log, which keeps its last `crash::LOG_BYTES`. Never fails, never
+/// waits on itself (a panic while writing is not logged).
 pub fn log(path: &Path, text: &str) {
+    if WRITING.with(|w| w.replace(true)) {
+        return;
+    }
+    let _done = Reset;
     let _one = LOG.lock().unwrap_or_else(PoisonError::into_inner);
     let old = fs::read_to_string(path).unwrap_or_default();
     let all = format!("{old}{text}\n");
@@ -29,6 +40,15 @@ pub fn log(path: &Path, text: &str) {
         let _ = fs::create_dir_all(dir);
     }
     let _ = fs::write(path, crash::tail(&all));
+}
+
+/// Clears this thread's [`WRITING`] when its write ends (on a panic too).
+struct Reset;
+
+impl Drop for Reset {
+    fn drop(&mut self) {
+        WRITING.with(|w| w.set(false));
+    }
 }
 
 /// Whether a panic here is contained: on the collect thread, or in a guarded task.
