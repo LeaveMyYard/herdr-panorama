@@ -194,6 +194,67 @@ fn the_sweep_laps_in_at_most_48_frames() {
 }
 
 #[test]
+fn a_link_runs_from_a_border_to_a_trunk_into_each_card() {
+    // Python's render.link on the same boxes (captured from the Python code)
+    use super::boxes::rbox;
+    use super::link::{Link, link};
+    let mut s = Screen::new(12, 6);
+    rbox(&mut s, 0, 0, 4, 3, LINE);
+    rbox(&mut s, 8, 0, 4, 3, LINE);
+    rbox(&mut s, 8, 3, 4, 3, LINE);
+    let l = Link {
+        fx: 3,
+        fy: Some(1),
+        tx: 6,
+        to_x: 8,
+        ys: &[1, 4],
+        top: 0,
+        bottom: 6,
+    };
+    link(&mut s, l);
+    assert_eq!(
+        s.text(),
+        "╭──╮    ╭──╮\n│  ├──┬─┤  │\n╰──╯  │ ╰──╯\n      │ ╭──╮\n      ╰─┤  │\n        ╰──╯"
+    );
+    // the trunk spans the source row and the cards above and below it
+    let mut s = Screen::new(12, 3);
+    link(
+        &mut s,
+        Link {
+            fx: 0,
+            fy: Some(1),
+            tx: 3,
+            to_x: 5,
+            ys: &[0, 2],
+            top: 0,
+            bottom: 6,
+        },
+    );
+    assert_eq!(s.text(), "   ╭──\n───┤\n   ╰──");
+    // no source on screen, or no card in the rows shown: nothing
+    let mut s = Screen::new(12, 3);
+    let none = Link {
+        fx: 0,
+        fy: None,
+        tx: 3,
+        to_x: 5,
+        ys: &[0, 2],
+        top: 0,
+        bottom: 6,
+    };
+    link(&mut s, none);
+    link(
+        &mut s,
+        Link {
+            fy: Some(1),
+            ys: &[9],
+            ..none
+        },
+    );
+    assert_eq!(s.text(), "\n\n");
+}
+
+#[test]
 fn tags_sit_right_aligned_on_the_border_and_skip_empty_ones() {
     use super::tags::tags;
     let mut s = Screen::new(30, 3);

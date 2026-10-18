@@ -1,6 +1,5 @@
 //! The view's own state: what is selected, hovered, filtered and how the panel looks
-//! (Python `render.View`: the parts the docked panel and the narrow layout use; the wide
-//! graph's sideways scroll joins in P4).
+//! (Python `render.View`).
 
 use super::filter::Filter;
 use super::target::Target;
@@ -59,6 +58,9 @@ pub struct View {
     pub offsets: BTreeMap<usize, i32>,
     /// Columns the wheel scrolled: they no longer follow the selection.
     pub wheel: BTreeSet<usize>,
+    /// The wide graph's first column shown, set by a sideways scroll; `None`: follow the
+    /// focus. A render reports the column it showed first in [`Screen::hlo`](super::Screen).
+    pub hcol: Option<usize>,
 }
 
 impl Default for View {
@@ -84,6 +86,7 @@ impl Default for View {
             frame: 0.0,
             offsets: BTreeMap::new(),
             wheel: BTreeSet::new(),
+            hcol: None,
         }
     }
 }
