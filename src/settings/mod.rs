@@ -9,6 +9,7 @@
 //! missing or broken file reads as empty, so everything takes its default.
 
 pub mod colour;
+pub mod durations;
 pub mod open_key;
 pub mod panel;
 pub mod theme;
