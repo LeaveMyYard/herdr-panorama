@@ -67,4 +67,6 @@ pub enum Effect {
     ArrowsRestAt(std::time::Instant),
     /// The panel closes (herdr closes its pane with it).
     Quit,
+    /// The home view's pane full-screen in its tab, and back (z).
+    Zoom,
 }

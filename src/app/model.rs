@@ -5,8 +5,8 @@
 //! The moving cockpit is dropped (Q187): no dock or follow runs here, so nothing holds the
 //! docked panel while a move resizes the pane, and no dock hint outlives a collect.
 
-use crate::panel::input::Key;
 use crate::ui::graph::Graph;
+use crate::ui::input::ClickArming;
 use crate::ui::layout;
 use crate::ui::selection::{self, ARM, SelectedCard};
 use panorama_core::model::Swarm;
@@ -38,6 +38,8 @@ pub struct App {
     pub width: i32,
     /// The terminal has the keyboard: the docked panel's focused look.
     pub pane_focused: bool,
+    /// The cells that ignore clicks for now (a refresh or the wheel moved them).
+    pub clicks: ClickArming,
 }
 
 impl App {
@@ -53,6 +55,7 @@ impl App {
             dock: false,
             width: 0,
             pane_focused: true,
+            clicks: ClickArming::default(),
         }
     }
 
@@ -141,12 +144,6 @@ impl App {
     /// What an action key would act on.
     pub fn selected_card(&self) -> SelectedCard {
         selection::selected_card(&self.graph.swarm, &self.graph.view, self.dock)
-    }
-
-    /// Whether `key` ends the app: `q`, and Esc in a popup (the home tab is not dismissed by
-    /// a stray Esc). The other keys join with the app's input (P4 8b).
-    pub fn quits(&self, key: Key) -> bool {
-        key == Key::Quit || (key == Key::Escape && !self.home_mode)
     }
 }
 

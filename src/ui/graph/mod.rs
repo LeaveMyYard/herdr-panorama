@@ -43,6 +43,13 @@ impl Graph {
         }
     }
 
+    /// The keyboard to column `col`; a focus change scrolls sideways to the focus again
+    /// (Python `_focus`).
+    pub(crate) fn focus(&mut self, col: usize) {
+        self.view.focus = col;
+        self.view.hcol = None;
+    }
+
     /// Where the arrows resume from while no orchestrator is selected.
     pub fn parked(&self) -> Option<&str> {
         self.parked.as_deref()
