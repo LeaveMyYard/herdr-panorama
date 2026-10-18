@@ -177,7 +177,7 @@ async fn a_tab_herdr_could_not_check_gets_no_panel() {
 async fn a_known_panel_is_not_asked_about_on_every_pass() {
     let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
     w.s().tab("w1:t2").insert(0, pane("w1:p50"));
-    w.s().argv.insert("w1:p50".into(), "panel".into());
+    w.s().viewer("w1:p50");
     let mut m = manager(&w, dir.path());
     for _ in 0..3 {
         let start = !m.started;
@@ -267,4 +267,48 @@ async fn only_local_claude_orchestrators_outside_home_in_its_workspace_are_targe
         .await
         .unwrap();
     assert_eq!(sv.targets.keys().collect::<Vec<_>>(), ["w1:t1", "w1:t2"]);
+}
+
+#[tokio::test]
+async fn a_panel_already_left_of_its_agent_is_not_swapped_again() {
+    // without the guard every pass in the operator's tab would swap and pull the focus
+    let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
+    let mut m = manager(&w, dir.path());
+    pass(&mut m, &w, &orch(&["w1:p2"]), &[], true).await;
+    let panel = w.order("w1:t2")[0].clone();
+    for focus in ["w1:p2", panel.as_str()] {
+        w.s().focus = ("w1:t2".into(), focus.into());
+        w.s().calls.clear();
+        pass(&mut m, &w, &orch(&["w1:p2"]), &[], false).await;
+        assert!(w.calls().is_empty(), "{:?}", w.calls());
+        assert_eq!(w.s().focus.1, focus);
+    }
+}
+
+#[tokio::test]
+async fn the_home_pane_is_never_counted_as_a_panel() {
+    // panorama's own pane beside an agent (an older version left it there) is no panel, even
+    // if herdr's process answer were to say so
+    let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
+    w.s().tab("w1:t2").insert(0, pane("w1:p5"));
+    w.s().runs = Some(Box::new(|_, _| Some(true)));
+    let mut m = manager(&w, dir.path());
+    let me = crate::panels::HomeRef {
+        pane_id: "w1:p5".into(),
+        tab_id: "w1:t1".into(),
+    };
+    let sv = m
+        .reconcile(
+            w.snap(),
+            &orch(&["w1:p2"]),
+            Some(&me),
+            &set(&[]),
+            true,
+            false,
+        )
+        .await
+        .unwrap();
+    assert!(!w.s().asked.contains(&"w1:p5".to_string()));
+    assert!(sv.panels["w1:t2"].iter().all(|p| p != "w1:p5"));
+    assert!(w.calls().contains(&"open w1:p2".to_string()));
 }

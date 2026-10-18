@@ -71,7 +71,7 @@ async fn the_open_key_waits_for_the_home_lock_then_says_busy() {
     let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
     let lock = dir.path().join("home.lock");
     let mut p = places(dir.path());
-    p.home_lock = Some(lock.clone());
+    p.home_lock = lock.clone();
     let mut m = crate::panels::Manager::new(w.clone(), None, p, Arc::new(Instant::now));
     let held = herdr_agent_kit::plugin_env::lock::LockFile::new(&lock)
         .try_exclusive()
@@ -123,7 +123,7 @@ async fn the_open_key_waits_for_the_home_lock_then_says_busy() {
 async fn only_provable_panels_are_closed() {
     let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
     w.s().tab("w1:t2").insert(0, pane("w1:p50"));
-    w.s().argv.insert("w1:p50".into(), "panel".into());
+    w.s().viewer("w1:p50");
     let mut m = manager(&w, dir.path());
     pass(&mut m, &w, &orch(&["w1:p2"]), &[], true).await;
     assert!(
@@ -141,6 +141,10 @@ async fn only_provable_panels_are_closed() {
 async fn remove_all_leaves_agents_and_panes_not_running_the_viewer() {
     let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
     let mut m = manager(&w, dir.path());
+    // plugin panes herdr would close, but one runs an agent and one no longer our viewer
+    w.s()
+        .plugin
+        .extend(["w1:p1".to_string(), "w1:p2".to_string()]);
     assert_eq!(m.remove_all(None, &set(&["w1:p1", "w1:p2"])).await, 0);
     assert!(w.closes().is_empty());
 }
@@ -152,7 +156,7 @@ async fn a_second_panel_is_closed_keeping_the_connected_one() {
     pass(&mut m, &w, &orch(&["w1:p2"]), &[], true).await;
     let first = w.order("w1:t2")[0].clone();
     w.s().tab("w1:t2").push(pane("w1:p70"));
-    w.s().argv.insert("w1:p70".into(), "panel".into());
+    w.s().viewer("w1:p70");
     pass(&mut m, &w, &orch(&["w1:p2"]), &["w1:p70"], false).await;
     assert!(w.calls().contains(&format!("close {first}")));
     assert!(w.order("w1:t2").contains(&"w1:p70".to_string()));
@@ -164,7 +168,7 @@ async fn a_second_look_alike_panel_is_left_but_not_counted() {
     let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
     for p in ["w1:p50", "w1:p51"] {
         w.s().tab("w1:t2").insert(0, pane(p));
-        w.s().argv.insert(p.into(), "panel".into());
+        w.s().viewer(p);
     }
     let mut m = manager(&w, dir.path());
     let sv = m
@@ -290,7 +294,7 @@ async fn an_orphaned_look_alike_is_never_closed() {
     pass(&mut m, &w, &orch(&["w1:p2"]), &[], true).await;
     let ours = w.order("w1:t2")[0].clone();
     w.s().tab("w1:t2").insert(0, pane("w1:p50"));
-    w.s().argv.insert("w1:p50".into(), "panel".into());
+    w.s().viewer("w1:p50");
     w.s().fail_close.insert(ours.clone());
     pass(&mut m, &w, &orch(&[]), &[], false).await; // its orchestrator went
     *now.lock().unwrap() += REMOVE_AFTER;
@@ -351,4 +355,21 @@ async fn a_restarted_core_adopts_a_verified_panel() {
     *w.s().tab("w1:t2") = vec![agent("w1:p2")]; // the operator closed it
     pass(&mut again, &w, &sw, &[], false).await;
     assert_eq!(again.closed(), &set(&["w1:t2"]));
+}
+
+#[tokio::test]
+async fn a_crash_marker_that_cannot_be_removed_still_counts_as_a_crash() {
+    // Python: an OSError other than "not found" on the marker is a crash too
+    let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
+    let mut m = manager(&w, dir.path());
+    let sw = orch(&["w1:p2"]);
+    pass(&mut m, &w, &sw, &[], true).await;
+    let p = w.order("w1:t2")[0].clone();
+    pass(&mut m, &w, &sw, &[&p], false).await;
+    let marker = crate::panel::crash::marker(&dir.path().join("state"), &p);
+    std::fs::create_dir_all(&marker).unwrap(); // a directory: remove_file fails, not NotFound
+    *w.s().tab("w1:t2") = vec![agent("w1:p2")];
+    pass(&mut m, &w, &sw, &[], false).await;
+    assert!(m.closed().is_empty());
+    assert_eq!(m.crashes["w1:t2"], 1);
 }

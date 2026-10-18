@@ -142,3 +142,87 @@ async fn closing_swapping_and_focusing_name_the_panes() {
         Err("not swapped: cross_tab".into())
     );
 }
+
+/// herdr 0.9.3's `session.snapshot` reply as recorded on an isolated server (the kit's
+/// `fixtures/herdr/api.jsonl`, seq 0): three tabs, Claude in `w1:p2` with the focus.
+fn recorded() -> FakeHerdr {
+    let fake = FakeHerdr::start();
+    fake.replay("api.jsonl", 0);
+    fake
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn herdrs_snapshot_reads_as_the_manager_sees_it() {
+    let snap = ops(&recorded())
+        .snapshot()
+        .await
+        .expect("the recorded snapshot");
+    assert_eq!(snap.focused_tab.as_deref(), Some("w1:t2"));
+    assert_eq!(snap.focused_pane.as_deref(), Some("w1:p2"));
+    let p = |id: &str| snap.pane(id).unwrap().clone();
+    assert_eq!(p("w1:p1").tab_id.as_deref(), Some("w1:t1"));
+    assert_eq!(p("w1:p1").workspace_id.as_deref(), Some("w1"));
+    assert_eq!(p("w1:p1").agent, None);
+    assert_eq!(p("w1:p2").agent.as_deref(), Some("claude"));
+    assert!(p("w1:p2").focused && !p("w1:p1").focused && !p("w1:p3").focused);
+    assert_eq!(
+        p("w1:p1").terminal_id.as_deref(),
+        Some("term_65e0a20f144c11")
+    );
+    assert_eq!(
+        p("w1:p3").terminal_id.as_deref(),
+        Some("term_65e0a20fc0d3c3")
+    );
+    assert_eq!(p("w1:p1").label, None);
+    // each tab's remembered focus (layouts[].focused_pane_id)
+    assert!(snap.tab_remembers("w1:p1") && snap.tab_remembers("w1:p2"));
+    assert!(!snap.tab_remembers("w1:p9"));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_new_terminal_in_herdrs_snapshot_starts_the_restore_check() {
+    // end to end through RealOps: a recorded panel whose terminal herdr now reports as
+    // another one is judged (here left alone: herdr shows it without the panel label)
+    use crate::panels::{FocusLog, Manager, Places};
+    use std::sync::Arc;
+    let dir = tempfile::tempdir().unwrap();
+    let state = dir.path().join("panels.json");
+    std::fs::write(
+        &state,
+        r#"{"closed": [], "panes": {"w1:p3": {"tab": "w1:t3", "terminal": "term_before"}}}"#,
+    )
+    .unwrap();
+    let places = Places {
+        state_path: Some(state),
+        marker_dir: None,
+        home_lock: dir.path().join("home.lock"),
+    };
+    let fake = recorded();
+    let log = Arc::new(FocusLog::default());
+    log.set_live(true);
+    let mut m = Manager::new(
+        ops(&fake),
+        Some(log),
+        places,
+        Arc::new(std::time::Instant::now),
+    );
+    let snap = ops(&fake).snapshot().await.unwrap();
+    m.reconcile(
+        snap,
+        &super::world::orch(&[]),
+        None,
+        &Default::default(),
+        false,
+        false,
+    )
+    .await
+    .unwrap();
+    let notes = m.take_notes();
+    assert!(
+        notes
+            .iter()
+            .any(|n| n == "w1:p3 was a panel before herdr restarted; left alone (relabelled)"),
+        "{notes:?}"
+    );
+    assert!(m.record().is_empty());
+}

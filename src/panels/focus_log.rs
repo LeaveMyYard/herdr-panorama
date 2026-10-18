@@ -23,7 +23,8 @@ pub struct FocusLog {
     live: AtomicBool,
 }
 
-/// Python's `deque(maxlen=64)`.
+/// Python's `deque(maxlen=64)`: "ever focused" means within the last 64 events, so a big
+/// start batch (2 events per tab) can push out an older focus on a restored panel (parity).
 const KEEP: usize = 64;
 
 impl FocusLog {
