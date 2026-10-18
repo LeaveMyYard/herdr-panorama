@@ -7,7 +7,8 @@
 //!   agent tree, as the core publishes them to the panels.
 //!
 //! - [`view`]: the views rendered into a cell grid with click targets: the docked panel
-//!   (design 9e) the per-tab panel shows; the graph views join in P4.
+//!   (design 9e) the per-tab panel shows, and the graph: the wide view (design 2a) and the
+//!   narrow layout.
 
 pub mod model;
 pub mod view;

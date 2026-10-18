@@ -1,5 +1,5 @@
-//! The graph's chrome (Python `render.header`, `legend`, `keys`): the empty pages wear it
-//! now, the graph views in P4.
+//! The graph's chrome (Python `render.header`, `legend`, `keys`): the graph views and the
+//! empty pages wear it.
 
 mod header;
 mod keys;
