@@ -7,6 +7,7 @@ use super::model::App;
 use super::panic;
 use crate::panel::actor::End;
 use crate::settings::Settings;
+use crate::snapshot::source;
 use crate::ui::term;
 use herdr_agent_kit::internal::plugin_paths::panorama::state_dir;
 use herdr_agent_kit::plugin_env::PluginEnv;
@@ -21,6 +22,22 @@ pub fn invocation_pane(context_json: Option<&str>) -> Option<String> {
         .and_then(Value::as_str)
         .filter(|p| !p.is_empty())
         .map(str::to_owned)
+}
+
+/// `panorama tui`: this machine's swarm (herdr, the transcripts, the inbox), collected by one
+/// collector on the collect thread. In the home tab the view's own pane is the one the
+/// collector docks by (Python `collector.self_pane`). The exit code.
+pub fn tui() -> i32 {
+    let env = PluginEnv::from_env();
+    let self_pane = home_mode(&env)
+        .then(|| env.pane_id().map(str::to_owned))
+        .flatten();
+    run(move || Box::new(source(PluginEnv::from_env(), self_pane)) as Source)
+}
+
+/// The home tab's view (`PANORAMA_HOME=1`, Python `home.is_home`).
+fn home_mode(env: &PluginEnv) -> bool {
+    env.var("PANORAMA_HOME") == Some("1")
 }
 
 /// Runs the app until it ends, its swarm from `make`'s source; the exit code.
@@ -49,8 +66,7 @@ async fn serve(
     make: impl FnOnce() -> Source + Send + 'static,
 ) -> std::io::Result<End> {
     let focus = invocation_pane(env.plugin_context_json());
-    let home = env.var("PANORAMA_HOME") == Some("1");
-    let app = App::new(focus, home, Instant::now());
+    let app = App::new(focus, home_mode(env), Instant::now());
     let (tx, rx) = mpsc::unbounded_channel();
     let worker = Worker::spawn(make, tx)?;
     let term = term::setup()?;
