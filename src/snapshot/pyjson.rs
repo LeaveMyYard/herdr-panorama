@@ -183,6 +183,58 @@ fn write(j: &J, indent: usize, level: usize, out: &mut String) {
     }
 }
 
+/// `json.dumps(j, ensure_ascii=False)`: one line, items apart by `", "`, keys by `": "`.
+pub fn dumps_line(j: &J) -> String {
+    let mut out = String::new();
+    line(j, &mut out);
+    out
+}
+
+/// `json.dumps(j)`: [`dumps_line`] with every non-ASCII character as `\uXXXX` (a surrogate
+/// pair beyond the BMP), as Python's default `ensure_ascii=True` writes it.
+pub fn dumps_line_ascii(j: &J) -> String {
+    let mut out = String::new();
+    for c in dumps_line(j).chars() {
+        if c.is_ascii() {
+            out.push(c);
+        } else {
+            let mut units = [0u16; 2];
+            for u in c.encode_utf16(&mut units) {
+                out.push_str(&format!("\\u{u:04x}"));
+            }
+        }
+    }
+    out
+}
+
+fn line(j: &J, out: &mut String) {
+    match j {
+        J::Arr(items) => {
+            out.push('[');
+            for (i, item) in items.iter().enumerate() {
+                if i > 0 {
+                    out.push_str(", ");
+                }
+                line(item, out);
+            }
+            out.push(']');
+        }
+        J::Obj(items) => {
+            out.push('{');
+            for (i, (k, v)) in items.iter().enumerate() {
+                if i > 0 {
+                    out.push_str(", ");
+                }
+                string(k, out);
+                out.push_str(": ");
+                line(v, out);
+            }
+            out.push('}');
+        }
+        scalar => write(scalar, 0, 0, out),
+    }
+}
+
 /// `json.dumps(j, indent=indent, ensure_ascii=False)`.
 pub fn dumps(j: &J, indent: usize) -> String {
     let mut out = String::new();

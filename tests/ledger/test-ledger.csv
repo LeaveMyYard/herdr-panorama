@@ -550,20 +550,20 @@ tests/test_hook_interp.py::test_hooks_run_isolated_from_pythonpath[False],tests/
 tests/test_hook_interp.py::test_hooks_run_isolated_from_pythonpath[True],tests/test_hook_interp.py,,retired,Pins python -I isolation from PYTHONPATH; a native Rust hook imports no Python modules.,P0b
 tests/test_hook_interp.py::test_a_relative_cache_entry_is_never_run_even_if_it_exists_in_the_cwd,tests/test_hook_interp.py,,retired,Pins run-hook.sh's Python interpreter resolution and cache; the Rust hook is a native binary with no interpreter to resolve.,P0b
 tests/test_hook_interp.py::test_a_directory_in_the_cache_place_collects_no_temp_files,tests/test_hook_interp.py,,retired,Pins run-hook.sh's Python interpreter resolution and cache; the Rust hook is a native binary with no interpreter to resolve.,P0b
-tests/test_hooks.py::test_start_and_stop_are_recorded,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_bad_input_never_fails_and_writes_nothing,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_session_start_text_only_inside_herdr,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_process_identity,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_cli_entry,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_b1_hooks_never_use_uv_and_always_exit_0,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_b1_concurrent_hooks_from_two_plugin_versions,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_b1_stop_hook_active_is_respected,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_b1_unknown_kind_and_direct_run_exit_0,tests/test_hooks.py,,todo,,P4
+tests/test_hooks.py::test_start_and_stop_are_recorded,tests/test_hooks.py,src/hook/tests.rs::start_and_stop_are_recorded ; src/hook/tests.rs::captured_payloads_are_recorded,mapped,,P4
+tests/test_hooks.py::test_bad_input_never_fails_and_writes_nothing,tests/test_hooks.py,src/hook/tests.rs::bad_input_never_fails_and_writes_nothing,mapped,,P4
+tests/test_hooks.py::test_session_start_text_only_inside_herdr,tests/test_hooks.py,src/hook/tests.rs::session_start_text_only_inside_herdr,mapped,,P4
+tests/test_hooks.py::test_process_identity,tests/test_hooks.py,herdr-agent-kit@v0.1.0:src/agent_procs/system/alive/tests.rs::a_gone_process_is_dead_and_another_namespace_is_unknown ; herdr-agent-kit@v0.1.0:src/agent_procs/system/alive/tests.rs::a_process_we_may_not_signal_is_alive_by_its_start_token,mapped,,P4
+tests/test_hooks.py::test_cli_entry,tests/test_hooks.py,tests/claude_launch.rs::the_built_binary_runs_the_hooks_and_the_server,mapped,,P4
+tests/test_hooks.py::test_b1_hooks_never_use_uv_and_always_exit_0,tests/test_hooks.py,tests/claude_launch.rs::the_built_binary_runs_the_hooks_and_the_server ; src/hook/tests.rs::bad_input_never_fails_and_writes_nothing,mapped,,P4
+tests/test_hooks.py::test_b1_concurrent_hooks_from_two_plugin_versions,tests/test_hooks.py,src/hook/tests.rs::concurrent_hooks_keep_every_line_whole,mapped,,P4
+tests/test_hooks.py::test_b1_stop_hook_active_is_respected,tests/test_hooks.py,src/hook/tests.rs::stop_hook_active_is_respected_and_unknown_kinds_do_nothing,mapped,,P4
+tests/test_hooks.py::test_b1_unknown_kind_and_direct_run_exit_0,tests/test_hooks.py,src/hook/tests.rs::stop_hook_active_is_respected_and_unknown_kinds_do_nothing ; tests/claude_launch.rs::the_built_binary_runs_the_hooks_and_the_server,mapped,,P4
 tests/test_hooks.py::test_m3_subagent_hooks_skip_internal_agents,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_m3_old_hook_files_are_pruned,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_l4_session_text_once_per_session,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_m2_claude_process_found_for_native_and_node_installs,tests/test_hooks.py,,todo,,P4
-tests/test_hooks.py::test_m2_another_pid_namespace_is_unknown,tests/test_hooks.py,,todo,,P4
+tests/test_hooks.py::test_m3_old_hook_files_are_pruned,tests/test_hooks.py,src/hook/tests.rs::old_hook_files_are_pruned,mapped,,P4
+tests/test_hooks.py::test_l4_session_text_once_per_session,tests/test_hooks.py,src/hook/tests.rs::l4_session_text_once_per_session,mapped,,P4
+tests/test_hooks.py::test_m2_claude_process_found_for_native_and_node_installs,tests/test_hooks.py,herdr-agent-kit@v0.1.0:src/agent_procs/claude/tests.rs::two_claudes_are_nested_and_the_nearest_owns ; herdr-agent-kit@v0.1.0:src/agent_procs/claude/tests.rs::a_claude_without_a_start_token_is_not_recorded,mapped,,P4
+tests/test_hooks.py::test_m2_another_pid_namespace_is_unknown,tests/test_hooks.py,herdr-agent-kit@v0.1.0:src/agent_procs/system/alive/tests.rs::a_gone_process_is_dead_and_another_namespace_is_unknown,mapped,,P4
 tests/test_inbox.py::test_absent_inbox_is_none,tests/test_inbox.py,herdr-agent-kit@v0.1.0:tests/inbox_contract_goldens.rs::no_inbox,mapped,,P4
 tests/test_inbox.py::test_open_questions_only,tests/test_inbox.py,herdr-agent-kit@v0.1.0:tests/inbox_contract_goldens.rs::current_and_0_1_databases,mapped,,P4
 tests/test_inbox.py::test_opened_read_only,tests/test_inbox.py,herdr-agent-kit@v0.1.0:tests/inbox_contract_goldens.rs::current_and_0_1_databases,mapped,,P4
@@ -766,8 +766,8 @@ tests/test_panels.py::test_without_a_live_focus_stream_nothing_is_closed[none],t
 tests/test_panels.py::test_without_a_live_focus_stream_nothing_is_closed[not-live],tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_a_click_during_the_looks_stops_the_close,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_a_focus_stream_that_connects_within_the_passes_lets_the_core_decide,tests/test_panels.py,,todo,,P4
-tests/test_plugin_copy.py::test_hooks_run_from_the_copy,tests/test_plugin_copy.py,,todo,,P4
-tests/test_plugin_copy.py::test_mcp_server_runs_from_the_copy,tests/test_plugin_copy.py,,todo,,P4
+tests/test_plugin_copy.py::test_hooks_run_from_the_copy,tests/test_plugin_copy.py,tests/claude_launch.rs::the_built_binary_runs_the_hooks_and_the_server ; tests/claude_launch.rs::without_a_binary_the_python_hooks_and_server_run,mapped,,P4
+tests/test_plugin_copy.py::test_mcp_server_runs_from_the_copy,tests/test_plugin_copy.py,tests/claude_launch.rs::the_built_binary_runs_the_hooks_and_the_server ; tests/claude_launch.rs::without_a_binary_the_python_hooks_and_server_run,mapped,,P4
 tests/test_render.py::test_wide_layout_has_the_three_columns_and_links,tests/test_render.py,,todo,,P4
 tests/test_render.py::test_narrow_layout_is_an_indented_list_with_only_the_selected_orchestrator_open,tests/test_render.py,crates/panorama-core/tests/narrow_layout.rs::the_narrow_layout_is_an_indented_list_with_only_the_selected_orchestrator_open,mapped,,P3
 tests/test_render.py::test_question_and_blocked_detail_lines,tests/test_render.py,,todo,,P4
@@ -783,13 +783,13 @@ tests/test_render.py::test_quiet_orchestrators_do_not_animate,tests/test_render.
 tests/test_render.py::test_r4_thread_and_agent_cards_have_animated_edges,tests/test_render.py,,todo,,P4
 tests/test_render.py::test_r4_sweeps_are_all_running_colour_and_offset_per_card,tests/test_render.py,,todo,,P4
 tests/test_render.py::test_r4_links_join_animated_edges,tests/test_render.py,,todo,,P4
-tests/test_report_thread.py::test_report_merges_phases_and_keeps_times,tests/test_report_thread.py,,todo,,P4
-tests/test_report_thread.py::test_tool_uses_the_session_from_the_environment,tests/test_report_thread.py,,todo,,P4
-tests/test_report_thread.py::test_tool_prefers_the_panes_current_session,tests/test_report_thread.py,,todo,,P4
-tests/test_report_thread.py::test_mcp_server_over_stdio,tests/test_report_thread.py,,todo,,P4
-tests/test_report_thread.py::test_m1_limits_and_no_wildcard_claims,tests/test_report_thread.py,,todo,,P4
-tests/test_report_thread.py::test_m1_the_events_file_is_compacted,tests/test_report_thread.py,,todo,,P4
-tests/test_report_thread.py::test_m1_short_patterns_never_match_on_read,tests/test_report_thread.py,,todo,,P4
+tests/test_report_thread.py::test_report_merges_phases_and_keeps_times,tests/test_report_thread.py,src/report/merge/tests.rs::report_merges_phases_and_keeps_times,mapped,,P4
+tests/test_report_thread.py::test_tool_uses_the_session_from_the_environment,tests/test_report_thread.py,src/mcp/session/tests.rs::tool_uses_the_session_from_the_environment ; src/mcp/call/tests.rs::tool_uses_the_session_it_is_given,mapped,,P4
+tests/test_report_thread.py::test_tool_prefers_the_panes_current_session,tests/test_report_thread.py,src/mcp/session/tests.rs::tool_prefers_the_panes_current_session,mapped,,P4
+tests/test_report_thread.py::test_mcp_server_over_stdio,tests/test_report_thread.py,tests/mcp_goldens.rs::report_thread_answers_and_records_as_the_python_server_does ; tests/mcp_goldens.rs::the_legacy_handshake_lists_the_same_tool_and_refuses_the_same_way ; tests/mcp_goldens.rs::claude_code_s_2026_requests_get_the_python_server_s_answers,mapped,,P4
+tests/test_report_thread.py::test_m1_limits_and_no_wildcard_claims,tests/test_report_thread.py,src/mcp/call/tests.rs::m1_limits_and_no_wildcard_claims,mapped,,P4
+tests/test_report_thread.py::test_m1_the_events_file_is_compacted,tests/test_report_thread.py,src/mcp/call/tests.rs::m1_the_events_file_is_compacted ; src/report/emit/tests.rs::the_file_is_compacted_past_its_limit_and_keeps_every_thread,mapped,,P4
+tests/test_report_thread.py::test_m1_short_patterns_never_match_on_read,tests/test_report_thread.py,src/collect/events/tests.rs::patterns_claim_by_id_description_or_a_long_enough_prefix,mapped,,P4
 tests/test_scan_session.py::test_notice_from_the_queue_carrier_ends_the_agent,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_scan_session.py::test_killed_is_terminal,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_scan_session.py::test_latest_notice_wins_across_resumes,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules ; herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/status.rs::a_resume_is_counted_and_restarts_the_clock,mapped,,P1

@@ -6,8 +6,11 @@
 
 pub mod collect;
 pub mod contract;
+pub mod hook;
 pub mod machines;
+pub mod mcp;
 pub mod panel;
 pub mod proto;
+pub mod report;
 pub mod settings;
 pub mod snapshot;

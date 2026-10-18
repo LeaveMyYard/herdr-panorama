@@ -5,7 +5,14 @@
 fn main() {
     match std::env::args().nth(1).as_deref() {
         Some("panel") => std::process::exit(panorama::panel::run()),
-        Some("contract") => println!("{}", panorama::contract::PANEL),
+        Some("contract") => match std::env::args().nth(2).as_deref() {
+            Some("claude") => println!("{}", panorama::contract::CLAUDE),
+            _ => println!("{}", panorama::contract::PANEL),
+        },
+        Some("hook") => std::process::exit(panorama::hook::main(
+            std::env::args().nth(2).as_deref().unwrap_or(""),
+        )),
+        Some("mcp") => std::process::exit(panorama::mcp::run()),
         Some("snapshot") => {
             let args: Vec<String> = std::env::args().skip(2).collect();
             std::process::exit(panorama::snapshot::run(&args))

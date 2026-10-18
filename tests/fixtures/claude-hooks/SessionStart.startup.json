@@ -1,0 +1,10 @@
+{
+ "source": "herdr-agent-kit fixtures/claude/hooks/SessionStart.startup.json (Claude Code 2.1.302): its stdin, session and agent ids and home paths anonymised",
+ "stdin": {
+  "session_id": "00000001-0000-4000-8000-000000000001",
+  "transcript_path": "/home/u/.claude/projects/-home-u-work-claude-cwd/00000001-0000-4000-8000-000000000001.jsonl",
+  "cwd": "/home/u/work/claude/cwd",
+  "hook_event_name": "SessionStart",
+  "source": "startup"
+ }
+}

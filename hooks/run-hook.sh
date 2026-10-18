@@ -19,6 +19,29 @@
 hook=$1
 shift
 
+# The Rust hooks first (docs/plans/rust-rewrite.md §5.4): when this plugin root has the binary
+# built (target/release/panorama: a linked checkout's `cargo build --release`, or a copy of one)
+# and it speaks this checkout's Claude-side contract (`panorama contract claude`), it runs the
+# hook (`panorama hook <kind>`, same records, same output, exit 0). Anything else (no binary,
+# a stale one, one that fails or hangs on the probe: 2 s, then KILL) falls through to Python.
+CLAUDE_CONTRACT=1
+case $0 in
+*/*) here=${0%/*} ;;
+*) here=. ;;
+esac
+root=$(cd "$here/.." 2>/dev/null && pwd)
+bin=$root/target/release/panorama
+if [ -n "$root" ] && [ -f "$bin" ] && [ -x "$bin" ]; then
+	if command -v timeout >/dev/null 2>&1; then
+		got=$(timeout -k 1 2 "$bin" contract claude </dev/null 2>/dev/null)
+	else
+		got=$("$bin" contract claude </dev/null 2>/dev/null)
+	fi
+	if [ "$got" = "$CLAUDE_CONTRACT" ]; then
+		exec "$bin" hook "$@"
+	fi
+fi
+
 usable() {
 	case $1 in
 	/*) [ -f "$1" ] && [ -x "$1" ] ;;

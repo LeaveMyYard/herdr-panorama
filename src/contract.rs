@@ -11,5 +11,13 @@
 /// The panel contract this binary implements.
 pub const PANEL: u32 = 1;
 
+/// The Claude Code side's contract (`panorama contract claude`): what `hooks/run-hook.sh` and
+/// `scripts/mcp` check before they run this binary instead of the Python hooks and MCP server.
+/// It covers the `hook <kind>` and `mcp` subcommands, the hook payloads read and the output and
+/// exit status (always 0), the hook record format (v1), the MCP tool's name, text and schemas,
+/// and the events format (v1). Raise it with `CLAUDE_CONTRACT=` in both scripts when any of
+/// these changes incompatibly.
+pub const CLAUDE: u32 = 1;
+
 #[cfg(test)]
 mod tests;

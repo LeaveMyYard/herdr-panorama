@@ -1,0 +1,5 @@
+{"dir": "client->server", "msg": {"jsonrpc": "2.0", "id": 0, "method": "initialize", "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "capture", "version": "0"}}}}
+{"dir": "server->client", "msg": {"jsonrpc": "2.0", "id": 0, "result": {"capabilities": {"prompts": {"listChanged": false}, "resources": {"listChanged": false, "subscribe": false}, "tools": {"listChanged": false}}, "instructions": "Report multi-step work to the herdr swarm view with report_thread.", "protocolVersion": "2025-06-18", "serverInfo": {"name": "herdr-panorama", "version": ""}}}}
+{"dir": "client->server", "msg": {"jsonrpc": "2.0", "method": "notifications/initialized"}}
+{"dir": "client->server", "msg": {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "report_thread", "arguments": {"thread_id": "t"}}}}
+{"dir": "server->client", "msg": {"jsonrpc": "2.0", "id": 1, "result": {"content": [{"text": "{\n  \"status\": \"unavailable\",\n  \"message\": \"No Claude session id; nothing recorded.\"\n}", "type": "text"}], "isError": false, "structuredContent": {"status": "unavailable", "message": "No Claude session id; nothing recorded."}}}}
