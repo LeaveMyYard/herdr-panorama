@@ -29,8 +29,10 @@ pub fn page(swarm: &Swarm, view: &View, w: i32, h: i32, stale: Option<&str>) -> 
     s.fill_bg(0, 0, w, h, BG);
     chrome::header(&mut s, swarm, view, stale);
     list(&mut s, swarm, view);
-    chrome::legend(&mut s, h - 3);
-    chrome::keys(&mut s, view.zoom_hint, swarm.inbox_ok);
+    // the narrow layout's chrome at any width (Python draws the wide graph from 120 columns,
+    // P4; until then a wider pane shows this page whole, not wide chrome around it)
+    chrome::legend(&mut s, h - 3, false);
+    chrome::keys(&mut s, false, view.zoom_hint, swarm.inbox_ok);
     s
 }
 
@@ -92,3 +94,6 @@ fn list(s: &mut Screen, swarm: &Swarm, view: &View) {
         offset,
     });
 }
+
+#[cfg(test)]
+mod tests;
