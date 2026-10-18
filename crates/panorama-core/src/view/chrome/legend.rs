@@ -3,7 +3,8 @@
 
 use crate::model::Status;
 use crate::view::empty::WIDE;
-use crate::view::palette::{FAINT, status, tile};
+use crate::view::palette::{FAINT, status};
+use crate::view::pod::pod;
 use crate::view::screen::Screen;
 use crate::view::seg::Seg;
 
@@ -44,17 +45,6 @@ const NARROW_DROP: [Status; 4] = [
     Status::Inferred,
 ];
 
-/// A status's tile, ` g ` (Python `pod`, unselected).
-fn pod(s: &mut Screen, x: i32, y: i32, st: &Status, g: &str) {
-    let (b, f) = tile(st);
-    let text = if g.chars().count() == 1 {
-        format!(" {g} ")
-    } else {
-        format!(" {g}").chars().take(3).collect()
-    };
-    s.segs(x, y, &[Seg::new(text, f).bold().on(b)]);
-}
-
 /// The legend at row `y`: tiles on a wide screen, coloured glyphs and short words on a
 /// narrow one.
 pub fn legend(s: &mut Screen, y: i32) {
@@ -78,7 +68,7 @@ pub fn legend(s: &mut Screen, y: i32) {
     let mut x = 1;
     for (st, g, lab) in items {
         if s.w() >= WIDE {
-            pod(s, x, y, st, g);
+            pod(s, x, y, st, g, false);
             x = s.segs(x + 4, y, &[Seg::new(*lab, FAINT)]) + 2;
         } else {
             let segs = [

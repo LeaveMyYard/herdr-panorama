@@ -6,6 +6,7 @@ use super::state::{DockState, thread_glyph};
 use super::tiles::{agent_glyphs, glyph_colour, tile};
 use super::tree_rows::{SpawnRow, spawn_rows};
 use crate::model::{Agent, BgTask, Orchestrator, Status, Thread, TreeKids};
+use crate::view::agent_text::{role_label, short_id};
 use crate::view::anim::{clock, glyph};
 use crate::view::palette::{DIM, FAINT, FG, LINE};
 use crate::view::screen::Screen;
@@ -48,23 +49,6 @@ pub fn items_of<'a>(o: &'a Orchestrator, d: &DockState<'a>) -> Vec<Item<'a>> {
         out.push(Item::Done);
     }
     out
-}
-
-/// Python `role_label`: the role, else the agent type, else "agent".
-fn role_label(a: &Agent) -> &str {
-    [a.role.as_str(), a.agent_type.as_deref().unwrap_or("")]
-        .into_iter()
-        .find(|s| !s.is_empty())
-        .unwrap_or("agent")
-}
-
-/// Python `short_id`: "main" for the session's own work, else the first 7 characters.
-fn short_id(a: &Agent) -> String {
-    if a.id.starts_with("main:") {
-        "main".into()
-    } else {
-        a.id.chars().take(7).collect()
-    }
 }
 
 /// What every row of one entry's list shares.

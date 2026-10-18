@@ -17,12 +17,36 @@ pub enum Target {
     AnswerOrch(String),
     /// A filter in the graph header (`filter`).
     Filter(Filter),
+    /// An orchestrator's "n complete" card (`done`), by its pane id.
+    Done(String),
+    /// A thread's card (`thread`).
+    Thread {
+        pane: String,
+        thread: String,
+    },
+    /// An agent's card or pod (`agent`).
+    Agent(AgentRef),
+    /// An agent's `g open pane` (`goto`), `t transcript` (`transcript`), `a answer` (`answer`).
+    Goto(AgentRef),
+    Transcript(AgentRef),
+    Answer(AgentRef),
+}
+
+/// An agent where the graph shows it: its orchestrator's pane, its thread, its id.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct AgentRef {
+    pub pane: String,
+    pub thread: String,
+    pub agent: String,
 }
 
 impl Target {
     /// A whole card (Python `CARDS`): the hover highlight follows these.
     pub fn is_card(&self) -> bool {
-        matches!(self, Self::Orch(_) | Self::NewAgent)
+        matches!(
+            self,
+            Self::Orch(_) | Self::NewAgent | Self::Done(_) | Self::Thread { .. } | Self::Agent(_)
+        )
     }
 }
 

@@ -33,3 +33,12 @@ fn clock_times() {
     assert_eq!(hhmm(None, 0), "");
     assert_eq!(hhmm(Some(0.0), 0), "");
 }
+
+#[test]
+fn wrap_breaks_at_spaces_like_python() {
+    assert_eq!(wrap("one two three four", 9), ["one two", "three", "four"]);
+    assert_eq!(wrap("averyveryverylongword x", 6), ["avery…", "x"]);
+    // single-space splitting: a double space is an empty word
+    assert_eq!(wrap("a  b", 3), ["a ", "b"]);
+    assert!(wrap("", 5).is_empty());
+}

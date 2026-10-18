@@ -27,6 +27,27 @@ pub fn fit(s: &str, n: i32) -> String {
     }
 }
 
+/// `text` in lines of at most `w` cells, broken at spaces (each line then cut to `w`), as
+/// Python's `render.wrap` (which splits on single spaces, so runs of spaces keep empty words).
+pub fn wrap(text: &str, w: i32) -> Vec<String> {
+    let mut out = vec![];
+    let mut cur = String::new();
+    for wd in text.split(' ') {
+        if cur.is_empty() {
+            cur = wd.to_owned();
+        } else if (chars(&cur) + 1 + chars(wd)) as i64 <= i64::from(w) {
+            cur.push(' ');
+            cur.push_str(wd);
+        } else {
+            out.push(std::mem::replace(&mut cur, wd.to_owned()));
+        }
+    }
+    if !cur.is_empty() {
+        out.push(cur);
+    }
+    out.iter().map(|l| trunc(l, w)).collect()
+}
+
 /// A duration: `42m`, `1h05m` (`None` or negative: `0m`).
 pub fn dur(seconds: Option<f64>) -> String {
     let m = (seconds.unwrap_or(0.0).max(0.0) / 60.0).floor() as i64;
