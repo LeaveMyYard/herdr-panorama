@@ -15,6 +15,7 @@ fn colour_values_read_as_theme_py_reads_them() {
     }
     for bad in [
         json!("rgb(256, 0, 0)"),
+        json!("rgb(0001,2,3)"),
         json!("rgb(1,2)"),
         json!("#12345"),
         json!("orange"),

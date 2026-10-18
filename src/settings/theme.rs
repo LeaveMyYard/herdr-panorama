@@ -37,6 +37,9 @@ pub fn tokens(cfg: &Map<String, Value>) -> Option<Tokens> {
         .and_then(Value::as_object)
         .unwrap_or(&empty);
     let auto = th.get("auto_switch") == Some(&Value::Bool(true));
+    // Python's `or`: a missing, null, false or empty name falls through. Python treats a 0,
+    // [] or {} name as falsy too; here those read as a name, which is unknown, so the default
+    // theme: only an absurd config tells the two apart.
     let truthy =
         |v: &&Value| !matches!(v, Value::Null | Value::Bool(false)) && v.as_str() != Some("");
     let pick = if auto {
