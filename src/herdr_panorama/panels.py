@@ -530,7 +530,7 @@ class Manager:
         return "failed" if err else "panel"
 
     def remove_all(self, snap: dict | None = None) -> int:
-        """Per-tab off (the cockpit off or ``"moving"``), or the home panorama quits: close every
+        """The cockpit off, or the home panorama quits: close every
         panel provably ours. How many were closed."""
         snap = snap if snap is not None else herdr.snapshot() or {}
         n = 0
