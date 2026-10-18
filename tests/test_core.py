@@ -498,6 +498,12 @@ def test_the_rust_panel_is_our_panel_too(monkeypatch):
     assert herdr.runs_panorama("w1:p9", "panel", pid=21) is True
     assert herdr.runs_panorama("w1:p9", "panel") is True
     assert herdr.runs_panorama("w1:p9", "tui") is False
+    # #78 L-1: what recognition must reject (a word that only contains or starts with panorama)
+    for argv in (["/x/panorama-foo", "panel"], ["/home/u/panorama/bin/vim", "panel"],
+                 ["vim", "/home/u/notes/panorama", "panel.md"], ["panorama-cli", "panel"],
+                 ["sh", "-c", herdr.PANEL_COMMAND[-1]]):
+        procs[0]["argv"] = argv
+        assert herdr.runs_panorama("w1:p9", "panel") is False, argv
 
 
 def test_the_tmp_fallbacks_parent_must_be_safe_too(paths, monkeypatch):

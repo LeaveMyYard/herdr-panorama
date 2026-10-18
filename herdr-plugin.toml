@@ -32,15 +32,14 @@ height = 26
 command = ["sh", "-c", "exec uv run --quiet --frozen --no-dev --project \"${HERDR_PLUGIN_ROOT:-.}\" panorama new-agent"]
 
 # A per-tab panel (cockpit_panels = "per-tab"): this tab's docked panel, drawn from the core's
-# state (the home panorama). Opened by the core as a split beside an orchestrator's pane. The Rust
-# viewer when it is built (`cargo build --release` in a linked checkout: target/release/panorama,
-# docs/plans/rust-rewrite.md §5.4), else from the venv the build made (no uv parent per panel);
-# uv run only without either. Rolling back: remove target/release/panorama, or this branch.
+# state (the home panorama). Opened by the core as a split beside an orchestrator's pane.
+# scripts/panel picks the viewer: the Rust one when it is built and speaks this checkout's panel
+# contract (`panorama contract`), else the venv's (no uv parent per panel), else uv run.
 [[panes]]
 id = "panel"
 title = "Panorama panel"
 placement = "split"
-command = ["sh", "-c", "R=\"${HERDR_PLUGIN_ROOT:-.}\"; [ -x \"$R/target/release/panorama\" ] && exec \"$R/target/release/panorama\" panel; [ -x \"$R/.venv/bin/panorama\" ] && exec \"$R/.venv/bin/panorama\" panel; exec uv run --quiet --frozen --no-dev --project \"$R\" panorama panel"]
+command = ["sh", "-c", "exec sh \"${HERDR_PLUGIN_ROOT:-.}/scripts/panel\""]
 
 # Bind a key to this (suggested: prefix+space). With the home tab on (default), it focuses
 # the "◆ panorama" tab, opening it if missing; with home_tab = false it opens the popup.
