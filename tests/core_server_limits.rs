@@ -152,7 +152,6 @@ async fn a_second_incompatible_hello_is_answered_then_closed() {
 
 #[tokio::test(flavor = "current_thread")]
 async fn a_stuck_writer_lets_go_of_the_socket_when_the_core_stops() {
-    use rustix::event::{PollFd, PollFlags, Timespec, poll};
     let dir = tempfile::tempdir().unwrap();
     let (c, _rx) = up(cfg(dir.path()), Panes::default()).await; // the send timeout: 10 s
     let (sock, _) = paths(dir.path());
@@ -166,18 +165,37 @@ async fn a_stuck_writer_lets_go_of_the_socket_when_the_core_stops() {
     }
     c.stop();
     tokio::time::sleep(Duration::from_millis(200)).await;
-    let mut fds = [PollFd::new(&stuck, PollFlags::RDHUP)];
-    let ready = poll(
-        &mut fds,
-        Some(&Timespec {
-            tv_sec: 1,
-            tv_nsec: 0,
-        }),
+    peer_closed_unread(&stuck);
+    // and, on every system: what was sent is there to read, then the end
+    let mut rest = Vec::new();
+    let read = tokio::time::timeout(
+        Duration::from_secs(5),
+        tokio::io::AsyncReadExt::read_to_end(&mut stuck, &mut rest),
     )
-    .unwrap();
-    assert_eq!(ready, 1, "the core still holds the socket");
+    .await;
+    assert!(matches!(read, Ok(Ok(_))), "no end of the stream: {read:?}");
+}
+
+/// Linux: the core closed the socket while its unread data still waits (`POLLRDHUP` says so
+/// without reading). Other systems have no such flag; the read to the end above stands in.
+#[cfg(target_os = "linux")]
+fn peer_closed_unread(s: &tokio::net::UnixStream) {
+    use rustix::event::{PollFd, PollFlags, Timespec, poll};
+    let mut fds = [PollFd::new(s, PollFlags::RDHUP)];
+    let second = Timespec {
+        tv_sec: 1,
+        tv_nsec: 0,
+    };
+    assert_eq!(
+        poll(&mut fds, Some(&second)).unwrap(),
+        1,
+        "the core still holds the socket"
+    );
     assert!(fds[0].revents().contains(PollFlags::RDHUP));
 }
+
+#[cfg(not(target_os = "linux"))]
+fn peer_closed_unread(_: &tokio::net::UnixStream) {}
 
 #[tokio::test(flavor = "current_thread")]
 async fn a_long_seen_line_is_cut_and_never_stalls_the_other_viewers() {
