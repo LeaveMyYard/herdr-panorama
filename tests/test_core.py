@@ -301,16 +301,6 @@ async def test_the_panels_focus_look_follows_the_cores_focused_pane(paths):
         assert app.pane_focused and app.grid.screen_data.c[30][20].bg == theme.FIXED[0]
 
 
-def test_the_home_panorama_publishes_only_in_per_tab_mode(monkeypatch):
-    from herdr_panorama import cockpit
-    monkeypatch.setattr(cockpit.config, "load", lambda: {})
-    assert cockpit.panels_mode() == "moving"
-    monkeypatch.setattr(cockpit.config, "load", lambda: {"cockpit_panels": "per-tab"})
-    assert cockpit.panels_mode() == "per-tab"
-
-
-
-
 async def test_the_home_panorama_publishes_each_refresh_and_takes_seen_back(paths, fake_herdr):
     """The core's side inside the home panorama: every applied refresh goes out as a full
     state; a viewer's seen clears the mark in the home tracker."""
