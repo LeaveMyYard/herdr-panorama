@@ -2,7 +2,12 @@
 //! panel reads it (`PanelApp._got_state`): each field on its own, a field of the wrong shape
 //! taken as absent. Only the swarm is strict: a swarm that does not read (see
 //! `panorama_core::model::swarm`) rejects the state, and the panel keeps its last picture.
+//!
+//! Every string the core sent (and every unseen mark's agent id) goes through the kit's
+//! `clean` here, once: the views draw text as given, so no control character from a
+//! transcript reaches the terminal (Python cleans at each draw; the text shown is the same).
 
+use herdr_agent_kit::herdr_api::{MAX_ARG, clean};
 use panorama_core::model::Swarm;
 use panorama_core::view::{Filter, Marks, Unseen};
 use serde_json::{Map, Value};
@@ -24,6 +29,16 @@ pub struct State {
     pub filter: Option<Filter>,
 }
 
+/// `v` with every string in it cleaned (object keys are field names, left as they are).
+fn cleaned(v: &Value) -> Value {
+    match v {
+        Value::String(s) => Value::String(clean(s, MAX_ARG)),
+        Value::Array(a) => Value::Array(a.iter().map(cleaned).collect()),
+        Value::Object(o) => Value::Object(o.iter().map(|(k, v)| (k.clone(), cleaned(v))).collect()),
+        other => other.clone(),
+    }
+}
+
 fn strings(v: &Value) -> impl Iterator<Item = String> + '_ {
     v.as_array()
         .into_iter()
@@ -36,7 +51,7 @@ impl State {
     pub fn read(st: &Map<String, Value>) -> Result<Self, serde_json::Error> {
         let swarm = match st.get("swarm") {
             Some(Value::Null) | None => Swarm::default(),
-            Some(v) => serde_json::from_value(v.clone())?,
+            Some(v) => serde_json::from_value(cleaned(v))?,
         };
         let unseen = st
             .get("unseen")
@@ -45,7 +60,7 @@ impl State {
             .flatten()
             .filter_map(|(id, ev)| {
                 Some((
-                    id.clone(),
+                    clean(id, MAX_ARG),
                     serde_json::from_value::<Unseen>(ev.clone()).ok()?,
                 ))
             })

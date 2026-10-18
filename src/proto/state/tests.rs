@@ -57,3 +57,18 @@ fn a_swarm_that_does_not_read_rejects_the_state() {
     swarm["orchestrators"][0]["threads"][0]["agents"][0]["id"] = Value::Null;
     assert!(read(json!({"swarm": swarm})).is_err());
 }
+
+#[test]
+fn every_string_is_cleaned_once_as_it_is_read() {
+    let mut swarm = captured_swarm();
+    swarm["orchestrators"][0]["tab_label"] = json!("evil\u{1b}]0;title\u{7}\ttab");
+    swarm["orchestrators"][0]["threads"][0]["agents"][0]["id"] = json!("a\u{1b}1");
+    swarm["errors"] = json!(["bad\nline"]);
+    let st = read(json!({"swarm": swarm, "unseen": {"a\u{1b}1": "fail"}})).unwrap();
+    let o = &st.swarm.orchestrators[0];
+    assert_eq!(o.tab_label, "evil]0;title tab");
+    assert_eq!(o.threads[0].agents[0].id, "a1");
+    assert_eq!(st.swarm.errors, ["bad line"]);
+    // the marks are cleaned the same way, so they still name the agent
+    assert!(st.unseen.contains_key("a1"));
+}
