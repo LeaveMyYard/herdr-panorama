@@ -18,7 +18,7 @@ import time
 import traceback
 
 from . import herdr, protocol, render, theme
-from .tui import SwarmApp
+from .tui import ARM_SECONDS, SwarmApp
 
 log = logging.getLogger("herdr_panorama.panel")
 
@@ -278,6 +278,7 @@ class PanelApp(SwarmApp):
         active = self._herdr_shows(swarm, vis, focused)
         if not self.loaded:
             self.focus_pane = active or mine
+        before = self.selected_card() if self.loaded else None
         self.apply(swarm, marks=unseen)
         self._core_filter(state.get("filter"))
         if active and active != self._active:
@@ -295,6 +296,10 @@ class PanelApp(SwarmApp):
                 self.repaint()
         elif self._back_to_shown():  # a refresh made the filter show it again (review of #54)
             self.repaint()
+        if before is not None and self.selected_card() != before:
+            # what a key acts on changed with this state, the cursor moved here included (apply
+            # only compares its own part): the keys wait ARM_SECONDS, as for any refresh (#75)
+            self.armed_at = max(self.armed_at, self.monotonic() + ARM_SECONDS)
         if isinstance(focused, str):
             self.herdr_focus(focused)
             if focused == self._awaiting:

@@ -7,12 +7,8 @@ use herdr_agent_kit::herdr_api::{Herdr, PaneId, clean};
 /// The notice's title.
 pub const TITLE: &str = "another machine";
 
-/// A namespaced pane id back to the id on its own server (Python `machines.local_id`).
-pub fn local_id(pane: &str, machine_id: &str) -> String {
-    pane.strip_prefix(&format!("{machine_id}:"))
-        .unwrap_or(pane)
-        .to_owned()
-}
+/// A namespaced pane id back to the id on its own server.
+pub use crate::machines::local_id;
 
 /// Focuses `pane` on machine `machine_id` (labelled `machine`); the notice's text.
 pub async fn goto_remote(

@@ -53,6 +53,24 @@ async def test_every_panel_selects_the_orchestrator_herdr_shows(paths):
             assert a.view.orch == b.view.orch == "w1:p4"
 
 
+async def test_a_cursor_moved_to_the_shown_orchestrator_re_arms_the_keys(paths):
+    """#75: a state that moves the cursor to the orchestrator herdr now shows changes what Enter,
+    g and a act on: the keys wait ARM_SECONDS, as for a refresh that changed the selection; a
+    state that leaves the selection as it was does not."""
+    a = panel(paths, "w1:t2", "w1:p92")
+    async with a.run_test(size=(46, 45)) as pilot:
+        a._got_state(state(visible=["w1:t2"]))
+        await pilot.pause()
+        a.monotonic = lambda: 1000.0  # the arming clock held (#76)
+        a.armed_at = 0.0
+        a._got_state(state(visible=["w1:t2"]))  # the same tab again: nothing moved
+        assert a.armed()
+        a._got_state(state(visible=["w1:t4"]))  # herdr shows tab 4: the cursor jumps there
+        assert a.view.orch == "w1:p4" and not a.armed()
+        a.monotonic = lambda: 1000.0 + 0.4
+        assert a.armed()
+
+
 async def test_an_arrow_move_waiting_for_its_switch_is_kept(paths):
     """↑/↓ move from the active row and switch a moment later: a state that still shows the
     same tab (a refresh, a ping) does not pull the cursor back meanwhile."""

@@ -190,3 +190,16 @@ fn the_first_paint_holds_every_cell_for_a_second_and_the_keys_for_400_ms() {
     );
     assert!(!p.on_key(Key::Goto, t0 + ARM).is_empty());
 }
+
+#[test]
+fn a_cursor_moved_to_the_shown_orchestrator_re_arms_the_keys() {
+    // #75 (Python test_panel_sync.py::test_a_cursor_moved_to_the_shown_orchestrator_re_arms_the_keys)
+    let (mut p, t) = panel("w1:t2", "w1:t2");
+    let st = |vis: &str| state(json!({"visible_tabs": [vis], "focused_pane": "w1:p90"}));
+    p.on_state(st("w1:t2"), t); // the same tab again: nothing moved
+    assert!(!p.on_key(Key::Goto, t).is_empty());
+    p.on_state(st("w1:t4"), t); // herdr shows tab 4: the cursor jumps there
+    assert_eq!(p.view.orch.as_deref(), Some("w1:p4"));
+    assert!(p.on_key(Key::Goto, t + ARM - TICK).is_empty());
+    assert!(!p.on_key(Key::Goto, t + ARM).is_empty());
+}

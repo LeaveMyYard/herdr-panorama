@@ -245,6 +245,9 @@ class SwarmApp(App):
         self.view = render.View()
         self.focus_pane = focus_pane or herdr.invocation_pane()
         self.armed_at = 0.0
+        # the arming clock (keys, click cells, the wheel): monotonic time, held by tests so a
+        # slow runner cannot let an arming window pass under them (#76)
+        self.monotonic = time.monotonic
         self.after_exit = None  # callable run by the CLI once the popup has closed
         self.loaded = False
         self._collect_lock = threading.Lock()  # single flight: one collect at a time owns the tail state
@@ -347,12 +350,12 @@ class SwarmApp(App):
         if not self.loaded:
             self.loaded = True
             self.initial_selection()
-            self.armed_at = time.monotonic() + ARM_SECONDS
+            self.armed_at = self.monotonic() + ARM_SECONDS
         else:
             self.resolve()
             self._update_dock()  # before the comparison: switching panels changes what keys do
             if self.selected_card() != before:
-                self.armed_at = time.monotonic() + ARM_SECONDS
+                self.armed_at = self.monotonic() + ARM_SECONDS
         self.repaint()
         self.publish()
         self.panels_pass()
@@ -361,7 +364,7 @@ class SwarmApp(App):
         # CLICK_ARM_SECONDS: a click aimed before the refresh must not land on something else.
         # Only refreshes come here; frames and hover repaint without touching it, and the wheel
         # stamps its own shorter window (``_stamp_scrolled``).
-        now = time.monotonic()
+        now = self.monotonic()
         self.arrived = {c: t for c, t in self.arrived.items() if now - t < CLICK_ARM_SECONDS}
         new_cells = self._cells()
         for cell, hit in new_cells.items():
@@ -788,7 +791,7 @@ class SwarmApp(App):
             self.repaint()
 
     def armed(self) -> bool:
-        return time.monotonic() >= self.armed_at
+        return self.monotonic() >= self.armed_at
 
     def action_enter(self) -> None:
         if not self.armed():
@@ -1054,7 +1057,7 @@ class SwarmApp(App):
         identity drawn there, only if that identity is still shown, never when what is drawn
         at that cell changed in the last refresh (``CLICK_ARM_SECONDS``). Selection clicks only move the cursor; action
         clicks (go to pane, New agent, answer, transcript) are armed like their keys."""
-        now = time.monotonic()
+        now = self.monotonic()
         if cell is not None and (now - self.arrived.get(cell, -1e9) < CLICK_ARM_SECONDS
                                  or now < self.scrolled.get(cell, 0.0)):
             return
@@ -1147,7 +1150,7 @@ class SwarmApp(App):
         scrolling after the operator starts to click: every cell whose click target changed
         ignores clicks for SCROLL_ARM_SECONDS (shorter than a refresh's, so a deliberate
         scroll-then-click still works)."""
-        now = time.monotonic()
+        now = self.monotonic()
         self.scrolled = {c: t for c, t in self.scrolled.items() if t > now}
         new = self._cells()
         for cell, hit in new.items():

@@ -392,6 +392,11 @@ async def play(run: dict, inputs: dict, work: Path, env0: dict, shots: dict) -> 
     else:
         app = PanelApp(sock_path=base / "core.sock", pane_id=run["pane_id"], tab_id=run["tab_id"],
                        clock=lambda: run["now"], start_client=False)
+    if hasattr(app, "_arrow_dock_later"):
+        # No herdr runs in a capture: a dock after the arrows rest could only fail and show a
+        # warning notice, 0.2 s of wall time after the key, so whether a later snap holds that
+        # notice depended on the runner's speed (#76). The screens capture what the keys draw.
+        app._arrow_dock_later = lambda: None
     async with app.run_test(size=tuple(run["size"]), notifications=True) as pilot:
         await settle(app, pilot, run["app"] == "swarm")
         hold_cursor(app)
