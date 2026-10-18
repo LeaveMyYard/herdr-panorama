@@ -6,6 +6,8 @@
 //! - [`model`]: the swarm (orchestrators, threads, agents), the status vocabulary and the
 //!   agent tree, as the core publishes them to the panels.
 //!
-//! `view` (rendering into a cell grid) arrives with the per-tab panel (P3).
+//! - [`view`]: the views rendered into a cell grid with click targets: the docked panel
+//!   (design 9e) the per-tab panel shows; the graph views join in P4.
 
 pub mod model;
+pub mod view;
