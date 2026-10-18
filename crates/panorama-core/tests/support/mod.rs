@@ -5,6 +5,9 @@
 
 pub mod design;
 
+/// The no-sessions words the Claude Code panel passes (Python's).
+pub const NO_SESSIONS: &str = "No Claude Code sessions in herdr";
+
 use panorama_core::model::Swarm;
 use panorama_core::view::Screen;
 use panorama_core::view::palette::{BG, FG};
@@ -81,9 +84,9 @@ pub fn golden(runs: &Value) -> Vec<Vec<Shown>> {
 
 /// A rendered screen as cells.
 pub fn cells(s: &Screen) -> Vec<Vec<Shown>> {
-    (0..s.h)
+    (0..s.h())
         .map(|y| {
-            (0..s.w)
+            (0..s.w())
                 .map(|x| {
                     let c = s.cell(x, y);
                     shown(

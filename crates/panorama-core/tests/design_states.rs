@@ -10,7 +10,7 @@ use panorama_core::model::{BgTask, Orchestrator, Status, Swarm};
 use panorama_core::view::{Target, View, render_dock};
 use serde_json::Value;
 use support::design::design_swarm;
-use support::{assert_same, cells, fixture, golden, wire_swarm};
+use support::{NO_SESSIONS, assert_same, cells, fixture, golden, wire_swarm};
 
 const NOW: f64 = 1_800_000_000.0;
 const NOW_MIN: i64 = 10 * 60 + 4; // the design's clock, 10:04
@@ -118,7 +118,7 @@ fn turn_8_panel_cell_for_cell_at_whole_and_fractional_frames() {
             now: NOW,
             ..View::default()
         };
-        let got = render_dock(&swarm, &view, 46, H, None);
+        let got = render_dock(&swarm, &view, 46, H, None, NO_SESSIONS);
         assert_same(
             &format!("turn 8 frame {key}"),
             &golden(&panes["P"]),

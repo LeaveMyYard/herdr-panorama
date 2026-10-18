@@ -47,11 +47,11 @@ pub struct ScrollRegion {
     pub offset: i32,
 }
 
-/// A grid of `w` × `h` cells.
+/// A grid of `w` × `h` cells (its size is fixed when it is made).
 #[derive(Clone, Debug)]
 pub struct Screen {
-    pub w: i32,
-    pub h: i32,
+    w: i32,
+    h: i32,
     rows: Vec<Option<Vec<Cell>>>,
     /// Click targets in the order registered; a later one wins over an earlier one.
     pub targets: Vec<Hit>,
@@ -70,6 +70,16 @@ impl Screen {
             targets: vec![],
             columns: vec![],
         }
+    }
+
+    /// Its width in cells.
+    pub fn w(&self) -> i32 {
+        self.w
+    }
+
+    /// Its height in cells.
+    pub fn h(&self) -> i32 {
+        self.h
     }
 
     fn inside(&self, x: i32, y: i32) -> bool {

@@ -42,7 +42,7 @@ pub fn header(s: &mut Screen, swarm: &Swarm, shown: usize, stale: bool) {
     }
     let c = swarm.counts();
     s.segs_right(
-        s.w - 1,
+        s.w() - 1,
         0,
         &[
             Seg::new(format!("?{}", c.questions), status(&Status::Waiting)).bold(),
@@ -95,7 +95,7 @@ fn open_key_hints(
 /// The last two lines: the rule (with the zoom hint in it) and the key hints. A narrow pane
 /// drops hints whole, never cuts one.
 pub fn footer(s: &mut Screen, view: &View, inbox_ok: bool) {
-    let (w, h) = (s.w, s.h);
+    let (w, h) = (s.w(), s.h());
     s.put(0, h - 2, &"─".repeat(w.max(0) as usize), LINE, None, false);
     if view.zoom_hint {
         s.segs_right(
