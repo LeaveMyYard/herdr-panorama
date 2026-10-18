@@ -10,6 +10,7 @@ pub mod collect;
 pub mod contract;
 pub mod machines;
 pub mod panel;
+pub mod produce;
 pub mod proto;
 pub mod settings;
 pub mod snapshot;
