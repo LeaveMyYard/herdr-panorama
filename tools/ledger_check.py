@@ -10,7 +10,18 @@ Usage:
 
 --collected takes the output of `pytest --collect-only -q` (run with every
 HERDR_* variable unset) and also checks that the ledger has exactly one row per
-collected test. Exit status is 0 when the ledger is valid, 1 otherwise.
+collected test.
+
+--done PHASE (repeatable) checks that a finished phase left nothing behind: no
+row of that phase is still todo. --rust-root DIR checks that every Rust test a
+mapped row names exists: `path::fn` is a file under DIR holding `fn fn(`. A
+`herdr-agent-kit@<tag>:path::fn` reference is checked the same way under
+--kit-root when that is given, else skipped; --kit-root must be the kit's
+checkout at that tag (the tag in the references is not checked against it).
+A reference must name a real test: a `fn` line (not commented out) with a
+`#[test]` or `#[tokio::test]` attribute just above it.
+
+Exit status is 0 when the ledger is valid, 1 otherwise.
 
 Standard library only, so it runs without the project's venv.
 """
@@ -19,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import re
 import sys
 from collections import Counter
 from pathlib import Path
@@ -34,7 +46,46 @@ def read_collected(path: Path) -> list[str]:
     return [line.strip() for line in path.read_text().splitlines() if "::" in line]
 
 
-def check(ledger: Path, collected: Path | None) -> tuple[list[str], Counter[str]]:
+KIT = re.compile(r"^herdr-agent-kit@[^:]+:")
+
+
+def missing_rust_tests(refs: str, rust_root: Path | None, kit_root: Path | None) -> list[str]:
+    """The references in `refs` (separated by " ; ") whose test function is not found."""
+    out = []
+    for ref in (r.strip() for r in refs.split(";") if r.strip()):
+        root = rust_root
+        if KIT.match(ref):
+            root, ref = kit_root, KIT.sub("", ref)
+        if root is None:
+            continue
+        path, _, fn = ref.rpartition("::")
+        f = root / path
+        if not path or not fn or not f.is_file() or not is_test_fn(f.read_text(), fn):
+            out.append(ref)
+    return out
+
+
+TEST_ATTR = re.compile(r"^\s*#\[(tokio::)?test\b")
+
+
+def is_test_fn(text: str, fn: str) -> bool:
+    """Whether `text` defines `fn` as a test: a `fn fn(` line that is not commented out, with a
+    `#[test]` or `#[tokio::test…]` attribute among the attribute lines just above it."""
+    lines = text.splitlines()
+    decl = re.compile(rf"^\s*(pub(\([^)]*\))?\s+)?(async\s+)?fn {re.escape(fn)}\(")
+    for i, line in enumerate(lines):
+        if not decl.match(line):
+            continue
+        j = i - 1
+        while j >= 0 and lines[j].strip().startswith(("#[", "///", "//")):
+            if TEST_ATTR.match(lines[j]):
+                return True
+            j -= 1
+    return False
+
+
+def check(ledger: Path, collected: Path | None, done: tuple[str, ...] = (), rust_root: Path | None = None,
+          kit_root: Path | None = None) -> tuple[list[str], Counter[str]]:
     errors: list[str] = []
     counts: Counter[str] = Counter()
     with ledger.open(newline="") as fh:
@@ -68,6 +119,13 @@ def check(ledger: Path, collected: Path | None) -> tuple[list[str], Counter[str]
                 errors.append(f"line {lineno}: retired_reason set on a {status!r} row")
             if rec["phase"] not in PHASES:
                 errors.append(f"line {lineno}: phase {rec['phase']!r} not one of {sorted(PHASES)}")
+            elif status != "todo" and not rec["phase"]:
+                errors.append(f"line {lineno}: a {status} row needs the phase that did it")
+            if status == "todo" and rec["phase"] in done:
+                errors.append(f"line {lineno}: {tid} is still todo in finished phase {rec['phase']}")
+            if status == "mapped":
+                for ref in missing_rust_tests(rec["rust_test"], rust_root, kit_root):
+                    errors.append(f"line {lineno}: no Rust test {ref!r}")
             counts[status] += 1
     if not seen:
         errors.append("the ledger has no rows")
@@ -84,8 +142,12 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("ledger", nargs="?", type=Path, default=DEFAULT_LEDGER)
     ap.add_argument("--collected", type=Path, help="output of `pytest --collect-only -q`")
+    ap.add_argument("--done", action="append", default=[], metavar="PHASE",
+                    help="a finished phase: none of its rows may be todo")
+    ap.add_argument("--rust-root", type=Path, help="this repo's root: check that mapped Rust tests exist")
+    ap.add_argument("--kit-root", type=Path, help="herdr-agent-kit's checkout: check the kit's tests too")
     args = ap.parse_args(argv)
-    errors, counts = check(args.ledger, args.collected)
+    errors, counts = check(args.ledger, args.collected, tuple(args.done), args.rust_root, args.kit_root)
     for err in errors:
         print(f"error: {err}", file=sys.stderr)
     total = sum(counts.values())

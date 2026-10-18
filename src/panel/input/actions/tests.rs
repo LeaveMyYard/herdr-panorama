@@ -105,3 +105,40 @@ fn notices_and_quitting() {
         [Effect::NewAgent { .. }]
     ));
 }
+
+#[test]
+fn a_panel_keeps_its_choice_against_an_older_state_and_follows_the_echo() {
+    // test_panel_filter.py::test_a_panel_keeps_its_choice_against_an_older_state
+    use panorama_core::view::Filter;
+    let (mut p, t) = panel("w1:t2", "w1:t2");
+    let st = |f: Option<&str>| {
+        let extra = match f {
+            Some(f) => serde_json::json!({"visible_tabs": ["w1:t2"], "filter": f}),
+            None => serde_json::json!({"visible_tabs": ["w1:t2"]}),
+        };
+        super::super::fixtures::state(extra)
+    };
+    p.on_key(Key::Filter, t); // running, sent to the core
+    p.on_state(st(Some("all")), t + Duration::from_millis(50)); // from before the core had it
+    assert_eq!(p.view.filter, Filter::Running);
+    p.on_state(st(Some("running")), t + Duration::from_millis(100)); // the echo
+    p.on_state(st(Some("needs")), t + Duration::from_millis(200)); // another panel's choice
+    assert_eq!(p.view.filter, Filter::Needs);
+    p.on_state(st(None), t + Duration::from_millis(300)); // an older core: no field
+    assert_eq!(p.view.filter, Filter::Needs);
+}
+
+#[test]
+fn after_a_lost_core_the_next_cores_filter_wins_at_once() {
+    // test_panel_filter.py::test_after_a_lost_core_the_next_cores_filter_wins_at_once
+    use panorama_core::view::Filter;
+    let (mut p, t) = panel("w1:t2", "w1:t2");
+    p.on_key(Key::Filter, t);
+    p.on_connected(false);
+    p.on_connected(true);
+    p.on_state(
+        super::super::fixtures::state(serde_json::json!({"filter": "all"})),
+        t + Duration::from_millis(100),
+    );
+    assert_eq!(p.view.filter, Filter::All);
+}

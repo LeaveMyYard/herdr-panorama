@@ -60,6 +60,9 @@ jobs:
               - 'uv.lock'
               - 'tools/ledger_check.py'
               - '.github/workflows/rust.yml'
+              # a renamed or removed Rust test breaks the rows that map to it
+              - 'crates/**'
+              - 'src/**/*.rs'
 
   check:
     # On macOS this job also builds both darwin release targets, so a run holds
@@ -186,7 +189,12 @@ jobs:
           mkdir -p "$scratch/state"
           export HERDR_INBOX_DB="$scratch/inbox.db" XDG_STATE_HOME="$scratch/state"
           uv run pytest --collect-only -q -p no:cacheprovider > "$scratch/collected.txt"
-      - run: python3 tools/ledger_check.py --collected "$RUNNER_TEMP/ledger/collected.txt"
+      # --done: the phases whose every row is mapped or retired stay that way; --rust-root:
+      # every mapped row names a Rust test that exists (the kit's are checked locally with
+      # --kit-root, see tools/ledger_check.py)
+      - run: >-
+          python3 tools/ledger_check.py --collected "$RUNNER_TEMP/ledger/collected.txt"
+          --done P0a --done P0b --done P3 --rust-root .
 
   rust-ok:
     name: rust ok

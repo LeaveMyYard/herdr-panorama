@@ -34,6 +34,19 @@ fn still_unless_something_moves() {
         &none
     ));
     assert!(animated(&swarm(serde_json::json!({"inbox": [1]})), &none));
+    // tests/test_states.py::test_the_clock_turns_once_a_second_and_keeps_frames_running: an
+    // orchestrator whose only motion is its background tasks' waiting clock keeps frames
+    // running; an idle one with old activity does not
+    assert!(animated(
+        &swarm(
+            serde_json::json!({"bg": [{"id": "b", "kind": "Bash", "description": "w", "started": 0.0}]})
+        ),
+        &none
+    ));
+    assert!(!animated(
+        &swarm(serde_json::json!({"herdr_status": "idle", "last_activity": 0.0})),
+        &none
+    ));
     let marks: Marks = [("a".to_owned(), Unseen::Done)].into();
     assert!(animated(&with_agent("done"), &marks));
 }
