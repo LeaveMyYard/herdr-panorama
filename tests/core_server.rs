@@ -372,6 +372,9 @@ async fn focusing_counts_only_from_a_verified_panel_and_filters_only_from_panels
     let mut ours = connect(&sock).await;
     hello(&mut ours, json!({"pane_id": "w1:p92"})).await;
     lines(&mut ours, 1).await;
+    ours.write_all(&line(json!({"focusing": {"pane_id": ""}})))
+        .await
+        .unwrap(); // no pane: nothing to announce
     ours.write_all(&line(json!({"focusing": {"pane_id": "w1:p94"}})))
         .await
         .unwrap();

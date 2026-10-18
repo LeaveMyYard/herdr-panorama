@@ -91,11 +91,12 @@ pub async fn serve(
             }
         }
         if !seen.is_empty() {
-            let mut once = vec![];
-            for id in seen {
-                if !once.contains(&id) {
-                    once.push(id);
-                }
+            let (once, over) = super::seen::once_each(seen, super::seen::MAX_SEEN);
+            if over {
+                shared.note(format!(
+                    "a viewer's seen list was cut to {}",
+                    super::seen::MAX_SEEN
+                ));
             }
             emit(&v, &shared.events, Event::Seen(once)).await; // one event per read
         }

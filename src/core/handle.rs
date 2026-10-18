@@ -117,7 +117,11 @@ pub async fn handle(
             reply,
         };
         let did = if emit(v, events, open).await {
-            answer.await.unwrap_or_else(|_| "failed".into()) // a broken request never takes the core down
+            // a broken request never takes the core down; a closed viewer stops waiting
+            tokio::select! {
+                a = answer => a.unwrap_or_else(|_| "failed".into()),
+                () = v.closed() => return Next::Close,
+            }
         } else {
             "failed".into()
         };

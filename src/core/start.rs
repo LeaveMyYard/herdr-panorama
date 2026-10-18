@@ -100,7 +100,7 @@ async fn accept(listener: UnixListener, shared: Arc<Shared>, verify: Arc<impl Ve
             }
         };
         let cred = stream.peer_cred().ok();
-        if cred.map(|c| c.uid()) != Some(shared.peer_uid) {
+        if !peer_allowed(cred.map(|c| c.uid()), shared.peer_uid) {
             shared.note("refused a connection from another user".into());
             continue;
         }
@@ -127,6 +127,14 @@ async fn accept(listener: UnixListener, shared: Arc<Shared>, verify: Arc<impl Ve
         tokio::spawn(conn::serve(stream, v, shared.clone(), verify.clone()));
     }
 }
+
+/// Only a peer whose uid could be read and is ours; a failed lookup refuses (fails closed).
+fn peer_allowed(uid: Option<u32>, ours: u32) -> bool {
+    uid == Some(ours)
+}
+
+#[cfg(test)]
+mod tests;
 
 async fn ping(shared: Arc<Shared>) {
     let mut n = 0u64;

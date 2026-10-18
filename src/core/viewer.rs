@@ -57,8 +57,16 @@ impl Viewer {
         }
     }
 
-    /// Queues `line` without blocking (a full outbox loses its oldest).
+    /// Queues `line` without blocking (a full outbox loses its oldest). Nothing is queued
+    /// after the last line (shutdown, a refusal), so nothing can push that out.
     pub fn send(&self, line: Arc<Vec<u8>>) {
+        if self.said.lock().unwrap().told_to_go {
+            return;
+        }
+        self.push(line);
+    }
+
+    fn push(&self, line: Arc<Vec<u8>>) {
         self.outbox.lock().unwrap().push(line);
         self.wake.notify_one();
     }
@@ -106,7 +114,7 @@ impl Viewer {
     /// Queues shutdown as the last thing it gets.
     pub fn tell_to_go(&self, line: Arc<Vec<u8>>) {
         self.said.lock().unwrap().told_to_go = true;
-        self.send(line);
+        self.push(line);
     }
 
     /// Queues `line` as the last thing it gets; the writer then closes it (a refused second
@@ -116,7 +124,7 @@ impl Viewer {
             let mut s = self.said.lock().unwrap();
             (s.told_to_go, s.finishing) = (true, true);
         }
-        self.send(line);
+        self.push(line);
     }
 
     pub fn finishing(&self) -> bool {
@@ -146,3 +154,6 @@ impl Viewer {
         let _ = rx.wait_for(|c| *c).await;
     }
 }
+
+#[cfg(test)]
+mod tests;

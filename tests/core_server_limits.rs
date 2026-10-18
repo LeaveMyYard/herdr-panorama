@@ -178,3 +178,56 @@ async fn a_stuck_writer_lets_go_of_the_socket_when_the_core_stops() {
     assert_eq!(ready, 1, "the core still holds the socket");
     assert!(fds[0].revents().contains(PollFlags::RDHUP));
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_long_seen_line_is_cut_and_never_stalls_the_other_viewers() {
+    // the review of #85: 80k distinct ids froze the core for 4.9 s with a quadratic dedup
+    let dir = tempfile::tempdir().unwrap();
+    let (c, mut rx) = up(cfg(dir.path()), Panes::default()).await;
+    let (sock, _) = paths(dir.path());
+    let mut v = connect(&sock).await;
+    hello(&mut v, json!({})).await;
+    lines(&mut v, 1).await;
+    let ids: Vec<String> = (0..50_000).map(|i| format!("a{i}")).collect();
+    v.write_all(&line(json!({ "seen": ids }))).await.unwrap();
+    let mut other = connect(&sock).await;
+    hello(&mut other, json!({})).await;
+    assert!(lines(&mut other, 1).await[0].get("welcome").is_some()); // within lines()' 5 s
+    let got = tokio::time::timeout(Duration::from_secs(10), async {
+        loop {
+            if let Some(Event::Seen(ids)) = rx.recv().await {
+                return ids;
+            }
+        }
+    })
+    .await
+    .expect("the seen event");
+    assert_eq!(got.len(), panorama::core::MAX_SEEN);
+    assert_eq!(got[0], "a0");
+    assert_eq!(
+        got[got.len() - 1],
+        format!("a{}", panorama::core::MAX_SEEN - 1)
+    );
+    c.stop();
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn an_open_request_the_app_never_answers_ends_with_the_core() {
+    let dir = tempfile::tempdir().unwrap();
+    let (c, mut rx) = up(cfg(dir.path()), Panes::default()).await;
+    let (sock, _) = paths(dir.path());
+    let mut key = connect(&sock).await;
+    hello(&mut key, json!({"role": "key"})).await;
+    lines(&mut key, 1).await;
+    key.write_all(&line(json!({"open": {}}))).await.unwrap();
+    let reply = loop {
+        if let Some(Event::Open { reply, .. }) = rx.recv().await {
+            break reply; // held, never answered
+        }
+    };
+    c.stop();
+    assert!(
+        wait(|| reply.is_closed()).await,
+        "the connection still waits for the answer after the core stopped"
+    );
+}

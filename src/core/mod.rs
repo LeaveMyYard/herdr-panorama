@@ -25,9 +25,11 @@
 mod conn;
 mod handle;
 pub mod outbox;
+mod seen;
 mod start;
 mod viewer;
 
+pub use seen::MAX_SEEN;
 pub use start::NotStarted;
 pub use viewer::Role;
 
@@ -116,6 +118,11 @@ pub enum Event {
 
 /// Whether a viewer's claimed pane is its own: herdr says that pane's foreground runs this
 /// very process (`pid`) as `panorama panel` (Python `verify_pane`).
+///
+/// It must fail closed: any error (herdr down, an unreadable answer) is `false`; there is no
+/// error channel. A check that has not answered by the hello deadline counts as `false`.
+/// The pid is the peer's at connect (`SO_PEERCRED`); like Python, a pid reused by a real
+/// panel after the connecting process exited could pass (issue #96: `SO_PEERPIDFD`).
 pub trait Verify: Send + Sync + 'static {
     fn verify(&self, pane: &str, pid: i32) -> impl Future<Output = bool> + Send;
 }
