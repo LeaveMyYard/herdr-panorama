@@ -6,7 +6,6 @@
 //! narrow layout here, a stated gap until P4 (panels are 46 columns).
 
 use super::model::Panel;
-use panorama_core::view::empty::WIDE;
 use panorama_core::view::palette::{BG, DIM, DOCK_HOV, FAINT, FG};
 use panorama_core::view::theme::{OwnColours, panel_look};
 use panorama_core::view::{PanelSettings, Screen, Tokens, render_dock, render_narrow};
@@ -42,16 +41,16 @@ pub struct Frame {
 impl Panel {
     /// The frame at `f`, `w` × `h`. The list's scroll offset is kept for the next frame.
     pub fn paint(&mut self, w: i32, h: i32, f: &Frame) -> Screen {
+        self.input.width = w;
+        self.update_dock();
+        let docked = self.input.dock;
         let v = &mut self.view;
         v.now = f.now;
         v.frame = f.frame;
         v.utc_offset = f.utc_offset;
         v.open_key = f.open_key.clone();
         let stale = self.swarm.errors.first().map(String::as_str);
-        let docked = self.swarm.docked.is_some() && w < WIDE;
-        self.input.dock = docked;
         let mut s = if docked {
-            v.focus = 0; // the docked list is one column
             v.panel = Some(panel_look(
                 f.theme.as_ref(),
                 self.pane_focused,

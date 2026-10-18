@@ -79,6 +79,17 @@ fn f_cycles_the_filter_and_keeps_it_against_the_cores_older_word() {
 }
 
 #[test]
+fn the_filter_echo_lasts_exactly_a_second() {
+    let (mut p, t) = panel("w1:t2", "w1:t2");
+    p.on_key(Key::Filter, t);
+    let all = || super::super::fixtures::state(serde_json::json!({"filter": "all"}));
+    p.on_state(all(), t + Duration::from_millis(999));
+    assert_eq!(p.view.filter, panorama_core::view::Filter::Running);
+    p.on_state(all(), t + Duration::from_secs(1));
+    assert_eq!(p.view.filter, panorama_core::view::Filter::All);
+}
+
+#[test]
 fn notices_and_quitting() {
     let (mut p, t) = panel("w1:t2", "w1:t2");
     assert!(

@@ -86,15 +86,14 @@ impl Panel {
             && self.input.dock
             && self.swarm.docked.as_deref() != Some(o.pane_id.as_str())
             && self.input.settings.keep_focus;
-        if !self.input.docking {
-            // its agents are seen once herdr confirms the pane is still there (the actor)
-            out.push(Effect::Goto {
-                pane: o.pane_id,
-                label: o.tab_label,
-                keep_focus,
-                seen: ids,
-            });
-        }
+        // its agents are seen once herdr confirms the pane is still there (the actor); while a
+        // switch runs, that is all it does (`switch` makes no second one), as in Python
+        out.push(Effect::Goto {
+            pane: o.pane_id,
+            label: o.tab_label,
+            keep_focus,
+            seen: ids,
+        });
         out
     }
 

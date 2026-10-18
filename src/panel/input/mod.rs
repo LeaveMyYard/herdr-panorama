@@ -18,7 +18,7 @@ pub mod mouse;
 pub mod moves;
 pub mod selection;
 
-pub use arming::ClickArming;
+pub use arming::{ClickArming, Painted};
 pub use effect::{Effect, Toast};
 pub use keys::Key;
 
@@ -37,7 +37,8 @@ pub const ARROW_REST: Duration = Duration::from_millis(200);
 pub struct InputSettings {
     /// `dock_keep_focus`: a switch from the docked list leaves the keyboard on the panel.
     pub keep_focus: bool,
-    /// `dock_on_arrows` (needs `keep_focus`): the arrows switch the chats.
+    /// `dock_on_arrows`: the arrows switch the chats; only with `keep_focus` (an arrow never
+    /// moves the keyboard into an agent; Python `cockpit.arrows_setting`).
     pub arrows: bool,
 }
 
@@ -63,8 +64,10 @@ pub struct InputState {
     pub arrow_again: bool,
     /// When the arrows' switch is due.
     pub arrow_due: Option<Instant>,
-    /// The docked view was drawn last (the list has one column).
+    /// Docked (the list has one column), as decided on the last refresh or paint.
     pub dock: bool,
+    /// The pane's width at the last paint (0 before the first).
+    pub width: i32,
     pub settings: InputSettings,
     /// Per-cell click arming.
     pub clicks: ClickArming,
@@ -78,7 +81,8 @@ impl Default for InputState {
             docking: false,
             arrow_again: false,
             arrow_due: None,
-            dock: true,
+            dock: false,
+            width: 0,
             settings: InputSettings::default(),
             clicks: ClickArming::default(),
         }
