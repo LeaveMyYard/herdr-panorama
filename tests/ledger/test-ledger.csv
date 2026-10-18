@@ -14,8 +14,8 @@ tests/test_background.py::test_an_agent_notified_complete_is_done_whatever_it_le
 tests/test_background.py::test_a_fork_does_not_inherit_its_parents_background_tasks,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/copies.rs::main_s_copy_of_a_background_launch_wins_even_when_it_is_later,mapped,,P1
 tests/test_background.py::test_task_of_reads_the_output_path,tests/test_background.py,herdr-agent-kit@v0.1.0:src/agent_procs/claude/tasks/tests.rs::task_ids_from_output_paths,mapped,,P1
 tests/test_background.py::test_live_tasks_finds_the_output_files_its_descendants_hold,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/system_liveness.rs::a_background_shell_holding_its_output_file_is_a_live_task,mapped,,P1
-tests/test_background.py::test_collect_fills_bg_last_activity_and_stale_after,tests/test_background.py,,todo,,P4
-tests/test_background.py::test_a_waiting_agent_says_so_in_the_model,tests/test_background.py,,todo,,P4
+tests/test_background.py::test_collect_fills_bg_last_activity_and_stale_after,tests/test_background.py,tests/collect_background.rs::collect_fills_bg_last_activity_and_stale_after ; tests/collect_background.rs::a_pane_herdr_cannot_name_is_not_asked_again_at_once ; src/collect/liveness/tests.rs::tasks_are_read_lazily_and_once_per_collect,mapped,,P4
+tests/test_background.py::test_a_waiting_agent_says_so_in_the_model,tests/test_background.py,tests/collect_background.rs::a_waiting_agent_says_so_in_the_model,mapped,,P4
 tests/test_background.py::test_an_old_agent_file_is_still_read_when_its_agent_never_ended,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/updates.rs::an_old_agent_file_is_still_read_when_its_agent_never_ended,mapped,,P1
 tests/test_bridge_rules.py::test_a_session_id_in_any_case_is_valid_and_canonical_is_lowercase[55555555-5555-4555-8555-555555555555-55555555-5555-4555-8555-555555555555],tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_bridge_rules.rs::a_session_id_in_any_case_is_valid_and_canonical_is_lowercase,mapped,,P1
 tests/test_bridge_rules.py::test_a_session_id_in_any_case_is_valid_and_canonical_is_lowercase[0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d-0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d],tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_bridge_rules.rs::a_session_id_in_any_case_is_valid_and_canonical_is_lowercase,mapped,,P1
@@ -212,19 +212,19 @@ tests/test_cockpit.py::test_dock_with_the_lock_held_elsewhere_gives_up,tests/tes
 tests/test_cockpit.py::test_follow_with_the_lock_held_elsewhere_gives_up,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_ensure_with_the_lock_held_elsewhere_gives_up,tests/test_cockpit.py,,todo,,P4
 tests/test_cockpit.py::test_lock_busy_is_its_own_exception,tests/test_cockpit.py,,todo,,P4
-tests/test_collect.py::test_demo_swarm_shape,tests/test_collect.py,,todo,,P4
-tests/test_collect.py::test_done_window_hides_old_threads,tests/test_collect.py,,todo,,P4
-tests/test_collect.py::test_later_ticks_read_only_what_was_appended,tests/test_collect.py,,todo,,P4
-tests/test_collect.py::test_lost_agents_end_silently,tests/test_collect.py,,todo,,P4
-tests/test_collect.py::test_inbox_tab_prefix_is_stripped,tests/test_collect.py,,todo,,P4
-tests/test_collect.py::test_a_session_continued_in_a_new_transcript_is_followed,tests/test_collect.py,,todo,,P4
-tests/test_collect.py::test_a_continuation_loop_is_not_followed_forever,tests/test_collect.py,,todo,,P4
-tests/test_collect.py::test_a_resumed_old_session_is_no_longer_followed,tests/test_collect.py,,todo,,P4
-tests/test_collect.py::test_a_continuation_that_is_not_a_session_id_is_ignored[../../outside],tests/test_collect.py,,todo,,P4
-tests/test_collect.py::test_a_continuation_that_is_not_a_session_id_is_ignored[../x],tests/test_collect.py,,todo,,P4
-tests/test_collect.py::test_a_continuation_that_is_not_a_session_id_is_ignored[*],tests/test_collect.py,,todo,,P4
-tests/test_collect.py::test_a_continuation_that_is_not_a_session_id_is_ignored[/etc/passwd],tests/test_collect.py,,todo,,P4
-tests/test_collect.py::test_a_continuation_that_is_not_a_session_id_is_ignored[/tmp/elsewhere/x],tests/test_collect.py,,todo,,P4
+tests/test_collect.py::test_demo_swarm_shape,tests/test_collect.py,tests/collect_demo.rs::demo_swarm_shape ; tests/model_goldens.rs::the_demo_model_matches_its_golden ; tests/model_goldens.rs::the_continued_model_matches_its_golden ; tests/model_goldens.rs::the_background_model_matches_its_golden,mapped,,P4
+tests/test_collect.py::test_done_window_hides_old_threads,tests/test_collect.py,tests/collect_demo.rs::done_window_hides_old_threads,mapped,,P4
+tests/test_collect.py::test_later_ticks_read_only_what_was_appended,tests/test_collect.py,tests/collect_demo.rs::later_ticks_read_only_what_was_appended,mapped,,P4
+tests/test_collect.py::test_lost_agents_end_silently,tests/test_collect.py,tests/collect_demo.rs::lost_agents_end_silently,mapped,,P4
+tests/test_collect.py::test_inbox_tab_prefix_is_stripped,tests/test_collect.py,tests/collect_demo.rs::inbox_tab_prefix_is_stripped ; src/collect/text/tests.rs::the_inbox_mark_is_stripped,mapped,,P4
+tests/test_collect.py::test_a_session_continued_in_a_new_transcript_is_followed,tests/test_collect.py,tests/collect_demo.rs::a_session_continued_in_a_new_transcript_is_followed,mapped,,P4
+tests/test_collect.py::test_a_continuation_loop_is_not_followed_forever,tests/test_collect.py,tests/collect_demo.rs::a_continuation_loop_is_not_followed_forever,mapped,,P4
+tests/test_collect.py::test_a_resumed_old_session_is_no_longer_followed,tests/test_collect.py,tests/collect_demo.rs::a_resumed_old_session_is_no_longer_followed,mapped,,P4
+tests/test_collect.py::test_a_continuation_that_is_not_a_session_id_is_ignored[../../outside],tests/test_collect.py,tests/collect_demo.rs::a_continuation_that_is_not_a_session_id_is_ignored ; src/collect/sessions/tests.rs::an_id_that_is_not_a_session_is_never_looked_up,mapped,,P4
+tests/test_collect.py::test_a_continuation_that_is_not_a_session_id_is_ignored[../x],tests/test_collect.py,tests/collect_demo.rs::a_continuation_that_is_not_a_session_id_is_ignored ; src/collect/sessions/tests.rs::an_id_that_is_not_a_session_is_never_looked_up,mapped,,P4
+tests/test_collect.py::test_a_continuation_that_is_not_a_session_id_is_ignored[*],tests/test_collect.py,tests/collect_demo.rs::a_continuation_that_is_not_a_session_id_is_ignored ; src/collect/sessions/tests.rs::an_id_that_is_not_a_session_is_never_looked_up,mapped,,P4
+tests/test_collect.py::test_a_continuation_that_is_not_a_session_id_is_ignored[/etc/passwd],tests/test_collect.py,tests/collect_demo.rs::a_continuation_that_is_not_a_session_id_is_ignored ; src/collect/sessions/tests.rs::an_id_that_is_not_a_session_is_never_looked_up,mapped,,P4
+tests/test_collect.py::test_a_continuation_that_is_not_a_session_id_is_ignored[/tmp/elsewhere/x],tests/test_collect.py,tests/collect_demo.rs::a_continuation_that_is_not_a_session_id_is_ignored ; src/collect/sessions/tests.rs::an_id_that_is_not_a_session_is_never_looked_up,mapped,,P4
 tests/test_config.py::test_default_is_one_hour,tests/test_config.py,src/settings/durations/tests.rs::default_is_one_hour,mapped,,P4
 tests/test_config.py::test_config_file_and_env_override,tests/test_config.py,src/settings/durations/tests.rs::config_file_and_env_override,mapped,,P4
 tests/test_config.py::test_bad_values_fall_back,tests/test_config.py,src/settings/durations/tests.rs::bad_values_fall_back ; src/settings/durations/tests.rs::durations_read_as_python_parse_duration_reads_them,mapped,,P4
@@ -289,7 +289,7 @@ tests/test_deep.py::test_right_on_a_leaf_or_a_folded_card_does_nothing,tests/tes
 tests/test_deep.py::test_clicks_on_deep_cards_focus_their_column,tests/test_deep.py,,todo,,P4
 tests/test_deep.py::test_shift_wheel_scrolls_sideways_and_a_focus_change_scrolls_back,tests/test_deep.py,,todo,,P4
 tests/test_deep.py::test_grid_maps_shift_wheel_and_the_horizontal_wheel_to_sideways,tests/test_deep.py,,todo,,P4
-tests/test_deep.py::test_collector_nests_any_depth_in_one_thread_and_keeps_finished_ancestors,tests/test_deep.py,,todo,,P4
+tests/test_deep.py::test_collector_nests_any_depth_in_one_thread_and_keeps_finished_ancestors,tests/test_deep.py,tests/collect_deep.rs::collector_nests_any_depth_in_one_thread_and_keeps_finished_ancestors,mapped,,P4
 tests/test_deep.py::test_status_glyph_of_a_waiting_deep_agent_reaches_the_orchestrator,tests/test_deep.py,crates/panorama-core/tests/narrow_layout.rs::a_waiting_deep_agents_status_reaches_the_orchestrator,mapped,,P3
 tests/test_deep.py::test_a_click_right_after_a_sideways_scroll_does_not_hit_what_slid_under_the_pointer,tests/test_deep.py,,todo,,P4
 tests/test_dock_panel.py::test_every_card_is_a_click_target_and_question_marks_answer,tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::every_card_is_a_click_target_and_question_marks_answer,mapped,,P3
@@ -302,7 +302,7 @@ tests/test_dock_panel.py::test_one_click_on_the_docked_entry_focuses_its_agent_l
 tests/test_dock_panel.py::test_one_click_still_obeys_arming_and_identity,tests/test_dock_panel.py,,todo,,P4
 tests/test_dock_panel.py::test_the_2a_graph_keeps_select_first,tests/test_dock_panel.py,,todo,,P4
 tests/test_dock_panel.py::test_a_card_that_moved_ignores_clicks,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_collector_finds_the_docked_agent_and_tab_numbers,tests/test_dock_panel.py,,todo,,P4
+tests/test_dock_panel.py::test_collector_finds_the_docked_agent_and_tab_numbers,tests/test_dock_panel.py,tests/collect_snapshot.rs::collector_finds_the_docked_agent_and_tab_numbers,mapped,,P4
 tests/test_dock_panel.py::test_r11_a_refresh_that_docks_the_view_rearms_the_keys,tests/test_dock_panel.py,,todo,,P4
 tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[36],tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::the_panel_lays_out_to_the_width_it_gets,mapped,,P3
 tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[40],tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::the_panel_lays_out_to_the_width_it_gets,mapped,,P3
@@ -564,11 +564,11 @@ tests/test_hooks.py::test_m3_old_hook_files_are_pruned,tests/test_hooks.py,,todo
 tests/test_hooks.py::test_l4_session_text_once_per_session,tests/test_hooks.py,,todo,,P4
 tests/test_hooks.py::test_m2_claude_process_found_for_native_and_node_installs,tests/test_hooks.py,,todo,,P4
 tests/test_hooks.py::test_m2_another_pid_namespace_is_unknown,tests/test_hooks.py,,todo,,P4
-tests/test_inbox.py::test_absent_inbox_is_none,tests/test_inbox.py,,todo,,P4
-tests/test_inbox.py::test_open_questions_only,tests/test_inbox.py,,todo,,P4
-tests/test_inbox.py::test_opened_read_only,tests/test_inbox.py,,todo,,P4
-tests/test_inbox.py::test_unusable_database_is_none,tests/test_inbox.py,,todo,,P4
-tests/test_inbox.py::test_env_override,tests/test_inbox.py,,todo,,P4
+tests/test_inbox.py::test_absent_inbox_is_none,tests/test_inbox.py,herdr-agent-kit@v0.1.0:tests/inbox_contract_goldens.rs::no_inbox,mapped,,P4
+tests/test_inbox.py::test_open_questions_only,tests/test_inbox.py,herdr-agent-kit@v0.1.0:tests/inbox_contract_goldens.rs::current_and_0_1_databases,mapped,,P4
+tests/test_inbox.py::test_opened_read_only,tests/test_inbox.py,herdr-agent-kit@v0.1.0:tests/inbox_contract_goldens.rs::current_and_0_1_databases,mapped,,P4
+tests/test_inbox.py::test_unusable_database_is_none,tests/test_inbox.py,herdr-agent-kit@v0.1.0:tests/inbox_contract_goldens.rs::no_inbox,mapped,,P4
+tests/test_inbox.py::test_env_override,tests/test_inbox.py,herdr-agent-kit@v0.1.0:src/internal/plugin_paths/inbox/tests.rs::db_path_prefers_the_override_then_xdg ; herdr-agent-kit@v0.1.0:src/internal/plugin_paths/inbox/tests.rs::db_path_treats_empty_variables_as_unset,mapped,,P4
 tests/test_inbox_link.py::test_060_deep_links_with_the_inbox_environment,tests/test_inbox_link.py,src/panel/act/inbox/tests.rs::the_command_runs_the_inbox_as_itself_without_panoramas_context ; src/panel/act/inbox/tests.rs::a_question_opens_its_group_through_the_deep_link ; src/panel/act/inbox/tests.rs::no_hold_only_when_the_help_lists_it,mapped,,P3
 tests/test_inbox_link.py::test_older_version_probes_help_for_pane,tests/test_inbox_link.py,src/panel/act/inbox/tests.rs::an_older_version_probes_its_help_for_pane,mapped,,P3
 tests/test_inbox_link.py::test_053_falls_back_to_the_plain_popup,tests/test_inbox_link.py,src/panel/act/inbox/tests.rs::an_old_inbox_opens_plain,mapped,,P3
@@ -613,7 +613,7 @@ tests/test_machines.py::test_prune_never_touches_live_sessions_or_leaves_the_pro
 tests/test_machines.py::test_malformed_session_ids_never_reach_rsync_or_prune,tests/test_machines.py,src/machines/tests.rs::malformed_session_ids_are_not_sessions ; src/machines/mirror/rules/tests.rs::malformed_session_ids_never_reach_rsync,mapped,,P4
 tests/test_machines.py::test_a_reload_keeps_unchanged_watchers_and_never_runs_two_per_machine,tests/test_machines.py,src/machines/remotes/tests.rs::a_reload_keeps_unchanged_watchers_and_never_runs_two_per_machine,mapped,,P4
 tests/test_machines.py::test_one_machine_never_syncs_twice_at_once,tests/test_machines.py,src/machines/sync/tests.rs::one_machine_never_syncs_twice_at_once ; src/machines/sync/tests.rs::two_ids_with_one_mirror_share_its_lock,mapped,,P4
-tests/test_machines.py::test_a_remote_continuation_is_mirrored_and_followed_in_one_refresh,tests/test_machines.py,,todo,,P4
+tests/test_machines.py::test_a_remote_continuation_is_mirrored_and_followed_in_one_refresh,tests/test_machines.py,tests/machines_continuation.rs::a_remote_continuation_is_mirrored_and_followed_in_one_refresh ; src/machines/watcher/refresh/tests.rs::continuations_are_mirrored_in_the_same_refresh,mapped,,P4
 tests/test_machines.py::test_prune_keeps_a_continuation_while_its_old_session_is_named,tests/test_machines.py,src/machines/prune/tests.rs::prune_keeps_a_continuation_while_its_old_session_is_named,mapped,,P4
 tests/test_manifest.py::test_plugin_manifest,tests/test_manifest.py,,todo,,P4
 tests/test_manifest.py::test_cli_entry_point,tests/test_manifest.py,,todo,,P4
