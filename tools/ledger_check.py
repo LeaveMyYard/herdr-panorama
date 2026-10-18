@@ -16,7 +16,10 @@ collected test.
 row of that phase is still todo. --rust-root DIR checks that every Rust test a
 mapped row names exists: `path::fn` is a file under DIR holding `fn fn(`. A
 `herdr-agent-kit@<tag>:path::fn` reference is checked the same way under
---kit-root when that is given (the kit's checkout at that tag), else skipped.
+--kit-root when that is given, else skipped; --kit-root must be the kit's
+checkout at that tag (the tag in the references is not checked against it).
+A reference must name a real test: a `fn` line (not commented out) with a
+`#[test]` or `#[tokio::test]` attribute just above it.
 
 Exit status is 0 when the ledger is valid, 1 otherwise.
 
@@ -57,9 +60,28 @@ def missing_rust_tests(refs: str, rust_root: Path | None, kit_root: Path | None)
             continue
         path, _, fn = ref.rpartition("::")
         f = root / path
-        if not path or not fn or not f.is_file() or not re.search(rf"\bfn {re.escape(fn)}\(", f.read_text()):
+        if not path or not fn or not f.is_file() or not is_test_fn(f.read_text(), fn):
             out.append(ref)
     return out
+
+
+TEST_ATTR = re.compile(r"^\s*#\[(tokio::)?test\b")
+
+
+def is_test_fn(text: str, fn: str) -> bool:
+    """Whether `text` defines `fn` as a test: a `fn fn(` line that is not commented out, with a
+    `#[test]` or `#[tokio::test…]` attribute among the attribute lines just above it."""
+    lines = text.splitlines()
+    decl = re.compile(rf"^\s*(pub(\([^)]*\))?\s+)?(async\s+)?fn {re.escape(fn)}\(")
+    for i, line in enumerate(lines):
+        if not decl.match(line):
+            continue
+        j = i - 1
+        while j >= 0 and lines[j].strip().startswith(("#[", "///", "//")):
+            if TEST_ATTR.match(lines[j]):
+                return True
+            j -= 1
+    return False
 
 
 def check(ledger: Path, collected: Path | None, done: tuple[str, ...] = (), rust_root: Path | None = None,

@@ -42,3 +42,16 @@ def test_mapped_rows_name_rust_tests_that_exist(tmp_path):
     (tmp_path / "tests").mkdir()
     errors = lc.check(p, None, rust_root=tmp_path, kit_root=tmp_path)[0]
     assert "no Rust test 'tests/k.rs::kit_fn'" in "\n".join(errors)
+
+
+def test_only_real_tests_count(tmp_path):
+    # #81 review L1: a commented-out fn or a plain helper is no Rust test
+    (tmp_path / "x.rs").write_text(
+        "// fn gone_test() was removed\n"
+        "fn helper() {}\n"
+        "#[test]\nfn plain() {}\n"
+        "#[tokio::test(flavor = \"current_thread\")]\nasync fn tokio_one() {}\n"
+        "#[test]\n#[ignore]\n/// doc\nfn attributed() {}\n"
+        "#[cfg(test)]\nfn cfg_only() {}\n")
+    refs = " ; ".join(f"x.rs::{n}" for n in ("gone_test", "helper", "plain", "tokio_one", "attributed", "cfg_only"))
+    assert lc.missing_rust_tests(refs, tmp_path, None) == ["x.rs::gone_test", "x.rs::helper", "x.rs::cfg_only"]

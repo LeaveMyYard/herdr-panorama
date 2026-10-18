@@ -265,3 +265,30 @@ fn needs_me_shows_neither_waiting_nor_stale() {
     assert!(visible_orchs(&sw, &v(Filter::Needs)).is_empty());
     assert_eq!(visible_orchs(&sw, &v(Filter::Running)).len(), 1);
 }
+
+#[test]
+fn the_narrow_layouts_colours_glide_between_whole_frames() {
+    // test_smooth.py::test_restyling_equals_a_full_render[narrow, demo narrow]: between whole
+    // frames the blinks and pulses move colours, never glyphs (Rust renders each colour tick
+    // in full, so this is the check those rows carried)
+    let sw = demo();
+    let at = |frame: f64| {
+        let v = View {
+            orch: Some("w1:p1".into()),
+            focus: 1,
+            frame,
+            ..demo_view()
+        };
+        render_narrow(&sw, &v, 70, 45, None, NO_SESSIONS)
+    };
+    let (whole, mid) = (at(1.0), at(1.5));
+    assert_eq!(whole.text(), mid.text(), "a fraction moved a glyph");
+    let colours = (0..45)
+        .flat_map(|y| (0..70).map(move |x| (x, y)))
+        .filter(|&(x, y)| {
+            whole.cell(x, y).fg != mid.cell(x, y).fg || whole.cell(x, y).bg != mid.cell(x, y).bg
+        })
+        .count();
+    assert!(colours > 0, "nothing glides between frames 1 and 1.5");
+    assert_eq!(at(2.0).text(), at(2.999).text()); // glyphs step only at whole frames
+}
