@@ -45,3 +45,19 @@ async fn no_reply_waits_for_the_popups_own_mark() {
         Some("plugin_not_found: nope")
     );
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_garbled_reply_is_no_reply_and_a_found_mark_ends_the_wait_at_once() {
+    // Python's NoReply covers a garbled reply too: the popup may be open, so no second one
+    let dir = tempfile::tempdir().unwrap();
+    let mark = marker(dir.path(), "k");
+    std::fs::write(&mark, format!("{}", now() + 60.0)).unwrap();
+    let fake = FakeHerdr::start();
+    fake.on("plugin.pane.open", Reply::Raw(b"not json\n".to_vec()));
+    let t = std::time::Instant::now();
+    assert_eq!(open(&fake.client(), "p", None, "/w", &mark).await, None);
+    assert!(
+        t.elapsed() < Duration::from_secs(1),
+        "waited for a mark that was there"
+    );
+}

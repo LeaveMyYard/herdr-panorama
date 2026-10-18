@@ -21,7 +21,10 @@ pub const PREPAINT_PAINT: Duration = Duration::from_millis(20);
 pub trait Announce {
     /// Announces `pane` (`focusing`); whether it went out.
     fn focusing(&self, pane: &str) -> impl Future<Output = bool>;
-    /// Whether the core echoes `pane` as the focused pane within `within`.
+    /// Whether the core echoes `pane` as the focused pane within `within`. An echo received
+    /// since the matching [`Announce::focusing`] was sent counts (Python clears its echo and
+    /// names the awaited pane before sending): an implementation that only waits for states
+    /// arriving after this call would miss a fast echo and wait the whole `within`.
     fn echoed(&self, pane: &str, within: Duration) -> impl Future<Output = bool>;
 }
 
@@ -56,6 +59,8 @@ pub async fn switch(
         .iter()
         .find(|p| id(p).as_deref() == Some(target))
         .and_then(|p| p.tab_id.clone())
+        .filter(|t| !t.as_str().is_empty())
+    // Python's `not agent.get("tab_id")`
     else {
         return failed(format!("{target} is gone"));
     };
@@ -69,7 +74,7 @@ pub async fn switch(
         Some(panel) => {
             let announced = prepaint(panel, announce).await;
             let err = focus_panel(h, &tab, panel).await;
-            let took_back = err.is_some() && announced;
+            let took_back = err.is_some() && announced && my_pane.is_some();
             if let (true, Some(mine)) = (took_back, my_pane) {
                 // nothing moved: this panel, still the focused one, keeps its look
                 announce.focusing(mine).await;

@@ -110,3 +110,96 @@ async fn a_pane_herdr_no_longer_has_is_gone() {
     .await;
     assert_eq!(done.err.as_deref(), Some("w1:p4 is gone"));
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn tab_then_pane_and_a_pane_focus_failure_is_a_failure_too() {
+    let fake = herdr(&[("w1:p4", "w1:t4"), ("w1:p94", "w1:t4")]);
+    fake.on("tab.focus", Reply::Result(json!({})));
+    fake.on("pane.focus", Reply::error("pane_not_found", "gone"));
+    let core = Core {
+        echo: true,
+        up: true,
+        ..Core::default()
+    };
+    let done = switch(
+        &fake.client(),
+        "w1:p4",
+        true,
+        &panels(),
+        Some("w1:p92"),
+        &core,
+    )
+    .await;
+    assert_eq!(
+        done,
+        Switched {
+            err: Some("pane_not_found: gone".into()),
+            took_back: true
+        }
+    );
+    let methods: Vec<String> = fake.calls().into_iter().map(|(m, _)| m).collect();
+    assert_eq!(methods, ["session.snapshot", "tab.focus", "pane.focus"]);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn nothing_is_taken_back_when_nothing_was_announced() {
+    let fake = herdr(&[("w1:p4", "w1:t4"), ("w1:p94", "w1:t4")]);
+    fake.on("tab.focus", Reply::error("tab_not_found", "no tab"));
+    let core = Core {
+        echo: false,
+        up: false,
+        ..Core::default()
+    }; // no core: not sent
+    let done = switch(
+        &fake.client(),
+        "w1:p4",
+        true,
+        &panels(),
+        Some("w1:p92"),
+        &core,
+    )
+    .await;
+    assert!(!done.took_back);
+    assert_eq!(*core.said.borrow(), ["w1:p94"]); // tried once, nothing to take back
+    // without a pane of its own there is nothing to announce back either
+    let core = Core {
+        echo: true,
+        up: true,
+        ..Core::default()
+    };
+    let done = switch(&fake.client(), "w1:p4", true, &panels(), None, &core).await;
+    assert!(!done.took_back);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_paint_wait_follows_only_an_echo() {
+    let fake = herdr(&[("w1:p4", "w1:t4"), ("w1:p94", "w1:t4")]);
+    fake.on("tab.focus", Reply::Result(json!({})));
+    fake.on("pane.focus", Reply::Result(json!({})));
+    let core = Core {
+        echo: true,
+        up: true,
+        ..Core::default()
+    };
+    let t = std::time::Instant::now();
+    switch(&fake.client(), "w1:p4", true, &panels(), None, &core).await;
+    assert!(
+        t.elapsed() >= PREPAINT_PAINT,
+        "no paint wait after the echo"
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn an_empty_tab_id_is_none() {
+    let fake = herdr(&[("w1:p4", "")]);
+    let done = switch(
+        &fake.client(),
+        "w1:p4",
+        false,
+        &panels(),
+        None,
+        &Core::default(),
+    )
+    .await;
+    assert_eq!(done.err.as_deref(), Some("w1:p4 is gone"));
+}
