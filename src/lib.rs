@@ -3,6 +3,7 @@
 //! per-tab panel viewer; `contract`, the number `scripts/panel` checks before running it.
 
 pub mod contract;
+pub mod core;
 pub mod panel;
 pub mod proto;
 pub mod settings;
