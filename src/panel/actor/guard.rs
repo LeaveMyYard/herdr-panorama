@@ -46,5 +46,23 @@ impl<T> Future for Guarded<T> {
     }
 }
 
+/// Tests that install their own panic hook take this first: the hook is the process's.
+#[cfg(test)]
+pub(crate) fn hook_lock() -> std::sync::MutexGuard<'static, ()> {
+    static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    LOCK.lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
+/// Runs `fut` on a runtime of its own (tests that hold [`hook_lock`]).
+#[cfg(test)]
+pub(crate) fn block_on<T>(fut: impl Future<Output = T>) -> T {
+    tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(fut)
+}
+
 #[cfg(test)]
 mod tests;

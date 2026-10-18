@@ -40,23 +40,13 @@ pub fn run() -> i32 {
     let env = PluginEnv::from_env();
     let state = state_dir(&env);
     let pane = env.pane_id().map(str::to_owned);
-    let hook_pane = pane.clone();
-    let hook_state = state.clone();
     let default_hook = std::panic::take_hook();
-    std::panic::set_hook(Box::new(move |info| {
-        if actor::guard::in_task() {
-            return; // a task of the herdr side: it reports its own failure
-        }
-        term::restore();
-        crash::mark(
-            &hook_state,
-            hook_pane.as_deref(),
-            // the panic and where it happened, as Python's log keeps the traceback
-            &format!("{info}\n{}", std::backtrace::Backtrace::force_capture()),
-            &clock::stamp(),
-        );
-        default_hook(info);
-    }));
+    std::panic::set_hook(crash::hook(
+        state.clone(),
+        pane.clone(),
+        term::restore,
+        default_hook,
+    ));
     let result = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()

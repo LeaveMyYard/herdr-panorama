@@ -3,6 +3,7 @@
 //! operator closing it, and `panel-crash-<pane>.log` with the error's last 16 KB as evidence.
 
 use std::fs;
+use std::panic::PanicHookInfo;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -38,6 +39,32 @@ pub fn mark(state_dir: &Path, pane: Option<&str>, error: &str, stamp: &str) {
     }
     let log = state_dir.join(format!("panel-crash-{pane}.log"));
     let _ = fs::write(log, format!("{stamp}\n{}", tail(error)));
+}
+
+/// What a panic does to the panel (installed as the panic hook): the terminal is put back
+/// (`restore`), the marker and log are written, then `next` (the default hook) speaks. A
+/// panic in a task of the herdr side is left to that task: it reports its own failure and
+/// the panel goes on (`actor::guard`).
+pub fn hook(
+    state_dir: PathBuf,
+    pane: Option<String>,
+    restore: fn(),
+    next: Box<dyn Fn(&PanicHookInfo<'_>) + Send + Sync>,
+) -> Box<dyn Fn(&PanicHookInfo<'_>) + Send + Sync> {
+    Box::new(move |info| {
+        if super::actor::guard::in_task() {
+            return;
+        }
+        restore();
+        mark(
+            &state_dir,
+            pane.as_deref(),
+            // the panic and where it happened, as Python's log keeps the traceback
+            &format!("{info}\n{}", std::backtrace::Backtrace::force_capture()),
+            &super::clock::stamp(),
+        );
+        next(info);
+    })
 }
 
 #[cfg(test)]

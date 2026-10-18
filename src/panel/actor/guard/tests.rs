@@ -1,7 +1,8 @@
 use super::*;
 
-#[tokio::test(flavor = "current_thread")]
-async fn a_panic_in_a_task_is_its_result_and_the_hook_knows_it() {
+#[test]
+fn a_panic_in_a_task_is_its_result_and_the_hook_knows_it() {
+    let _hook = hook_lock();
     let hook = std::panic::take_hook();
     let seen = std::sync::Arc::new(std::sync::Mutex::new(vec![]));
     let s = seen.clone();
@@ -11,14 +12,13 @@ async fn a_panic_in_a_task_is_its_result_and_the_hook_knows_it() {
             s.lock().unwrap().push(in_task());
         }
     }));
-    let out: Result<(), String> = guarded(async {
+    let out: Result<(), String> = block_on(guarded(async {
         tokio::task::yield_now().await; // a panic after a wait, as a herdr call's
         panic!("guarded boom");
-    })
-    .await;
+    }));
     std::panic::set_hook(hook);
     assert_eq!(out, Err("guarded boom".to_owned()));
     assert_eq!(*seen.lock().unwrap(), [true]);
     assert!(!in_task());
-    assert_eq!(guarded(async { 7 }).await, Ok(7));
+    assert_eq!(block_on(guarded(async { 7 })), Ok(7));
 }

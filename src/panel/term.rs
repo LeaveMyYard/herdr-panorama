@@ -61,6 +61,10 @@ pub fn restore() {
 /// Whether the terminal is gone (its other side closed): crossterm's reader never reports
 /// it (it reads the error again and again), and without a controlling terminal no SIGHUP
 /// comes either.
+///
+/// It looks at stdin, which herdr makes the pane's terminal. A stdin that closes some other
+/// way (a pipe whose writer went) counts too: no key can come any more, the same end as the
+/// input ending (`End::Input`).
 pub fn hung_up() -> bool {
     use rustix::event::{PollFd, PollFlags, Timespec, poll};
     let stdin = io::stdin();

@@ -24,3 +24,28 @@ fn without_a_pane_nothing_is_written() {
     mark(dir.path(), Some(""), "boom", "now");
     assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 0);
 }
+
+#[test]
+fn the_hook_marks_a_crash_but_leaves_a_tasks_panic_to_the_task() {
+    use crate::panel::actor::guard::{block_on, guarded, hook_lock};
+    let _hook = hook_lock();
+    // #77 L3: a herdr-side task's panic is its own failure, not the panel's crash
+    let dir = tempfile::tempdir().unwrap();
+    let previous = std::panic::take_hook();
+    std::panic::set_hook(hook(
+        dir.path().into(),
+        Some("w9:p9".into()),
+        || {},
+        Box::new(|_| {}),
+    ));
+    let task = block_on(guarded(async { panic!("in a task") }));
+    let task_marked = marker(dir.path(), "w9:p9").exists();
+    let crash = std::panic::catch_unwind(|| panic!("in the panel"));
+    std::panic::set_hook(previous);
+    assert!(task.is_err() && crash.is_err());
+    assert!(!task_marked, "a task's panic marked a crash");
+    assert!(
+        marker(dir.path(), "w9:p9").exists(),
+        "the panel's panic left no marker"
+    );
+}

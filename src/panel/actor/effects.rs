@@ -15,7 +15,7 @@ use std::future::Future;
 use std::io;
 use std::time::{Duration, Instant};
 
-/// How long a filter may take to reach the core before it counts as not sent.
+/// How long the actor waits for a filter's send (keys and paint go on after it).
 pub const FILTER_SEND: Duration = Duration::from_millis(500);
 
 /// What a task of the herdr side reports back.
@@ -36,9 +36,11 @@ pub enum Done {
     Toast(Toast),
 }
 
-/// Whether `send` said yes within `within` (a send still waiting is not sent).
-pub async fn bounded(send: impl Future<Output = bool>, within: Duration) -> bool {
-    tokio::time::timeout(within, send).await.unwrap_or(false)
+/// Whether the filter went out: `Some(false)` when the client said there is no core;
+/// `None` when it did not answer within `within` (the client has queued it and still sends
+/// it, so it is not taken back).
+pub async fn bounded(send: impl Future<Output = bool>, within: Duration) -> Option<bool> {
+    tokio::time::timeout(within, send).await.ok()
 }
 
 /// The notice for a task that panicked.
@@ -53,7 +55,7 @@ impl Actor {
             match e {
                 Effect::Seen(ids) => self.client.seen(ids),
                 Effect::SendFilter(f) => {
-                    if !bounded(self.client.filter(f.name()), FILTER_SEND).await {
+                    if bounded(self.client.filter(f.name()), FILTER_SEND).await == Some(false) {
                         self.driver.panel.filter_not_sent();
                     }
                 }

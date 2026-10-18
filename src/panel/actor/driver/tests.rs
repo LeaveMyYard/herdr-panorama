@@ -26,6 +26,7 @@ fn fewer() -> State {
 fn a_state_holds_the_cells_whose_target_moved_for_a_second() {
     for (wait, acts) in [(Duration::from_millis(600), false), (CLICK_ARM, true)] {
         let (mut d, t) = driver();
+        let t = t + CLICK_ARM; // the first paint's own hold is over (the reviewer's fix)
         let old = cells(&d.paint(46, 45, &frame(), Painted::Other, t));
         let cause = d.state(fewer(), t);
         let new = d.paint(46, 45, &frame(), cause, t);
