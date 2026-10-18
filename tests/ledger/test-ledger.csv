@@ -470,7 +470,7 @@ tests/test_hooks.py::test_b1_hooks_never_use_uv_and_always_exit_0,tests/test_hoo
 tests/test_hooks.py::test_b1_concurrent_hooks_from_two_plugin_versions,tests/test_hooks.py,src/hook/tests.rs::concurrent_hooks_keep_every_line_whole,mapped,,P4
 tests/test_hooks.py::test_b1_stop_hook_active_is_respected,tests/test_hooks.py,src/hook/tests.rs::stop_hook_active_is_respected_and_unknown_kinds_do_nothing,mapped,,P4
 tests/test_hooks.py::test_b1_unknown_kind_and_direct_run_exit_0,tests/test_hooks.py,src/hook/tests.rs::stop_hook_active_is_respected_and_unknown_kinds_do_nothing ; tests/claude_launch.rs::the_built_binary_runs_the_hooks_and_the_server,mapped,,P4
-tests/test_hooks.py::test_m3_subagent_hooks_skip_internal_agents,tests/test_hooks.py,,todo,,P4
+tests/test_hooks.py::test_m3_subagent_hooks_skip_internal_agents,tests/test_hooks.py,tests/claude_manifests.rs::subagent_hooks_skip_internal_agents,mapped,,P4
 tests/test_hooks.py::test_m3_old_hook_files_are_pruned,tests/test_hooks.py,src/hook/tests.rs::old_hook_files_are_pruned,mapped,,P4
 tests/test_hooks.py::test_l4_session_text_once_per_session,tests/test_hooks.py,src/hook/tests.rs::l4_session_text_once_per_session,mapped,,P4
 tests/test_hooks.py::test_m2_claude_process_found_for_native_and_node_installs,tests/test_hooks.py,herdr-agent-kit@v0.1.0:src/agent_procs/claude/tests.rs::two_claudes_are_nested_and_the_nearest_owns ; herdr-agent-kit@v0.1.0:src/agent_procs/claude/tests.rs::a_claude_without_a_start_token_is_not_recorded,mapped,,P4
@@ -528,7 +528,7 @@ tests/test_machines.py::test_a_remote_continuation_is_mirrored_and_followed_in_o
 tests/test_machines.py::test_prune_keeps_a_continuation_while_its_old_session_is_named,tests/test_machines.py,src/machines/prune/tests.rs::prune_keeps_a_continuation_while_its_old_session_is_named,mapped,,P4
 tests/test_manifest.py::test_plugin_manifest,tests/test_manifest.py,,todo,,P4
 tests/test_manifest.py::test_cli_entry_point,tests/test_manifest.py,,todo,,P4
-tests/test_manifest.py::test_claude_plugin_manifests,tests/test_manifest.py,,todo,,P4
+tests/test_manifest.py::test_claude_plugin_manifests,tests/test_manifest.py,tests/claude_manifests.rs::the_plugin_and_its_marketplace_entry_agree_and_the_server_runs_mcp ; tests/claude_manifests.rs::every_hook_runs_its_own_kind_through_sh_and_always_exits_0,mapped,,P4
 tests/test_manifest.py::test_the_panel_runs_the_rust_viewer_when_built_else_the_venv_else_uv,tests/test_manifest.py,,todo,,P8
 tests/test_manifest.py::test_a_shared_cargo_target_dir_is_not_looked_at,tests/test_manifest.py,,todo,,P8
 tests/test_manifest.py::test_a_binary_that_does_not_speak_the_contract_falls_back_to_the_venv[stale],tests/test_manifest.py,,todo,,P8
