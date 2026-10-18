@@ -12,13 +12,21 @@ pub const FRAME: i64 = 2;
 /// narrow layout).
 pub fn width(setting: Option<&Value>) -> i64 {
     let w = setting
-        .and_then(|v| v.as_i64().or_else(|| v.as_f64().map(|f| f as i64)).or_else(|| v.as_str()?.trim().parse().ok()))
+        .and_then(|v| {
+            v.as_i64()
+                .or_else(|| v.as_f64().map(|f| f as i64))
+                .or_else(|| v.as_str()?.trim().parse().ok())
+        })
         .unwrap_or(DEFAULT_WIDTH);
     w.clamp(36, 119)
 }
 
 /// The split that holds `pane` as a direct child: (its path, the split, the pane is first).
-pub fn split_of<'a>(node: &'a Value, pane: &str, path: &mut Vec<bool>) -> Option<(Vec<bool>, &'a Value, bool)> {
+pub fn split_of<'a>(
+    node: &'a Value,
+    pane: &str,
+    path: &mut Vec<bool>,
+) -> Option<(Vec<bool>, &'a Value, bool)> {
     if node.get("type")?.as_str()? != "split" {
         return None;
     }
@@ -42,8 +50,15 @@ pub fn split_of<'a>(node: &'a Value, pane: &str, path: &mut Vec<bool>) -> Option
 /// Every pane id under `node`.
 pub fn pane_ids(node: &Value) -> Vec<String> {
     match node.get("type").and_then(Value::as_str) {
-        Some("pane") => node["pane_id"].as_str().map(str::to_owned).into_iter().collect(),
-        Some(_) => [&node["first"], &node["second"]].into_iter().flat_map(pane_ids).collect(),
+        Some("pane") => node["pane_id"]
+            .as_str()
+            .map(str::to_owned)
+            .into_iter()
+            .collect(),
+        Some(_) => [&node["first"], &node["second"]]
+            .into_iter()
+            .flat_map(pane_ids)
+            .collect(),
         None => vec![],
     }
 }
@@ -60,8 +75,17 @@ pub fn ratio(root: &Value, rects: &Value, pane: &str, width: i64) -> Option<(Vec
     let mine: Vec<(i64, i64)> = rects
         .as_array()?
         .iter()
-        .filter(|p| p["pane_id"].as_str().is_some_and(|i| ids.iter().any(|x| x == i)))
-        .map(|p| (p["rect"]["x"].as_i64().unwrap_or(0), p["rect"]["width"].as_i64().unwrap_or(0)))
+        .filter(|p| {
+            p["pane_id"]
+                .as_str()
+                .is_some_and(|i| ids.iter().any(|x| x == i))
+        })
+        .map(|p| {
+            (
+                p["rect"]["x"].as_i64().unwrap_or(0),
+                p["rect"]["width"].as_i64().unwrap_or(0),
+            )
+        })
         .collect();
     let total = mine.iter().map(|(x, w)| x + w).max()? - mine.iter().map(|(x, _)| *x).min()?;
     if total <= 0 {

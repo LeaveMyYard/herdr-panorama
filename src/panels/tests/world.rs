@@ -1,8 +1,8 @@
 //! An in-memory herdr as the manager sees it (Python `tests/test_panels.py::World`): tabs of
 //! panes left to right, the focus, herdr's focus events, and every call made.
 
-use crate::panels::{Clock, Focus, FocusLog, HomeRef, Manager, Ops, PANEL_LABEL, Places, Shell};
 use crate::panels::snap::{Snap, SnapPane};
+use crate::panels::{Clock, Focus, FocusLog, HomeRef, Manager, Ops, PANEL_LABEL, Places, Shell};
 use panorama_core::model::Swarm;
 use serde_json::json;
 use std::collections::{BTreeMap, BTreeSet};
@@ -20,14 +20,24 @@ pub struct P {
 }
 
 pub fn pane(id: &str) -> P {
-    P { id: id.into(), ..P::default() }
+    P {
+        id: id.into(),
+        ..P::default()
+    }
 }
 
 pub fn agent(id: &str) -> P {
-    P { agent: Some("claude".into()), ..pane(id) }
+    P {
+        agent: Some("claude".into()),
+        ..pane(id)
+    }
 }
 
 type Hook = Box<dyn FnMut(&mut State) + Send>;
+/// (plain shell?, age, children)
+type ShellLook = (Option<bool>, Option<f64>, Option<bool>);
+type Runs = Box<dyn Fn(&State, &str) -> Option<bool> + Send>;
+type Looks = Box<dyn FnMut(&mut State, &str) -> Shell + Send>;
 
 pub struct State {
     pub tabs: Vec<(String, Vec<P>)>,
@@ -37,23 +47,28 @@ pub struct State {
     /// pane → "panel" for panes running our viewer.
     pub argv: BTreeMap<String, String>,
     /// pane → (plain shell?, age, children); default an idle shell herdr just started.
-    pub shell: BTreeMap<String, (Option<bool>, Option<f64>, Option<bool>)>,
+    pub shell: BTreeMap<String, ShellLook>,
     pub tab_focus: BTreeMap<String, String>,
     pub log: Option<Arc<FocusLog>>,
     pub on_swap: Option<Hook>,
     pub on_open: Option<Hook>,
     /// Overrides `runs_panel`; every ask is noted in `asked`.
-    pub runs: Option<Box<dyn Fn(&State, &str) -> Option<bool> + Send>>,
+    pub runs: Option<Runs>,
     pub asked: Vec<String>,
     /// Overrides `pane_shell` (the state is handed in for a click during the look).
-    pub looks: Option<Box<dyn FnMut(&mut State, &str) -> Shell + Send>>,
+    pub looks: Option<Looks>,
     /// Overrides `shell_state`.
     pub ages: Option<(Option<f64>, Option<bool>)>,
 }
 
 impl State {
     pub fn tab_of(&self, pane: &str) -> String {
-        self.tabs.iter().find(|(_, ps)| ps.iter().any(|p| p.id == pane)).unwrap().0.clone()
+        self.tabs
+            .iter()
+            .find(|(_, ps)| ps.iter().any(|p| p.id == pane))
+            .unwrap()
+            .0
+            .clone()
     }
 
     pub fn tab(&mut self, tab: &str) -> &mut Vec<P> {
@@ -61,11 +76,22 @@ impl State {
     }
 
     pub fn pane(&mut self, id: &str) -> &mut P {
-        self.tabs.iter_mut().flat_map(|(_, ps)| ps.iter_mut()).find(|p| p.id == id).unwrap()
+        self.tabs
+            .iter_mut()
+            .flat_map(|(_, ps)| ps.iter_mut())
+            .find(|p| p.id == id)
+            .unwrap()
     }
 
     pub fn order(&self, tab: &str) -> Vec<String> {
-        self.tabs.iter().find(|(t, _)| t == tab).unwrap().1.iter().map(|p| p.id.clone()).collect()
+        self.tabs
+            .iter()
+            .find(|(t, _)| t == tab)
+            .unwrap()
+            .1
+            .iter()
+            .map(|p| p.id.clone())
+            .collect()
     }
 
     pub fn record(&self, ev: Focus) {
@@ -164,7 +190,10 @@ impl World {
     }
 
     pub fn closes(&self) -> Vec<String> {
-        self.calls().into_iter().filter(|c| c.starts_with("close")).collect()
+        self.calls()
+            .into_iter()
+            .filter(|c| c.starts_with("close"))
+            .collect()
     }
 }
 
@@ -189,7 +218,14 @@ impl Ops for World {
         let tab = s.tab_of(target);
         let ps = s.tab(&tab);
         let i = ps.iter().position(|p| p.id == target).unwrap();
-        ps.insert(i + 1, P { label: Some(PANEL_LABEL.into()), terminal: Some(format!("term_{n}")), ..pane(&id) });
+        ps.insert(
+            i + 1,
+            P {
+                label: Some(PANEL_LABEL.into()),
+                terminal: Some(format!("term_{n}")),
+                ..pane(&id)
+            },
+        );
         s.argv.insert(id.clone(), "panel".into());
         s.calls.push(format!("open {target}"));
         if let Some(mut hook) = s.on_open.take() {
@@ -272,21 +308,38 @@ impl Ops for World {
         if let Some(a) = s.ages {
             return a;
         }
-        let id = s.tabs.iter().flat_map(|(_, ps)| ps).find(|p| State::shell_pid(&p.id) == shell).unwrap().id.clone();
-        s.shell.get(&id).map_or((Some(3.0), Some(false)), |v| (v.1, v.2))
+        let id = s
+            .tabs
+            .iter()
+            .flat_map(|(_, ps)| ps)
+            .find(|p| State::shell_pid(&p.id) == shell)
+            .unwrap()
+            .id
+            .clone();
+        s.shell
+            .get(&id)
+            .map_or((Some(3.0), Some(false)), |v| (v.1, v.2))
     }
 }
 
 /// The model's orchestrators, local.
 pub fn orch(panes: &[&str]) -> Swarm {
-    let os: Vec<_> = panes.iter().map(|p| json!({"pane_id": p, "tab_label": ""})).collect();
-    serde_json::from_value(json!({"orchestrators": os, "generated_at": 0.0, "herdr_ok": true,
-                                  "inbox_ok": true, "errors": []}))
+    let os: Vec<_> = panes
+        .iter()
+        .map(|p| json!({"pane_id": p, "tab_label": ""}))
+        .collect();
+    serde_json::from_value(
+        json!({"orchestrators": os, "generated_at": 0.0, "herdr_ok": true,
+                                  "inbox_ok": true, "errors": []}),
+    )
     .unwrap()
 }
 
 pub fn home() -> HomeRef {
-    HomeRef { pane_id: "w1:p1".into(), tab_id: "w1:t1".into() }
+    HomeRef {
+        pane_id: "w1:p1".into(),
+        tab_id: "w1:t1".into(),
+    }
 }
 
 pub fn set(panes: &[&str]) -> BTreeSet<String> {
@@ -294,7 +347,11 @@ pub fn set(panes: &[&str]) -> BTreeSet<String> {
 }
 
 pub fn places(dir: &Path) -> Places {
-    Places { state_path: Some(dir.join("panels.json")), marker_dir: Some(dir.join("state")), home_lock: None }
+    Places {
+        state_path: Some(dir.join("panels.json")),
+        marker_dir: Some(dir.join("state")),
+        home_lock: None,
+    }
 }
 
 pub fn manager(w: &World, dir: &Path) -> Manager<World> {
@@ -309,5 +366,7 @@ pub fn manager_with(w: &World, dir: &Path, clock: Clock) -> Manager<World> {
 /// One pass, as the core runs it (no home lock in these tests).
 pub async fn pass(m: &mut Manager<World>, w: &World, sw: &Swarm, verified: &[&str], start: bool) {
     let snap = w.snap();
-    m.reconcile(snap, sw, Some(&home()), &set(verified), start, false).await.unwrap();
+    m.reconcile(snap, sw, Some(&home()), &set(verified), start, false)
+        .await
+        .unwrap();
 }

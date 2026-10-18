@@ -33,9 +33,14 @@ impl<O: Ops> Manager<O> {
         single: bool,
     ) -> OpenKey {
         let panel = {
-            let Ok(_held) = self.lock().await else { return OpenKey::Busy };
+            let Ok(_held) = self.lock().await else {
+                return OpenKey::Busy;
+            };
             let sv = self.survey(snap, swarm, home, single).await;
-            let Some((tab, agent)) = sv.focused_tab.as_ref().and_then(|t| Some((t.clone(), sv.targets.get(t)?.clone())))
+            let Some((tab, agent)) = sv
+                .focused_tab
+                .as_ref()
+                .and_then(|t| Some((t.clone(), sv.targets.get(t)?.clone())))
             else {
                 return OpenKey::Home;
             };

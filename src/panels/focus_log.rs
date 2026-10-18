@@ -46,16 +46,32 @@ impl FocusLog {
 
     /// The events since `t0`, oldest first.
     pub fn since(&self, t0: Instant) -> Vec<Focus> {
-        self.events.lock().unwrap().iter().filter(|(t, _)| *t >= t0).map(|(_, e)| e.clone()).collect()
+        self.events
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|(t, _)| *t >= t0)
+            .map(|(_, e)| e.clone())
+            .collect()
     }
 
     /// Every event kept.
     pub fn all(&self) -> Vec<Focus> {
-        self.events.lock().unwrap().iter().map(|(_, e)| e.clone()).collect()
+        self.events
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|(_, e)| e.clone())
+            .collect()
     }
 
     /// Until an event since `t0` matches (true), or `timeout` (false).
-    pub async fn wait_for(&self, t0: Instant, mut pred: impl FnMut(&Focus) -> bool, timeout: Duration) -> bool {
+    pub async fn wait_for(
+        &self,
+        t0: Instant,
+        mut pred: impl FnMut(&Focus) -> bool,
+        timeout: Duration,
+    ) -> bool {
         let end = tokio::time::Instant::now() + timeout;
         loop {
             let added = self.added.notified();

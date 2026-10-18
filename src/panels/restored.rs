@@ -37,7 +37,11 @@ impl<O: Ops> Manager<O> {
                 changed = true;
                 continue;
             };
-            if !rec.terminal.is_empty() && p.terminal_id.as_deref().is_some_and(|now| !now.is_empty() && now != rec.terminal) {
+            if !rec.terminal.is_empty()
+                && p.terminal_id
+                    .as_deref()
+                    .is_some_and(|now| !now.is_empty() && now != rec.terminal)
+            {
                 candidates.push(p); // a restore, or a live handoff (the panel still runs)
             }
         }
@@ -47,7 +51,11 @@ impl<O: Ops> Manager<O> {
         let since = self.restore_seen.map_or(0, |s| self.passes - s);
         let mut gone = BTreeSet::new();
         for p in candidates {
-            let verdict = if since < super::RESTORE_PASSES { self.judge(&p, &snap).await } else { Verdict::Leave("late".into()) };
+            let verdict = if since < super::RESTORE_PASSES {
+                self.judge(&p, &snap).await
+            } else {
+                Verdict::Leave("late".into())
+            };
             if verdict == Verdict::Again {
                 continue;
             }
@@ -59,7 +67,10 @@ impl<O: Ops> Manager<O> {
                     self.created.remove(&p.pane_id);
                     self.connected_once.remove(&p.pane_id);
                 }
-                Verdict::Leave(why) => self.note(format!("{} was a panel before herdr restarted; left alone ({why})", p.pane_id)),
+                Verdict::Leave(why) => self.note(format!(
+                    "{} was a panel before herdr restarted; left alone ({why})",
+                    p.pane_id
+                )),
                 Verdict::Again => {}
             }
         }
@@ -80,7 +91,10 @@ impl<O: Ops> Manager<O> {
         if p.agent.as_deref().is_some_and(|a| !a.is_empty()) {
             return leave("an agent");
         }
-        if p.focused || snap.focused_pane.as_deref() == Some(&p.pane_id) || snap.tab_remembers(&p.pane_id) {
+        if p.focused
+            || snap.focused_pane.as_deref() == Some(&p.pane_id)
+            || snap.tab_remembers(&p.pane_id)
+        {
             return leave("focused");
         }
         match self.focused_ever(&p.pane_id) {
@@ -111,7 +125,10 @@ impl<O: Ops> Manager<O> {
         if let Err(e) = self.ops.close_pane(&p.pane_id).await {
             return Verdict::Leave(format!("could not close: {e}"));
         }
-        self.note(format!("closed {}: a panel herdr restored as a plain shell; a new one is made", p.pane_id));
+        self.note(format!(
+            "closed {}: a panel herdr restored as a plain shell; a new one is made",
+            p.pane_id
+        ));
         Verdict::Close
     }
 
@@ -119,7 +136,11 @@ impl<O: Ops> Manager<O> {
     /// no live stream to ask.
     fn focused_ever(&self, pane: &str) -> Option<bool> {
         let log = self.focus_log.as_ref().filter(|l| l.live())?;
-        Some(log.all().iter().any(|e| matches!(e, Focus::Pane(p) if p == pane)))
+        Some(
+            log.all()
+                .iter()
+                .any(|e| matches!(e, Focus::Pane(p) if p == pane)),
+        )
     }
 
     /// Records our running panels (pane id, tab, herdr's terminal id) for after a herdr
@@ -128,8 +149,18 @@ impl<O: Ops> Manager<O> {
         let running: BTreeSet<&String> = sv.panels.values().flatten().collect();
         let mut record = self.saved.panes.clone();
         for (pane, tab) in &self.created {
-            if let Some(term) = snap.pane(pane).and_then(|p| p.terminal_id.clone()).filter(|_| running.contains(pane)) {
-                record.insert(pane.clone(), Recorded { tab: tab.clone(), terminal: term });
+            if let Some(term) = snap
+                .pane(pane)
+                .and_then(|p| p.terminal_id.clone())
+                .filter(|_| running.contains(pane))
+            {
+                record.insert(
+                    pane.clone(),
+                    Recorded {
+                        tab: tab.clone(),
+                        terminal: term,
+                    },
+                );
             }
         }
         if record != self.saved.panes {

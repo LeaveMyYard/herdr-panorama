@@ -16,17 +16,29 @@ async fn the_start_batch_puts_a_panel_left_of_every_orchestrator_and_the_operato
     let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
     let mut m = manager(&w, dir.path());
     let sw = orch(&["w1:p2", "w1:p3", "w1:p4"]);
-    let sv = m.reconcile(w.snap(), &sw, Some(&home()), &set(&[]), true, false).await.unwrap();
+    let sv = m
+        .reconcile(w.snap(), &sw, Some(&home()), &set(&[]), true, false)
+        .await
+        .unwrap();
     for (tab, ag) in [("w1:t2", "w1:p2"), ("w1:t3", "w1:p3"), ("w1:t4", "w1:p4")] {
         let order = w.order(tab);
         assert_eq!(order.len(), 2);
         assert_eq!(order[1], ag);
-        assert!(w.s().argv.contains_key(&order[0]), "the panel is on the left");
-        assert!(w.calls().contains(&format!("swap {ag} {}", order[0])), "the agent is the swap's source");
+        assert!(
+            w.s().argv.contains_key(&order[0]),
+            "the panel is on the left"
+        );
+        assert!(
+            w.calls().contains(&format!("swap {ag} {}", order[0])),
+            "the agent is the swap's source"
+        );
     }
     assert_eq!(w.s().focus, ("w1:t1".into(), "w1:p1".into()));
     let calls = w.calls();
-    assert_eq!(calls[calls.len() - 2..], ["focus_tab w1:t1".to_string(), "focus_pane w1:p1".into()]);
+    assert_eq!(
+        calls[calls.len() - 2..],
+        ["focus_tab w1:t1".to_string(), "focus_pane w1:p1".into()]
+    );
     let map = m.panels_map(&sv, &set(&[]));
     for tab in ["w1:t2", "w1:t3", "w1:t4"] {
         assert_eq!(map[tab], w.order(tab)[0]);
@@ -68,12 +80,30 @@ async fn the_restore_skips_only_the_batchs_own_events_in_order() {
 #[test]
 fn the_batchs_own_events_may_skip_one_but_never_go_back() {
     let expected = [t("a"), p("1"), t("b"), p("2")];
-    assert_eq!(operator_moved(&[t("a"), p("1"), t("b"), p("2")], &expected), None);
-    assert_eq!(operator_moved(&[p("1"), p("2")], &expected), None, "herdr may leave a tab event out");
-    assert_eq!(operator_moved(&[t("a"), p("1"), t("a")], &expected), Some("a".into()), "back is the operator's");
+    assert_eq!(
+        operator_moved(&[t("a"), p("1"), t("b"), p("2")], &expected),
+        None
+    );
+    assert_eq!(
+        operator_moved(&[p("1"), p("2")], &expected),
+        None,
+        "herdr may leave a tab event out"
+    );
+    assert_eq!(
+        operator_moved(&[t("a"), p("1"), t("a")], &expected),
+        Some("a".into()),
+        "back is the operator's"
+    );
     assert_eq!(operator_moved(&[t("x")], &expected), Some("x".into()));
-    assert_eq!(operator_moved(&[p(""), t("a")], &expected), None, "an empty id is no event");
-    assert_eq!(operator_moved(&[t("a"), p("2"), p("1")], &expected), Some("1".into()));
+    assert_eq!(
+        operator_moved(&[p(""), t("a")], &expected),
+        None,
+        "an empty id is no event"
+    );
+    assert_eq!(
+        operator_moved(&[t("a"), p("2"), p("1")], &expected),
+        Some("1".into())
+    );
 }
 
 #[tokio::test]
@@ -88,7 +118,10 @@ async fn after_the_start_only_the_operators_tab_gets_a_panel() {
     w.s().focus = ("w1:t3".into(), "w1:p3".into()); // they enter its tab, on the agent
     pass(&mut m, &w, &sw, &[], false).await;
     let panel = w.order("w1:t3")[0].clone();
-    assert_eq!(w.calls(), [format!("open w1:p3"), format!("swap w1:p3 {panel}")]);
+    assert_eq!(
+        w.calls(),
+        ["open w1:p3".to_string(), format!("swap w1:p3 {panel}")]
+    );
     assert_eq!(w.s().focus, ("w1:t3".into(), "w1:p3".into()));
 }
 
@@ -111,7 +144,9 @@ async fn a_lazy_panel_waits_on_the_right_when_the_operator_left_before_the_swap(
     let mut m = manager(&w, dir.path());
     m.started = true;
     w.s().focus = ("w1:t2".into(), "w1:p2".into());
-    w.s().on_open = Some(Box::new(|s: &mut State| s.focus = ("w1:t1".into(), "w1:p1".into())));
+    w.s().on_open = Some(Box::new(|s: &mut State| {
+        s.focus = ("w1:t1".into(), "w1:p1".into())
+    }));
     let sw = orch(&["w1:p2"]);
     pass(&mut m, &w, &sw, &[], false).await;
     assert_eq!(w.order("w1:t2")[0], "w1:p2", "right of the agent");
@@ -130,7 +165,9 @@ async fn a_lazy_panel_waits_on_the_right_when_the_operator_left_before_the_swap(
 async fn a_tab_herdr_could_not_check_gets_no_panel() {
     let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
     w.s().tab("w1:t2").push(pane("w1:p60"));
-    w.s().runs = Some(Box::new(|_, p| if p == "w1:p60" { None } else { Some(false) }));
+    w.s().runs = Some(Box::new(
+        |_, p| if p == "w1:p60" { None } else { Some(false) },
+    ));
     let mut m = manager(&w, dir.path());
     pass(&mut m, &w, &orch(&["w1:p2"]), &[], true).await;
     assert!(w.calls().is_empty());
@@ -155,7 +192,11 @@ async fn a_not_a_panel_answer_is_believed_for_a_while_then_asked_again() {
     w.s().tab("w1:t2").insert(0, pane("w1:p50"));
     let now = std::sync::Arc::new(std::sync::Mutex::new(std::time::Instant::now()));
     let c = now.clone();
-    let mut m = manager_with(&w, dir.path(), std::sync::Arc::new(move || *c.lock().unwrap()));
+    let mut m = manager_with(
+        &w,
+        dir.path(),
+        std::sync::Arc::new(move || *c.lock().unwrap()),
+    );
     m.started = true;
     let sw = orch(&["w1:p2"]);
     for _ in 0..2 {
@@ -173,11 +214,31 @@ async fn single_follows_only_tabs_where_the_orchestrator_is_alone() {
     let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
     w.s().tab("w1:t3").push(pane("w1:p5"));
     let mut m = manager(&w, dir.path());
-    let sv = m.reconcile(w.snap(), &orch(&["w1:p2", "w1:p3"]), Some(&home()), &set(&[]), true, true).await.unwrap();
+    let sv = m
+        .reconcile(
+            w.snap(),
+            &orch(&["w1:p2", "w1:p3"]),
+            Some(&home()),
+            &set(&[]),
+            true,
+            true,
+        )
+        .await
+        .unwrap();
     assert!(sv.targets.contains_key("w1:t2") && !sv.targets.contains_key("w1:t3"));
     assert_eq!(w.order("w1:t3"), ["w1:p3", "w1:p5"]);
     // its own panel does not crowd a tab
-    let sv = m.reconcile(w.snap(), &orch(&["w1:p2", "w1:p3"]), Some(&home()), &set(&[]), false, true).await.unwrap();
+    let sv = m
+        .reconcile(
+            w.snap(),
+            &orch(&["w1:p2", "w1:p3"]),
+            Some(&home()),
+            &set(&[]),
+            false,
+            true,
+        )
+        .await
+        .unwrap();
     assert!(sv.targets.contains_key("w1:t2"));
 }
 
@@ -190,10 +251,20 @@ async fn only_local_claude_orchestrators_outside_home_in_its_workspace_are_targe
     let mut sw = orch(&["w1:p2", "w1:p3", "w1:p4", "w1:p9", "w1:p77"]);
     sw.orchestrators[2].machine = Some("box".into());
     let mut snap = w.snap();
-    snap.panes.iter_mut().find(|p| p.pane_id == "w1:p2").unwrap().workspace_id = Some("w2".into());
-    let sv = m.reconcile(snap.clone(), &sw, Some(&home()), &set(&[]), false, false).await.unwrap();
+    snap.panes
+        .iter_mut()
+        .find(|p| p.pane_id == "w1:p2")
+        .unwrap()
+        .workspace_id = Some("w2".into());
+    let sv = m
+        .reconcile(snap.clone(), &sw, Some(&home()), &set(&[]), false, false)
+        .await
+        .unwrap();
     assert!(sv.targets.is_empty(), "{:?}", sv.targets);
     // without a home: any workspace, any tab
-    let sv = m.reconcile(snap, &sw, None, &set(&[]), false, false).await.unwrap();
+    let sv = m
+        .reconcile(snap, &sw, None, &set(&[]), false, false)
+        .await
+        .unwrap();
     assert_eq!(sv.targets.keys().collect::<Vec<_>>(), ["w1:t1", "w1:t2"]);
 }

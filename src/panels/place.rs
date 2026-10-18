@@ -31,7 +31,8 @@ impl<O: Ops> Manager<O> {
     /// swap; if they have left, leave the panel on the right for now; if they were on another
     /// pane of the tab, give it the focus back. The panel's pane id.
     pub async fn place(&mut self, tab: &str, agent: &str, lazy: bool) -> Option<String> {
-        self.creating.insert(tab.to_owned(), (self.clock)() + super::CREATING);
+        self.creating
+            .insert(tab.to_owned(), (self.clock)() + super::CREATING);
         let panel = match self.ops.open_panel(agent).await {
             Ok(p) => p,
             Err(e) => {
@@ -81,12 +82,17 @@ impl<O: Ops> Manager<O> {
                 expected.extend([Focus::Tab(tab.clone()), Focus::Pane(agent.clone())]);
             }
         }
-        let Some(was_tab) = was_tab.filter(|_| !made.is_empty()) else { return made };
+        let Some(was_tab) = was_tab.filter(|_| !made.is_empty()) else {
+            return made;
+        };
         if let Some(log) = self.focus_log.clone().filter(|l| l.live()) {
             let last = expected.last().cloned();
-            log.wait_for(t0, |e| Some(e) == last.as_ref(), super::SYNC).await;
+            log.wait_for(t0, |e| Some(e) == last.as_ref(), super::SYNC)
+                .await;
             if let Some(went) = operator_moved(&log.since(t0), &expected) {
-                self.note(format!("panel batch: the operator went to {went}; left there"));
+                self.note(format!(
+                    "panel batch: the operator went to {went}; left there"
+                ));
                 return made;
             }
         }

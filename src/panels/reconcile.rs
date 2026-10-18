@@ -32,7 +32,11 @@ impl<O: Ops> Manager<O> {
                 self.created.entry(p.clone()).or_insert_with(|| tab.clone());
             }
         }
-        let ours_live: Vec<String> = verified.iter().filter(|p| self.created.contains_key(*p)).cloned().collect();
+        let ours_live: Vec<String> = verified
+            .iter()
+            .filter(|p| self.created.contains_key(*p))
+            .cloned()
+            .collect();
         self.connected_once.extend(ours_live);
         let gone: Vec<(String, String)> = self
             .created
@@ -53,8 +57,15 @@ impl<O: Ops> Manager<O> {
                 let n = self.crashes.entry(tab.clone()).or_default();
                 *n += 1;
                 let n = *n;
-                let more = if n >= super::CRASH_LIMIT { "; no more panels there" } else { "" };
-                self.note(format!("the panel in {tab} died on its own ({n} of {}){more}", super::CRASH_LIMIT));
+                let more = if n >= super::CRASH_LIMIT {
+                    "; no more panels there"
+                } else {
+                    ""
+                };
+                self.note(format!(
+                    "the panel in {tab} died on its own ({n} of {}){more}",
+                    super::CRASH_LIMIT
+                ));
                 if n >= super::CRASH_LIMIT {
                     self.broken.insert(tab);
                 }
@@ -68,7 +79,8 @@ impl<O: Ops> Manager<O> {
         if self.saved.closed.len() != before {
             self.save();
         }
-        self.creating.retain(|t, until| *until > now && !sv.panels.contains_key(t));
+        self.creating
+            .retain(|t, until| *until > now && !sv.panels.contains_key(t));
         self.right.retain(|t| sv.panels.contains_key(t));
         self.close_extras(&mut sv, verified, now).await;
         self.place_missing(&mut sv, start).await;
@@ -78,12 +90,21 @@ impl<O: Ops> Manager<O> {
 
     /// Duplicates (keep one, a connected one first; close the provable rest) and orphans (a
     /// tab whose orchestrator went away keeps its panel for `REMOVE_AFTER`).
-    async fn close_extras(&mut self, sv: &mut Survey, verified: &BTreeSet<String>, now: std::time::Instant) {
+    async fn close_extras(
+        &mut self,
+        sv: &mut Survey,
+        verified: &BTreeSet<String>,
+        now: std::time::Instant,
+    ) {
         let tabs: Vec<String> = sv.panels.keys().cloned().collect();
         for tab in &tabs {
             let ps = sv.panels[tab].clone();
             if ps.len() > 1 {
-                let keep = ps.iter().find(|p| verified.contains(*p)).unwrap_or(&ps[0]).clone();
+                let keep = ps
+                    .iter()
+                    .find(|p| verified.contains(*p))
+                    .unwrap_or(&ps[0])
+                    .clone();
                 for p in ps.iter().filter(|p| **p != keep) {
                     if self.ours(p, verified) && self.ops.close_plugin_pane(p).await.is_ok() {
                         self.created.remove(p);
@@ -139,7 +160,10 @@ impl<O: Ops> Manager<O> {
                     sv.panels.entry(tab).or_default().push(panel);
                 }
             } else if self.right.contains(&tab)
-                && let (Some(agent), Some(panel)) = (sv.targets.get(&tab).cloned(), sv.panels.get(&tab).and_then(|p| p.first()).cloned())
+                && let (Some(agent), Some(panel)) = (
+                    sv.targets.get(&tab).cloned(),
+                    sv.panels.get(&tab).and_then(|p| p.first()).cloned(),
+                )
             {
                 self.swap_left(&tab, &agent, &panel).await;
             }

@@ -21,8 +21,8 @@
 //! The manager runs one pass at a time (`&mut self`), under the home lock when one is given.
 
 pub mod fit;
-mod keys;
 pub mod focus_log;
+mod keys;
 pub mod ops;
 mod place;
 pub mod real;
@@ -36,8 +36,8 @@ mod survey;
 mod tests;
 
 pub use focus_log::{Focus, FocusLog};
-pub use ops::{Ops, Shell};
 pub use keys::OpenKey;
+pub use ops::{Ops, Shell};
 pub use place::operator_moved;
 pub use survey::{HomeRef, Survey};
 
@@ -152,7 +152,11 @@ impl<O: Ops> Manager<O> {
 
     /// The panels recorded for after a herdr restart: pane → (tab, terminal).
     pub fn record(&self) -> Vec<(String, String, String)> {
-        self.saved.panes.iter().map(|(p, r)| (p.clone(), r.tab.clone(), r.terminal.clone())).collect()
+        self.saved
+            .panes
+            .iter()
+            .map(|(p, r)| (p.clone(), r.tab.clone(), r.terminal.clone()))
+            .collect()
     }
 
     /// What happened worth a log line since the last call.
@@ -182,13 +186,23 @@ impl<O: Ops> Manager<O> {
     pub fn panels_map(&self, sv: &Survey, verified: &BTreeSet<String>) -> BTreeMap<String, String> {
         sv.panels
             .iter()
-            .filter_map(|(t, ps)| Some((t.clone(), ps.iter().find(|p| verified.contains(*p)).or(ps.first())?.clone())))
+            .filter_map(|(t, ps)| {
+                Some((
+                    t.clone(),
+                    ps.iter()
+                        .find(|p| verified.contains(*p))
+                        .or(ps.first())?
+                        .clone(),
+                ))
+            })
             .collect()
     }
 
     /// The viewer left a crash marker; it is used up here.
     fn crashed(&self, pane: &str) -> bool {
-        let Some(dir) = &self.marker_dir else { return false };
+        let Some(dir) = &self.marker_dir else {
+            return false;
+        };
         match std::fs::remove_file(crate::panel::crash::marker(dir, pane)) {
             Ok(()) => true,
             Err(e) => e.kind() != std::io::ErrorKind::NotFound,
@@ -197,8 +211,14 @@ impl<O: Ops> Manager<O> {
 
     /// The home lock for up to `LOCK`; `Err(())` when it stayed busy (or no lock is set: `Ok(None)`).
     async fn lock(&self) -> Result<Option<herdr_agent_kit::plugin_env::lock::HeldLock>, ()> {
-        let Some(lock) = self.home_lock.clone() else { return Ok(None) };
-        match tokio::task::spawn_blocking(move || lock.exclusive_within(LOCK, Duration::from_millis(20), || true)).await {
+        let Some(lock) = self.home_lock.clone() else {
+            return Ok(None);
+        };
+        match tokio::task::spawn_blocking(move || {
+            lock.exclusive_within(LOCK, Duration::from_millis(20), || true)
+        })
+        .await
+        {
             Ok(Ok(Some(held))) => Ok(Some(held)),
             _ => Err(()),
         }
@@ -215,6 +235,9 @@ impl<O: Ops> Manager<O> {
         single: bool,
     ) -> Option<Survey> {
         let _held = self.lock().await.ok()?;
-        Some(self.reconcile_unlocked(snap, swarm, home, verified, start, single).await)
+        Some(
+            self.reconcile_unlocked(snap, swarm, home, verified, start, single)
+                .await,
+        )
     }
 }

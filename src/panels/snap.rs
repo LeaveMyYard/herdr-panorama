@@ -58,7 +58,11 @@ impl From<Snapshot> for Snap {
                 })
             })
             .collect();
-        let tab_focus = s.layouts.iter().filter_map(|l| text(l.get("focused_pane_id"))).collect();
+        let tab_focus = s
+            .layouts
+            .iter()
+            .filter_map(|l| text(l.get("focused_pane_id")))
+            .collect();
         Self {
             panes,
             focused_tab: s.focused_tab_id.map(|t| t.as_str().to_owned()),

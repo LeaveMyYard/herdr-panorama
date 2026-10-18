@@ -27,13 +27,21 @@ pub fn load(path: Option<&Path>) -> Saved {
         .and_then(|t| serde_json::from_str(&t).ok())
         .unwrap_or(Value::Null);
     let closed = data["closed"].as_array().map_or_else(BTreeSet::new, |a| {
-        a.iter().filter_map(|t| t.as_str().map(str::to_owned)).collect()
+        a.iter()
+            .filter_map(|t| t.as_str().map(str::to_owned))
+            .collect()
     });
     let panes = data["panes"].as_object().map_or_else(BTreeMap::new, |o| {
         o.iter()
             .filter_map(|(p, r)| {
                 let r = r.as_object()?;
-                Some((p.clone(), Recorded { tab: text(r, "tab"), terminal: text(r, "terminal") }))
+                Some((
+                    p.clone(),
+                    Recorded {
+                        tab: text(r, "tab"),
+                        terminal: text(r, "terminal"),
+                    },
+                ))
             })
             .collect()
     });
@@ -41,13 +49,19 @@ pub fn load(path: Option<&Path>) -> Saved {
 }
 
 fn text(r: &Map<String, Value>, k: &str) -> String {
-    r.get(k).and_then(Value::as_str).unwrap_or_default().to_owned()
+    r.get(k)
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_owned()
 }
 
 /// Saves `saved` at `path`; why not, if it failed.
 pub fn save(path: &Path, saved: &Saved) -> Result<(), String> {
-    let panes: Map<String, Value> =
-        saved.panes.iter().map(|(p, r)| (p.clone(), json!({"tab": r.tab, "terminal": r.terminal}))).collect();
+    let panes: Map<String, Value> = saved
+        .panes
+        .iter()
+        .map(|(p, r)| (p.clone(), json!({"tab": r.tab, "terminal": r.terminal})))
+        .collect();
     let doc = json!({"closed": saved.closed.iter().collect::<Vec<_>>(), "panes": panes});
     let tmp: PathBuf = path.with_extension("tmp");
     let write = || -> std::io::Result<()> {

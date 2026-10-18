@@ -25,7 +25,12 @@ async fn a_panel_the_operator_closed_stays_closed_until_the_open_key() {
     again.started = true;
     pass(&mut again, &w, &sw, &[], false).await;
     assert!(w.calls().is_empty());
-    assert_eq!(again.open_key(&w.snap(), &sw, Some(&home()), &set(&[]), false).await, OpenKey::Panel);
+    assert_eq!(
+        again
+            .open_key(&w.snap(), &sw, Some(&home()), &set(&[]), false)
+            .await,
+        OpenKey::Panel
+    );
     let new = w.order("w1:t2")[0].clone();
     assert_ne!(new, panel);
     assert_eq!(w.s().focus, ("w1:t2".into(), new));
@@ -41,12 +46,24 @@ async fn the_open_key_focuses_an_existing_panel_or_says_home() {
     pass(&mut m, &w, &sw, &[], true).await;
     w.s().focus = ("w1:t2".into(), "w1:p2".into());
     let opens = w.calls().iter().filter(|c| c.starts_with("open")).count();
-    assert_eq!(m.open_key(&w.snap(), &sw, Some(&home()), &set(&[]), false).await, OpenKey::Panel);
+    assert_eq!(
+        m.open_key(&w.snap(), &sw, Some(&home()), &set(&[]), false)
+            .await,
+        OpenKey::Panel
+    );
     let first = w.order("w1:t2")[0].clone();
     assert_eq!(w.s().focus, ("w1:t2".into(), first));
-    assert_eq!(w.calls().iter().filter(|c| c.starts_with("open")).count(), opens, "no second panel");
+    assert_eq!(
+        w.calls().iter().filter(|c| c.starts_with("open")).count(),
+        opens,
+        "no second panel"
+    );
     w.s().focus = ("w1:t3".into(), "w1:p3".into()); // not an orchestrator of the model
-    assert_eq!(m.open_key(&w.snap(), &sw, Some(&home()), &set(&[]), false).await, OpenKey::Home);
+    assert_eq!(
+        m.open_key(&w.snap(), &sw, Some(&home()), &set(&[]), false)
+            .await,
+        OpenKey::Home
+    );
 }
 
 #[tokio::test]
@@ -56,14 +73,49 @@ async fn the_open_key_waits_for_the_home_lock_then_says_busy() {
     let mut p = places(dir.path());
     p.home_lock = Some(lock.clone());
     let mut m = crate::panels::Manager::new(w.clone(), None, p, Arc::new(Instant::now));
-    let held = herdr_agent_kit::plugin_env::lock::LockFile::new(&lock).try_exclusive().unwrap().unwrap();
+    let held = herdr_agent_kit::plugin_env::lock::LockFile::new(&lock)
+        .try_exclusive()
+        .unwrap()
+        .unwrap();
     let t0 = Instant::now();
-    assert_eq!(m.open_key(&w.snap(), &orch(&["w1:p2"]), Some(&home()), &set(&[]), false).await, OpenKey::Busy);
+    assert_eq!(
+        m.open_key(
+            &w.snap(),
+            &orch(&["w1:p2"]),
+            Some(&home()),
+            &set(&[]),
+            false
+        )
+        .await,
+        OpenKey::Busy
+    );
     assert!(t0.elapsed() >= crate::panels::LOCK);
-    assert!(m.reconcile(w.snap(), &orch(&["w1:p2"]), Some(&home()), &set(&[]), true, false).await.is_none());
+    assert!(
+        m.reconcile(
+            w.snap(),
+            &orch(&["w1:p2"]),
+            Some(&home()),
+            &set(&[]),
+            true,
+            false
+        )
+        .await
+        .is_none()
+    );
     assert!(w.calls().is_empty());
     drop(held);
-    assert!(m.reconcile(w.snap(), &orch(&["w1:p2"]), Some(&home()), &set(&[]), true, false).await.is_some());
+    assert!(
+        m.reconcile(
+            w.snap(),
+            &orch(&["w1:p2"]),
+            Some(&home()),
+            &set(&[]),
+            true,
+            false
+        )
+        .await
+        .is_some()
+    );
     assert!(!w.calls().is_empty());
 }
 
@@ -74,7 +126,10 @@ async fn only_provable_panels_are_closed() {
     w.s().argv.insert("w1:p50".into(), "panel".into());
     let mut m = manager(&w, dir.path());
     pass(&mut m, &w, &orch(&["w1:p2"]), &[], true).await;
-    assert!(!w.calls().contains(&"open w1:p2".to_string()), "it still counts as the tab's panel");
+    assert!(
+        !w.calls().contains(&"open w1:p2".to_string()),
+        "it still counts as the tab's panel"
+    );
     assert_eq!(m.remove_all(Some(w.snap()), &set(&[])).await, 0);
     assert!(w.order("w1:t2").contains(&"w1:p50".to_string()));
     let mut verified = manager(&w, dir.path());
@@ -112,7 +167,17 @@ async fn a_second_look_alike_panel_is_left_but_not_counted() {
         w.s().argv.insert(p.into(), "panel".into());
     }
     let mut m = manager(&w, dir.path());
-    let sv = m.reconcile(w.snap(), &orch(&["w1:p2"]), Some(&home()), &set(&[]), true, false).await.unwrap();
+    let sv = m
+        .reconcile(
+            w.snap(),
+            &orch(&["w1:p2"]),
+            Some(&home()),
+            &set(&[]),
+            true,
+            false,
+        )
+        .await
+        .unwrap();
     assert!(w.closes().is_empty());
     assert_eq!(sv.panels["w1:t2"].len(), 1);
 }
@@ -159,7 +224,10 @@ async fn a_panel_that_dies_before_its_viewer_connected_is_a_crash_not_a_close() 
     }
     assert!(m.closed().is_empty());
     let opens = w.calls().iter().filter(|c| *c == "open w1:p2").count();
-    assert_eq!(opens as u32, CRASH_LIMIT, "the first one and the re-makes, then it gives up");
+    assert_eq!(
+        opens as u32, CRASH_LIMIT,
+        "the first one and the re-makes, then it gives up"
+    );
     assert!(m.broken.contains("w1:t2"));
     assert_eq!(m.crashes["w1:t2"], CRASH_LIMIT);
 }
