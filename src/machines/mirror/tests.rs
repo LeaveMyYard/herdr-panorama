@@ -189,3 +189,23 @@ fn a_mirror_deletes_nothing_already_in_the_dest() {
         "a\n"
     );
 }
+
+#[test]
+fn building_an_rsync_never_runs_it() {
+    assert_eq!(Rsync::new(None).append, None); // asked on first use, on a watcher's thread
+    let off = Rsync {
+        append: Some(false),
+        ..Rsync::new(None)
+    };
+    let [jsonl, _] = off.passes("h:x/", Path::new("/m"), &[SID.to_owned()]);
+    assert!(!jsonl.iter().any(|a| a == "--append-verify"));
+    let on = Rsync {
+        append: Some(true),
+        ..Rsync::new(None)
+    };
+    let [jsonl, json] = on.passes("h:x/", Path::new("/m"), &[SID.to_owned()]);
+    assert!(
+        jsonl.iter().any(|a| a == "--append-verify")
+            && !json.iter().any(|a| a == "--append-verify")
+    );
+}

@@ -25,8 +25,8 @@ pub use keys::Key;
 use panorama_core::view::Filter;
 use std::time::{Duration, Instant};
 
-/// No key acts this long after what it would act on changed (Python `ARM_SECONDS`).
-pub const ARM: Duration = Duration::from_millis(400);
+/// No key acts this long after what it would act on changed (shared with the app).
+pub use crate::ui::selection::ARM;
 /// A filter chosen here wins over the core's older word this long.
 pub const FILTER_ECHO: Duration = Duration::from_secs(1);
 /// The docked list: switch once the arrows rest this long (holding one switches once).

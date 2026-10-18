@@ -4,8 +4,8 @@
 //! [`Screen`] with its click targets. Animation is a function of `View.frame`, so the caller
 //! renders again on each colour tick (see `anim`).
 //!
-//! The docked panel ([`render_dock`]) is the per-tab panel's view (P3); the graph and the
-//! narrow layout join in P4.
+//! The docked panel ([`render_dock`]) is the per-tab panel's view; [`render_graph`] is the
+//! graph: the wide view (design 2a) from 120 columns, the narrow layout below.
 
 pub mod agent_text;
 pub mod anim;
@@ -15,6 +15,7 @@ pub mod colour;
 pub mod dock;
 pub mod empty;
 pub mod filter;
+pub mod graph;
 pub mod machines;
 pub mod moving;
 pub mod narrow;
@@ -62,6 +63,33 @@ pub fn render_dock(
         return empty::page(swarm, view, w, h, stale, no_sessions);
     }
     dock::dock_panel(swarm, view, w, h, stale.is_some())
+}
+
+/// The graph as Python's `render(…)` draws it with `view.dock` off: the same empty pages,
+/// otherwise the wide graph ([`graph::page`]) from [`empty::WIDE`] columns and the narrow
+/// layout ([`narrow::page`]) below. The arguments are [`render_dock`]'s. The screen's
+/// [`Screen::hlo`] is the wide graph's first column shown, for a sideways scroll.
+///
+/// As for [`render_dock`], every string is drawn as given: the caller cleans the swarm first.
+/// The panel's swarm is cleaned as the core's state is read; the app (P4 8a) renders its own
+/// collector's swarm and must clean it before this (test_render.py's untrusted-text row maps
+/// there).
+pub fn render_graph(
+    swarm: &Swarm,
+    view: &View,
+    w: i32,
+    h: i32,
+    stale: Option<&str>,
+    no_sessions: &str,
+) -> Screen {
+    if w < empty::WIDE {
+        return render_narrow(swarm, view, w, h, stale, no_sessions);
+    }
+    debug_assert!(!no_sessions.is_empty(), "the empty page needs its words");
+    if !swarm.herdr_ok || swarm.orchestrators.is_empty() {
+        return empty::page(swarm, view, w, h, stale, no_sessions);
+    }
+    graph::page(swarm, view, w, h, stale)
 }
 
 /// The narrow layout as Python's `render(…)` draws it below 120 columns with `view.dock` off:

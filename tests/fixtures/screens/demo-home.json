@@ -55,6 +55,10 @@
    ]
   }
  ],
+ "unseen": {
+  "home": {},
+  "new agent form": {}
+ },
  "screens": {
   "home": [
     [[" ","#c3c7cd","#171a1f",false],["herdr","#eceef1","#171a1f",true],[" panorama","#80868f","#171a1f",false],["    ","#c3c7cd","#171a1f",false],["all","#eceef1","#171a1f",true],["   ","#c3c7cd","#171a1f",false],["running","#4d535c","#171a1f",false],["   ","#c3c7cd","#171a1f",false],["needs me","#4d535c","#171a1f",false],["                                                                                              ","#c3c7cd","#171a1f",false],["? 1","#ffb547","#171a1f",true],["  ","#c3c7cd","#171a1f",false],["! 1","#ffb547","#171a1f",true],["  ","#c3c7cd","#171a1f",false],["✗ 1","#ff6b6b","#171a1f",true],["    ","#c3c7cd","#171a1f",false],["10:04","#80868f","#171a1f",false],[" ","#c3c7cd","#171a1f",false]],

@@ -57,6 +57,10 @@ pub struct Screen {
     pub targets: Vec<Hit>,
     /// The scrollable columns.
     pub columns: Vec<ScrollRegion>,
+    /// The wide graph: its first column shown (Python `View.hlo`). A sideways scroll starts
+    /// from it, and a set [`View::hcol`](super::View) takes it (the render clamps it). 0 on
+    /// any other view.
+    pub hlo: usize,
 }
 
 impl Screen {
@@ -69,6 +73,7 @@ impl Screen {
             rows: vec![None; h as usize],
             targets: vec![],
             columns: vec![],
+            hlo: 0,
         }
     }
 

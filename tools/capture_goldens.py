@@ -15,7 +15,9 @@ Every golden carries its inputs, so another implementation can replay it without
   ``steps``; every ``snap`` step's screen is under ``screens`` by its name, as runs of
   ``[text, fg, bg, bold]`` per row (the shape of ``design_*.json``; ``null`` is the
   terminal's default colour; a ``reverse`` cell has its fg and bg swapped, as the terminal
-  shows it; no other attribute occurs on these screens).
+  shows it; no other attribute occurs on these screens). ``unseen``: the unseen marks the view
+  drew each snap with, by its name (the tracker's state file is shared by the runs, so they
+  depend on the runs before; a port renders with them).
 
 The goldens are made from the input files (written first, then read back), so the inputs are
 known to be complete. Deterministic: fixed sizes, held clock and animation frame, TZ=UTC, no
@@ -356,7 +358,7 @@ def hold_cursor(app) -> None:
         w.cursor_blink = False
 
 
-async def play(run: dict, inputs: dict, work: Path, env0: dict, shots: dict) -> None:
+async def play(run: dict, inputs: dict, work: Path, env0: dict, shots: dict, marks: dict) -> None:
     from textual import events
 
     from herdr_panorama import herdr, inbox, protocol
@@ -434,6 +436,8 @@ async def play(run: dict, inputs: dict, work: Path, env0: dict, shots: dict) -> 
             if do == "snap":
                 assert step["name"] not in shots, step["name"]
                 shots[step["name"]] = dump(app)
+                if hasattr(app, "view"):
+                    marks[step["name"]] = dict(sorted(app.view.unseen.items()))
 
 
 def capture_screens(out: Path, work: Path, inputs: dict, env0: dict) -> list[Path]:
@@ -443,8 +447,9 @@ def capture_screens(out: Path, work: Path, inputs: dict, env0: dict) -> list[Pat
     written = []
     for name, runs in screen_files(inputs["scenarios"], inputs["swarms"]).items():
         shots: dict = {}
+        marks: dict = {}
         for run in runs:
-            asyncio.run(play(run, flat, work, env0, shots))
+            asyncio.run(play(run, flat, work, env0, shots, marks))
         os.environ.clear()
         os.environ.update(env0)
         for run in runs:
@@ -457,7 +462,7 @@ def capture_screens(out: Path, work: Path, inputs: dict, env0: dict) -> list[Pat
                          "materialised as for model/ and read through the app's own source (herdr + the "
                          "inbox) with the clock held; a swarm input through protocol.swarm_from_wire; "
                          "<root> in env: that run's own directory; " + ENV_NOTE,
-               "runs": runs, "screens": shots}
+               "runs": runs, "unseen": marks, "screens": shots}
         path = out / "screens" / f"{name}.json"
         write_screens(path, doc)
         written.append(path)
