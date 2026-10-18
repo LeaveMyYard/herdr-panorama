@@ -5,6 +5,8 @@
 
 pub mod design;
 pub mod glyphs;
+pub mod states;
+pub mod tree_design;
 
 /// The no-sessions words the Claude Code panel passes (Python's).
 pub const NO_SESSIONS: &str = "No Claude Code sessions in herdr";

@@ -1,8 +1,5 @@
 //! A card's marks on the right: `✗` (an agent failed), `!` (blocked), `?N` (questions)
 //! (Python `render.marks_of`, `marks_right`).
-//!
-//! Not yet ported (P4's wide graph uses it): `marks_of`'s `extra_q`, the questions no
-//! agent filed.
 
 use crate::model::{Agent, Status};
 use crate::view::palette::status;
@@ -10,8 +7,9 @@ use crate::view::screen::Screen;
 use crate::view::seg::Seg;
 use crate::view::target::Target;
 
-/// The marks of `agents` (`blocked`: the session itself is blocked).
-pub fn marks_of(agents: &[&Agent], blocked: bool) -> Vec<Seg> {
+/// The marks of `agents` (`blocked`: the session itself is blocked; `extra_q`: questions
+/// no agent filed, which count in `?N`).
+pub fn marks_of(agents: &[&Agent], blocked: bool, extra_q: usize) -> Vec<Seg> {
     let any = |st: Status| agents.iter().any(|a| a.status == st);
     let mut out = vec![];
     if any(Status::Failed) {
@@ -20,7 +18,7 @@ pub fn marks_of(agents: &[&Agent], blocked: bool) -> Vec<Seg> {
     if blocked || any(Status::Blocked) {
         out.push(Seg::new("!", status(&Status::Blocked)).bold());
     }
-    let q: usize = agents.iter().map(|a| a.question_ids.len()).sum();
+    let q: usize = agents.iter().map(|a| a.question_ids.len()).sum::<usize>() + extra_q;
     if q > 0 {
         out.push(Seg::new(format!("?{q}"), status(&Status::Waiting)).bold());
     }

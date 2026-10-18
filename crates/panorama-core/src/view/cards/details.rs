@@ -34,7 +34,7 @@ pub fn bg_row(b: &BgTask, w: i32, now: f64, frame: f64, i: usize) -> Vec<Seg> {
 }
 
 /// A label for a status as Python's `LABEL.get(status, "")` reads it.
-fn label(st: &Status) -> &str {
+pub fn label(st: &Status) -> &str {
     if matches!(st, Status::Unknown(_)) {
         ""
     } else {
