@@ -21,6 +21,7 @@ pub mod no_core;
 pub mod pacing;
 pub mod paint;
 pub mod term;
+pub mod toast;
 
 use crate::proto::client::{BACKOFF, Client, Config};
 use crate::proto::socket;
