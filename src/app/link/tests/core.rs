@@ -14,8 +14,8 @@ use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::UnixStream;
 
-struct Anyone;
-impl core::Verify for Anyone {
+struct NoOne;
+impl core::Verify for NoOne {
     async fn verify(&self, _pane: &str, _pid: i32) -> bool {
         false
     }
@@ -37,7 +37,7 @@ async fn the_home_view_publishes_each_refresh_and_takes_seen_back() {
     let sock = dir.path().join("s").join("core.sock");
     let cfg = Config::new(sock.clone(), dir.path().join("s").join("core.lock"), uid);
     let (tx, rx) = core::events();
-    let c = Arc::new(core::start(cfg, Anyone, tx).await.expect("the core starts"));
+    let c = Arc::new(core::start(cfg, NoOne, tx).await.expect("the core starts"));
     let mut l = link(&fake, true, dir.path());
     l.core = Some(c.clone());
     l.core_events = Some(rx);

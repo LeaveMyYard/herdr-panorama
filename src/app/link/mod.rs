@@ -230,7 +230,12 @@ impl Link {
             }
         };
         tokio::select! {
-            Some(d) = self.done_rx.recv() => LinkEvent::Done(d),
+            Some(d) = self.done_rx.recv() => {
+                if let Done::MyPane(pane) = &d {
+                    self.moved(pane.clone()); // the open key moved the home pane: a new id
+                }
+                LinkEvent::Done(d)
+            }
             Some(e) = core => LinkEvent::Core(e),
         }
     }

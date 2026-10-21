@@ -407,7 +407,7 @@ tests/test_goldens.py::test_the_goldens_are_what_the_code_does[model],tests/test
 tests/test_goldens.py::test_the_goldens_are_what_the_code_does[screens],tests/test_goldens.py,,retired,"checks that the Python code still reproduces its own captures; the Rust tests read the same goldens (model, screens) directly",P0a
 tests/test_herdr.py::test_clean_strips_controls_and_caps,tests/test_herdr.py,herdr-agent-kit@v0.1.0:src/herdr_api/sanitize/tests.rs::clean_strips_controls_and_caps,mapped,,P1
 tests/test_herdr.py::test_missing_binary_is_an_error_not_an_exception,tests/test_herdr.py,herdr-agent-kit@v0.1.0:tests/herdr_api/cli.rs::a_missing_binary_is_unreachable,mapped,,P1
-tests/test_herdr.py::test_snapshot_and_focus_through_the_fake,tests/test_herdr.py,herdr-agent-kit@v0.1.0:tests/herdr_api/cli.rs::cli_arguments_are_cleaned,mapped,,P4
+tests/test_herdr.py::test_snapshot_and_focus_through_the_fake,tests/test_herdr.py,herdr-agent-kit@v0.1.1:tests/herdr_api/parity_tabs_panes.rs::tabs_and_workspaces_send_what_herdrs_cli_sends ; herdr-agent-kit@v0.1.1:tests/herdr_api/cli.rs::cli_arguments_are_cleaned,mapped,,P4
 tests/test_herdr.py::test_open_view_split_targets_the_invoking_pane,tests/test_herdr.py,,todo,,P4
 tests/test_home.py::test_home_opens_once_renamed_first_and_focused_on_demand,tests/test_home.py,src/home/tests/ensure.rs::home_opens_once_renamed_first_and_focused_on_demand,mapped,,P4
 tests/test_home.py::test_concurrent_openers_make_one_home,tests/test_home.py,src/home/tests/ensure.rs::concurrent_openers_make_one_home,mapped,,P4
@@ -1134,4 +1134,4 @@ tests/test_panel_keys.py::test_one_click_still_obeys_arming_and_identity,tests/t
 tests/test_panel_keys.py::test_the_2a_graph_keeps_select_first,tests/test_panel_keys.py,src/panel/input/mouse/tests.rs::the_wide_graph_selects_first_and_goes_on_the_second_click,mapped,,P4
 tests/test_panel_keys.py::test_no_graph_flash_while_a_switch_runs,tests/test_panel_keys.py,src/panel/model/tests.rs::the_docked_panel_stays_while_a_switch_runs_even_at_the_wide_layouts_width ; src/ui/layout/tests.rs::docked_and_narrower_than_the_wide_layout_once_painted,mapped,,P4
 tests/test_panel_keys.py::test_a_switch_that_ends_judges_the_focus_again,tests/test_panel_keys.py,src/panel/model/tests.rs::a_switch_that_ends_judges_the_focus_again,mapped,,P4
-tests/test_cockpit.py::test_the_cores_open_key_follows_the_home_panes_new_id,tests/test_cockpit.py,src/app/link/tests/panels.rs::the_open_key_brings_a_docked_home_back_first ; src/app/link/tests/focus.rs::a_moved_home_pane_moves_the_collectors_copy_too,mapped,,P4
+tests/test_cockpit.py::test_the_cores_open_key_follows_the_home_panes_new_id,tests/test_cockpit.py,src/app/link/tests/panels.rs::the_open_key_follows_the_home_panes_new_id ; src/app/link/tests/focus.rs::the_link_takes_its_new_id_from_the_report ; src/app/link/tests/focus.rs::a_moved_home_pane_moves_the_collectors_copy_too,mapped,,P4

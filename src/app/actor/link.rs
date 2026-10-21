@@ -63,13 +63,8 @@ impl Actor {
                     .and_then(|l| l.focus_read(&announced, real));
                 return self.focused(look);
             }
-            Done::MyPane(pane) => {
-                if let Some(link) = self.link.as_mut() {
-                    link.moved(pane);
-                }
-                return Ok(None);
-            }
-            Done::NewAgentForm(_cwd) => {} // the form in this pane: P4 PR 9b
+            Done::MyPane(_) => return Ok(None), // the link took its new id (`Link::next`)
+            Done::NewAgentForm(_cwd) => {}      // the form in this pane: P4 PR 9b
         }
         self.repaint(Painted::Other).map(|()| None)
     }

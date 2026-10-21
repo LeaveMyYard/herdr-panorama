@@ -26,10 +26,7 @@ fn a_click_on_an_agent_cards_answer_deep_links_its_question() {
     let later = now + Duration::from_secs(2); // the first paint, a while later
     r.d.app.armed_at = later + Duration::from_secs(30); // as right after a background change
     let out = r.click(&answer, later); // not armed: no inbox (the card is looked at: seen)
-    assert!(
-        !out.iter().any(|e| matches!(e, Effect::OpenInbox { .. })),
-        "{out:?}"
-    );
+    assert_eq!(out, [Effect::Seen(vec!["c1d2e3f".into()])]);
     r.d.app.armed_at = r.t0;
     let out = r.click(&answer, later);
     let inbox = Effect::OpenInbox {
