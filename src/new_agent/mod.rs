@@ -8,7 +8,10 @@
 //! - [`start`]: starting the agent through [`ops::StartOps`] ([`real`] is herdr itself).
 
 pub mod form;
+pub mod keys;
 pub mod ops;
+pub mod overlay;
+pub mod popup;
 pub mod real;
 pub mod start;
 pub mod text;

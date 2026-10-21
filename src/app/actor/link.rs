@@ -5,8 +5,7 @@
 use super::{Actor, End};
 use crate::app::link::{Done, LinkEvent};
 use crate::core::Event;
-use crate::ui::input::{Host, Painted};
-use panorama_core::view::Filter;
+use crate::ui::input::Painted;
 use std::io;
 use std::time::Instant;
 
@@ -64,7 +63,12 @@ impl Actor {
                 return self.focused(look);
             }
             Done::MyPane(_) => return Ok(None), // the link took its new id (`Link::next`)
-            Done::NewAgentForm(_cwd) => {}      // the form in this pane: P4 PR 9b
+            Done::NewAgentForm(cwd) => self.driver.open_form(&cwd, now),
+            Done::Started(result) => {
+                if self.driver.agent_started(result, now) {
+                    return Ok(Some(End::Quit)); // the new tab has the focus: a popup would hide it
+                }
+            }
         }
         self.repaint(Painted::Other).map(|()| None)
     }
@@ -79,14 +83,11 @@ impl Actor {
                 }
             }
             Event::Filter(name) => {
-                let Some(f) = Filter::from_name(&name) else {
-                    return Ok(None);
+                let Some(out) = self.driver.app.filter_from_core(&name, now) else {
+                    return Ok(None); // no such filter: ignored
                 };
-                if f != self.driver.app.view.filter {
-                    let out = self.driver.app.set_filter(f, now);
-                    if let Some(end) = self.act(out) {
-                        return Ok(Some(end));
-                    }
+                if let Some(end) = self.act(out) {
+                    return Ok(Some(end));
                 }
                 self.publish();
             }
@@ -114,10 +115,7 @@ impl Actor {
     fn focused(&mut self, look: Option<bool>) -> io::Result<Option<End>> {
         self.publish();
         match look {
-            Some(f) if f != self.driver.app.pane_focused => {
-                self.driver.app.pane_focused = f;
-                self.repaint(Painted::Other).map(|()| None)
-            }
+            Some(f) if self.driver.focus(f) => self.repaint(Painted::Other).map(|()| None),
             _ => Ok(None),
         }
     }

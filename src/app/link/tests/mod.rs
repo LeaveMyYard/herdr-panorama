@@ -2,6 +2,7 @@ mod acts;
 mod announce;
 mod core;
 mod events;
+mod filter;
 mod focus;
 mod panels;
 mod verify;

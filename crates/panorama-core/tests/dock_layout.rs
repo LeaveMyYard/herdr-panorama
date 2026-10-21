@@ -4,7 +4,7 @@
 mod support;
 
 use panorama_core::model::Swarm;
-use panorama_core::view::{NEW_ROW, Screen, Target, View, render_dock};
+use panorama_core::view::{NEW_ROW, Screen, Target, View, render_dock, render_graph};
 use serde_json::json;
 use support::design::design_swarm;
 use support::{NO_SESSIONS, fixture};
@@ -218,4 +218,18 @@ fn the_cursor_has_no_highlight_only_the_mouse_has() {
     v.hover = Some(orch(&other.pane_id));
     let s = render_dock(&sw, &v, 46, 45, None, NO_SESSIONS);
     assert_eq!(s.cell(30, y).bg, Some(DOCK_HOV));
+}
+
+#[test]
+fn the_docked_panel_and_the_graph_show_the_zoom_key() {
+    // test_follow.py::test_the_docked_panel_and_the_graph_show_the_zoom_key
+    let v = View {
+        orch: Some("w1:p3".into()),
+        zoom_hint: true,
+        ..View::default()
+    };
+    let docked = lines(&render_dock(&swarm(), &v, 46, 45, None, NO_SESSIONS));
+    assert!(docked[docked.len() - 2].contains("z graph"), "{docked:?}");
+    let wide = lines(&render_graph(&swarm(), &v, 160, 45, None, NO_SESSIONS));
+    assert!(wide.last().unwrap().contains("z panel"), "{wide:?}");
 }

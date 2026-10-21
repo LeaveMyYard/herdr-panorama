@@ -34,6 +34,8 @@ pub enum Pointer {
 pub struct Driver {
     pub app: App,
     pub toasts: Toasts,
+    /// The + New agent modal while it is open (keys and clicks go to it).
+    pub form: Option<super::form::OpenForm>,
     toast_rects: Vec<Placed>,
     shown: Option<Screen>,
 }
@@ -43,9 +45,17 @@ impl Driver {
         Self {
             app,
             toasts: Toasts::default(),
+            form: None,
             toast_rects: vec![],
             shown: None,
         }
+    }
+
+    /// Whether the view has the keyboard (the terminal's focus reports, herdr's focus): the
+    /// docked panel's two looks (Python `on_app_focus` / `on_app_blur`, `herdr_focus`).
+    /// Whether that changed it.
+    pub fn focus(&mut self, focused: bool) -> bool {
+        std::mem::replace(&mut self.app.pane_focused, focused) != focused
     }
 
     /// A refresh's outcome at `now`: the model and its unseen marks, or why it failed (the
@@ -141,6 +151,7 @@ impl Driver {
         let view = self.app.paint(w, h, look)?;
         self.app.stamp(self.shown.as_ref(), &view, cause, now);
         let mut screen = view.clone();
+        self.form_over(&mut screen); // the modal, when open, over the dimmed view
         self.toast_rects = self.toasts.draw(&mut screen);
         self.shown = Some(view);
         Some(screen)
