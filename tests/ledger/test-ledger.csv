@@ -543,7 +543,7 @@ tests/test_manifest.py::test_a_probe_that_ignores_term_is_killed_a_second_later,
 tests/test_manifest.py::test_a_probe_child_holding_the_output_cannot_keep_the_panel_waiting,tests/test_manifest.py,,todo,,P8
 tests/test_manifest.py::test_the_probe_never_reads_the_panes_input,tests/test_manifest.py,,todo,,P8
 tests/test_manifest.py::test_a_start_that_runs_rust_clears_the_last_fallback,tests/test_manifest.py,,todo,,P8
-tests/test_mouse.py::test_wide_cards_select_and_a_second_click_goes_to_the_pane,tests/test_mouse.py,,todo,,P4
+tests/test_mouse.py::test_wide_cards_select_and_a_second_click_goes_to_the_pane,tests/test_mouse.py,src/app/driver/tests/clicks.rs::wide_cards_select_and_a_second_click_goes_to_the_pane ; src/app/link/tests/acts.rs::goto_focuses_the_agent_and_a_popup_closes_then,mapped,,P4
 tests/test_mouse.py::test_a_selected_orchestrator_clicked_again_goes_to_its_pane,tests/test_mouse.py,src/app/driver/tests/clicks.rs::a_selected_orchestrator_clicked_again_goes_to_its_pane,mapped,,P4
 tests/test_mouse.py::test_a_selected_card_without_focus_is_focused_first,tests/test_mouse.py,src/app/driver/tests/clicks.rs::a_selected_card_without_focus_is_focused_first,mapped,,P4
 tests/test_mouse.py::test_pods_in_a_thread_card_select_their_agent,tests/test_mouse.py,src/app/driver/tests/clicks.rs::pods_in_a_thread_card_select_their_agent,mapped,,P4
@@ -561,7 +561,7 @@ tests/test_mouse.py::test_a_click_right_after_a_wheel_scroll_does_not_hit_what_s
 tests/test_mouse.py::test_wheel_outside_a_column_or_on_a_short_one_does_nothing,tests/test_mouse.py,src/app/driver/tests/wheel.rs::the_wheel_outside_a_column_or_on_a_short_one_does_nothing,mapped,,P4
 tests/test_mouse.py::test_narrow_clicks,tests/test_mouse.py,src/app/driver/tests/narrow.rs::narrow_clicks,mapped,,P4
 tests/test_mouse.py::test_narrow_expanded_agent_and_its_actions,tests/test_mouse.py,src/app/driver/tests/narrow.rs::narrow_expanded_agent_and_its_actions,mapped,,P4
-tests/test_mouse.py::test_narrow_wheel_and_new_row,tests/test_mouse.py,,todo,,P4
+tests/test_mouse.py::test_narrow_wheel_and_new_row,tests/test_mouse.py,src/app/driver/tests/narrow.rs::narrow_wheel_and_new_row ; src/app/link/tests/acts.rs::new_agent_uses_the_form_where_it_fits_else_the_popup,mapped,,P4
 tests/test_mouse.py::test_hover_highlights_one_card_and_repaints_only_on_change,tests/test_mouse.py,src/app/driver/tests/clicks.rs::hover_highlights_one_card_and_repaints_only_on_change,mapped,,P4
 tests/test_mouse.py::test_r7_m1_pods_that_shifted_ignore_clicks_even_if_their_agent_card_did_not_move,tests/test_mouse.py,src/app/driver/tests/arming.rs::pods_that_shifted_ignore_clicks_even_if_their_agent_card_did_not_move,mapped,,P4
 tests/test_mouse.py::test_r7_l1_fold_clicks_are_armed_like_enter,tests/test_mouse.py,src/app/driver/tests/clicks.rs::fold_clicks_are_armed_like_enter,mapped,,P4
@@ -1026,7 +1026,7 @@ tests/test_tui.py::test_a_vanished_target_parks_the_cursor,tests/test_tui.py,src
 tests/test_tui.py::test_action_keys_are_ignored_right_after_a_background_change,tests/test_tui.py,src/app/model/tests.rs::a_background_change_under_the_cursor_arms_the_keys_again ; src/app/driver/tests/clicks.rs::action_labels_act_on_their_agent,mapped,,P4
 tests/test_tui.py::test_goto_focuses_the_orchestrator_pane_and_closes,tests/test_tui.py,src/app/link/tests/acts.rs::goto_focuses_the_agent_and_a_popup_closes_then,mapped,,P4
 tests/test_tui.py::test_goto_failure_keeps_the_view_open,tests/test_tui.py,src/app/link/tests/acts.rs::goto_focuses_the_agent_and_a_popup_closes_then,mapped,,P4
-tests/test_tui.py::test_answer_opens_the_inbox_after_the_popup_closes,tests/test_tui.py,,todo,,P4
+tests/test_tui.py::test_answer_opens_the_inbox_after_the_popup_closes,tests/test_tui.py,src/app/driver/tests/keys.rs::the_answer_key_opens_the_asking_agents_question_group ; src/app/link/tests/acts.rs::the_inbox_opens_over_the_home_view_and_after_a_popup,mapped,,P4
 tests/test_tui.py::test_answer_on_a_blocked_session_goes_to_the_pane,tests/test_tui.py,src/app/driver/tests/keys.rs::answer_on_a_blocked_session_goes_to_the_pane,mapped,,P4
 tests/test_tui.py::test_no_inbox_means_no_inbox_actions,tests/test_tui.py,src/app/driver/tests/keys.rs::no_inbox_means_no_inbox_actions,mapped,,P4
 tests/test_tui.py::test_filter_cycles_and_reselects,tests/test_tui.py,src/app/driver/tests/keys.rs::the_filter_cycles_and_reselects,mapped,,P4
@@ -1042,8 +1042,8 @@ tests/test_tui.py::test_frames_never_recollect_rearm_or_move_the_cursor,tests/te
 tests/test_tui.py::test_frames_keep_running_unfocused_and_pause_when_nothing_moves,tests/test_tui.py,src/app/driver/tests/frames.rs::frames_keep_running_unfocused_and_pause_when_nothing_moves ; src/ui/pacing/tests.rs::a_hidden_tab_or_a_still_screen_never_ticks,mapped,,P4
 tests/test_tui.py::test_new_row_is_last_stable_and_opens_the_form,tests/test_tui.py,,todo,,P4
 tests/test_tui.py::test_form_submit_is_armed_validated_and_runs_the_flow,tests/test_tui.py,src/new_agent/tests/form.rs::enter_on_the_last_field_or_ctrl_s_starts_once_armed ; src/new_agent/tests/form.rs::a_bad_name_or_directory_is_said_on_the_status_row,mapped,,P4
-tests/test_tui.py::test_home_mode_keeps_the_view_open,tests/test_tui.py,,todo,,P4
-tests/test_tui.py::test_new_row_in_narrow_layout,tests/test_tui.py,,todo,,P4
+tests/test_tui.py::test_home_mode_keeps_the_view_open,tests/test_tui.py,src/app/driver/tests/keys.rs::the_home_view_stays_open,mapped,,P4
+tests/test_tui.py::test_new_row_in_narrow_layout,tests/test_tui.py,crates/panorama-core/tests/narrow_layout.rs::the_new_row_in_the_narrow_layout,mapped,,P4
 tests/test_tui.py::test_refreshes_and_frames_keep_running_under_the_form,tests/test_tui.py,,todo,,P4
 tests/test_tui.py::test_r5_m3_submit_freezes_the_fields,tests/test_tui.py,,todo,,P4
 tests/test_tui.py::test_r5_l1_arrows_in_the_form_do_not_move_the_cursor,tests/test_tui.py,,todo,,P4
