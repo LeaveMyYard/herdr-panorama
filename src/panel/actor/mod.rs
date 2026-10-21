@@ -54,6 +54,24 @@ pub struct Place {
     pub home: String,
 }
 
+impl Place {
+    /// The plugin's own: `HERDR_PLUGIN_ID`, `HERDR_PLUGIN_ROOT`, this session's mark, `$HOME`.
+    pub fn from_env(env: &herdr_agent_kit::plugin_env::PluginEnv) -> Self {
+        use herdr_agent_kit::internal::plugin_paths::{PANORAMA_ID, panorama};
+        Self {
+            plugin_id: env.plugin_id(PANORAMA_ID).to_owned(),
+            root: env.plugin_root().map(std::path::Path::to_path_buf),
+            new_agent_mark: super::act::new_agent::marker(
+                &panorama::state_dir(env),
+                &panorama::session_key(env),
+            ),
+            home: env
+                .home()
+                .map_or_else(|| "~".to_owned(), |h| h.to_string_lossy().into_owned()),
+        }
+    }
+}
+
 /// The actor's state.
 pub struct Actor {
     driver: Driver,
