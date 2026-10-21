@@ -1,6 +1,7 @@
 //! What the input asks for, carried out (Python `SwarmApp`'s actions' IO): a notice and the
 //! end here; going to a pane, the inbox, + New agent and zoom on the herdr side
-//! ([`crate::app::link`], off the actor). Without a link (tests) those do nothing.
+//! ([`crate::app::link`], off the actor). Without a link (tests) those do nothing. Agents seen
+//! go to the producer's unseen tracker ([`crate::app::seen`]).
 
 use super::{Actor, End};
 use crate::ui::input::Effect;
@@ -13,8 +14,12 @@ impl Actor {
             match e {
                 Effect::Quit => return Some(End::Quit),
                 Effect::Toast(t) => self.driver.toasts.push(t, Instant::now()),
-                // the marks cleared in the view; the store that keeps them is the producer's
-                Effect::Seen(_) => {}
+                // the marks cleared in the view; the producer's tracker keeps them cleared
+                Effect::Seen(ids) => {
+                    if let Some(t) = self.worker.tracker() {
+                        crate::app::seen::mark(&t, &ids);
+                    }
+                }
                 Effect::Goto { pane, .. } => self.on_link_ref(|l| l.goto(pane)),
                 Effect::GotoRemote {
                     machine_id,

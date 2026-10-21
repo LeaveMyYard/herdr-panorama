@@ -1032,11 +1032,11 @@ tests/test_tui.py::test_no_inbox_means_no_inbox_actions,tests/test_tui.py,src/ap
 tests/test_tui.py::test_filter_cycles_and_reselects,tests/test_tui.py,src/app/driver/tests/keys.rs::the_filter_cycles_and_reselects,mapped,,P4
 tests/test_tui.py::test_enter_unfolds_the_complete_card,tests/test_tui.py,src/app/driver/tests/keys.rs::enter_unfolds_the_complete_card,mapped,,P4
 tests/test_tui.py::test_narrow_layout_in_a_side_split,tests/test_tui.py,src/app/driver/tests/narrow.rs::the_narrow_layout_in_a_side_split,mapped,,P4
-tests/test_tui.py::test_refresh_errors_never_kill_the_view,tests/test_tui.py,src/app/model/tests.rs::a_failed_refresh_keeps_the_last_model_and_says_why ; src/app/collect/tests.rs::a_panicking_collect_is_a_failed_refresh_and_the_next_one_still_runs,mapped,,P4
+tests/test_tui.py::test_refresh_errors_never_kill_the_view,tests/test_tui.py,src/app/model/tests.rs::a_failed_refresh_keeps_the_last_model_and_says_why ; src/app/collect/tests.rs::a_failed_or_panicking_refresh_is_a_failed_refresh_and_the_next_one_still_runs,mapped,,P4
 tests/test_tui.py::test_spinner_frames_advance_without_changing_width,tests/test_tui.py,src/app/driver/tests/frames.rs::spinner_frames_advance_without_changing_width,mapped,,P4
 tests/test_tui.py::test_m5_a_new_inbox_question_arms_the_answer_key,tests/test_tui.py,src/app/model/tests.rs::a_background_change_under_the_cursor_arms_the_keys_again,mapped,,P4
 tests/test_tui.py::test_parked_cursor_keys_act_on_nothing,tests/test_tui.py,src/app/driver/tests/keys.rs::parked_cursor_keys_act_on_nothing,mapped,,P4
-tests/test_tui.py::test_h2_collects_never_overlap,tests/test_tui.py,src/app/collect/tests.rs::one_collect_at_a_time_and_its_swarm_is_cleaned,mapped,,P4
+tests/test_tui.py::test_h2_collects_never_overlap,tests/test_tui.py,src/app/collect/tests.rs::one_refresh_at_a_time_its_swarm_cleaned_and_its_marks_kept,mapped,,P4
 tests/test_tui.py::test_l1_a_failing_collect_keeps_the_last_model_and_says_so,tests/test_tui.py,src/app/model/tests.rs::a_failed_refresh_keeps_the_last_model_and_says_why ; src/app/paint/tests.rs::a_failed_refresh_says_so_in_the_header_and_no_size_paints_nothing,mapped,,P4
 tests/test_tui.py::test_frames_never_recollect_rearm_or_move_the_cursor,tests/test_tui.py,src/app/driver/tests/frames.rs::frames_never_rearm_or_move_the_cursor,mapped,,P4
 tests/test_tui.py::test_frames_keep_running_unfocused_and_pause_when_nothing_moves,tests/test_tui.py,src/app/driver/tests/frames.rs::frames_keep_running_unfocused_and_pause_when_nothing_moves ; src/ui/pacing/tests.rs::a_hidden_tab_or_a_still_screen_never_ticks,mapped,,P4
