@@ -98,8 +98,12 @@ impl StartOps for RealStart {
         })
     }
 
-    async fn agent_in(&self, pane: &str) -> bool {
-        matches!(self.herdr.agent(&PaneId::new(pane)).await, Ok(Some(_)))
+    async fn agent_in(&self, pane: &str) -> Option<bool> {
+        self.herdr
+            .agent(&PaneId::new(pane))
+            .await
+            .ok()
+            .map(|a| a.is_some())
     }
 
     async fn fit(&self, panel: &str, tab: &str) {

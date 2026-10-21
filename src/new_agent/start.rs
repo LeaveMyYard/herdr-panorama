@@ -45,11 +45,15 @@ pub async fn new_agent(
         ops.fit(panel, &tab.tab).await;
     }
     if let Err(e) = ops.start_agent(&slug, kind, &pane).await {
-        // herdr may have started it after all (a start that only timed out): a tab whose pane
-        // holds an agent now is never closed
-        if !ops.agent_in(&pane).await {
-            let _ = ops.close_tab(&tab.tab).await; // no orphan tab left behind
-            return Err(format!("agent start failed: {e}"));
+        // herdr may have started it after all (a start that only timed out): the tab is closed
+        // only when herdr says for sure that its pane holds no agent
+        match ops.agent_in(&pane).await {
+            Some(true) => {} // it came up late: started
+            Some(false) => {
+                let _ = ops.close_tab(&tab.tab).await; // no orphan tab left behind
+                return Err(format!("agent start failed: {e}"));
+            }
+            None => return Err(format!("agent start failed: {e}")), // unknown: the tab stays
         }
     }
     let _ = ops.focus_tab(&tab.tab).await;

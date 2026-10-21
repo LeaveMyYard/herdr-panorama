@@ -250,3 +250,65 @@ async fn a_start_that_times_out_while_herdr_still_brings_the_agent_up_keeps_the_
     );
     assert_eq!(fake.params_of("tab.close"), [json!({"tab_id": "w1:t5"})]);
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn after_a_failed_start_the_tab_closes_only_when_herdr_says_its_pane_is_empty() {
+    let pending = json!({"name": "slow", "pane_id": "w1:p8", "tab_id": "w1:t5", "agent_status": "unknown",
+        "launch_pending": true});
+    let fake = FakeHerdr::start();
+    fake.once(
+        "agent.get",
+        Reply::error("agent_not_found", "agent not found"),
+    ); // before the start
+    fake.on(
+        "tab.create",
+        Reply::Result(json!({"type": "tab_created", "tab": {"tab_id": "w1:t5"}})),
+    );
+    fake.on(
+        "pane.list",
+        Reply::Result(
+            json!({"type": "pane_list", "panes": [{"pane_id": "w1:p8", "tab_id": "w1:t5"}]}),
+        ),
+    );
+    fake.on(
+        "agent.start",
+        Reply::error("timeout", "the agent was not ready"),
+    );
+    fake.on("tab.close", Reply::Result(json!({"type": "ok"})));
+    // herdr fails the look itself: the tab is kept, the start's error said
+    fake.on("agent.get", Reply::error("server_error", "internal"));
+    let err = new_agent(&ops(&fake), "slow", None, KIND, false)
+        .await
+        .unwrap_err();
+    assert!(err.starts_with("agent start failed"), "{err}");
+    assert!(
+        fake.params_of("tab.close").is_empty(),
+        "never closed on doubt"
+    );
+    // herdr says the agent is there: kept, started
+    fake.once(
+        "agent.get",
+        Reply::error("agent_not_found", "agent not found"),
+    );
+    fake.on(
+        "agent.get",
+        Reply::Result(json!({"type": "agent_info", "agent": pending})),
+    );
+    fake.on("tab.focus", Reply::Result(json!({"type": "ok"})));
+    assert_eq!(
+        new_agent(&ops(&fake), "slow", None, KIND, false).await,
+        Ok("slow".into())
+    );
+    assert!(fake.params_of("tab.close").is_empty());
+    // herdr says for sure there is none: closed
+    fake.on(
+        "agent.get",
+        Reply::error("agent_not_found", "agent not found"),
+    );
+    assert!(
+        new_agent(&ops(&fake), "slow", None, KIND, false)
+            .await
+            .is_err()
+    );
+    assert_eq!(fake.params_of("tab.close"), [json!({"tab_id": "w1:t5"})]);
+}

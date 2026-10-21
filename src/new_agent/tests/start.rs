@@ -16,6 +16,8 @@ struct World {
     paneless: bool,
     /// The start gives up, but herdr brings the agent up in the pane after all.
     late: bool,
+    /// herdr cannot say whether the pane holds an agent.
+    unknown: bool,
 }
 
 impl World {
@@ -49,8 +51,8 @@ impl StartOps for World {
             panel: None,
         })
     }
-    async fn agent_in(&self, _pane: &str) -> bool {
-        self.late
+    async fn agent_in(&self, _pane: &str) -> Option<bool> {
+        (!self.unknown).then_some(self.late)
     }
     async fn fit(&self, panel: &str, _tab: &str) {
         let _ = self.log(format!("fit {panel}"));
@@ -205,4 +207,21 @@ async fn an_agent_that_came_up_after_the_start_gave_up_keeps_its_tab() {
         "the tab holds an agent: never closed"
     );
     assert_eq!(w.calls().last().unwrap(), "focus_tab w1:t1");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_tab_herdr_cannot_describe_after_a_failed_start_is_kept() {
+    // the agent may be in it: never closed on doubt; the start's error is said as before
+    let w = World {
+        fail: vec!["start"],
+        unknown: true,
+        ..World::default()
+    };
+    let err = new_agent(&w, "slow", None, KIND, false).await.unwrap_err();
+    assert!(err.starts_with("agent start failed"), "{err}");
+    assert!(
+        !w.calls()
+            .iter()
+            .any(|c| c.starts_with("close") || c.starts_with("focus"))
+    );
 }
