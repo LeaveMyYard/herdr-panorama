@@ -1148,8 +1148,11 @@ tests/test_view_launcher.py::test_a_binary_that_does_not_speak_the_view_contract
 tests/test_view_launcher.py::test_a_binary_that_does_not_speak_the_view_contract_falls_back[stale],tests/test_view_launcher.py,,todo,,P8
 tests/test_view_launcher.py::test_a_binary_that_does_not_speak_the_view_contract_falls_back[panics],tests/test_view_launcher.py,,todo,,P8
 tests/test_view_launcher.py::test_a_shared_cargo_target_dir_is_not_looked_at,tests/test_view_launcher.py,,todo,,P8
+tests/test_view_launcher.py::test_it_runs_only_the_views_two_commands,tests/test_view_launcher.py,,todo,,P8
 tests/test_manifest.py::test_without_timeout_perls_alarm_bounds_the_probe[panel],tests/test_manifest.py,,todo,,P8
 tests/test_manifest.py::test_without_timeout_perls_alarm_bounds_the_probe[tui],tests/test_manifest.py,,todo,,P8
+tests/test_manifest.py::test_a_probe_child_holding_the_output_of_a_silent_binary_cannot_keep_it_waiting[panel],tests/test_manifest.py,,todo,,P8
+tests/test_manifest.py::test_a_probe_child_holding_the_output_of_a_silent_binary_cannot_keep_it_waiting[tui],tests/test_manifest.py,,todo,,P8
 tests/test_view_launcher.py::test_it_runs_only_the_views_commands,tests/test_view_launcher.py,,todo,,P8
 tests/test_view_launcher.py::test_the_view_runs_the_rust_app_when_built_else_the_venv_else_uv[action:open-open],tests/test_view_launcher.py,,todo,,P8
 tests/test_view_launcher.py::test_the_view_runs_the_rust_app_when_built_else_the_venv_else_uv[action:open-popup-open --popup],tests/test_view_launcher.py,,todo,,P8
