@@ -81,6 +81,12 @@ impl Settings {
         }
     }
 
+    /// panorama's own config table as it stands (the home view's and the cockpit's settings,
+    /// [`crate::home::config`]).
+    pub fn panorama_table(&mut self) -> Map<String, Value> {
+        table(&mut self.panorama)
+    }
+
     /// Why a config file was ignored, if one was (for the log). The same message stands until
     /// the file changes: log it when it changes, as Python logs once per re-read.
     pub fn errors(&self) -> impl Iterator<Item = &str> {
