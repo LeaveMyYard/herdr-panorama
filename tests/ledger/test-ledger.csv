@@ -215,8 +215,8 @@ tests/test_core.py::test_a_connection_without_hello_is_closed_at_the_deadline,te
 tests/test_core.py::test_idle_connections_are_capped_and_hold_no_threads,tests/test_core.py,tests/core_server.rs::idle_connections_are_capped,mapped,,P4
 tests/test_core.py::test_a_viewer_that_never_reads_is_dropped_after_the_send_timeout,tests/test_core.py,tests/core_server.rs::a_viewer_that_never_reads_is_dropped_after_the_send_timeout,mapped,,P4
 tests/test_core.py::test_a_pane_claim_is_checked_against_the_peers_own_process,tests/test_core.py,tests/core_server.rs::an_unverified_pane_claim_is_not_trusted_and_the_claim_is_checked_against_the_peer,mapped,,P4
-tests/test_core.py::test_a_pane_runs_our_panel_only_with_that_pid_and_argv,tests/test_core.py,,todo,,P4
-tests/test_core.py::test_the_rust_panel_is_our_panel_too,tests/test_core.py,,todo,,P4
+tests/test_core.py::test_a_pane_runs_our_panel_only_with_that_pid_and_argv,tests/test_core.py,src/app/link/tests/verify.rs::only_our_viewer_as_the_peer_itself_counts ; src/app/link/tests/verify.rs::herdrs_answer_decides_and_an_error_is_no,mapped,,P4
+tests/test_core.py::test_the_rust_panel_is_our_panel_too,tests/test_core.py,src/app/link/tests/verify.rs::only_our_viewer_as_the_peer_itself_counts,mapped,,P4
 tests/test_core.py::test_the_tmp_fallbacks_parent_must_be_safe_too,tests/test_core.py,tests/core_server.rs::an_unsafe_socket_directory_is_refused,mapped,,P4
 tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[True-fail],tests/test_current_card.py,crates/panorama-core/tests/wide_layout.rs::the_selected_card_stays_apart_through_a_whole_pulse,mapped,,P4
 tests/test_current_card.py::test_the_selected_card_stays_apart_through_a_whole_pulse[True-wait],tests/test_current_card.py,crates/panorama-core/tests/wide_layout.rs::the_selected_card_stays_apart_through_a_whole_pulse,mapped,,P4
@@ -298,14 +298,14 @@ tests/test_focus_theme.py::test_every_built_in_theme_has_the_six_tokens,tests/te
 tests/test_focus_theme.py::test_the_view_follows_the_terminals_focus_in_and_out,tests/test_focus_theme.py,,todo,,P4
 tests/test_focus_theme.py::test_the_table_is_herdrs_measured_values,tests/test_focus_theme.py,crates/panorama-core/src/view/theme/tests.rs::the_table_is_herdrs_measured_values,mapped,,P3
 tests/test_focus_theme.py::test_herdrs_focus_events_switch_the_look_too,tests/test_focus_theme.py,,todo,,P4
-tests/test_focus_theme.py::test_the_focus_watcher_forwards_herdrs_pane_focus,tests/test_focus_theme.py,,todo,,P4
+tests/test_focus_theme.py::test_the_focus_watcher_forwards_herdrs_pane_focus,tests/test_focus_theme.py,src/app/link/tests/events.rs::focus_events_feed_the_log_the_view_and_one_pass_per_burst,mapped,,P4
 tests/test_focus_theme.py::test_the_hover_row_is_a_step_lighter_than_either_background,tests/test_focus_theme.py,crates/panorama-core/src/view/theme/tests.rs::fixed_is_the_default_and_own_colours_replace_either,mapped,,P3
 tests/test_focus_theme.py::test_a_panorama_started_without_the_keyboard_looks_unfocused,tests/test_focus_theme.py,,todo,,P4
-tests/test_follow.py::test_z_zooms_panoramas_own_pane,tests/test_follow.py,,todo,,P4
+tests/test_follow.py::test_z_zooms_panoramas_own_pane,tests/test_follow.py,src/app/link/tests/acts.rs::zoom_is_the_home_panes_own,mapped,,P4
 tests/test_follow.py::test_the_docked_panel_and_the_graph_show_the_zoom_key,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_event_stream_yields_focus_events_and_reconnects,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_r12_l1_backoff_grows_until_data_arrives,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12f_l1_the_watcher_tracks_liveness,tests/test_follow.py,,todo,,P4
+tests/test_follow.py::test_r12f_l1_the_watcher_tracks_liveness,tests/test_follow.py,src/app/link/tests/events.rs::focus_events_feed_the_log_the_view_and_one_pass_per_burst,mapped,,P4
 tests/test_follow.py::test_r12f_l1_events_marks_connect_and_disconnect,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_r16_the_settle_wait_keeps_its_margin,tests/test_follow.py,,todo,,P4
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 46 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
@@ -470,7 +470,7 @@ tests/test_hooks.py::test_b1_hooks_never_use_uv_and_always_exit_0,tests/test_hoo
 tests/test_hooks.py::test_b1_concurrent_hooks_from_two_plugin_versions,tests/test_hooks.py,src/hook/tests.rs::concurrent_hooks_keep_every_line_whole,mapped,,P4
 tests/test_hooks.py::test_b1_stop_hook_active_is_respected,tests/test_hooks.py,src/hook/tests.rs::stop_hook_active_is_respected_and_unknown_kinds_do_nothing,mapped,,P4
 tests/test_hooks.py::test_b1_unknown_kind_and_direct_run_exit_0,tests/test_hooks.py,src/hook/tests.rs::stop_hook_active_is_respected_and_unknown_kinds_do_nothing ; tests/claude_launch.rs::the_built_binary_runs_the_hooks_and_the_server,mapped,,P4
-tests/test_hooks.py::test_m3_subagent_hooks_skip_internal_agents,tests/test_hooks.py,,todo,,P4
+tests/test_hooks.py::test_m3_subagent_hooks_skip_internal_agents,tests/test_hooks.py,tests/claude_manifests.rs::subagent_hooks_skip_internal_agents,mapped,,P4
 tests/test_hooks.py::test_m3_old_hook_files_are_pruned,tests/test_hooks.py,src/hook/tests.rs::old_hook_files_are_pruned,mapped,,P4
 tests/test_hooks.py::test_l4_session_text_once_per_session,tests/test_hooks.py,src/hook/tests.rs::l4_session_text_once_per_session,mapped,,P4
 tests/test_hooks.py::test_m2_claude_process_found_for_native_and_node_installs,tests/test_hooks.py,herdr-agent-kit@v0.1.0:src/agent_procs/claude/tests.rs::two_claudes_are_nested_and_the_nearest_owns ; herdr-agent-kit@v0.1.0:src/agent_procs/claude/tests.rs::a_claude_without_a_start_token_is_not_recorded,mapped,,P4
@@ -516,7 +516,7 @@ tests/test_machines.py::test_a_failed_refresh_keeps_the_last_result,tests/test_m
 tests/test_machines.py::test_enter_on_a_remote_orchestrator_focuses_it_there_and_says_where,tests/test_machines.py,,todo,,P4
 tests/test_machines.py::test_remote_groups_get_a_divider_and_it_is_not_clickable,tests/test_machines.py,,todo,,P4
 tests/test_machines.py::test_two_machines_with_the_same_local_ids_are_two_identities,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_a_custom_source_never_starts_machines,tests/test_machines.py,,todo,,P4
+tests/test_machines.py::test_a_custom_source_never_starts_machines,tests/test_machines.py,src/produce/tests.rs::a_producer_without_machines_never_starts_any,mapped,,P4
 tests/test_machines.py::test_two_machines_with_one_label_stay_apart_and_colons_are_fine,tests/test_machines.py,,todo,,P4
 tests/test_machines.py::test_a_changed_machines_setting_applies_without_a_restart,tests/test_machines.py,src/machines/remotes/tests.rs::a_changed_machines_setting_applies_without_a_restart,mapped,,P4
 tests/test_machines.py::test_an_rsync_without_append_verify_gets_a_normal_jsonl_pass,tests/test_machines.py,src/machines/sync/tests.rs::an_rsync_without_append_verify_gets_a_normal_jsonl_pass,mapped,,P4
@@ -528,7 +528,7 @@ tests/test_machines.py::test_a_remote_continuation_is_mirrored_and_followed_in_o
 tests/test_machines.py::test_prune_keeps_a_continuation_while_its_old_session_is_named,tests/test_machines.py,src/machines/prune/tests.rs::prune_keeps_a_continuation_while_its_old_session_is_named,mapped,,P4
 tests/test_manifest.py::test_plugin_manifest,tests/test_manifest.py,,todo,,P4
 tests/test_manifest.py::test_cli_entry_point,tests/test_manifest.py,,todo,,P4
-tests/test_manifest.py::test_claude_plugin_manifests,tests/test_manifest.py,,todo,,P4
+tests/test_manifest.py::test_claude_plugin_manifests,tests/test_manifest.py,tests/claude_manifests.rs::the_plugin_and_its_marketplace_entry_agree_and_the_server_runs_mcp ; tests/claude_manifests.rs::every_hook_runs_its_own_kind_through_sh_and_always_exits_0,mapped,,P4
 tests/test_manifest.py::test_the_panel_runs_the_rust_viewer_when_built_else_the_venv_else_uv,tests/test_manifest.py,,todo,,P8
 tests/test_manifest.py::test_a_shared_cargo_target_dir_is_not_looked_at,tests/test_manifest.py,,todo,,P8
 tests/test_manifest.py::test_a_binary_that_does_not_speak_the_contract_falls_back_to_the_venv[stale],tests/test_manifest.py,,todo,,P8
@@ -606,8 +606,8 @@ tests/test_panel_sync.py::test_a_hidden_target_paints_focused_before_it_is_shown
 tests/test_panel_sync.py::test_the_core_side_publishes_an_announced_focus,tests/test_panel_sync.py,,todo,,P4
 tests/test_panel_sync.py::test_tests_never_reach_a_live_herdr,tests/test_panel_sync.py,tests/no_live_herdr.rs::every_test_that_starts_the_binary_clears_its_environment,mapped,,P3
 tests/test_panel_sync.py::test_a_failed_switch_takes_its_announcement_back,tests/test_panel_sync.py,src/panel/act/switch/tests.rs::a_failed_switch_takes_the_announcement_back ; src/panel/input/arrows/tests.rs::a_switch_that_took_its_announcement_back_leaves_this_panel_focused,mapped,,P3
-tests/test_panel_sync.py::test_the_core_rereads_the_real_focus_after_an_unconfirmed_announcement,tests/test_panel_sync.py,,todo,,P4
-tests/test_panel_sync.py::test_a_confirmed_announcement_is_not_second_guessed,tests/test_panel_sync.py,,todo,,P4
+tests/test_panel_sync.py::test_the_core_rereads_the_real_focus_after_an_unconfirmed_announcement,tests/test_panel_sync.py,src/app/link/tests/focus.rs::an_announced_focus_is_read_again_unless_herdr_confirmed_one,mapped,,P4
+tests/test_panel_sync.py::test_a_confirmed_announcement_is_not_second_guessed,tests/test_panel_sync.py,src/app/link/tests/focus.rs::an_announced_focus_is_read_again_unless_herdr_confirmed_one,mapped,,P4
 tests/test_panels.py::test_the_start_batch_puts_a_panel_left_of_every_orchestrator_and_the_operator_back,tests/test_panels.py,src/panels/tests/batch.rs::the_start_batch_puts_a_panel_left_of_every_orchestrator_and_the_operator_back,mapped,,P4
 tests/test_panels.py::test_an_operator_who_moves_during_the_batch_is_left_there,tests/test_panels.py,src/panels/tests/batch.rs::an_operator_who_moves_during_the_batch_is_left_there,mapped,,P4
 tests/test_panels.py::test_after_the_start_only_the_operators_tab_gets_a_panel,tests/test_panels.py,src/panels/tests/batch.rs::after_the_start_only_the_operators_tab_gets_a_panel,mapped,,P4
@@ -902,9 +902,9 @@ tests/test_smooth.py::test_restyling_equals_a_full_render[frame 0-11.6-2a waitin
 tests/test_smooth.py::test_restyling_equals_a_full_render[frame 0-11.6-9e waiting],tests/test_smooth.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision), so 'restyle equals a full render' holds by construction; the fractional frames themselves are pinned by the design goldens",P3
 tests/test_smooth.py::test_whole_frames_are_the_stepped_design_frames,tests/test_smooth.py,crates/panorama-core/src/view/anim/tests.rs::whole_frames_are_the_stepped_design_frames,mapped,,P3
 tests/test_smooth.py::test_colours_glide_in_small_steps_at_the_colour_tick,tests/test_smooth.py,crates/panorama-core/src/view/anim/tests.rs::colours_glide_in_small_steps_at_the_colour_tick,mapped,,P3
-tests/test_smooth.py::test_a_still_view_has_nothing_to_restyle,tests/test_smooth.py,,todo,,P4
+tests/test_smooth.py::test_a_still_view_has_nothing_to_restyle,tests/test_smooth.py,src/ui/pacing/tests.rs::a_hidden_tab_or_a_still_screen_never_ticks ; src/ui/pacing/tests.rs::a_tick_draws_on_a_new_whole_frame_or_while_colours_glide,mapped,,P4
 tests/test_smooth.py::test_the_animation_tick_restyles_only_animated_cells_never_renders,tests/test_smooth.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision), so 'restyle equals a full render' holds by construction; the fractional frames themselves are pinned by the design goldens",P3
-tests/test_smooth.py::test_a_frame_or_a_refresh_repaints_only_what_changed,tests/test_smooth.py,,todo,,P4
+tests/test_smooth.py::test_a_frame_or_a_refresh_repaints_only_what_changed,tests/test_smooth.py,,retired,Textual's partial repaint: ratatui's Terminal diffs each frame's buffer against the last and writes only the cells that changed (the same ground as test_textual_partial_updates_send_only_the_changed_cells); what a frame or a hover changes is pinned by src/app/driver/tests/frames.rs and clicks.rs::hover_highlights_one_card_and_repaints_only_on_change,P4
 tests/test_smooth.py::test_random_restyles_repaint_every_changed_cell[0],tests/test_smooth.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision), so 'restyle equals a full render' holds by construction; the fractional frames themselves are pinned by the design goldens",P3
 tests/test_smooth.py::test_random_restyles_repaint_every_changed_cell[1],tests/test_smooth.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision), so 'restyle equals a full render' holds by construction; the fractional frames themselves are pinned by the design goldens",P3
 tests/test_smooth.py::test_random_restyles_repaint_every_changed_cell[2],tests/test_smooth.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision), so 'restyle equals a full render' holds by construction; the fractional frames themselves are pinned by the design goldens",P3
@@ -949,7 +949,7 @@ tests/test_smooth.py::test_the_textual_crop_patch_is_on_for_the_verified_textual
 tests/test_smooth.py::test_the_crop_patch_falls_back_to_textual_on_anything_unexpected,tests/test_smooth.py,,retired,pins tui.py's patch of Textual's private ChopsUpdate; Rust draws through ratatui's buffer diff (plan §2.6),P3
 tests/test_smooth.py::test_the_crop_never_starts_inside_a_wide_character,tests/test_smooth.py,,retired,pins tui.py's patch of Textual's private ChopsUpdate; Rust draws through ratatui's buffer diff (plan §2.6),P3
 tests/test_smooth.py::test_textual_partial_updates_send_only_the_changed_cells,tests/test_smooth.py,,retired,pins tui.py's patch of Textual's private ChopsUpdate; Rust draws through ratatui's buffer diff (plan §2.6),P3
-tests/test_smooth.py::test_a_low_animation_fps_keeps_spinners_at_their_speed,tests/test_smooth.py,,todo,,P4
+tests/test_smooth.py::test_a_low_animation_fps_keeps_spinners_at_their_speed,tests/test_smooth.py,src/ui/clock/tests.rs::the_animation_time_is_the_wall_clock_in_quarter_seconds ; src/settings/panel/tests.rs::animation_fps_is_clamped_and_needs_a_number ; src/ui/pacing/tests.rs::a_tick_draws_on_a_new_whole_frame_or_while_colours_glide,mapped,,P4
 tests/test_smooth.py::test_9e_glides_exactly_like_the_design_between_frames[9e-1.4],tests/test_smooth.py,crates/panorama-core/tests/design_goldens.rs::design_9e_glides_like_the_design_between_frames,mapped,,P3
 tests/test_smooth.py::test_9e_glides_exactly_like_the_design_between_frames[9e-1.75],tests/test_smooth.py,crates/panorama-core/tests/design_goldens.rs::design_9e_glides_like_the_design_between_frames,mapped,,P3
 tests/test_smooth.py::test_9e_glides_exactly_like_the_design_between_frames[9e-3.5],tests/test_smooth.py,crates/panorama-core/tests/design_goldens.rs::design_9e_glides_like_the_design_between_frames,mapped,,P3
@@ -1024,8 +1024,8 @@ tests/test_tui.py::test_arrow_navigation_across_columns,tests/test_tui.py,src/ap
 tests/test_tui.py::test_cursor_tracks_identity_when_a_refresh_reorders,tests/test_tui.py,src/app/model/tests.rs::the_cursor_tracks_identity_when_a_refresh_reorders,mapped,,P4
 tests/test_tui.py::test_a_vanished_target_parks_the_cursor,tests/test_tui.py,src/app/model/tests.rs::a_vanished_target_parks_the_cursor ; src/app/driver/tests/keys.rs::parked_cursor_keys_act_on_nothing ; src/panel/input/moves/tests.rs::arrows_move_among_the_shown_rows_and_resume_from_a_parked_cursor,mapped,,P4
 tests/test_tui.py::test_action_keys_are_ignored_right_after_a_background_change,tests/test_tui.py,src/app/model/tests.rs::a_background_change_under_the_cursor_arms_the_keys_again ; src/app/driver/tests/clicks.rs::action_labels_act_on_their_agent,mapped,,P4
-tests/test_tui.py::test_goto_focuses_the_orchestrator_pane_and_closes,tests/test_tui.py,,todo,,P4
-tests/test_tui.py::test_goto_failure_keeps_the_view_open,tests/test_tui.py,,todo,,P4
+tests/test_tui.py::test_goto_focuses_the_orchestrator_pane_and_closes,tests/test_tui.py,src/app/link/tests/acts.rs::goto_focuses_the_agent_and_a_popup_closes_then,mapped,,P4
+tests/test_tui.py::test_goto_failure_keeps_the_view_open,tests/test_tui.py,src/app/link/tests/acts.rs::goto_focuses_the_agent_and_a_popup_closes_then,mapped,,P4
 tests/test_tui.py::test_answer_opens_the_inbox_after_the_popup_closes,tests/test_tui.py,,todo,,P4
 tests/test_tui.py::test_answer_on_a_blocked_session_goes_to_the_pane,tests/test_tui.py,src/app/driver/tests/keys.rs::answer_on_a_blocked_session_goes_to_the_pane,mapped,,P4
 tests/test_tui.py::test_no_inbox_means_no_inbox_actions,tests/test_tui.py,src/app/driver/tests/keys.rs::no_inbox_means_no_inbox_actions,mapped,,P4
@@ -1033,13 +1033,13 @@ tests/test_tui.py::test_filter_cycles_and_reselects,tests/test_tui.py,src/app/dr
 tests/test_tui.py::test_enter_unfolds_the_complete_card,tests/test_tui.py,src/app/driver/tests/keys.rs::enter_unfolds_the_complete_card,mapped,,P4
 tests/test_tui.py::test_narrow_layout_in_a_side_split,tests/test_tui.py,src/app/driver/tests/narrow.rs::the_narrow_layout_in_a_side_split,mapped,,P4
 tests/test_tui.py::test_refresh_errors_never_kill_the_view,tests/test_tui.py,src/app/model/tests.rs::a_failed_refresh_keeps_the_last_model_and_says_why ; src/app/collect/tests.rs::a_panicking_collect_is_a_failed_refresh_and_the_next_one_still_runs,mapped,,P4
-tests/test_tui.py::test_spinner_frames_advance_without_changing_width,tests/test_tui.py,,todo,,P4
+tests/test_tui.py::test_spinner_frames_advance_without_changing_width,tests/test_tui.py,src/app/driver/tests/frames.rs::spinner_frames_advance_without_changing_width,mapped,,P4
 tests/test_tui.py::test_m5_a_new_inbox_question_arms_the_answer_key,tests/test_tui.py,src/app/model/tests.rs::a_background_change_under_the_cursor_arms_the_keys_again,mapped,,P4
 tests/test_tui.py::test_parked_cursor_keys_act_on_nothing,tests/test_tui.py,src/app/driver/tests/keys.rs::parked_cursor_keys_act_on_nothing,mapped,,P4
 tests/test_tui.py::test_h2_collects_never_overlap,tests/test_tui.py,src/app/collect/tests.rs::one_collect_at_a_time_and_its_swarm_is_cleaned,mapped,,P4
 tests/test_tui.py::test_l1_a_failing_collect_keeps_the_last_model_and_says_so,tests/test_tui.py,src/app/model/tests.rs::a_failed_refresh_keeps_the_last_model_and_says_why ; src/app/paint/tests.rs::a_failed_refresh_says_so_in_the_header_and_no_size_paints_nothing,mapped,,P4
-tests/test_tui.py::test_frames_never_recollect_rearm_or_move_the_cursor,tests/test_tui.py,,todo,,P4
-tests/test_tui.py::test_frames_keep_running_unfocused_and_pause_when_nothing_moves,tests/test_tui.py,,todo,,P4
+tests/test_tui.py::test_frames_never_recollect_rearm_or_move_the_cursor,tests/test_tui.py,src/app/driver/tests/frames.rs::frames_never_rearm_or_move_the_cursor,mapped,,P4
+tests/test_tui.py::test_frames_keep_running_unfocused_and_pause_when_nothing_moves,tests/test_tui.py,src/app/driver/tests/frames.rs::frames_keep_running_unfocused_and_pause_when_nothing_moves ; src/ui/pacing/tests.rs::a_hidden_tab_or_a_still_screen_never_ticks,mapped,,P4
 tests/test_tui.py::test_new_row_is_last_stable_and_opens_the_form,tests/test_tui.py,,todo,,P4
 tests/test_tui.py::test_form_submit_is_armed_validated_and_runs_the_flow,tests/test_tui.py,src/new_agent/tests/form.rs::enter_on_the_last_field_or_ctrl_s_starts_once_armed ; src/new_agent/tests/form.rs::a_bad_name_or_directory_is_said_on_the_status_row,mapped,,P4
 tests/test_tui.py::test_home_mode_keeps_the_view_open,tests/test_tui.py,,todo,,P4
@@ -1047,7 +1047,7 @@ tests/test_tui.py::test_new_row_in_narrow_layout,tests/test_tui.py,,todo,,P4
 tests/test_tui.py::test_refreshes_and_frames_keep_running_under_the_form,tests/test_tui.py,,todo,,P4
 tests/test_tui.py::test_r5_m3_submit_freezes_the_fields,tests/test_tui.py,,todo,,P4
 tests/test_tui.py::test_r5_l1_arrows_in_the_form_do_not_move_the_cursor,tests/test_tui.py,,todo,,P4
-tests/test_tui.py::test_a_narrow_pane_opens_new_agent_as_its_own_popup,tests/test_tui.py,,todo,,P4
+tests/test_tui.py::test_a_narrow_pane_opens_new_agent_as_its_own_popup,tests/test_tui.py,src/app/link/tests/acts.rs::new_agent_uses_the_form_where_it_fits_else_the_popup,mapped,,P4
 tests/test_tui.py::test_a_wide_pane_keeps_the_form_in_place_and_a_failed_popup_falls_back,tests/test_tui.py,,todo,,P4
 tests/test_tui.py::test_a_popup_request_herdr_never_answered_does_not_also_open_the_form,tests/test_tui.py,,todo,,P4
 tests/test_tui.py::test_a_socket_request_that_was_sent_but_never_answered_says_so,tests/test_tui.py,,todo,,P4
@@ -1112,8 +1112,8 @@ tests/test_cockpit.py::test_the_key_brings_a_left_docked_panorama_home_and_focus
 tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[per-tab],tests/test_cockpit.py,src/home/tests/ensure.rs::a_panorama_left_docked_goes_back_to_its_own_first_tab,mapped,,P4
 tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[off],tests/test_cockpit.py,src/home/tests/ensure.rs::a_panorama_left_docked_goes_back_to_its_own_first_tab,mapped,,P4
 tests/test_cockpit.py::test_a_panorama_left_docked_goes_back_to_its_own_first_tab[old-moving-setting],tests/test_cockpit.py,src/home/tests/ensure.rs::a_panorama_left_docked_goes_back_to_its_own_first_tab,mapped,,P4
-tests/test_cockpit.py::test_the_cores_open_key_brings_a_docked_home_back_to_its_own_tab,tests/test_cockpit.py,,todo,,P4
-tests/test_follow.py::test_a_burst_of_focus_events_makes_one_panel_pass,tests/test_follow.py,,todo,,P4
+tests/test_cockpit.py::test_the_cores_open_key_brings_a_docked_home_back_to_its_own_tab,tests/test_cockpit.py,src/app/link/tests/panels.rs::the_open_key_brings_a_docked_home_back_first,mapped,,P4
+tests/test_follow.py::test_a_burst_of_focus_events_makes_one_panel_pass,tests/test_follow.py,src/app/link/tests/events.rs::focus_events_feed_the_log_the_view_and_one_pass_per_burst,mapped,,P4
 tests/test_panels.py::test_follow_tabs_single_gives_panels_only_to_tabs_of_one_orchestrator,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_the_cockpit_is_per_tab_panels_and_an_old_moving_setting_reads_as_per_tab,tests/test_panels.py,,todo,,P4
 tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[enter-False-True],tests/test_panel_keys.py,,todo,,P4

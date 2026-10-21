@@ -1,6 +1,6 @@
-//! What the input asks for, carried out (Python `SwarmApp`'s actions' IO): a notice, the end.
-//! The herdr side (going to a pane, the inbox, a new agent, zoom) and the unseen tracker
-//! join in P4 8c; until then those effects do nothing here.
+//! What the input asks for, carried out (Python `SwarmApp`'s actions' IO): a notice and the
+//! end here; going to a pane, the inbox, + New agent and zoom on the herdr side
+//! ([`crate::app::link`], off the actor). Without a link (tests) those do nothing.
 
 use super::{Actor, End};
 use crate::ui::input::Effect;
@@ -13,17 +13,35 @@ impl Actor {
             match e {
                 Effect::Quit => return Some(End::Quit),
                 Effect::Toast(t) => self.driver.toasts.push(t, Instant::now()),
-                // P4 8c: the herdr side and the unseen tracker
-                Effect::Seen(_)
-                | Effect::Goto { .. }
-                | Effect::GotoRemote { .. }
-                | Effect::OpenInbox { .. }
-                | Effect::NewAgent { .. }
-                | Effect::Zoom => {}
+                // the marks cleared in the view; the store that keeps them is the producer's
+                Effect::Seen(_) => {}
+                Effect::Goto { pane, .. } => self.on_link_ref(|l| l.goto(pane)),
+                Effect::GotoRemote {
+                    machine_id,
+                    machine,
+                    pane,
+                    label,
+                } => {
+                    self.on_link_ref(|l| l.goto_remote(machine_id, machine, pane, label));
+                }
+                Effect::OpenInbox { question, pane } => {
+                    self.on_link_ref(|l| l.open_inbox(question, pane))
+                }
+                Effect::NewAgent { cwd } => {
+                    let width = self.driver.app.width;
+                    self.on_link_ref(|l| l.new_agent(cwd, width));
+                }
+                Effect::Zoom => self.on_link_ref(|l| l.zoom()),
                 // the panel's own (a core, the docked list's arrows): the app never asks
                 Effect::SendFilter(_) | Effect::Switch { .. } | Effect::ArrowsRestAt(_) => {}
             }
         }
         None
+    }
+
+    fn on_link_ref(&self, f: impl FnOnce(&crate::app::link::Link)) {
+        if let Some(l) = &self.link {
+            f(l);
+        }
     }
 }

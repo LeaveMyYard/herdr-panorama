@@ -372,3 +372,19 @@ fn highlight_unseen_follows_the_config() {
     std::fs::write(&file, "").unwrap();
     assert!(enabled()); // the default
 }
+
+#[test]
+fn a_producer_without_machines_never_starts_any() {
+    // Python `test_machines.py::test_a_custom_source_never_starts_machines`: a source of its
+    // own (no remote start) refreshes with no machines and no watcher
+    let dir = tempfile::tempdir().unwrap();
+    let mut p = Producer::new(
+        Box::new(Swarm::default),
+        None,
+        tracker(dir.path()),
+        Box::new(|| 1.0),
+    );
+    let r = p.refresh();
+    assert!(r.error.is_none() && r.swarm.orchestrators.is_empty());
+    assert!(p.remotes.is_none());
+}
