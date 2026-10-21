@@ -16,6 +16,7 @@ mod narrow;
 mod new_agent;
 mod phase;
 mod refresh;
+mod remote;
 mod states;
 mod wheel;
 

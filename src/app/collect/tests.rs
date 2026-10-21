@@ -225,3 +225,63 @@ fn the_ui_reaches_the_refreshers_tracker_once_it_is_made() {
     recv(&mut rx); // made, and refreshed once
     assert!(Arc::ptr_eq(&w.tracker().unwrap(), &t));
 }
+
+#[test]
+fn the_state_file_is_read_and_written_off_the_ui_thread() {
+    // tests/test_unseen.py::test_review_l2_the_state_file_is_read_and_written_off_the_ui_thread:
+    // the real producer's tracker updates on the refresh thread; a seen mark is saved on a
+    // thread of its own (`app::seen::mark`), never the caller's
+    let dir = tempfile::tempdir().unwrap();
+    let threads = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let seen_on = threads.clone();
+    let enabled = Box::new(move || {
+        seen_on.lock().unwrap().push(std::thread::current().id());
+        true
+    });
+    let tracker = Arc::new(Tracker::new(dir.path().join("unseen.json"), enabled));
+    let producer = crate::produce::Producer::new(
+        Box::new(Swarm::default),
+        None,
+        tracker.clone(),
+        Box::new(|| 1.0),
+    );
+    let (tx, mut rx) = mpsc::unbounded_channel();
+    let mut w = Worker::spawn(move || producer, tx).unwrap();
+    assert!(w.request());
+    assert!(matches!(recv(&mut rx), Collected::Swarm(..)));
+    let ui = std::thread::current().id();
+    let updates = threads.lock().unwrap().clone();
+    assert!(
+        !updates.is_empty() && updates.iter().all(|t| *t != ui),
+        "the tracker updated on the UI thread"
+    );
+    let marked = Arc::new(Tracker::new(
+        dir.path().join("unseen.json"),
+        Box::new(|| true),
+    ));
+    let sw: Swarm = serde_json::from_value(
+        serde_json::json!({"orchestrators": [{"pane_id": "w1:p1", "tab_id": "t",
+        "tab_label": "o", "session_id": "s", "threads": [{"id": "t1", "name": "t", "source": "turn",
+        "agents": [{"id": "a1", "status": "run"}]}]}]}),
+    )
+    .unwrap();
+    marked.update(&sw, 1.0);
+    let mut done = sw.clone();
+    done.orchestrators[0].threads[0].agents[0].status = panorama_core::model::Status::Done;
+    marked.update(&done, 2.0);
+    // the save runs off this thread: it waits for the state file's lock this thread holds
+    // (a save on this thread gives up while the lock is held, leaving the mark pending)
+    let held = herdr_agent_kit::plugin_env::LockFile::new(dir.path().join("unseen.json.lock"))
+        .try_exclusive()
+        .unwrap()
+        .expect("the state file's lock");
+    let save = crate::app::seen::mark(&marked, &["a1".into()]).expect("a mark to save");
+    drop(held);
+    save.join().unwrap();
+    let other = Tracker::new(dir.path().join("unseen.json"), Box::new(|| true));
+    assert!(
+        other.update(&done, 3.0).is_empty(),
+        "the save ran on the caller's thread"
+    );
+    assert!(w.stop(Duration::from_secs(10)));
+}

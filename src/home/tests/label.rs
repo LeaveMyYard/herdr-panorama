@@ -147,7 +147,7 @@ async fn quit_never_waits_long_for_a_busy_lock() {
             .unwrap_err()
             .contains("busy")
     );
-    assert!(t0.elapsed() < std::time::Duration::from_secs(2));
+    assert!(t0.elapsed() < std::time::Duration::from_secs(1)); // Python's bound
     assert_eq!(
         w.s().label(&h.tab_id),
         Some(label()),
