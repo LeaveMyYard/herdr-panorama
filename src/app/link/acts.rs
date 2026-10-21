@@ -26,13 +26,22 @@ impl Link {
         what: &'static str,
         fut: impl Future<Output = Option<Done>> + Send + 'static,
     ) {
+        self.spawn_or(fut, move |why| {
+            Done::Toast(Toast::new(Some("panorama"), format!("{what} failed: {why}"), 8).warning())
+        });
+    }
+
+    /// [`Self::spawn`] with its own report of a panic (`why`).
+    fn spawn_or(
+        &self,
+        fut: impl Future<Output = Option<Done>> + Send + 'static,
+        panicked: impl FnOnce(String) -> Done + Send + 'static,
+    ) {
         let tx = self.done_tx.clone();
         tokio::spawn(async move {
             let done = match guarded(fut).await {
                 Ok(d) => d,
-                Err(why) => Some(Done::Toast(
-                    Toast::new(Some("panorama"), format!("{what} failed: {why}"), 8).warning(),
-                )),
+                Err(why) => Some(panicked(why)),
             };
             if let Some(d) = done {
                 let _ = tx.send(d);
@@ -161,10 +170,19 @@ impl Link {
             },
             start_timeout_ms: START_TIMEOUT_MS,
         };
-        self.spawn("+ New agent", async move {
-            Some(Done::Started(
-                start::new_agent(&ops, &name, cwd.as_deref(), kind, per_tab).await,
-            ))
+        self.report_start(async move {
+            start::new_agent(&ops, &name, cwd.as_deref(), kind, per_tab).await
+        });
+    }
+
+    /// A start's end as [`Done::Started`]; a start that panicked is a failed one, so the
+    /// modal leaves its busy state and says why.
+    pub(super) fn report_start(
+        &self,
+        start: impl Future<Output = Result<String, String>> + Send + 'static,
+    ) {
+        self.spawn_or(async move { Some(Done::Started(start.await)) }, |why| {
+            Done::Started(Err(format!("+ New agent failed: {why}")))
         });
     }
 }

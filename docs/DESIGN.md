@@ -927,7 +927,7 @@ an inbox question; otherwise `g`), `i` inbox, `f` cycle filter, `?` help,
 - pane `panorama`: `placement = "popup"`, `width = "100%"`, `height = "100%"`
   (the design's full-screen overlay; popups are session-modal and leave the
   layout untouched);
-- pane `new-agent`: `placement = "popup"`, 84×26 cells, the `+ New agent` form
+- pane `new-agent`: `placement = "popup"`, 84×30 cells, the `+ New agent` form
   alone for panes too narrow for it;
 - action `open` (popup) and action `open-split` (`herdr plugin pane open
   --placement split --direction right`, the design's 70-column side split);
@@ -1005,7 +1005,7 @@ label, and the form uses the same palette. `◆ panorama` is the herdr tab label
 
   The form is 76 columns wide. In a pane narrower than 80 columns (the docked
   panel's 46) it opens as its own herdr popup over everything instead, the
-  plugin's `new-agent` entrypoint (`panorama new-agent`, 84×26 cells), with the
+  plugin's `new-agent` entrypoint (`panorama new-agent`, 84×30 cells), with the
   directory passed in `PANORAMA_NEW_AGENT_CWD`. It is the same form, with the
   same arming, validation and agent creation, and the popup closes with it.
   This fixes the operator's report that the form was cut in the side panel. If
@@ -1833,6 +1833,17 @@ per-tab had proven itself).
   The P3 exit bar ("8 panels at under 5 MB each") is measured as decided at P3: **PSS for a
   dev build, RSS for a release (musl) build**; both are met, the release build's give or take
   one huge page.
+- **The Rust view (rewrite P4 PR 10).** The manifest's `panorama` and `new-agent` panes run
+  `scripts/tui tui` and `scripts/tui new-agent`, which pick the app the way `scripts/panel`
+  picks the viewer: the plugin root's own `target/release/panorama` when it answers
+  `panorama contract tui` with `tui <n>`, the number the script carries (the view contract: the
+  `tui` and `new-agent` subcommands, the home view's record and lock, the core protocol it
+  serves, the + New agent popup's started marker and `PANORAMA_NEW_AGENT_CWD`); else the
+  venv's app, else `uv run`. A binary from before the contract answers nothing (or the panel's
+  bare number) and is passed over, said on stderr and in `<state dir>/tui-launch.log`. The
+  `open`/`open-popup`/`open-split` actions and the `home --startup` hook stay Python for now;
+  they open the `panorama` pane and talk to the core over protocol 1.3, which the Rust app's
+  core serves, so a Python `open` drives a Rust home view. Removing the binary rolls back.
 - **Open key.** In per-tab mode the open key asks the core over its socket (`role: "key"`,
   `{"open": {}}`, answered with `{"opened": {"result": …}}`):
   - a panel in the operator's tab: it is focused;

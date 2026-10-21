@@ -12,13 +12,15 @@ command = ["uv", "sync", "--frozen", "--no-dev"]
 # The view. Full-screen popup (design 2a, 160x45 layout); session-modal, the
 # tiled layout is left alone. The project is resolved from HERDR_PLUGIN_ROOT
 # because a pane's cwd is not documented to be the plugin dir.
+# scripts/tui runs the Rust app when this root has it built and it speaks the view contract
+# (`panorama contract tui`), else the venv's, else uv run (docs/DESIGN.md).
 [[panes]]
 id = "panorama"
 title = "Panorama"
 placement = "popup"
 width = "100%"
 height = "100%"
-command = ["sh", "-c", "exec uv run --quiet --frozen --no-dev --project \"${HERDR_PLUGIN_ROOT:-.}\" panorama tui"]
+command = ["sh", "-c", "exec sh \"${HERDR_PLUGIN_ROOT:-.}/scripts/tui\" tui"]
 
 # The + New agent form as its own popup, over everything: a docked panel (46 columns) is too
 # narrow for it. Sized for the form (76 columns plus its frame). PANORAMA_NEW_AGENT_CWD is the
@@ -28,8 +30,8 @@ id = "new-agent"
 title = "New agent"
 placement = "popup"
 width = 84
-height = 26
-command = ["sh", "-c", "exec uv run --quiet --frozen --no-dev --project \"${HERDR_PLUGIN_ROOT:-.}\" panorama new-agent"]
+height = 30
+command = ["sh", "-c", "exec sh \"${HERDR_PLUGIN_ROOT:-.}/scripts/tui\" new-agent"]
 
 # A per-tab panel (cockpit = true): this tab's docked panel, drawn from the core's
 # state (the home panorama). Opened by the core as a split beside an orchestrator's pane.

@@ -190,7 +190,7 @@ def _socket_call(method: str, params: dict, timeout: float = TIMEOUT) -> tuple[d
     return reply.get("result") or {}, None
 
 
-NEW_AGENT_POPUP = (84, 26)  # the popup's outer size in cells (the form is 76 wide)
+NEW_AGENT_POPUP = (84, 30)  # the popup's outer size in cells: the Rust 1C modal is 76 x 27 plus herdr's frame
 
 
 def open_new_agent(cwd: str) -> str | None:

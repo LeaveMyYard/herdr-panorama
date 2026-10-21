@@ -1,0 +1,58 @@
+# herdr-panorama: the view's launcher (docs/plans/rust-rewrite.md §5.4; POSIX sh).
+#
+#   sh scripts/tui tui          the manifest's `panorama` pane (the home view, a popup, a split)
+#   sh scripts/tui new-agent    the manifest's `new-agent` pane (+ New agent in its own popup)
+#
+# Like scripts/panel: it runs the Rust app only when this plugin root has it built
+# (target/release/panorama; CARGO_TARGET_DIR is not looked at, see scripts/panel) AND it speaks
+# this checkout's view contract: `panorama contract tui` answers `tui <n>` (the `tui` and
+# `new-agent` subcommands, the home view's record and lock, the core protocol it serves and
+# speaks, the + New agent popup's started marker and PANORAMA_NEW_AGENT_CWD), and this script
+# carries the number expected next to the Python side. Otherwise the venv's app, and `uv run`
+# without one. A binary from before this contract answers `contract tui` with nothing (or the
+# panel's bare number), and never passes.
+#
+# The probe is scripts/panel's: stdin from /dev/null, its answer through a file, at most 2 s. A
+# binary passed over is said on stderr and in <state dir>/tui-launch.log (the latest fallback;
+# a later start that runs the Rust app removes it).
+TUI_CONTRACT=1
+
+R=${HERDR_PLUGIN_ROOT:-.}
+B="$R/target/release/panorama"
+CMD=${1:-tui}
+case "$CMD" in
+tui | new-agent) ;;
+*)
+	printf 'panorama: scripts/tui runs tui or new-agent, not %s\n' "$CMD" >&2
+	exit 2
+	;;
+esac
+
+# What `$B contract tui` says, or nothing.
+contract_of() {
+	out=$(mktemp "${TMPDIR:-/tmp}/panorama-contract.XXXXXX") || return
+	if command -v timeout >/dev/null 2>&1; then
+		timeout -k 1 2 "$B" contract tui
+	elif command -v perl >/dev/null 2>&1; then
+		perl -e 'alarm shift; exec @ARGV or exit 127' 2 "$B" contract tui
+	else
+		"$B" contract tui
+	fi </dev/null >"$out" 2>/dev/null
+	head -n 1 "$out"
+	rm -f "$out"
+}
+
+if [ -f "$B" ] && [ -x "$B" ]; then
+	got=$(contract_of)
+	if [ "$got" = "tui $TUI_CONTRACT" ]; then
+		[ -n "${HERDR_PLUGIN_STATE_DIR:-}" ] && rm -f "$HERDR_PLUGIN_STATE_DIR/tui-launch.log"
+		exec "$B" "$CMD"
+	fi
+	msg="panorama: $B speaks view contract '${got:-none}', this checkout needs tui $TUI_CONTRACT: using the Python app"
+	printf '%s\n' "$msg" >&2
+	if [ -n "${HERDR_PLUGIN_STATE_DIR:-}" ]; then
+		printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$msg" >"$HERDR_PLUGIN_STATE_DIR/tui-launch.log" 2>/dev/null
+	fi
+fi
+[ -f "$R/.venv/bin/panorama" ] && [ -x "$R/.venv/bin/panorama" ] && exec "$R/.venv/bin/panorama" "$CMD"
+exec uv run --quiet --frozen --no-dev --project "$R" panorama "$CMD"

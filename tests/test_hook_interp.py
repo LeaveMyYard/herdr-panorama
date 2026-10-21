@@ -18,9 +18,26 @@ REAL_PY = os.path.realpath(sys.executable)
 PAYLOAD = {"session_id": "s", "agent_id": "a1", "agent_type": "Explore"}
 
 
+PLUGIN = None  # the plugin root the hooks run from (the fixture below)
+
+
+@pytest.fixture(autouse=True, scope="module")
+def plugin_root(tmp_path_factory):
+    """A plugin root of this checkout's hooks and sources, never the checkout itself: a Rust
+    build in the checkout (target/release/panorama, which run-hook.sh prefers) must not decide
+    what these Python-hook tests run (#125 round 1, M2)."""
+    global PLUGIN
+    PLUGIN = tmp_path_factory.mktemp("plugin")
+    shutil.copytree(ROOT / "hooks", PLUGIN / "hooks")
+    (PLUGIN / "src").symlink_to(ROOT / "src")
+    assert not (PLUGIN / "target").exists()
+    yield PLUGIN
+    PLUGIN = None
+
+
 def hook_argv(event):
-    spec = json.loads((ROOT / "hooks/hooks.json").read_text())["hooks"][event][0]["hooks"][0]
-    return [spec["command"], *(a.replace("${CLAUDE_PLUGIN_ROOT}", str(ROOT)) for a in spec["args"])]
+    spec = json.loads((PLUGIN / "hooks/hooks.json").read_text())["hooks"][event][0]["hooks"][0]
+    return [spec["command"], *(a.replace("${CLAUDE_PLUGIN_ROOT}", str(PLUGIN)) for a in spec["args"])]
 
 
 def base_env(tmp_path, path, data=None):
