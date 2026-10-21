@@ -62,7 +62,7 @@ def test_claude_plugin_manifests():
 
 # The two launchers that probe the binary the same way: scripts/panel (the panel contract, a bare
 # number) and scripts/tui (the view contract, `tui <n>`), each with the command it runs.
-LAUNCHERS = {"panel": ("panel", "1"), "tui": ("tui", "tui 1")}
+LAUNCHERS = {"panel": ("panel", "1"), "tui": ("tui", "tui 2")}
 
 
 def _launch(root, env_extra=None, timeout=10, stdin=None, launcher="panel", path=None):
