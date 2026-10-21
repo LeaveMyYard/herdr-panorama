@@ -1,0 +1,29 @@
+{
+ "source": "herdr-agent-kit fixtures/claude/hooks/SubagentStop.json (Claude Code 2.1.302): its stdin, session and agent ids and home paths anonymised",
+ "stdin": {
+  "session_id": "00000001-0000-4000-8000-000000000001",
+  "transcript_path": "/home/u/.claude/projects/-home-u-work-claude-cwd/00000001-0000-4000-8000-000000000001.jsonl",
+  "cwd": "/home/u/work/claude/cwd",
+  "prompt_id": "00000002-0000-4000-8000-000000000002",
+  "permission_mode": "default",
+  "agent_id": "abbbbbbbbbbbbbbb3",
+  "agent_type": "general-purpose",
+  "effort": {
+   "level": "low"
+  },
+  "hook_event_name": "SubagentStop",
+  "stop_hook_active": false,
+  "agent_transcript_path": "/home/u/.claude/projects/-home-u-work-claude-cwd/00000001-0000-4000-8000-000000000001/subagents/agent-abbbbbbbbbbbbbbb3.jsonl",
+  "last_assistant_message": "ok",
+  "background_tasks": [
+   {
+    "id": "abbbbbbbbbbbbbbb3",
+    "type": "subagent",
+    "status": "running",
+    "description": "capture subagent",
+    "agent_type": "general-purpose"
+   }
+  ],
+  "session_crons": []
+ }
+}
