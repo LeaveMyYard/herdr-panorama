@@ -77,6 +77,8 @@ rustix = { version = "1", features = ["event", "process"] }
 # The collector's ordered maps (Python dicts keep insertion order) and its two patterns.
 indexmap = "2"
 regex = "1"
+# The Claude Code plugin's MCP server (plan §3: pinned, behind a thin adapter, src/mcp/server.rs).
+rmcp = { version = "=3.5.1", default-features = false, features = ["server", "transport-io"] }
 # A character's width in cells (a notice folds its text by it), as ratatui counts it.
 unicode-width = "0.2"
 # The local time zone's offset, for clock times.
