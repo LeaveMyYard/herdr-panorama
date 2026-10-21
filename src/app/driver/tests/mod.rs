@@ -11,6 +11,8 @@ mod frames;
 mod inbox;
 mod keys;
 mod narrow;
+mod phase;
+mod refresh;
 mod states;
 mod wheel;
 
