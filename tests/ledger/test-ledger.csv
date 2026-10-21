@@ -585,8 +585,8 @@ tests/test_panel_click.py::test_a_crash_leaves_its_traceback_next_to_the_marker,
 tests/test_panel_click.py::test_the_crash_log_is_bounded_in_bytes,tests/test_panel_click.py,src/ui/crash/tests.rs::a_crash_leaves_the_marker_and_the_errors_end,mapped,,P3
 tests/test_panel_click.py::test_mark_crash_never_raises_on_an_unencodable_message,tests/test_panel_click.py,,retired,Pins Python's surrogate-escape encoding of the crash log; Rust strings are always valid UTF-8.,P3
 tests/test_panel_filter.py::test_the_core_passes_a_panels_filter_on,tests/test_panel_filter.py,tests/core_server.rs::focusing_counts_only_from_a_verified_panel_and_filters_only_from_panels,mapped,,P4
-tests/test_panel_filter.py::test_the_state_carries_the_filter_and_the_version_says_so,tests/test_panel_filter.py,,todo,,P4
-tests/test_panel_filter.py::test_a_filter_chosen_in_one_panel_shows_in_every_panel,tests/test_panel_filter.py,,todo,,P4
+tests/test_panel_filter.py::test_the_state_carries_the_filter_and_the_version_says_so,tests/test_panel_filter.py,tests/core_filter.rs::the_state_carries_the_filter_and_the_version_says_so ; src/app/link/state/tests.rs::the_state_carries_focus_tab_panels_and_filter_and_the_panel_reads_it,mapped,,P4
+tests/test_panel_filter.py::test_a_filter_chosen_in_one_panel_shows_in_every_panel,tests/test_panel_filter.py,tests/core_filter.rs::a_filter_chosen_in_one_panel_shows_in_every_panel,mapped,,P4
 tests/test_panel_filter.py::test_the_home_panorama_takes_a_panels_filter_and_publishes_it,tests/test_panel_filter.py,,todo,,P4
 tests/test_panel_filter.py::test_a_panel_keeps_its_choice_against_an_older_state,tests/test_panel_filter.py,src/panel/input/actions/tests.rs::a_panel_keeps_its_choice_against_an_older_state_and_follows_the_echo,mapped,,P3
 tests/test_panel_filter.py::test_an_unechoed_choice_gives_way_to_the_core_after_a_moment,tests/test_panel_filter.py,src/panel/input/actions/tests.rs::the_filter_echo_lasts_exactly_a_second ; src/panel/input/actions/tests.rs::f_cycles_the_filter_and_keeps_it_against_the_cores_older_word,mapped,,P3
@@ -603,7 +603,7 @@ tests/test_panel_sync.py::test_the_core_announces_a_focus_only_from_a_verified_p
 tests/test_panel_sync.py::test_a_switch_announces_the_focus_before_showing_the_tab,tests/test_panel_sync.py,src/panel/act/switch/tests.rs::onto_the_target_tabs_panel_after_announcing_it ; src/panel/act/switch/tests.rs::the_paint_wait_follows_only_an_echo,mapped,,P3
 tests/test_panel_sync.py::test_the_switching_panel_keeps_its_look_until_it_is_hidden,tests/test_panel_sync.py,src/panel/model/tests.rs::the_switching_panel_keeps_its_look_until_it_is_hidden,mapped,,P3
 tests/test_panel_sync.py::test_a_hidden_target_paints_focused_before_it_is_shown,tests/test_panel_sync.py,src/panel/model/tests.rs::a_hidden_target_paints_focused_before_it_is_shown,mapped,,P3
-tests/test_panel_sync.py::test_the_core_side_publishes_an_announced_focus,tests/test_panel_sync.py,,todo,,P4
+tests/test_panel_sync.py::test_the_core_side_publishes_an_announced_focus,tests/test_panel_sync.py,src/app/link/tests/announce.rs::an_announced_focus_is_published_at_once ; src/app/link/tests/focus.rs::an_announced_focus_is_read_again_unless_herdr_confirmed_one,mapped,,P4
 tests/test_panel_sync.py::test_tests_never_reach_a_live_herdr,tests/test_panel_sync.py,tests/no_live_herdr.rs::every_test_that_starts_the_binary_clears_its_environment,mapped,,P3
 tests/test_panel_sync.py::test_a_failed_switch_takes_its_announcement_back,tests/test_panel_sync.py,src/panel/act/switch/tests.rs::a_failed_switch_takes_the_announcement_back ; src/panel/input/arrows/tests.rs::a_switch_that_took_its_announcement_back_leaves_this_panel_focused,mapped,,P3
 tests/test_panel_sync.py::test_the_core_rereads_the_real_focus_after_an_unconfirmed_announcement,tests/test_panel_sync.py,src/app/link/tests/focus.rs::an_announced_focus_is_read_again_unless_herdr_confirmed_one,mapped,,P4

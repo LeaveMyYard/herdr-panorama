@@ -1,4 +1,5 @@
 mod acts;
+mod announce;
 mod events;
 mod focus;
 mod panels;
