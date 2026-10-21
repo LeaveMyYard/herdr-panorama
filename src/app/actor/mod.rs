@@ -9,14 +9,19 @@
 //!   differs ([`crate::ui::pacing`]); a notice's time running out;
 //! - SIGTERM and SIGHUP end it; so does a terminal that hung up (looked at every second).
 //!
-//! The effects the input asks for go out from [`effects`]; drawing is [`draw`]'s.
+//! The effects the input asks for go out from [`effects`]; what the herdr side, the core and
+//! the panels report comes back through [`link`]; drawing is [`draw`]'s.
 
 mod draw;
 mod effects;
+mod link;
 mod terminal;
+
+pub use link::AfterExit;
 
 use super::collect::{Collected, Worker};
 use super::driver::Driver;
+use super::link::{Link, LinkEvent};
 use crate::settings::Settings;
 use crate::ui::end::End;
 use crate::ui::frame::Frame;
@@ -28,6 +33,7 @@ use futures_util::StreamExt;
 use panorama_core::view::Marks;
 use std::io;
 use std::mem::ManuallyDrop;
+use std::path::PathBuf;
 use std::time::{Duration, Instant};
 use tokio::signal::unix::{SignalKind, signal};
 use tokio::sync::mpsc;
@@ -46,6 +52,12 @@ pub struct Actor {
     collected: mpsc::UnboundedReceiver<Collected>,
     look: Option<Frame>,
     pacing: Pacing,
+    /// The herdr side, the core and the panels (none in tests).
+    link: Option<Link>,
+    /// What runs once the app has ended.
+    pub after_exit: Option<AfterExit>,
+    /// panorama's log.
+    log: PathBuf,
 }
 
 impl Actor {
@@ -64,15 +76,31 @@ impl Actor {
             collected,
             look: None,
             pacing: Pacing::default(),
+            link: None,
+            after_exit: None,
+            log: PathBuf::new(),
         }
+    }
+
+    /// With the herdr side (`log`: panorama's log).
+    pub fn with_link(mut self, link: Link, log: PathBuf) -> Self {
+        self.link = Some(link);
+        self.log = log;
+        self
     }
 
     /// Runs until the app ends; a terminal that hung up is an end, not an error.
     pub async fn run(&mut self) -> io::Result<End> {
-        match self.serve().await {
+        let end = match self.serve().await {
             Err(e) if hung_up_error(&e) => Ok(End::Hangup),
             r => r,
+        };
+        if matches!(end, Ok(End::Quit))
+            && let Some(link) = self.link.as_mut()
+        {
+            link.quit().await; // q: the panels go, a shared home tab loses its label
         }
+        end
     }
 
     async fn serve(&mut self) -> io::Result<End> {
@@ -96,6 +124,7 @@ impl Actor {
                     None
                 }
                 Some(c) = self.collected.recv() => self.on_collected(c).map(|()| None)?,
+                ev = next_link(&mut self.link) => self.on_link(ev)?,
                 ev = input.next() => self.on_terminal(ev)?,
                 _ = tick.tick(), if self.moving() => self.animate().map(|()| None)?,
                 () = sleep_until(toast_at), if toast_at.is_some() => {
@@ -118,7 +147,16 @@ impl Actor {
         self.worker.done();
         let app = &mut self.driver.app;
         match c {
-            Collected::Swarm(swarm) => app.apply(swarm, Marks::new(), Instant::now()),
+            Collected::Swarm(swarm) => {
+                app.apply(swarm, Marks::new(), Instant::now());
+                if let Some(link) = self.link.as_mut() {
+                    link.refreshed(
+                        &app.graph.swarm,
+                        &app.graph.view.unseen,
+                        app.graph.view.filter,
+                    );
+                }
+            }
             Collected::Failed(why) => app.failed(&why),
         }
         self.repaint(Painted::Refresh)
@@ -128,6 +166,13 @@ impl Actor {
     fn moving(&self) -> bool {
         let app = &self.driver.app;
         ticking(true, &app.graph.swarm, &app.graph.view.unseen)
+    }
+}
+
+async fn next_link(link: &mut Option<Link>) -> LinkEvent {
+    match link {
+        Some(l) => l.next().await,
+        None => std::future::pending().await,
     }
 }
 
