@@ -55,6 +55,17 @@ async fn onto_the_target_tabs_panel_after_announcing_it() {
     assert_eq!(*core.said.borrow(), ["w1:p94"]);
     assert_eq!(fake.params_of("tab.focus"), [json!({"tab_id": "w1:t4"})]);
     assert_eq!(fake.params_of("pane.focus"), [json!({"pane_id": "w1:p94"})]);
+    let focus: Vec<String> = fake
+        .calls()
+        .into_iter()
+        .map(|(m, _)| m)
+        .filter(|m| m.ends_with(".focus"))
+        .collect();
+    assert_eq!(
+        focus,
+        ["tab.focus", "pane.focus"],
+        "the tab first, then its panel"
+    );
 }
 
 #[tokio::test(flavor = "current_thread")]

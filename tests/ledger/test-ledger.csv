@@ -205,7 +205,7 @@ tests/test_core.py::test_the_panel_renders_its_tab_exactly_like_the_docked_panel
 tests/test_core.py::test_a_panel_without_a_core_acts_on_nothing,tests/test_core.py,src/panel/input/actions/tests.rs::nothing_acts_before_the_keys_are_armed_or_without_a_core,mapped,,P3
 tests/test_core.py::test_a_hidden_tabs_panel_draws_no_frames,tests/test_core.py,src/ui/pacing/tests.rs::a_hidden_tab_or_a_still_screen_never_ticks ; src/panel/model/tests.rs::the_docked_entry_is_this_tabs_and_the_selected_row_the_shown_one ; src/ui/clock/tests.rs::the_animation_time_is_the_wall_clock_in_quarter_seconds,mapped,,P3
 tests/test_core.py::test_the_panels_focus_look_follows_the_cores_focused_pane,tests/test_core.py,src/panel/model/tests.rs::the_focus_look_follows_herdrs_focus_and_the_terminals ; crates/panorama-core/tests/design_goldens.rs::design_10_focused_and_not_in_two_themes_cell_for_cell,mapped,,P3
-tests/test_core.py::test_the_home_panorama_publishes_each_refresh_and_takes_seen_back,tests/test_core.py,,todo,,P4
+tests/test_core.py::test_the_home_panorama_publishes_each_refresh_and_takes_seen_back,tests/test_core.py,src/app/link/tests/core.rs::the_home_view_publishes_each_refresh_and_takes_seen_back ; src/app/driver/tests/refresh.rs::a_panels_seen_clears_the_view_and_reaches_the_tracker_and_its_file,mapped,,P4
 tests/test_core.py::test_the_line_reader_is_linear_and_one_read_reports_seen_once,tests/test_core.py,tests/core_server.rs::one_read_reports_seen_once ; src/proto/framing/tests.rs::a_feed_splits_its_lines_once,mapped,,P4
 tests/test_core.py::test_an_unsafe_socket_directory_is_refused[symlink],tests/test_core.py,tests/core_server.rs::an_unsafe_socket_directory_is_refused,mapped,,P4
 tests/test_core.py::test_an_unsafe_socket_directory_is_refused[group-writable],tests/test_core.py,tests/core_server.rs::an_unsafe_socket_directory_is_refused,mapped,,P4
@@ -407,7 +407,7 @@ tests/test_goldens.py::test_the_goldens_are_what_the_code_does[model],tests/test
 tests/test_goldens.py::test_the_goldens_are_what_the_code_does[screens],tests/test_goldens.py,,retired,"checks that the Python code still reproduces its own captures; the Rust tests read the same goldens (model, screens) directly",P0a
 tests/test_herdr.py::test_clean_strips_controls_and_caps,tests/test_herdr.py,herdr-agent-kit@v0.1.0:src/herdr_api/sanitize/tests.rs::clean_strips_controls_and_caps,mapped,,P1
 tests/test_herdr.py::test_missing_binary_is_an_error_not_an_exception,tests/test_herdr.py,herdr-agent-kit@v0.1.0:tests/herdr_api/cli.rs::a_missing_binary_is_unreachable,mapped,,P1
-tests/test_herdr.py::test_snapshot_and_focus_through_the_fake,tests/test_herdr.py,,todo,,P4
+tests/test_herdr.py::test_snapshot_and_focus_through_the_fake,tests/test_herdr.py,herdr-agent-kit@v0.1.1:tests/herdr_api/parity_tabs_panes.rs::tabs_and_workspaces_send_what_herdrs_cli_sends ; herdr-agent-kit@v0.1.1:tests/herdr_api/cli.rs::cli_arguments_are_cleaned,mapped,,P4
 tests/test_herdr.py::test_open_view_split_targets_the_invoking_pane,tests/test_herdr.py,,todo,,P4
 tests/test_home.py::test_home_opens_once_renamed_first_and_focused_on_demand,tests/test_home.py,src/home/tests/ensure.rs::home_opens_once_renamed_first_and_focused_on_demand,mapped,,P4
 tests/test_home.py::test_concurrent_openers_make_one_home,tests/test_home.py,src/home/tests/ensure.rs::concurrent_openers_make_one_home,mapped,,P4
@@ -484,15 +484,15 @@ tests/test_inbox_link.py::test_060_deep_links_with_the_inbox_environment,tests/t
 tests/test_inbox_link.py::test_older_version_probes_help_for_pane,tests/test_inbox_link.py,src/panel/act/inbox/tests.rs::an_older_version_probes_its_help_for_pane,mapped,,P3
 tests/test_inbox_link.py::test_053_falls_back_to_the_plain_popup,tests/test_inbox_link.py,src/panel/act/inbox/tests.rs::an_old_inbox_opens_plain,mapped,,P3
 tests/test_inbox_link.py::test_not_installed_or_failing_deep_link_falls_back,tests/test_inbox_link.py,src/panel/act/inbox/tests.rs::not_installed_or_an_empty_pane_runs_the_plain_action ; src/panel/act/inbox/tests.rs::a_deep_link_that_failed_before_the_popup_falls_back_to_the_plain_one,mapped,,P3
-tests/test_inbox_link.py::test_click_answer_on_an_agent_card_deep_links_its_question,tests/test_inbox_link.py,,todo,,P4
-tests/test_inbox_link.py::test_click_on_the_orchestrator_mark_opens_its_pane_group,tests/test_inbox_link.py,,todo,,P4
-tests/test_inbox_link.py::test_a_click_on_a_vanished_identity_does_nothing,tests/test_inbox_link.py,,todo,,P4
+tests/test_inbox_link.py::test_click_answer_on_an_agent_card_deep_links_its_question,tests/test_inbox_link.py,src/app/driver/tests/inbox.rs::a_click_on_an_agent_cards_answer_deep_links_its_question ; src/app/link/tests/acts.rs::the_inbox_opens_over_the_home_view_and_after_a_popup,mapped,,P4
+tests/test_inbox_link.py::test_click_on_the_orchestrator_mark_opens_its_pane_group,tests/test_inbox_link.py,src/app/driver/tests/inbox.rs::a_click_on_an_orchestrators_mark_opens_its_pane_group ; src/app/link/tests/acts.rs::the_inbox_opens_over_the_home_view_and_after_a_popup,mapped,,P4
+tests/test_inbox_link.py::test_a_click_on_a_vanished_identity_does_nothing,tests/test_inbox_link.py,src/app/driver/tests/clicks.rs::a_vanished_identity_is_not_acted_on,mapped,,P4
 tests/test_inbox_link.py::test_r6_l1_not_installed_is_rechecked,tests/test_inbox_link.py,src/panel/act/inbox/tests.rs::not_installed_is_looked_up_again_after_a_minute_and_found_is_kept,mapped,,P3
 tests/test_inbox_link.py::test_r6_l2_panoramas_context_does_not_leak,tests/test_inbox_link.py,src/panel/act/inbox/tests.rs::the_command_runs_the_inbox_as_itself_without_panoramas_context,mapped,,P3
 tests/test_inbox_link.py::test_r6_l3_no_second_popup_after_an_unclear_failure[1-Traceback: something after the popup opened-0],tests/test_inbox_link.py,src/panel/act/inbox/tests.rs::a_deep_link_that_failed_before_the_popup_falls_back_to_the_plain_one ; src/panel/act/inbox/tests.rs::versions_and_failure_words_read_as_python_reads_them,mapped,,P3
 tests/test_inbox_link.py::test_r6_l3_no_second_popup_after_an_unclear_failure[2-error: unrecognized arguments: --question-1],tests/test_inbox_link.py,src/panel/act/inbox/tests.rs::a_deep_link_that_failed_before_the_popup_falls_back_to_the_plain_one ; src/panel/act/inbox/tests.rs::versions_and_failure_words_read_as_python_reads_them,mapped,,P3
 tests/test_inbox_link.py::test_r6_l3_no_second_popup_after_an_unclear_failure[1-could not open the inbox popup: herdr down-1],tests/test_inbox_link.py,src/panel/act/inbox/tests.rs::no_second_popup_after_an_unclear_failure,mapped,,P3
-tests/test_inbox_link.py::test_r6_m1_a_target_that_moved_in_the_last_refresh_ignores_clicks,tests/test_inbox_link.py,,todo,,P4
+tests/test_inbox_link.py::test_r6_m1_a_target_that_moved_in_the_last_refresh_ignores_clicks,tests/test_inbox_link.py,src/app/driver/tests/inbox.rs::a_mark_that_moved_in_the_last_refresh_ignores_clicks,mapped,,P4
 tests/test_inbox_link.py::test_no_hold_is_passed_when_the_inbox_lists_it,tests/test_inbox_link.py,src/panel/act/inbox/tests.rs::a_question_opens_its_group_through_the_deep_link,mapped,,P3
 tests/test_inbox_link.py::test_an_older_inbox_gets_no_no_hold,tests/test_inbox_link.py,src/panel/act/inbox/tests.rs::no_hold_only_when_the_help_lists_it,mapped,,P3
 tests/test_inbox_link.py::test_a_failed_help_probe_means_no_no_hold,tests/test_inbox_link.py,src/panel/act/inbox/tests.rs::a_failed_help_probe_means_no_no_hold,mapped,,P3
@@ -619,12 +619,12 @@ tests/test_panels.py::test_a_tab_herdr_could_not_check_gets_no_panel,tests/test_
 tests/test_panels.py::test_a_second_panel_is_closed_keeping_the_connected_one,tests/test_panels.py,src/panels/tests/closing.rs::a_second_panel_is_closed_keeping_the_connected_one,mapped,,P4
 tests/test_panels.py::test_a_tab_without_its_orchestrator_loses_the_panel_only_after_a_while,tests/test_panels.py,src/panels/tests/closing.rs::a_tab_without_its_orchestrator_loses_the_panel_only_after_a_while,mapped,,P4
 tests/test_panels.py::test_the_open_key_asks_the_core,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_panel_switches_by_tab_and_panel_focus,tests/test_panels.py,,todo,,P4
+tests/test_panels.py::test_a_panel_switches_by_tab_and_panel_focus,tests/test_panels.py,src/panel/act/switch/tests.rs::onto_the_target_tabs_panel_after_announcing_it ; src/panel/act/switch/tests.rs::into_the_agent_without_keep_focus_or_without_a_panel_there,mapped,,P4
 tests/test_panels.py::test_new_agent_builds_its_tab_with_the_panel_on_the_left,tests/test_panels.py,src/new_agent/tests/start.rs::per_tab_builds_the_tab_with_its_panel_on_the_left ; src/new_agent/tests/real.rs::the_panel_layout_puts_our_panel_left_of_the_new_pane,mapped,,P4
-tests/test_panels.py::test_a_viewer_exits_on_the_cores_shutdown,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_viewer_without_a_core_for_long_exits,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_a_connected_viewer_does_not_time_out,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_viewers_start_from_the_venv_not_uv_run,tests/test_panels.py,,todo,,P4
+tests/test_panels.py::test_a_viewer_exits_on_the_cores_shutdown,tests/test_panels.py,tests/proto_client.rs::shutdown_stops_the_client_and_a_refused_hello_is_reported ; tests/core_server.rs::shutdown_reaches_every_panel_and_pings_follow_states,mapped,,P4
+tests/test_panels.py::test_a_viewer_without_a_core_for_long_exits,tests/test_panels.py,src/panel/no_core/tests.rs::ten_minutes_without_a_core_and_the_panel_goes,mapped,,P4
+tests/test_panels.py::test_a_connected_viewer_does_not_time_out,tests/test_panels.py,src/panel/no_core/tests.rs::a_welcome_stops_the_clock_and_a_lost_core_starts_it_again,mapped,,P4
+tests/test_panels.py::test_viewers_start_from_the_venv_not_uv_run,tests/test_panels.py,src/contract/tests.rs::a_panel_runs_the_rust_viewer_then_the_venv_then_uv_run,mapped,,P4
 tests/test_panels.py::test_a_panel_that_dies_before_its_viewer_connected_is_a_crash_not_a_close,tests/test_panels.py,src/panels/tests/closing.rs::a_panel_that_dies_before_its_viewer_connected_is_a_crash_not_a_close,mapped,,P4
 tests/test_panels.py::test_a_panel_whose_viewer_connected_then_vanished_was_closed_by_the_operator,tests/test_panels.py,src/panels/tests/closing.rs::a_panel_whose_viewer_connected_then_vanished_was_closed_by_the_operator,mapped,,P4
 tests/test_panels.py::test_a_crash_marker_wins_over_a_connected_viewer,tests/test_panels.py,src/panels/tests/closing.rs::a_crash_marker_wins_over_a_connected_viewer,mapped,,P4
@@ -996,7 +996,7 @@ tests/test_states.py::test_all_done_threads_go_stale_too,tests/test_states.py,cr
 tests/test_states.py::test_needs_me_shows_neither_waiting_nor_stale,tests/test_states.py,crates/panorama-core/tests/narrow_layout.rs::needs_me_shows_neither_waiting_nor_stale,mapped,,P3
 tests/test_states.py::test_the_clock_turns_once_a_second_and_keeps_frames_running,tests/test_states.py,crates/panorama-core/src/view/anim/tests.rs::the_spinner_and_the_clock_are_braille_cycles ; crates/panorama-core/src/view/moving/tests.rs::still_unless_something_moves,mapped,,P3
 tests/test_states.py::test_the_background_card_is_selectable_in_the_thread_column,tests/test_states.py,crates/panorama-core/tests/wide_layout.rs::the_background_card_is_selectable_in_the_thread_column,mapped,,P4
-tests/test_states.py::test_the_background_card_is_reached_with_right_and_enter_does_nothing_else,tests/test_states.py,,todo,,P4
+tests/test_states.py::test_the_background_card_is_reached_with_right_and_enter_does_nothing_else,tests/test_states.py,src/app/driver/tests/states.rs::the_background_card_is_reached_with_right_and_enter_does_nothing_else,mapped,,P4
 tests/test_states.py::test_the_waiting_clock_steps_on_the_restyle_path,tests/test_states.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision), so 'restyle equals a full render' holds by construction; the fractional frames themselves are pinned by the design goldens",P3
 tests/test_states.py::test_the_background_card_takes_the_wide_thread_column[160],tests/test_states.py,crates/panorama-core/tests/design_states.rs::the_background_card_takes_the_wide_thread_column,mapped,,P4
 tests/test_states.py::test_the_background_card_takes_the_wide_thread_column[240],tests/test_states.py,crates/panorama-core/tests/design_states.rs::the_background_card_takes_the_wide_thread_column,mapped,,P4
@@ -1134,4 +1134,4 @@ tests/test_panel_keys.py::test_one_click_still_obeys_arming_and_identity,tests/t
 tests/test_panel_keys.py::test_the_2a_graph_keeps_select_first,tests/test_panel_keys.py,src/panel/input/mouse/tests.rs::the_wide_graph_selects_first_and_goes_on_the_second_click,mapped,,P4
 tests/test_panel_keys.py::test_no_graph_flash_while_a_switch_runs,tests/test_panel_keys.py,src/panel/model/tests.rs::the_docked_panel_stays_while_a_switch_runs_even_at_the_wide_layouts_width ; src/ui/layout/tests.rs::docked_and_narrower_than_the_wide_layout_once_painted,mapped,,P4
 tests/test_panel_keys.py::test_a_switch_that_ends_judges_the_focus_again,tests/test_panel_keys.py,src/panel/model/tests.rs::a_switch_that_ends_judges_the_focus_again,mapped,,P4
-tests/test_cockpit.py::test_the_cores_open_key_follows_the_home_panes_new_id,tests/test_cockpit.py,,todo,,P4
+tests/test_cockpit.py::test_the_cores_open_key_follows_the_home_panes_new_id,tests/test_cockpit.py,src/app/link/tests/panels.rs::the_open_key_follows_the_home_panes_new_id ; src/app/link/tests/focus.rs::the_link_takes_its_new_id_from_the_report ; src/app/link/tests/focus.rs::a_moved_home_pane_moves_the_collectors_copy_too,mapped,,P4

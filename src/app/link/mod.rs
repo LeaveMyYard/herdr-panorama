@@ -243,7 +243,7 @@ impl Link {
             }
         };
         tokio::select! {
-            Some(d) = self.done_rx.recv() => LinkEvent::Done(d),
+            Some(d) = self.done_rx.recv() => self.reported(d),
             Some(e) = core => LinkEvent::Core(e),
         }
     }
