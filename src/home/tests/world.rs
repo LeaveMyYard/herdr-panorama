@@ -261,11 +261,6 @@ impl HomeOps for World {
         })
     }
 
-    async fn open_popup(&self) -> Result<(), String> {
-        self.s().calls.push("open_popup".into());
-        Ok(())
-    }
-
     async fn rename_pane(&self, pane: &str, label: &str) -> Result<(), String> {
         let mut s = self.s();
         s.calls.push(format!("rename_pane {pane} {label}"));
@@ -359,4 +354,44 @@ pub fn places(dir: &Path) -> Places {
 
 pub fn label() -> String {
     HOME_LABEL.to_string()
+}
+
+/// The entrypoints (`crate::open`) over the world: what `panorama open` / `home` run, with no
+/// core (`request_open` answers nothing) and the view's opening recorded as `open_view`.
+pub struct Entry<'a> {
+    pub w: &'a World,
+    pub places: &'a Places,
+}
+
+impl crate::open::OpenOps for Entry<'_> {
+    async fn request_open(&self) -> Option<String> {
+        None
+    }
+    async fn ensure_home(&self, focus: bool) -> Result<(), String> {
+        crate::open::ensure_home(self.w, self.places, focus).await
+    }
+    async fn open_view(&self, split: bool) -> Result<(), String> {
+        self.w.s().calls.push(format!("open_view split={split}"));
+        Ok(())
+    }
+}
+
+/// `panorama open` (no flags) over the world: its exit status and stderr.
+pub async fn open_key(
+    w: &World,
+    places: &Places,
+    cfg: &serde_json::Map<String, serde_json::Value>,
+) -> (i32, String) {
+    let mut err = vec![];
+    let code = crate::open::open(&Entry { w, places }, cfg, Default::default(), &mut err).await;
+    (code, String::from_utf8(err).unwrap())
+}
+
+/// `panorama home --startup` over the world: its exit status.
+pub async fn startup(
+    w: &World,
+    places: &Places,
+    cfg: &serde_json::Map<String, serde_json::Value>,
+) -> i32 {
+    crate::open::home(&Entry { w, places }, cfg, true, &mut vec![]).await
 }

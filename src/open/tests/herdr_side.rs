@@ -132,6 +132,8 @@ async fn open_view_split_targets_the_invoking_pane() {
     let p = &fake.params_of("plugin.pane.open")[1];
     assert!(p.get("placement").is_none_or(|v| v.is_null()), "{p}");
     assert!(p.get("target_pane_id").is_none_or(|v| v.is_null()), "{p}");
+    assert!(p.get("env").is_none_or(|v| v.is_null()), "{p}");
+    assert_eq!(p["entrypoint"], "panorama");
     fake.on("plugin.pane.open", Reply::error("plugin_not_found", "nope"));
     assert!(
         real(&fake, None)

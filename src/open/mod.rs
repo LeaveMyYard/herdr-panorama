@@ -49,6 +49,15 @@ pub fn parse_flags(args: &[String], known: &[&'static str]) -> Result<Vec<&'stat
         .collect()
 }
 
+/// The home tab (opened if missing), focused or not: what [`OpenOps::ensure_home`] runs.
+pub async fn ensure_home(
+    home: &impl crate::home::HomeOps,
+    places: &crate::home::Places,
+    focus: bool,
+) -> Result<(), String> {
+    crate::home::ensure(home, places, focus).await.map(drop)
+}
+
 /// `panorama open`: the exit status (1 when not even the view could be opened).
 pub async fn open(
     ops: &impl OpenOps,

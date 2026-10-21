@@ -1,7 +1,7 @@
 //! Opening and keeping the home tab (Python `tests/test_home.py`, `tests/test_cockpit.py`).
 
 use super::world::*;
-use crate::home::{Home, Opened, ensure, open_key, startup};
+use crate::home::{Home, ensure};
 use serde_json::{Map, Value, json};
 
 fn cfg(v: Value) -> Map<String, Value> {
@@ -88,9 +88,9 @@ async fn lost_record_adopts_the_labelled_tab_and_a_gone_home_is_reopened() {
 async fn open_action_focuses_home_and_the_popup_stays_available() {
     let (w, dir) = (World::default(), tempfile::tempdir().unwrap());
     let p = places(dir.path());
-    assert_eq!(open_key(&w, &p, &cfg(json!({}))).await, Ok(Opened::Home));
+    assert_eq!(open_key(&w, &p, &cfg(json!({}))).await, (0, String::new()));
     assert_eq!(w.s().count("open_home focus"), 1, "opened with focus");
-    assert_eq!(open_key(&w, &p, &cfg(json!({}))).await, Ok(Opened::Home)); // back home
+    assert_eq!(open_key(&w, &p, &cfg(json!({}))).await, (0, String::new())); // back home
     assert_eq!(w.s().count("open_home"), 1);
     assert_eq!(
         w.calls()
@@ -99,7 +99,7 @@ async fn open_action_focuses_home_and_the_popup_stays_available() {
             .collect::<Vec<_>>(),
         ["focus_tab w1:t1"]
     );
-    assert_eq!(w.s().count("open_popup"), 0);
+    assert_eq!(w.s().count("open_view"), 0);
 }
 
 #[tokio::test]
@@ -107,18 +107,16 @@ async fn home_tab_off_means_popup_and_no_startup_tab() {
     let (w, dir) = (World::default(), tempfile::tempdir().unwrap());
     let p = places(dir.path());
     let off = cfg(json!({"home_tab": false}));
-    startup(&w, &p, &off).await.unwrap();
+    assert_eq!(startup(&w, &p, &off).await, 0);
     assert_eq!(w.s().count("open_home"), 0);
-    assert_eq!(open_key(&w, &p, &off).await, Ok(Opened::Popup(None)));
-    assert_eq!(w.s().count("open_popup"), 1);
+    assert_eq!(open_key(&w, &p, &off).await, (0, String::new()));
+    assert_eq!(w.s().count("open_view split=false"), 1);
 }
 
 #[tokio::test]
 async fn startup_does_not_take_focus() {
     let (w, dir) = (World::default(), tempfile::tempdir().unwrap());
-    startup(&w, &places(dir.path()), &cfg(json!({})))
-        .await
-        .unwrap();
+    assert_eq!(startup(&w, &places(dir.path()), &cfg(json!({}))).await, 0);
     assert_eq!(w.s().count("open_home no-focus"), 1);
     assert_eq!(w.s().count("focus_tab"), 0);
 }
@@ -136,11 +134,13 @@ async fn a_failed_snapshot_never_opens_a_second_home() {
     );
     assert_eq!(w.s().count("open_home"), 1);
     assert_eq!(std::fs::read_to_string(&p.record).unwrap(), record);
-    let opened = open_key(&w, &p, &cfg(json!({}))).await.unwrap();
+    let (code, err) = open_key(&w, &p, &cfg(json!({}))).await;
+    assert_eq!(code, 0, "the key still works: the popup");
     assert!(
-        matches!(opened, Opened::Popup(Some(_))),
-        "the key still works: the popup"
+        err.starts_with("panorama: home tab: ") && err.ends_with("; opening the popup\n"),
+        "{err}"
     );
+    assert_eq!(w.s().count("open_view split=false"), 1);
 }
 
 #[tokio::test]
@@ -196,7 +196,7 @@ async fn the_key_brings_a_left_docked_panorama_home_and_focuses_it() {
     let h = ensure(&w, &p, false).await.unwrap();
     let (a, ta) = w.s().add_agent("billing", 0);
     w.s().left_docked(&h.pane_id, &a);
-    assert_eq!(open_key(&w, &p, &cfg(json!({}))).await, Ok(Opened::Home));
+    assert_eq!(open_key(&w, &p, &cfg(json!({}))).await, (0, String::new()));
     assert_eq!(w.s().count("open_home"), 1, "no second panorama");
     let home_tab = w.s().tab_of(&h.pane_id).unwrap();
     assert_ne!(home_tab, ta);

@@ -104,13 +104,14 @@ async fn unverifiable_lookalikes_open_nothing() {
     w.s().fail.insert("process_info");
     assert!(ensure(&w, &p, false).await.unwrap_err().contains("verify"));
     assert_eq!(w.s().count("open_home"), 1);
-    let opened = crate::home::open_key(&w, &p, &cfg(json!({})))
-        .await
-        .unwrap();
+    let (code, err) = open_key(&w, &p, &cfg(json!({}))).await;
+    assert_eq!(code, 0, "the key still works: the popup");
     assert!(
-        matches!(opened, crate::home::Opened::Popup(Some(_))),
-        "the key still works: the popup"
+        err.contains("verify") && err.ends_with("; opening the popup\n"),
+        "{err}"
     );
+    assert_eq!(w.s().count("open_view split=false"), 1);
+    assert_eq!(w.s().count("open_home"), 1, "never a second home");
 }
 
 #[tokio::test]

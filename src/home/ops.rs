@@ -18,8 +18,6 @@ pub trait HomeOps: Send + Sync {
     fn runs_tui(&self, pane: &str) -> impl Future<Output = Option<bool>> + Send;
     /// The plugin's `panorama` pane in a tab of its own (`PANORAMA_HOME=1`), focused or not.
     fn open_home_pane(&self, focus: bool) -> impl Future<Output = Result<At, String>> + Send;
-    /// The plugin's `panorama` pane at its own placement (the popup).
-    fn open_popup(&self) -> impl Future<Output = Result<(), String>> + Send;
     fn rename_pane(
         &self,
         pane: &str,

@@ -1,8 +1,8 @@
 //! [`OpenOps`] against herdr and the core.
 
 use super::{OPEN_WAIT, OpenOps, request_open};
+use crate::home::Places;
 use crate::home::real::RealHome;
-use crate::home::{Places, ensure};
 use herdr_agent_kit::herdr_api::{Direction, Herdr, OpenPluginPane, PaneId, Placement};
 use herdr_agent_kit::internal::plugin_paths::PANORAMA_ID;
 use herdr_agent_kit::plugin_env::PluginEnv;
@@ -63,7 +63,7 @@ impl OpenOps for RealOpen {
     }
 
     async fn ensure_home(&self, focus: bool) -> Result<(), String> {
-        ensure(&self.home, &self.places, focus).await.map(drop)
+        super::ensure_home(&self.home, &self.places, focus).await
     }
 
     async fn open_view(&self, split: bool) -> Result<(), String> {
