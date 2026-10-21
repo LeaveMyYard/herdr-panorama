@@ -5,9 +5,9 @@
 //! the panel manager) closes panes. Everything that waits on herdr runs off the actor and
 //! reports back as [`Done`].
 
-mod acts;
+pub mod acts;
 pub mod done;
-mod events;
+pub mod events;
 mod focus;
 pub mod panels;
 pub mod state;
@@ -111,7 +111,12 @@ impl Link {
             link.start_core(env, &state, &mut settings, focus_log.clone())
                 .await;
         }
-        events::spawn(herdr, focus_log, link.done_tx.clone(), link.panels.clone());
+        let panels = link.panels.clone();
+        events::spawn(herdr, focus_log, link.done_tx.clone(), move || {
+            if let Some(p) = &panels {
+                p.pass();
+            }
+        });
         link
     }
 
@@ -245,3 +250,6 @@ impl Link {
         }
     }
 }
+
+#[cfg(test)]
+mod tests;

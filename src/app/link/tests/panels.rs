@@ -1,0 +1,224 @@
+//! The panels task: one pass at a time, the open key, quit (the core's shutdown, then every
+//! panel provably ours closed), and per-tab switched off while running.
+
+use crate::app::link::Done;
+use crate::app::link::panels::{PanelsLink, PanelsTask};
+use crate::core::{self, Config, Core};
+use crate::home::real::RealHome;
+use crate::home::{HOME_LABEL, Places};
+use crate::panels::real::RealOps;
+use crate::panels::{Manager, Places as PanelPlaces};
+use crate::settings::Settings;
+use herdr_agent_kit::herdr_api::fake::{FakeHerdr, Reply};
+use serde_json::{Value, json};
+use std::os::unix::fs::MetadataExt;
+use std::path::Path;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::net::UnixStream;
+use tokio::sync::mpsc;
+
+const ID: &str = "leavemyyard.herdr-panorama";
+
+async fn core(dir: &Path) -> Arc<Core> {
+    let uid = std::fs::metadata(dir).unwrap().uid();
+    let cfg = Config::new(
+        dir.join("s").join("core.sock"),
+        dir.join("s").join("core.lock"),
+        uid,
+    );
+    let (tx, _rx) = core::events();
+    std::mem::forget(_rx); // the app's end of the core's events, kept open
+    Arc::new(core::start(cfg, Panes, tx).await.expect("the core starts"))
+}
+
+struct Panes;
+impl core::Verify for Panes {
+    async fn verify(&self, _pane: &str, _pid: i32) -> bool {
+        false
+    }
+}
+
+fn task(
+    fake: &FakeHerdr,
+    core: Arc<Core>,
+    dir: &Path,
+    config: &str,
+) -> (PanelsTask, mpsc::UnboundedReceiver<Done>) {
+    std::fs::create_dir_all(dir.join("cfg")).unwrap();
+    std::fs::write(dir.join("cfg").join("config.toml"), config).unwrap();
+    let ops = RealOps {
+        herdr: fake.client(),
+        plugin_id: ID.into(),
+        root: None,
+        width: 46,
+    };
+    let places = PanelPlaces {
+        state_path: Some(dir.join("panels.json")),
+        marker_dir: Some(dir.into()),
+        home_lock: dir.join("home.lock"),
+    };
+    let manager = Manager::new(ops, None, places, Arc::new(Instant::now));
+    let (done, rx) = mpsc::unbounded_channel();
+    let t = PanelsTask {
+        manager,
+        core,
+        swarm: Arc::new(Mutex::new(Default::default())),
+        settings: Settings::new(Some(dir.join("cfg")), dir.join("herdr"), ID),
+        home: RealHome {
+            herdr: fake.client(),
+            plugin_id: ID.into(),
+            root: None,
+        },
+        places: Places {
+            record: dir.join("home.json"),
+            lock: dir.join("home.lock"),
+            wait: Duration::from_secs(2),
+        },
+        my_pane: Some("w1:p1".into()),
+        done,
+        log: dir.join("panorama.log"),
+    };
+    (t, rx)
+}
+
+fn snapshot(fake: &FakeHerdr, home_tab_label: &str) {
+    fake.on("session.snapshot", Reply::Result(json!({"snapshot": {
+        "focused_tab_id": "w1:t1", "focused_pane_id": "w1:p1",
+        "tabs": [{"tab_id": "w1:t1", "label": home_tab_label, "workspace_id": "w1"},
+                 {"tab_id": "w1:t2", "label": "billing", "workspace_id": "w1"}],
+        "panes": [{"pane_id": "w1:p1", "tab_id": "w1:t1", "workspace_id": "w1", "label": HOME_LABEL},
+                  {"pane_id": "w1:p7", "tab_id": "w1:t2", "workspace_id": "w1", "label": "Panorama panel"},
+                  {"pane_id": "w1:p2", "tab_id": "w1:t2", "workspace_id": "w1", "agent": "claude"}]}})));
+}
+
+fn runs(fake: &FakeHerdr, command: &str) {
+    fake.on("pane.process_info", Reply::Result(json!({"type": "pane_process_info", "process_info": {"pane_id": "w1:p1",
+        "shell_pid": 5, "foreground_processes": [{"pid": 5, "name": "panorama", "argv": ["/p/panorama", command]}]}})));
+}
+
+/// A panel viewer connected to the core: its socket, after hello.
+async fn viewer(dir: &Path) -> BufReader<UnixStream> {
+    let mut s = UnixStream::connect(dir.join("s").join("core.sock"))
+        .await
+        .unwrap();
+    s.write_all(b"{\"hello\": {\"protocol\": \"1.3\"}}\n")
+        .await
+        .unwrap();
+    let mut r = BufReader::new(s);
+    let mut l = String::new();
+    r.read_line(&mut l).await.unwrap();
+    assert!(l.contains("welcome"));
+    r
+}
+
+async fn said_shutdown(r: &mut BufReader<UnixStream>) -> bool {
+    let mut l = String::new();
+    while tokio::time::timeout(Duration::from_secs(3), r.read_line(&mut l))
+        .await
+        .is_ok_and(|n| n.is_ok_and(|n| n > 0))
+    {
+        if serde_json::from_str::<Value>(&l).is_ok_and(|v| v.get("shutdown").is_some()) {
+            return true;
+        }
+        l.clear();
+    }
+    false
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn quit_tells_the_viewers_to_go_then_closes_our_panels() {
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    let c = core(dir.path()).await;
+    let mut v = viewer(dir.path()).await;
+    snapshot(&fake, HOME_LABEL);
+    runs(&fake, "panel");
+    fake.on("plugin.pane.close", Reply::Result(json!({"type": "ok"})));
+    let (mut t, _rx) = task(&fake, c, dir.path(), "cockpit = true\n");
+    t.manager.created.insert("w1:p7".into(), "w1:t2".into()); // a panel this core opened
+    let link = PanelsLink::spawn(t);
+    link.quit().await;
+    assert!(said_shutdown(&mut v).await, "the viewers were told to go");
+    assert_eq!(
+        fake.params_of("plugin.pane.close"),
+        [json!({"pane_id": "w1:p7"})]
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_open_key_shows_the_home_view_where_it_is() {
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    let c = core(dir.path()).await;
+    snapshot(&fake, HOME_LABEL);
+    runs(&fake, "tui");
+    for m in ["tab.focus", "pane.focus"] {
+        fake.on(m, Reply::Result(json!({"type": "ok"})));
+    }
+    let (t, _rx) = task(&fake, c, dir.path(), ""); // per-tab off: the home view
+    let link = PanelsLink::spawn(t);
+    assert_eq!(link.open_key().await, "home");
+    assert_eq!(fake.params_of("tab.focus"), [json!({"tab_id": "w1:t1"})]);
+    assert_eq!(fake.params_of("pane.focus"), [json!({"pane_id": "w1:p1"})]);
+    assert!(
+        fake.params_of("pane.move").is_empty(),
+        "in its home tab: nothing moves"
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_open_key_brings_a_docked_home_back_first() {
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    let c = core(dir.path()).await;
+    snapshot(&fake, "billing"); // the home pane sits in a tab that is no home tab
+    runs(&fake, "tui");
+    fake.on(
+        "pane.move",
+        Reply::Result(json!({"type": "pane_move", "move_result": {"changed": true,
+        "pane": {"pane_id": "w1:p1", "tab_id": "w1:t9"}}})),
+    );
+    for m in [
+        "tab.focus",
+        "pane.focus",
+        "tab.move",
+        "tab.rename",
+        "pane.rename",
+    ] {
+        fake.on(m, Reply::Result(json!({"type": "ok"})));
+    }
+    let (t, mut rx) = task(&fake, c, dir.path(), "");
+    let link = PanelsLink::spawn(t);
+    assert_eq!(link.open_key().await, "home");
+    assert_eq!(fake.params_of("pane.move")[0]["pane_id"], "w1:p1");
+    assert_eq!(
+        fake.params_of("tab.focus").last().unwrap(),
+        &json!({"tab_id": "w1:t9"})
+    );
+    assert!(matches!(rx.try_recv(), Ok(Done::MyPane(p)) if p == "w1:p1"));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn per_tab_switched_off_closes_the_panels_once() {
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    let c = core(dir.path()).await;
+    let mut v = viewer(dir.path()).await;
+    snapshot(&fake, HOME_LABEL);
+    runs(&fake, "panel");
+    fake.on("plugin.pane.close", Reply::Result(json!({"type": "ok"})));
+    let (mut t, mut rx) = task(&fake, c, dir.path(), "cockpit = false\n");
+    t.manager.started = true;
+    t.manager.created.insert("w1:p7".into(), "w1:t2".into());
+    let link = PanelsLink::spawn(t);
+    link.pass();
+    let d = tokio::time::timeout(Duration::from_secs(5), rx.recv())
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(matches!(d, Done::Panels(m) if m.is_empty()));
+    assert!(said_shutdown(&mut v).await);
+    assert_eq!(fake.params_of("plugin.pane.close").len(), 1);
+    link.pass(); // already off: nothing more
+    tokio::time::sleep(Duration::from_millis(300)).await;
+    assert_eq!(fake.params_of("plugin.pane.close").len(), 1);
+    assert!(rx.try_recv().is_err());
+}

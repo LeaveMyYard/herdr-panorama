@@ -3,7 +3,6 @@
 //! focus, and, once a burst settles (`FOLLOW_DEBOUNCE`), ask for one panels pass.
 
 use super::done::Done;
-use super::panels::PanelsLink;
 use crate::panels::{Focus, FocusLog};
 use herdr_agent_kit::herdr_api::{EventKind, Herdr, HerdrEvent};
 use std::sync::Arc;
@@ -14,12 +13,13 @@ use tokio::sync::mpsc;
 /// on where the operator ended up.
 pub const FOLLOW_DEBOUNCE: Duration = Duration::from_millis(150);
 
-/// Starts the watcher; it ends when the view is gone (its channel closed).
+/// Starts the watcher; it ends when the view is gone (its channel closed). `settled`: a burst
+/// of focus events ended (the panels' pass).
 pub fn spawn(
     h: Herdr,
     log: Arc<FocusLog>,
     done: mpsc::UnboundedSender<Done>,
-    panels: Option<PanelsLink>,
+    settled: impl Fn() + Send + 'static,
 ) {
     tokio::spawn(async move {
         let mut events = h.events(&[EventKind::TAB_FOCUSED, EventKind::PANE_FOCUSED]);
@@ -29,9 +29,7 @@ pub fn spawn(
                 ev = events.next() => ev,
                 () = sleep_until(due) => {
                     due = None;
-                    if let Some(p) = &panels {
-                        p.pass(); // the operator may have entered a tab that has no panel yet
-                    }
+                    settled(); // the operator may have entered a tab that has no panel yet
                     continue;
                 }
             };
