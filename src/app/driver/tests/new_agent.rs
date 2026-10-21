@@ -57,6 +57,12 @@ fn its_keys_never_reach_the_view_and_refreshes_go_on_under_it() {
     let (swarm, _) = wire("demo");
     r.refresh(swarm, now); // a refresh under the modal
     assert!(r.d.form.is_some(), "the modal stays");
+    let mut tick = look(r.now_s);
+    tick.frame = 1.0; // a colour tick under the modal
+    let (w, h) = r.size;
+    assert!(r.d.paint(w, h, &tick, Painted::Other, now).is_some());
+    assert_eq!(r.d.app.view.frame, 1.0);
+    assert!(r.d.form.is_some());
     let mut frame = r.d.shown().unwrap().clone();
     r.d.form_over(&mut frame);
     assert!(frame.text().contains("+ New agent"));
@@ -125,4 +131,35 @@ fn a_click_on_the_carousel_switches_the_harness() {
     assert_eq!(r.d.form_click(next.x, next.y), FormStep::Repaint);
     assert_eq!(r.d.form.as_ref().unwrap().form.harness, 1);
     assert_eq!(r.d.form_click(0, 0), FormStep::Nothing);
+}
+
+#[test]
+fn a_started_agent_is_said_and_a_popup_closes_over_its_tab() {
+    // Python `_new_agent_done`: "started <name>" (title "new agent", 6 s); a popup exits
+    let mut r = Run::new(wire("demo"), "w1:p1", true, WIDE); // the home view
+    let now = r.settled();
+    r.d.open_form("/work", now - ARM);
+    assert!(
+        !r.d.agent_started(Err("boom".into()), now),
+        "an error keeps the modal"
+    );
+    assert!(r.d.form.is_some());
+    assert!(
+        !r.d.agent_started(Ok("docs".into()), now),
+        "the home view stays"
+    );
+    assert!(r.d.form.is_none());
+    let mut s = panorama_core::view::Screen::new(160, 45);
+    r.d.toasts.draw(&mut s);
+    assert!(
+        s.text().contains("started docs") && s.text().contains("new agent"),
+        "{}",
+        s.text()
+    );
+    let (mut p, _) = opened("/work"); // Run::demo: a popup
+    assert!(p.d.agent_started(Ok("docs".into()), now), "a popup closes");
+    assert!(
+        !p.d.agent_started(Ok("docs".into()), now),
+        "nothing open: nothing to say"
+    );
 }

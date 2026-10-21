@@ -73,19 +73,7 @@ async fn serve(env: &PluginEnv) -> std::io::Result<()> {
     let table = settings.panorama_table();
     let ops = RealStart {
         herdr: herdr.clone(),
-        plugin_env: [
-            "HERDR_PLUGIN_ID",
-            "HERDR_PLUGIN_ROOT",
-            "HERDR_PLUGIN_STATE_DIR",
-            "HERDR_PLUGIN_CONFIG_DIR",
-        ]
-        .into_iter()
-        .filter_map(|k| {
-            env.var(k)
-                .filter(|v| !v.is_empty())
-                .map(|v| (k.to_owned(), v.to_owned()))
-        })
-        .collect(),
+        plugin_env: crate::new_agent::real::plugin_env(env),
         root: env.plugin_root().map(|r| r.to_string_lossy().into_owned()),
         panels: RealOps {
             herdr,

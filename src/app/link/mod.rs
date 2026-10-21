@@ -123,29 +123,18 @@ impl Link {
             Places::from_env(env),
             log,
         );
-        link.settings = Some(Arc::new(Mutex::new(Settings::from_env(env))));
-        link.plugin_env = [
-            "HERDR_PLUGIN_ID",
-            "HERDR_PLUGIN_ROOT",
-            "HERDR_PLUGIN_STATE_DIR",
-            "HERDR_PLUGIN_CONFIG_DIR",
-        ]
-        .into_iter()
-        .filter_map(|k| {
-            env.var(k)
-                .filter(|v| !v.is_empty())
-                .map(|v| (k.to_owned(), v.to_owned()))
-        })
-        .collect();
+        let mut settings = Settings::from_env(env);
+        link.plugin_env = crate::new_agent::real::plugin_env(env);
         if !home_mode {
+            link.settings = Some(Arc::new(Mutex::new(settings)));
             return link;
         }
-        let mut settings = Settings::from_env(env);
         let focus_log = Arc::new(FocusLog::default());
         if per_tab(&settings.panorama_table()) {
             link.start_core(env, &state, &mut settings, focus_log.clone())
                 .await;
         }
+        link.settings = Some(Arc::new(Mutex::new(settings)));
         let panels = link.panels.clone();
         events::spawn(herdr, focus_log, link.done_tx.clone(), move || {
             if let Some(p) = &panels {

@@ -149,3 +149,24 @@ fn the_popup_holds_the_whole_modal_and_the_manifest_says_the_same_size() {
         (Some(POPUP.0), Some(POPUP.1))
     );
 }
+
+#[test]
+fn a_new_panel_gets_the_plugins_own_variables_that_are_set() {
+    let env = PluginEnv::from_vars(
+        [
+            ("HERDR_PLUGIN_ID", "p"),
+            ("HERDR_PLUGIN_ROOT", "/r"),
+            ("HERDR_PLUGIN_STATE_DIR", ""),
+            ("HERDR_SOCKET_PATH", "/s"),
+        ],
+        None,
+        1000,
+    );
+    assert_eq!(
+        crate::new_agent::real::plugin_env(&env),
+        [
+            ("HERDR_PLUGIN_ID".to_owned(), "p".to_owned()),
+            ("HERDR_PLUGIN_ROOT".to_owned(), "/r".to_owned())
+        ]
+    );
+}
