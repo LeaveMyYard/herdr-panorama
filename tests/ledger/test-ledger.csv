@@ -254,11 +254,11 @@ tests/test_deep.py::test_a_click_right_after_a_sideways_scroll_does_not_hit_what
 tests/test_dock_panel.py::test_every_card_is_a_click_target_and_question_marks_answer,tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::every_card_is_a_click_target_and_question_marks_answer,mapped,,P3
 tests/test_dock_panel.py::test_the_cursor_wears_the_hover_look_and_the_docked_entry_keeps_its_bar,tests/test_dock_panel.py,crates/panorama-core/tests/dock_screens.rs::docked_unfocused,mapped,,P3
 tests/test_dock_panel.py::test_docked_panel_scrolls_to_the_cursor,tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::the_docked_panel_scrolls_to_the_cursor,mapped,,P3
-tests/test_dock_panel.py::test_docked_view_uses_the_panel_and_keeps_one_column,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_wide_or_undocked_keeps_the_2a_layout,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_a_card_that_moved_ignores_clicks,tests/test_dock_panel.py,,todo,,P4
+tests/test_dock_panel.py::test_docked_view_uses_the_panel_and_keeps_one_column,tests/test_dock_panel.py,src/app/driver/tests/dock.rs::the_docked_view_uses_the_panel_and_keeps_one_column ; src/app/model/tests.rs::docked_and_narrow_is_the_docked_panel_with_one_column,mapped,,P4
+tests/test_dock_panel.py::test_wide_or_undocked_keeps_the_2a_layout,tests/test_dock_panel.py,src/app/model/tests.rs::docked_and_narrow_is_the_docked_panel_with_one_column,mapped,,P4
+tests/test_dock_panel.py::test_a_card_that_moved_ignores_clicks,tests/test_dock_panel.py,src/app/driver/tests/dock.rs::a_card_that_moved_ignores_clicks,mapped,,P4
 tests/test_dock_panel.py::test_collector_finds_the_docked_agent_and_tab_numbers,tests/test_dock_panel.py,tests/collect_snapshot.rs::collector_finds_the_docked_agent_and_tab_numbers,mapped,,P4
-tests/test_dock_panel.py::test_r11_a_refresh_that_docks_the_view_rearms_the_keys,tests/test_dock_panel.py,,todo,,P4
+tests/test_dock_panel.py::test_r11_a_refresh_that_docks_the_view_rearms_the_keys,tests/test_dock_panel.py,src/app/model/tests.rs::a_refresh_that_docks_the_view_arms_the_keys_again,mapped,,P4
 tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[36],tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::the_panel_lays_out_to_the_width_it_gets,mapped,,P3
 tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[40],tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::the_panel_lays_out_to_the_width_it_gets,mapped,,P3
 tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[44],tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::the_panel_lays_out_to_the_width_it_gets,mapped,,P3
@@ -1116,22 +1116,22 @@ tests/test_cockpit.py::test_the_cores_open_key_brings_a_docked_home_back_to_its_
 tests/test_follow.py::test_a_burst_of_focus_events_makes_one_panel_pass,tests/test_follow.py,,todo,,P4
 tests/test_panels.py::test_follow_tabs_single_gives_panels_only_to_tabs_of_one_orchestrator,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_the_cockpit_is_per_tab_panels_and_an_old_moving_setting_reads_as_per_tab,tests/test_panels.py,,todo,,P4
-tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[enter-False-True],tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[g-False-True],tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[enter-True-False],tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_docked_enter_with_keep_focus_off_focuses_the_agent,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_the_2a_graph_enter_still_focuses_the_agent,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_arrows_switch_the_chats_once_they_settle,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_arrows_do_not_dock_the_docked_one_new_agent_or_a_remote,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_arrows_off_or_the_2a_graph_never_dock_on_arrows,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left[blurred],tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left[herdr says another pane],tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_an_arrow_settling_during_a_dock_runs_after_it_even_if_focus_looks_elsewhere,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_an_arrow_dock_due_during_a_dock_runs_after_it,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_one_click_on_an_entry_docks_and_question_marks_answer,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_one_click_on_the_docked_entry_focuses_its_agent_like_enter,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_one_click_still_obeys_arming_and_identity,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_the_2a_graph_keeps_select_first,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_no_graph_flash_while_a_switch_runs,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_a_switch_that_ends_judges_the_focus_again,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[enter-False-True],tests/test_panel_keys.py,src/panel/input/actions/tests.rs::enter_on_another_orchestrator_in_the_docked_list_goes_into_it,mapped,,P4
+tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[g-False-True],tests/test_panel_keys.py,src/panel/input/actions/tests.rs::g_in_the_docked_list_goes_into_the_agent,mapped,,P4
+tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[enter-True-False],tests/test_panel_keys.py,src/panel/input/actions/tests.rs::enter_on_another_orchestrator_in_the_docked_list_goes_into_it,mapped,,P4
+tests/test_panel_keys.py::test_docked_enter_with_keep_focus_off_focuses_the_agent,tests/test_panel_keys.py,src/panel/input/actions/tests.rs::enter_with_neither_the_arrows_nor_keep_focus_goes_into_the_agent,mapped,,P4
+tests/test_panel_keys.py::test_the_2a_graph_enter_still_focuses_the_agent,tests/test_panel_keys.py,src/panel/input/actions/tests.rs::the_wide_graphs_enter_still_goes_into_the_agent,mapped,,P4
+tests/test_panel_keys.py::test_arrows_switch_the_chats_once_they_settle,tests/test_panel_keys.py,src/panel/input/arrows/tests.rs::the_arrows_switch_once_they_rest ; src/panel/input/arrows/tests.rs::the_rest_comes_due_at_200_ms_not_a_tick_before,mapped,,P4
+tests/test_panel_keys.py::test_arrows_do_not_dock_the_docked_one_new_agent_or_a_remote,tests/test_panel_keys.py,src/panel/input/arrows/tests.rs::no_switch_onto_the_docked_one_or_while_the_keyboard_is_elsewhere ; src/panel/input/arrows/tests.rs::the_arrows_do_not_switch_onto_new_agent_or_another_machine,mapped,,P4
+tests/test_panel_keys.py::test_arrows_off_or_the_2a_graph_never_dock_on_arrows,tests/test_panel_keys.py,src/panel/input/arrows/tests.rs::with_the_arrows_off_or_in_the_wide_graph_the_arrows_only_move,mapped,,P4
+tests/test_panel_keys.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left[blurred],tests/test_panel_keys.py,src/panel/input/arrows/tests.rs::no_switch_onto_the_docked_one_or_while_the_keyboard_is_elsewhere,mapped,,P4
+tests/test_panel_keys.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left[herdr says another pane],tests/test_panel_keys.py,src/panel/input/arrows/tests.rs::no_switch_while_herdr_says_the_keyboard_is_in_another_pane,mapped,,P4
+tests/test_panel_keys.py::test_an_arrow_settling_during_a_dock_runs_after_it_even_if_focus_looks_elsewhere,tests/test_panel_keys.py,src/panel/input/arrows/tests.rs::an_arrow_resting_during_a_switch_runs_after_it_even_while_the_focus_looks_elsewhere,mapped,,P4
+tests/test_panel_keys.py::test_an_arrow_dock_due_during_a_dock_runs_after_it,tests/test_panel_keys.py,src/panel/input/arrows/tests.rs::arrows_that_rest_during_a_switch_are_looked_at_again_when_it_ends,mapped,,P4
+tests/test_panel_keys.py::test_one_click_on_an_entry_docks_and_question_marks_answer,tests/test_panel_keys.py,src/panel/input/mouse/tests.rs::a_click_on_an_entry_in_the_docked_list_switches_to_it ; src/panel/input/mouse/tests.rs::a_click_on_a_question_mark_answers_and_does_not_switch,mapped,,P4
+tests/test_panel_keys.py::test_one_click_on_the_docked_entry_focuses_its_agent_like_enter,tests/test_panel_keys.py,src/panel/input/mouse/tests.rs::a_click_on_the_docked_entry_goes_into_its_agent_like_enter,mapped,,P4
+tests/test_panel_keys.py::test_one_click_still_obeys_arming_and_identity,tests/test_panel_keys.py,src/panel/input/mouse/tests.rs::an_unarmed_click_in_the_docked_list_may_select_but_never_switches ; src/panel/input/selection/tests.rs::armed_clicks_wait_like_their_keys,mapped,,P4
+tests/test_panel_keys.py::test_the_2a_graph_keeps_select_first,tests/test_panel_keys.py,src/panel/input/mouse/tests.rs::the_wide_graph_selects_first_and_goes_on_the_second_click,mapped,,P4
+tests/test_panel_keys.py::test_no_graph_flash_while_a_switch_runs,tests/test_panel_keys.py,src/panel/model/tests.rs::the_docked_panel_stays_while_a_switch_runs_even_at_the_wide_layouts_width ; src/ui/layout/tests.rs::docked_and_narrower_than_the_wide_layout_once_painted,mapped,,P4
+tests/test_panel_keys.py::test_a_switch_that_ends_judges_the_focus_again,tests/test_panel_keys.py,src/panel/model/tests.rs::a_switch_that_ends_judges_the_focus_again,mapped,,P4
 tests/test_cockpit.py::test_the_cores_open_key_follows_the_home_panes_new_id,tests/test_cockpit.py,,todo,,P4
