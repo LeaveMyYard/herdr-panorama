@@ -24,7 +24,6 @@ pub mod server;
 pub mod session;
 pub mod tool;
 
-use herdr_agent_kit::herdr_api::Herdr;
 use herdr_agent_kit::plugin_env::PluginEnv;
 use rmcp::ServiceExt;
 use server::Server;
@@ -34,7 +33,7 @@ use session::Sessions;
 pub fn server(env: &PluginEnv) -> Server {
     let pane = env
         .pane_id()
-        .map(|p| (Herdr::from_env().with_client("panorama"), p.to_owned()));
+        .map(|p| (crate::trace::client(), p.to_owned()));
     Server {
         events_dir: crate::collect::paths::events_dir(env),
         sessions: Sessions {

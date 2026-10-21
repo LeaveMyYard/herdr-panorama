@@ -1,11 +1,11 @@
 //! Before going to an orchestrator: does herdr still have its pane? (The core's state may be
 //! old; Python `PanelApp.action_goto`.)
 
-use herdr_agent_kit::herdr_api::Herdr;
+use crate::trace::HerdrClient;
 
 /// Whether herdr's snapshot has `pane`. A snapshot that cannot be read counts as not (Python
 /// reads it as empty).
-pub async fn exists(h: &Herdr, pane: &str) -> bool {
+pub async fn exists(h: &HerdrClient, pane: &str) -> bool {
     h.snapshot().await.is_ok_and(|snap| {
         snap.panes
             .iter()

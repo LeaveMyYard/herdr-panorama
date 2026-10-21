@@ -8,7 +8,8 @@
 //! [`PREPAINT_WAIT`]), then [`PREPAINT_PAINT`] for the paint. A switch that then fails takes
 //! the announcement back, so the core stops naming the target.
 
-use herdr_agent_kit::herdr_api::{Herdr, PaneId, TabId};
+use crate::trace::HerdrClient;
+use herdr_agent_kit::herdr_api::{PaneId, TabId};
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -40,7 +41,7 @@ pub struct Switched {
 /// Switches to the tab of the orchestrator in `target`. `panes_of`: tab -> its panel;
 /// `my_pane`: the switching panel's own pane.
 pub async fn switch(
-    h: &Herdr,
+    h: &HerdrClient,
     target: &str,
     keep_focus: bool,
     panes_of: &HashMap<String, String>,
@@ -104,7 +105,7 @@ async fn prepaint(panel: &str, announce: &impl Announce) -> bool {
 }
 
 /// Shows `tab` with the keyboard on `panel`.
-async fn focus_panel(h: &Herdr, tab: &TabId, panel: &str) -> Option<String> {
+async fn focus_panel(h: &HerdrClient, tab: &TabId, panel: &str) -> Option<String> {
     if let Err(e) = h.focus_tab(tab).await {
         return Some(e.to_string());
     }

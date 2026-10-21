@@ -4,12 +4,13 @@ use super::fit;
 use super::ops::{Ops, Shell};
 use super::shell;
 use super::snap::Snap;
-use herdr_agent_kit::herdr_api::{Direction, Herdr, OpenPluginPane, PaneId, Placement, TabId};
+use crate::trace::HerdrClient;
+use herdr_agent_kit::herdr_api::{Direction, OpenPluginPane, PaneId, Placement, TabId};
 use serde_json::json;
 use std::path::PathBuf;
 
 pub struct RealOps {
-    pub herdr: Herdr,
+    pub herdr: HerdrClient,
     /// Our plugin id (`HERDR_PLUGIN_ID`, else `leavemyyard.herdr-panorama`).
     pub plugin_id: String,
     /// The plugin's root (`HERDR_PLUGIN_ROOT`): the panel's working directory.

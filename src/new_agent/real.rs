@@ -3,7 +3,8 @@
 use super::ops::{NewTab, StartOps};
 use crate::panels::Ops;
 use crate::panels::real::RealOps;
-use herdr_agent_kit::herdr_api::{Herdr, PaneId, Sanitized, TabId};
+use crate::trace::HerdrClient;
+use herdr_agent_kit::herdr_api::{PaneId, Sanitized, TabId};
 use herdr_agent_kit::plugin_env::PluginEnv;
 use serde_json::{Map, Value, json};
 
@@ -36,7 +37,7 @@ pub fn plugin_env(env: &PluginEnv) -> Vec<(String, String)> {
 }
 
 pub struct RealStart {
-    pub herdr: Herdr,
+    pub herdr: HerdrClient,
     /// The plugin's own variables (`HERDR_PLUGIN_ID`, `_ROOT`, `_STATE_DIR`, `_CONFIG_DIR`)
     /// that are set: the panel's environment.
     pub plugin_env: Vec<(String, String)>,

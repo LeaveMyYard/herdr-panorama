@@ -24,7 +24,6 @@ use crate::proto::socket;
 use crate::settings::Settings;
 use crate::ui::{clock, crash, term};
 use actor::Actor;
-use herdr_agent_kit::herdr_api::Herdr;
 use herdr_agent_kit::internal::plugin_paths::panorama::state_dir;
 use herdr_agent_kit::plugin_env::PluginEnv;
 use model::Panel;
@@ -73,7 +72,7 @@ async fn serve(env: &PluginEnv) -> std::io::Result<actor::End> {
     let (tx, rx) = mpsc::unbounded_channel();
     let client = Client::spawn(cfg, tx);
     let place = actor::Place::from_env(env);
-    let herdr = Herdr::from_env().with_client("panorama");
+    let herdr = crate::trace::client();
     let term = term::setup()?;
     let mut actor = Actor::new(
         panel,

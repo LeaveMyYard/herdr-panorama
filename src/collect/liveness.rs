@@ -7,7 +7,7 @@
 
 use herdr_agent_kit::agent_procs::claude::{SystemLiveness, first_claude, live_tasks};
 use herdr_agent_kit::agent_procs::{Liveness, Pid, ProcessIdentity, start_token};
-use herdr_agent_kit::herdr_api::{PaneId, blocking};
+use herdr_agent_kit::herdr_api::PaneId;
 use std::cell::{OnceCell, RefCell};
 use std::collections::{BTreeSet, HashMap};
 
@@ -18,7 +18,7 @@ pub const NO_PID_RETRY: f64 = 30.0;
 pub type PanePid = dyn FnMut(&str) -> Option<Pid> + Send;
 
 /// The pane's foreground Claude Code process, by herdr's `pane.process_info`.
-pub fn claude_pid(herdr: &blocking::Herdr, pane: &str) -> Option<Pid> {
+pub fn claude_pid(herdr: &crate::trace::BlockingHerdrClient, pane: &str) -> Option<Pid> {
     let info = herdr.process_info(&PaneId::new(pane)).ok()?;
     let procs = info.foreground_processes.unwrap_or_default();
     let list: Vec<(Pid, &str, &[String])> = procs

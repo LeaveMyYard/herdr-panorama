@@ -23,5 +23,6 @@ pub mod proto;
 pub mod report;
 pub mod settings;
 pub mod snapshot;
+pub mod trace;
 pub mod ui;
 pub mod unseen;

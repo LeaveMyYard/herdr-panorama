@@ -2,12 +2,13 @@
 //! per call: the pane's current Claude session from herdr (`HERDR_PANE_ID`, then `pane get`;
 //! it follows /clear), else `CLAUDE_CODE_SESSION_ID`.
 
-use herdr_agent_kit::herdr_api::{Herdr, PaneId};
+use crate::trace::HerdrClient;
+use herdr_agent_kit::herdr_api::PaneId;
 
 /// Where the session id comes from.
 pub struct Sessions {
     /// herdr, when the server runs in a herdr pane (`HERDR_PANE_ID`).
-    pub pane: Option<(Herdr, String)>,
+    pub pane: Option<(HerdrClient, String)>,
     /// `CLAUDE_CODE_SESSION_ID`.
     pub env: Option<String>,
 }

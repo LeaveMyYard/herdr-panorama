@@ -4,7 +4,8 @@
 //! same: the popup's process marks that it started, and only if it never does is the
 //! operator told to press n again.
 
-use herdr_agent_kit::herdr_api::{Herdr, OpenPluginPane, Placement};
+use crate::trace::HerdrClient;
+use herdr_agent_kit::herdr_api::{OpenPluginPane, Placement};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -38,7 +39,7 @@ pub fn started_since(marker: &Path, t0: f64) -> bool {
 /// Opens the popup for `plugin_id` (run from `root`), starting in `cwd`. The notice to show,
 /// if any: herdr refused (its words), or it did not answer and no popup started.
 pub async fn open(
-    h: &Herdr,
+    h: &HerdrClient,
     plugin_id: &str,
     root: Option<&Path>,
     cwd: &str,

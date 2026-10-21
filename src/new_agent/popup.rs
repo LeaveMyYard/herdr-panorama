@@ -16,7 +16,6 @@ use crate::settings::Settings;
 use crate::ui::term;
 use crossterm::event::{Event, EventStream, MouseButton, MouseEventKind};
 use futures_util::StreamExt;
-use herdr_agent_kit::herdr_api::Herdr;
 use herdr_agent_kit::internal::plugin_paths::PANORAMA_ID;
 use herdr_agent_kit::internal::plugin_paths::panorama::{session_key, state_dir};
 use herdr_agent_kit::plugin_env::PluginEnv;
@@ -67,7 +66,7 @@ pub fn picture(form: &NewAgentForm, w: i32, h: i32) -> (Screen, Modal) {
 }
 
 async fn serve(env: &PluginEnv) -> std::io::Result<()> {
-    let herdr = Herdr::from_env().with_client("panorama");
+    let herdr = crate::trace::client();
     let mut settings = Settings::from_env(env);
     let table = settings.panorama_table();
     let ops = RealStart {
