@@ -193,20 +193,53 @@ def test_without_timeout_perls_alarm_bounds_the_probe(tmp_path, launcher):
     assert out == f"rust {launcher}", "a binary that answers still passes"
 
 
+def _children_reaped(pidfile):
+    """Kills exactly the children the stub recorded (never by name), waits until they are gone,
+    and says none remain."""
+    import os
+    import signal
+    import time
+    pids = [int(x) for x in pidfile.read_text().split()] if pidfile.exists() else []
+    for pid in pids:
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    deadline = time.monotonic() + 5
+    alive = pids
+    while alive and time.monotonic() < deadline:
+        alive = [pid for pid in pids if _alive(pid)]
+        time.sleep(0.05)
+    return pids, alive
+
+
+def _alive(pid):
+    import os
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
 @both
-def test_a_probe_child_holding_the_output_cannot_keep_the_panel_waiting(tmp_path, launcher):
-    # #78 review L-3: a child left behind with the probe's stdout no longer holds the read
-    body = 'if [ "$1" = contract ]; then sleep 30 & echo "ANSWER"; exit 0; fi; echo rust "$@"'
-    out, took = _bounded(tmp_path, body, launcher)
-    assert out == f"rust {launcher}" and took < 6
-
-
-
-@both
-def test_a_probe_child_holding_the_output_of_a_silent_binary_cannot_keep_it_waiting(tmp_path, launcher):
-    # #125 round 2: the answer goes through a file, not a pipe a left-behind child holds open
-    out, took = _bounded(tmp_path, 'if [ "$1" = contract ]; then sleep 30 & exit 0; fi; echo rust "$@"', launcher)
-    assert out == f"venv {launcher}" and took < 6
+@pytest.mark.parametrize("answers", [True, False], ids=["answers", "silent"])
+def test_a_probe_child_holding_the_output_cannot_keep_the_panel_waiting(tmp_path, launcher, answers):
+    # #78 review L-3: a child left behind with the probe's stdout no longer holds the read;
+    # #125 round 2: also when the binary answers nothing (the answer goes through a file, not a
+    # pipe the child holds open). The child's pid goes to a file so the test reaps exactly it.
+    pidfile = tmp_path / "children"
+    say = 'echo "ANSWER"; ' if answers else ""
+    body = f'if [ "$1" = contract ]; then sleep 30 & echo $! >> "{pidfile}"; {say}exit 0; fi; echo rust "$@"'
+    try:
+        out, took = _bounded(tmp_path, body, launcher)
+        assert out == (f"rust {launcher}" if answers else f"venv {launcher}") and took < 6
+    finally:
+        pids, alive = _children_reaped(pidfile)
+    assert pids, "the stub recorded its child"
+    assert alive == [], f"children left: {alive}"
 
 
 @both
