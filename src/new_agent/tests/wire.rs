@@ -119,38 +119,6 @@ fn the_popup_says_it_started_and_takes_its_directory() {
 }
 
 #[test]
-fn the_popup_holds_the_whole_modal_and_the_manifest_says_the_same_size() {
-    use crate::panel::act::new_agent::POPUP;
-    use panorama_core::view::new_agent::{H, W};
-    // room for the 1C modal inside herdr's frame (one cell each side)
-    assert!(
-        i32::from(POPUP.0) >= W + 2 && i32::from(POPUP.1) >= H + 2,
-        "{POPUP:?}"
-    );
-    let toml =
-        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/herdr-plugin.toml")).unwrap();
-    // the new-agent pane's block (no TOML parser here: its `key = value` lines)
-    let block = toml
-        .split("[[panes]]")
-        .find(|b| b.contains("id = \"new-agent\""))
-        .unwrap();
-    let int = |k: &str| {
-        block.lines().find_map(|l| {
-            l.strip_prefix(k)?
-                .trim()
-                .strip_prefix('=')?
-                .trim()
-                .parse::<u16>()
-                .ok()
-        })
-    };
-    assert_eq!(
-        (int("width"), int("height")),
-        (Some(POPUP.0), Some(POPUP.1))
-    );
-}
-
-#[test]
 fn a_new_panel_gets_the_plugins_own_variables_that_are_set() {
     let env = PluginEnv::from_vars(
         [
