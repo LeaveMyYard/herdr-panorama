@@ -50,6 +50,9 @@ pub struct PanelsTask {
     pub my_pane: Option<String>,
     pub done: mpsc::UnboundedSender<Done>,
     pub log: PathBuf,
+    /// Tests: the next passes panic (a step's panic must never end the task).
+    #[cfg(test)]
+    pub explode: std::sync::Arc<std::sync::atomic::AtomicUsize>,
 }
 
 impl PanelsLink {
@@ -121,7 +124,8 @@ impl PanelsTask {
     }
 
     fn swarm(&self) -> Option<Swarm> {
-        self.swarm.lock().unwrap().clone()
+        // a panic elsewhere while holding it leaves the model as it was: still the model
+        self.swarm.lock().unwrap_or_else(|e| e.into_inner()).clone()
     }
 
     async fn home_ref(&self) -> Option<HomeRef> {
@@ -145,6 +149,12 @@ impl PanelsTask {
                 let _ = self.done.send(Done::Panels(Default::default()));
             }
             return;
+        }
+        #[cfg(test)]
+        if self.explode.load(std::sync::atomic::Ordering::SeqCst) > 0 {
+            self.explode
+                .fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+            panic!("a pass that panics (test)");
         }
         let Some(swarm) = self.swarm() else {
             return; // no model yet

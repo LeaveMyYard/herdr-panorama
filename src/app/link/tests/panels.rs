@@ -79,6 +79,7 @@ fn task(
         my_pane: Some("w1:p1".into()),
         done,
         log: dir.join("panorama.log"),
+        explode: Default::default(),
     };
     (t, rx)
 }
@@ -302,30 +303,38 @@ async fn quit_closes_our_panels_before_it_releases_the_home_tab() {
 
 #[test]
 fn a_step_that_panics_is_logged_and_the_task_goes_on() {
-    let _hook = crate::ui::guard::hook_lock(); // this test panics on purpose
+    let _hook = crate::ui::guard::hook_lock(); // a pass panics on purpose
     crate::ui::guard::block_on(async {
         let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
         let c = core(dir.path()).await;
         snapshot(&fake, HOME_LABEL);
         runs(&fake, "panel");
         fake.on("plugin.pane.close", Reply::Result(json!({"type": "ok"})));
-        let (t, _rx) = task(&fake, c, dir.path(), "cockpit = true\n");
-        let swarm = t.swarm.clone();
-        let _ = std::thread::spawn(move || {
-            let _held = swarm.lock().unwrap();
-            panic!("poisoning the model on purpose");
-        })
-        .join();
+        let (mut t, mut rx) = task(&fake, c, dir.path(), "cockpit = true\n");
+        t.manager.created.insert("w1:p7".into(), "w1:t2".into());
+        *t.swarm.lock().unwrap() = Some(Default::default());
+        t.explode.store(1, std::sync::atomic::Ordering::SeqCst);
         let link = PanelsLink::spawn(t);
-        link.pass(); // reads the poisoned model: panics
-        assert_eq!(
-            link.open_key().await,
-            "failed",
-            "the open key still gets an answer"
+        link.pass(); // panics
+        tokio::time::sleep(Duration::from_millis(200)).await;
+        assert!(
+            rx.try_recv().is_err(),
+            "the panicking pass reported nothing"
         );
+        link.pass(); // the next one runs
+        let d = tokio::time::timeout(Duration::from_secs(5), rx.recv())
+            .await
+            .expect("a later pass ran")
+            .unwrap();
+        assert!(matches!(d, Done::Panels(_)));
         tokio::time::timeout(Duration::from_secs(5), link.quit())
             .await
             .expect("quit still runs");
+        assert_eq!(
+            fake.params_of("plugin.pane.close"),
+            [json!({"pane_id": "w1:p7"})],
+            "and closes our panel"
+        );
         let log = std::fs::read_to_string(dir.path().join("panorama.log")).unwrap_or_default();
         assert!(log.contains("panels: a pass failed"), "{log}");
     });

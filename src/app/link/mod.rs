@@ -214,6 +214,8 @@ impl Link {
             my_pane: self.my_pane.clone(),
             done: self.done_tx.clone(),
             log: self.log.clone(),
+            #[cfg(test)]
+            explode: Default::default(),
         }));
         self.core = Some(core);
         self.core_events = Some(rx);
