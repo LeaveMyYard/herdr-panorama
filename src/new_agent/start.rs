@@ -1,10 +1,12 @@
 //! Starting the agent (Python `home.new_agent` without its first prompt: approved deviation
 //! 2026-10-17, nothing is ever typed into the pane): the tab, unfocused, the agent started in
 //! its pane, then the tab focused. A failed start closes that tab again, so nothing is left
-//! behind; only the tab this start made is ever closed.
+//! behind; only the tab this start made is ever closed, and never once an agent is in it (one
+//! that came up after herdr's start gave up waiting is kept, as started).
 
 use super::ops::StartOps;
 use super::{name_ok, slugify};
+use panorama_core::view::new_agent::HARNESSES;
 use std::path::Path;
 
 /// The agent named after `name` (slugified) in a new tab, `cwd` its directory; per-tab mode
@@ -16,6 +18,9 @@ pub async fn new_agent(
     kind: &str,
     per_tab: bool,
 ) -> Result<String, String> {
+    if !HARNESSES.iter().any(|h| h.id == kind && h.supported()) {
+        return Err(format!("{kind} cannot be started yet")); // coming soon: whoever asks
+    }
     let slug = slugify(name);
     if !name_ok(&slug) {
         return Err("the name needs at least one letter".into());
@@ -40,8 +45,12 @@ pub async fn new_agent(
         ops.fit(panel, &tab.tab).await;
     }
     if let Err(e) = ops.start_agent(&slug, kind, &pane).await {
-        let _ = ops.close_tab(&tab.tab).await; // no orphan tab left behind
-        return Err(format!("agent start failed: {e}"));
+        // herdr may have started it after all (a start that only timed out): a tab whose pane
+        // holds an agent now is never closed
+        if !ops.agent_in(&pane).await {
+            let _ = ops.close_tab(&tab.tab).await; // no orphan tab left behind
+            return Err(format!("agent start failed: {e}"));
+        }
     }
     let _ = ops.focus_tab(&tab.tab).await;
     if tab.panel.is_some() {

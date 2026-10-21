@@ -30,6 +30,8 @@ pub trait StartOps: Send + Sync {
     ) -> impl Future<Output = Result<NewTab, String>> + Send;
     /// The panel's split at its width; best effort.
     fn fit(&self, panel: &str, tab: &str) -> impl Future<Output = ()> + Send;
+    /// Whether herdr reports an agent in `pane`.
+    fn agent_in(&self, pane: &str) -> impl Future<Output = bool> + Send;
     /// Claude Code named `name` in `pane`, waited for until it is ready.
     fn start_agent(
         &self,

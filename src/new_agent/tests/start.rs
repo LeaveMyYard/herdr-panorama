@@ -14,6 +14,8 @@ struct World {
     fail: Vec<&'static str>,
     /// The new tab has no pane.
     paneless: bool,
+    /// The start gives up, but herdr brings the agent up in the pane after all.
+    late: bool,
 }
 
 impl World {
@@ -46,6 +48,9 @@ impl StartOps for World {
             pane: (!self.paneless).then(|| "w1:p1".into()),
             panel: None,
         })
+    }
+    async fn agent_in(&self, _pane: &str) -> bool {
+        self.late
     }
     async fn fit(&self, panel: &str, _tab: &str) {
         let _ = self.log(format!("fit {panel}"));
@@ -169,4 +174,35 @@ async fn a_tab_that_could_not_be_made_or_has_no_pane() {
         Err("the new tab has no pane".into())
     );
     assert_eq!(w.calls().last().unwrap(), "close w1:t9");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_harness_that_is_coming_soon_is_refused_by_the_start_itself() {
+    // the form is not the only guard
+    let w = World::default();
+    for kind in ["codex", "opencode", "gemini", "droid", "nonsense"] {
+        assert!(
+            new_agent(&w, "docs", None, kind, false).await.is_err(),
+            "{kind}"
+        );
+    }
+    assert!(w.calls().is_empty(), "nothing made");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn an_agent_that_came_up_after_the_start_gave_up_keeps_its_tab() {
+    let w = World {
+        fail: vec!["start"],
+        late: true,
+        ..World::default()
+    };
+    assert_eq!(
+        new_agent(&w, "slow", None, KIND, false).await,
+        Ok("slow".into())
+    );
+    assert!(
+        !w.calls().iter().any(|c| c.starts_with("close")),
+        "the tab holds an agent: never closed"
+    );
+    assert_eq!(w.calls().last().unwrap(), "focus_tab w1:t1");
 }

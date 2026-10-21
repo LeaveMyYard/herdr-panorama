@@ -27,6 +27,7 @@ fn ops(fake: &FakeHerdr) -> RealStart {
             root: None,
             width: 46,
         },
+        start_timeout_ms: START_TIMEOUT_MS,
     }
 }
 
@@ -174,5 +175,78 @@ async fn the_whole_start_through_herdr() {
         .await
         .unwrap_err();
     assert!(err.starts_with("agent start failed"), "{err}");
+    assert_eq!(fake.params_of("tab.close"), [json!({"tab_id": "w1:t5"})]);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_start_that_times_out_while_herdr_still_brings_the_agent_up_keeps_the_tab() {
+    // herdr took the start but the agent was not ready in time; it is there all the same
+    let fake = FakeHerdr::start();
+    let pending = json!({"type": "agent_info", "agent": {"name": "slow", "pane_id": "w1:p8", "tab_id": "w1:t5",
+        "agent_status": "unknown", "launch_pending": true}});
+    fake.once(
+        "agent.get",
+        Reply::error("agent_not_found", "agent not found"),
+    ); // before the start
+    fake.on("agent.get", Reply::Result(pending.clone())); // the polls, and the look after
+    fake.on(
+        "tab.create",
+        Reply::Result(json!({"type": "tab_created", "tab": {"tab_id": "w1:t5"}})),
+    );
+    fake.on(
+        "pane.list",
+        Reply::Result(
+            json!({"type": "pane_list", "panes": [{"pane_id": "w1:p8", "tab_id": "w1:t5"}]}),
+        ),
+    );
+    fake.on(
+        "agent.start",
+        Reply::Result(json!({"type": "agent_started", "agent": pending["agent"]})),
+    );
+    fake.on("tab.close", Reply::Result(json!({"type": "ok"})));
+    fake.on("tab.focus", Reply::Result(json!({"type": "ok"})));
+    let o = RealStart {
+        start_timeout_ms: 300,
+        ..ops(&fake)
+    };
+    assert_eq!(
+        new_agent(&o, "slow", None, KIND, false).await,
+        Ok("slow".into())
+    );
+    assert!(
+        fake.params_of("tab.close").is_empty(),
+        "a tab with the agent in it is never closed"
+    );
+    // and one that never came up is closed, as before
+    let fake = FakeHerdr::start();
+    fake.on(
+        "agent.get",
+        Reply::error("agent_not_found", "agent not found"),
+    );
+    fake.on(
+        "tab.create",
+        Reply::Result(json!({"type": "tab_created", "tab": {"tab_id": "w1:t5"}})),
+    );
+    fake.on(
+        "pane.list",
+        Reply::Result(
+            json!({"type": "pane_list", "panes": [{"pane_id": "w1:p8", "tab_id": "w1:t5"}]}),
+        ),
+    );
+    fake.on(
+        "agent.start",
+        Reply::Result(json!({"type": "agent_started", "agent": pending["agent"]})),
+    );
+    fake.on("tab.close", Reply::Result(json!({"type": "ok"})));
+    let o = RealStart {
+        start_timeout_ms: 300,
+        ..ops(&fake)
+    };
+    assert!(
+        new_agent(&o, "slow", None, KIND, false)
+            .await
+            .unwrap_err()
+            .starts_with("agent start failed")
+    );
     assert_eq!(fake.params_of("tab.close"), [json!({"tab_id": "w1:t5"})]);
 }

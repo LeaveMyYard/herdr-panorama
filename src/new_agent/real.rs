@@ -29,6 +29,8 @@ pub struct RealStart {
     pub root: Option<String>,
     /// The panels' side (`fit`).
     pub panels: RealOps,
+    /// How long the agent may take to become ready ([`START_TIMEOUT_MS`]).
+    pub start_timeout_ms: u32,
 }
 
 fn err(e: impl std::fmt::Display) -> String {
@@ -96,6 +98,10 @@ impl StartOps for RealStart {
         })
     }
 
+    async fn agent_in(&self, pane: &str) -> bool {
+        matches!(self.herdr.agent(&PaneId::new(pane)).await, Ok(Some(_)))
+    }
+
     async fn fit(&self, panel: &str, tab: &str) {
         self.panels.fit(panel, tab).await;
     }
@@ -106,7 +112,7 @@ impl StartOps for RealStart {
                 &Sanitized::new(name),
                 kind,
                 &PaneId::new(pane),
-                START_TIMEOUT_MS,
+                self.start_timeout_ms,
             )
             .await
             .map(drop)
