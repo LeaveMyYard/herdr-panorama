@@ -120,3 +120,15 @@ fn fit_segs_keeps_short_titles_and_cuts_long_ones() {
     );
     assert_eq!(cut.iter().map(|s| s.fg).collect::<Vec<_>>(), [FG, FAINT]);
 }
+
+#[test]
+fn a_title_that_fits_exactly_is_kept_whole() {
+    // the edge of fit_segs: a title of exactly `room` cells stays, one cell less cuts it
+    let segs = vec![Seg::new("general-purpose", FG), Seg::new(" a6c8a7b", FAINT), Seg::new(" · opus", DIM)];
+    let full: String = segs.iter().map(|s| s.text.as_str()).collect();
+    let n = full.chars().count() as i32;
+    assert_eq!(fit_segs(segs.clone(), n), segs);
+    let cut: String = fit_segs(segs, n - 1).iter().map(|s| s.text.as_str()).collect();
+    assert_eq!(cut.chars().count() as i32, n - 1);
+    assert!(cut.ends_with('…') && full.starts_with(cut.trim_end_matches('…')), "{cut:?}");
+}
