@@ -3,16 +3,18 @@
 //! failure reported as a failed refresh: the last good model stays.
 //!
 //! The refresher is the core's [`Producer`] (this machine's swarm, herdr's saved machines,
-//! the unseen marks), made on that thread. Quitting stops it without waiting it out
-//! ([`Worker::stop`]).
+//! the unseen marks), made on that thread. Quitting stops its remote watchers at once, even
+//! mid-refresh, and does not wait the refresh out ([`Worker::stop`]). The UI marks agents
+//! seen through its tracker ([`Worker::tracker`]).
 
 use crate::produce::{Producer, Refreshed};
 use crate::proto::state::cleaned_swarm;
-use crate::unseen::Event;
+use crate::unseen::{Event, Tracker};
 use panorama_core::model::Swarm;
 use panorama_core::view::{Marks, Unseen};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::mpsc as std_mpsc;
+use std::sync::{Arc, OnceLock};
 use std::thread;
 use std::time::Duration;
 use tokio::sync::mpsc;
@@ -23,6 +25,16 @@ pub trait Refresher {
     fn refresh(&mut self) -> Refreshed;
     /// Stop what it runs in the background (the remote machines' watchers).
     fn stop(&mut self);
+    /// What other threads may use while it refreshes.
+    fn handles(&self) -> Handles;
+}
+
+/// A refresher's handles for other threads.
+pub struct Handles {
+    /// Stops the background work now, even mid-refresh, without waiting for it.
+    pub halt: Box<dyn Fn() + Send + Sync>,
+    /// The unseen tracker, for the UI's `seen` and `save_seen`.
+    pub tracker: Option<Arc<Tracker>>,
 }
 
 impl Refresher for Producer {
@@ -33,9 +45,18 @@ impl Refresher for Producer {
     fn stop(&mut self) {
         Producer::stop(self);
     }
+
+    fn handles(&self) -> Handles {
+        let halt = self.halt();
+        Handles {
+            halt: Box::new(move || halt.stop()),
+            tracker: Some(self.tracker()),
+        }
+    }
 }
 
-/// The refresh thread's name; the app's panic hook keeps a panic on it off the terminal.
+/// The name of the app's background threads (the refreshes, [`crate::app::seen`]'s saves);
+/// the app's panic hook keeps a panic on them off the terminal.
 pub const THREAD: &str = "panorama-collect";
 
 /// A refresh's outcome.
@@ -56,6 +77,7 @@ enum Ask {
 pub struct Worker {
     ask: std_mpsc::Sender<Ask>,
     stopped: std_mpsc::Receiver<()>,
+    handles: Arc<OnceLock<Handles>>,
     busy: bool,
 }
 
@@ -67,12 +89,15 @@ impl Worker {
     ) -> std::io::Result<Self> {
         let (ask, asked) = std_mpsc::channel::<Ask>();
         let (done, stopped) = std_mpsc::channel::<()>();
+        let handles: Arc<OnceLock<Handles>> = Arc::default();
+        let made = handles.clone();
         thread::Builder::new()
             .name(THREAD.into())
-            .spawn(move || serve(make, &asked, &out, &done))?;
+            .spawn(move || serve(make, &made, &asked, &out, &done))?;
         Ok(Self {
             ask,
             stopped,
+            handles,
             busy: false,
         })
     }
@@ -91,11 +116,20 @@ impl Worker {
         self.busy = false;
     }
 
-    /// Quitting: the refresher stops (a remote sync under way is killed at once), waited for
-    /// at most `within`; the thread is then left to finish on its own (a forwarded snapshot
-    /// under way can take herdr's CLI up to 8 s, and Python quits at once). Whether it had
-    /// stopped by then.
+    /// The refresher's unseen tracker, once it is made.
+    pub fn tracker(&self) -> Option<Arc<Tracker>> {
+        self.handles.get().and_then(|h| h.tracker.clone())
+    }
+
+    /// Quitting: the refresher's background work is halted from here at once (a remote sync
+    /// under way is killed, even while a refresh runs), then the thread stops it after its
+    /// refresh, waited for at most `within`. The thread is then left to finish on its own:
+    /// a refresh's herdr calls, or a forwarded snapshot's (read-only, up to 8 s), may outlive
+    /// the exit; Python quits at once. Whether it had stopped by then.
     pub fn stop(&self, within: Duration) -> bool {
+        if let Some(h) = self.handles.get() {
+            (h.halt)();
+        }
         let _ = self.ask.send(Ask::Stop);
         self.stopped.recv_timeout(within).is_ok()
     }
@@ -103,12 +137,16 @@ impl Worker {
 
 fn serve<R: Refresher>(
     make: impl FnOnce() -> R,
+    handles: &OnceLock<Handles>,
     asked: &std_mpsc::Receiver<Ask>,
     out: &mpsc::UnboundedSender<Collected>,
     done: &std_mpsc::Sender<()>,
 ) {
     let mut refresher = match catch_unwind(AssertUnwindSafe(make)) {
-        Ok(r) => Some(r),
+        Ok(r) => {
+            let _ = handles.set(r.handles());
+            Some(r)
+        }
         Err(p) => {
             let _ = out.send(Collected::Failed(format!("collector: {}", message(&*p))));
             None

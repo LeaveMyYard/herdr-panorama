@@ -25,8 +25,10 @@ pub fn invocation_pane(context_json: Option<&str>) -> Option<String> {
         .map(str::to_owned)
 }
 
-/// How long quitting waits for the refresher to stop: long enough for a remote sync under way
-/// to be killed, never a forwarded snapshot's herdr call (Python quits at once).
+/// How long quitting waits for the refresher to stop. Its remote watchers are halted at once
+/// and a sync under way is killed within the rsync runner's poll, well inside this; a local
+/// refresh under way, or a forwarded snapshot's `herdr --machine … api snapshot` (read-only,
+/// at most 8 s), is never waited out and may outlive the exit (Python quits at once).
 pub const STOP_WAIT: Duration = Duration::from_millis(500);
 
 /// `panorama tui`: the core's producer (this machine's swarm, herdr's saved machines, the

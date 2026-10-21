@@ -6,10 +6,13 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
-/// A refresher from a closure; `stopped` says whether it was stopped.
+/// A refresher from a closure; `stopped` says whether it was stopped, `halted` whether its
+/// halt handle was used.
 struct Fake {
     refresh: Box<dyn FnMut() -> Refreshed + Send>,
     stopped: Arc<AtomicBool>,
+    halted: Arc<AtomicBool>,
+    tracker: Option<Arc<Tracker>>,
 }
 
 impl Refresher for Fake {
@@ -20,6 +23,14 @@ impl Refresher for Fake {
     fn stop(&mut self) {
         self.stopped.store(true, Ordering::SeqCst);
     }
+
+    fn handles(&self) -> Handles {
+        let halted = self.halted.clone();
+        Handles {
+            halt: Box::new(move || halted.store(true, Ordering::SeqCst)),
+            tracker: self.tracker.clone(),
+        }
+    }
 }
 
 fn fake(refresh: impl FnMut() -> Refreshed + Send + 'static) -> (Fake, Arc<AtomicBool>) {
@@ -27,6 +38,8 @@ fn fake(refresh: impl FnMut() -> Refreshed + Send + 'static) -> (Fake, Arc<Atomi
     let f = Fake {
         refresh: Box::new(refresh),
         stopped: stopped.clone(),
+        halted: Arc::default(),
+        tracker: None,
     };
     (f, stopped)
 }
@@ -158,15 +171,21 @@ fn quitting_stops_the_refresher() {
 fn quitting_during_a_long_refresh_does_not_wait_it_out_and_it_stops_after() {
     let (tx, _rx) = mpsc::unbounded_channel();
     let (go, wait) = std::sync::mpsc::channel::<()>();
+    let (entered, inside) = std::sync::mpsc::channel::<()>();
     let (f, stopped) = fake(move || {
+        entered.send(()).unwrap();
         let _ = wait.recv(); // a refresh stuck in a slow herdr call
         swarm(Swarm::default())
     });
+    let halted = f.halted.clone();
     let mut w = Worker::spawn(move || f, tx).unwrap();
     assert!(w.request());
+    inside.recv().unwrap();
     let asked = std::time::Instant::now();
     assert!(!w.stop(Duration::from_millis(50)));
     assert!(asked.elapsed() < Duration::from_secs(5));
+    // the halt reached the remote watchers from here, the refresh still running
+    assert!(halted.load(Ordering::SeqCst));
     assert!(!stopped.load(Ordering::SeqCst));
     go.send(()).unwrap(); // the call returns: the thread stops the refresher on its own
     eventually(&stopped);
@@ -189,4 +208,20 @@ fn eventually(stopped: &AtomicBool) {
         assert!(std::time::Instant::now() < deadline, "never stopped");
         std::thread::yield_now();
     }
+}
+
+#[test]
+fn the_ui_reaches_the_refreshers_tracker_once_it_is_made() {
+    let dir = tempfile::tempdir().unwrap();
+    let t = Arc::new(Tracker::new(
+        dir.path().join("unseen.json"),
+        Box::new(|| true),
+    ));
+    let (tx, mut rx) = mpsc::unbounded_channel();
+    let (mut f, _) = fake(|| swarm(Swarm::default()));
+    f.tracker = Some(t.clone());
+    let mut w = Worker::spawn(move || f, tx).unwrap();
+    w.request();
+    recv(&mut rx); // made, and refreshed once
+    assert!(Arc::ptr_eq(&w.tracker().unwrap(), &t));
 }

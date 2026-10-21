@@ -8,7 +8,10 @@
 //! flight is its caller's). A refresh that panics keeps the last result with the error, so a
 //! bad transcript never kills the worker. Dropping the producer stops the remote watchers.
 
+mod halt;
 pub mod remote;
+
+pub use halt::Halt;
 
 use crate::machines::Remotes;
 use crate::unseen::{self, Marks, Tracker};
@@ -48,6 +51,7 @@ pub struct Producer {
     tracker: Arc<Tracker>,
     clock: Box<dyn Fn() -> f64 + Send>,
     last: Refreshed,
+    halt: Halt,
 }
 
 fn panic_text(p: &(dyn std::any::Any + Send)) -> String {
@@ -88,6 +92,7 @@ impl Producer {
             tracker,
             clock,
             last: Refreshed::default(),
+            halt: Halt::default(),
         }
     }
 
@@ -110,6 +115,12 @@ impl Producer {
         )
     }
 
+    /// A handle that stops the remote watchers from any thread, even while a refresh runs
+    /// (quitting: [`Halt::stop`]); later refreshes start none.
+    pub fn halt(&self) -> Halt {
+        self.halt.clone()
+    }
+
     /// The tracker, for the UI's `seen` and `save_seen` (off the UI thread).
     pub fn tracker(&self) -> Arc<Tracker> {
         self.tracker.clone()
@@ -122,12 +133,14 @@ impl Producer {
         let out = catch_unwind(AssertUnwindSafe(|| {
             let mut swarm = (self.source)();
             if self.remotes.is_none()
+                && !self.halt.is_stopped()
                 && let Some(start) = self.start_remotes.as_mut()
             {
                 self.remotes = Some(start());
             }
             if let Some(r) = self.remotes.as_mut() {
-                r.merge(&mut swarm);
+                r.merge(&mut swarm); // may start watchers: the halt reaches them too
+                self.halt.track(r);
             }
             let marks = self.tracker.update(&swarm, (self.clock)());
             (swarm, marks)
@@ -154,6 +167,7 @@ impl Producer {
     /// a forwarded snapshot under way is waited for (herdr's CLI, at most 8 s). So no watcher
     /// thread or rsync child outlives the producer, and stopping does not wait out a hung ssh.
     pub fn stop(&mut self) {
+        self.halt.stop();
         if let Some(mut r) = self.remotes.take() {
             r.stop();
             for w in r.watchers.drain(..) {
