@@ -26,3 +26,12 @@ pub struct Frame {
     pub settings: PanelSettings,
     pub open_key: (String, String),
 }
+
+impl Frame {
+    /// The frame at the wall-clock instant `now`: its clock and its animation time, the same
+    /// in every window at that instant (Python `SwarmApp.anim_frame`; tests/test_anim_sync.py).
+    pub fn at(&mut self, now: f64) {
+        self.now = now;
+        self.frame = super::clock::frame_at(now);
+    }
+}

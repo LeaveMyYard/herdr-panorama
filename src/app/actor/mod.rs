@@ -30,7 +30,6 @@ use crate::ui::pacing::{Pacing, ticking};
 use crate::ui::term::{self, HANGUP_CHECK, Term, hung_up_error};
 use crossterm::event::EventStream;
 use futures_util::StreamExt;
-use panorama_core::view::Marks;
 use std::io;
 use std::mem::ManuallyDrop;
 use std::path::PathBuf;
@@ -145,21 +144,22 @@ impl Actor {
     /// or the header says why it failed; the cells whose click target moved wait.
     fn on_collected(&mut self, c: Collected) -> io::Result<()> {
         self.worker.done();
-        let app = &mut self.driver.app;
-        match c {
-            Collected::Swarm(swarm) => {
-                app.apply(swarm, Marks::new(), Instant::now());
-                if let Some(link) = self.link.as_mut() {
-                    link.refreshed(
-                        &app.graph.swarm,
-                        &app.graph.view.unseen,
-                        app.graph.view.filter,
-                    );
-                }
-            }
-            Collected::Failed(why) => app.failed(&why),
+        let fresh = matches!(c, Collected::Swarm(..));
+        self.driver.collected(c, Instant::now());
+        if fresh && let Some(link) = self.link.as_mut() {
+            let app = &self.driver.app;
+            link.refreshed(
+                &app.graph.swarm,
+                &app.graph.view.unseen,
+                app.graph.view.filter,
+            );
         }
         self.repaint(Painted::Refresh)
+    }
+
+    /// The app ended: the refresher stops, waited for at most `within`.
+    pub fn stop(&self, within: Duration) -> bool {
+        self.worker.stop(within)
     }
 
     /// Whether the tick has anything to do (a terminal view is always shown).

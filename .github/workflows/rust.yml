@@ -194,7 +194,7 @@ jobs:
       # --kit-root, see tools/ledger_check.py)
       - run: >-
           python3 tools/ledger_check.py --collected "$RUNNER_TEMP/ledger/collected.txt"
-          --done P0a --done P0b --done P3 --rust-root .
+          --done P0a --done P0b --done P1 --done P3 --rust-root .
 
   rust-ok:
     name: rust ok

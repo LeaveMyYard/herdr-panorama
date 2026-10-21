@@ -1,6 +1,6 @@
 python_test_id,python_file,rust_test,status,retired_reason,phase
-tests/test_anim_sync.py::test_two_windows_started_apart_show_the_same_phase,tests/test_anim_sync.py,,todo,,P4
-tests/test_anim_sync.py::test_a_panel_and_the_home_view_share_the_frame,tests/test_anim_sync.py,,todo,,P4
+tests/test_anim_sync.py::test_two_windows_started_apart_show_the_same_phase,tests/test_anim_sync.py,src/app/driver/tests/phase.rs::two_windows_started_apart_show_the_same_phase ; src/ui/clock/tests.rs::the_animation_time_is_the_wall_clock_in_quarter_seconds,mapped,,P4
+tests/test_anim_sync.py::test_a_panel_and_the_home_view_share_the_frame,tests/test_anim_sync.py,src/app/driver/tests/phase.rs::a_panel_and_the_home_view_share_the_frame,mapped,,P4
 tests/test_anim_sync.py::test_colour_glides_stay_smooth_at_wall_clock_frames,tests/test_anim_sync.py,crates/panorama-core/src/view/anim/tests.rs::colour_glides_stay_smooth_at_wall_clock_frames,mapped,,P3
 tests/test_background.py::test_a_background_bash_is_open_until_its_notice,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules ; herdr-agent-kit@v0.1.0:tests/panorama_model_goldens.rs::the_background_model_matches_its_golden,mapped,,P1
 tests/test_background.py::test_a_timed_out_bash_moved_to_the_background_counts_too,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/panorama_model_goldens.rs::the_background_model_matches_its_golden,mapped,,P1
@@ -8,9 +8,9 @@ tests/test_background.py::test_every_task_id_of_an_orphan_notice_ends_its_task,t
 tests/test_background.py::test_a_taskstop_ends_it_and_a_failed_one_does_not,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_background.py::test_a_monitor_ends_with_its_expiry_event_or_its_timeout,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules ; herdr-agent-kit@v0.1.0:src/agent_session/claude/wire/notice/tests.rs::notices_parse_as_panorama_reads_them ; herdr-agent-kit@v0.1.0:tests/panorama_model_goldens.rs::the_background_model_matches_its_golden,mapped,,P1
 tests/test_background.py::test_an_unchecked_task_counts_for_at_most_bg_cap,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
-tests/test_background.py::test_the_process_check_decides_when_it_can,tests/test_background.py,,todo,,P1
+tests/test_background.py::test_the_process_check_decides_when_it_can,tests/test_background.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::the_process_check_decides_when_it_can,mapped,,P1
 tests/test_background.py::test_an_agent_whose_turn_ended_on_background_work_is_waiting,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
-tests/test_background.py::test_an_agent_notified_complete_is_done_whatever_it_left_behind,tests/test_background.py,,todo,,P1
+tests/test_background.py::test_an_agent_notified_complete_is_done_whatever_it_left_behind,tests/test_background.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::an_agent_notified_complete_is_done_whatever_it_left_behind,mapped,,P1
 tests/test_background.py::test_a_fork_does_not_inherit_its_parents_background_tasks,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/copies.rs::main_s_copy_of_a_background_launch_wins_even_when_it_is_later,mapped,,P1
 tests/test_background.py::test_task_of_reads_the_output_path,tests/test_background.py,herdr-agent-kit@v0.1.0:src/agent_procs/claude/tasks/tests.rs::task_ids_from_output_paths,mapped,,P1
 tests/test_background.py::test_live_tasks_finds_the_output_files_its_descendants_hold,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/system_liveness.rs::a_background_shell_holding_its_output_file_is_a_live_task,mapped,,P1
@@ -51,8 +51,8 @@ tests/test_bridge_rules.py::test_anything_else_is_not_a_session_id[123],tests/te
 tests/test_bridge_rules.py::test_machines_has_no_validator_of_its_own,tests/test_bridge_rules.py,,retired,"Pins a Python module attribute; in Rust the one validator is the kit's SessionId type, which machines code must take.",P4
 tests/test_bridge_rules.py::test_an_uppercase_id_finds_its_lowercase_transcript[55555555-5555-4555-8555-555555555555],tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_bridge_rules.rs::an_uppercase_id_finds_its_lowercase_transcript,mapped,,P1
 tests/test_bridge_rules.py::test_an_uppercase_id_finds_its_lowercase_transcript[abcdef01-2345-4abc-8def-0123456789ab],tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_bridge_rules.rs::an_uppercase_id_finds_its_lowercase_transcript,mapped,,P1
-tests/test_bridge_rules.py::test_the_remote_mirror_names_sessions_in_lowercase_once,tests/test_bridge_rules.py,,todo,,P4
-tests/test_bridge_rules.py::test_an_events_file_is_named_by_the_canonical_id,tests/test_bridge_rules.py,,todo,,P4
+tests/test_bridge_rules.py::test_the_remote_mirror_names_sessions_in_lowercase_once,tests/test_bridge_rules.py,src/machines/sync/tests.rs::the_remote_mirror_names_sessions_in_lowercase_once ; src/machines/sync/tests.rs::sessions_are_canonical_each_once_and_only_session_ids,mapped,,P4
+tests/test_bridge_rules.py::test_an_events_file_is_named_by_the_canonical_id,tests/test_bridge_rules.py,src/collect/paths/tests.rs::an_events_file_is_named_by_the_canonical_id,mapped,,P4
 tests/test_bridge_rules.py::test_a_continuation_named_in_uppercase_is_found_and_followed,tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_bridge_rules.rs::a_continuation_named_in_uppercase_is_found_and_followed,mapped,,P1
 tests/test_bridge_rules.py::test_bookkeeping_after_continued_in_does_not_clear_it[kinds0],tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_bridge_rules.rs::bookkeeping_after_continued_in_does_not_clear_it,mapped,,P1
 tests/test_bridge_rules.py::test_bookkeeping_after_continued_in_does_not_clear_it[kinds1],tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_bridge_rules.rs::bookkeeping_after_continued_in_does_not_clear_it,mapped,,P1
@@ -585,8 +585,8 @@ tests/test_panel_click.py::test_a_crash_leaves_its_traceback_next_to_the_marker,
 tests/test_panel_click.py::test_the_crash_log_is_bounded_in_bytes,tests/test_panel_click.py,src/ui/crash/tests.rs::a_crash_leaves_the_marker_and_the_errors_end,mapped,,P3
 tests/test_panel_click.py::test_mark_crash_never_raises_on_an_unencodable_message,tests/test_panel_click.py,,retired,Pins Python's surrogate-escape encoding of the crash log; Rust strings are always valid UTF-8.,P3
 tests/test_panel_filter.py::test_the_core_passes_a_panels_filter_on,tests/test_panel_filter.py,tests/core_server.rs::focusing_counts_only_from_a_verified_panel_and_filters_only_from_panels,mapped,,P4
-tests/test_panel_filter.py::test_the_state_carries_the_filter_and_the_version_says_so,tests/test_panel_filter.py,,todo,,P4
-tests/test_panel_filter.py::test_a_filter_chosen_in_one_panel_shows_in_every_panel,tests/test_panel_filter.py,,todo,,P4
+tests/test_panel_filter.py::test_the_state_carries_the_filter_and_the_version_says_so,tests/test_panel_filter.py,tests/core_filter.rs::the_state_carries_the_filter_and_the_version_says_so ; src/app/link/state/tests.rs::the_state_carries_focus_tab_panels_and_filter_and_the_panel_reads_it,mapped,,P4
+tests/test_panel_filter.py::test_a_filter_chosen_in_one_panel_shows_in_every_panel,tests/test_panel_filter.py,tests/core_filter.rs::a_filter_chosen_in_one_panel_shows_in_every_panel,mapped,,P4
 tests/test_panel_filter.py::test_the_home_panorama_takes_a_panels_filter_and_publishes_it,tests/test_panel_filter.py,,todo,,P4
 tests/test_panel_filter.py::test_a_panel_keeps_its_choice_against_an_older_state,tests/test_panel_filter.py,src/panel/input/actions/tests.rs::a_panel_keeps_its_choice_against_an_older_state_and_follows_the_echo,mapped,,P3
 tests/test_panel_filter.py::test_an_unechoed_choice_gives_way_to_the_core_after_a_moment,tests/test_panel_filter.py,src/panel/input/actions/tests.rs::the_filter_echo_lasts_exactly_a_second ; src/panel/input/actions/tests.rs::f_cycles_the_filter_and_keeps_it_against_the_cores_older_word,mapped,,P3
@@ -603,7 +603,7 @@ tests/test_panel_sync.py::test_the_core_announces_a_focus_only_from_a_verified_p
 tests/test_panel_sync.py::test_a_switch_announces_the_focus_before_showing_the_tab,tests/test_panel_sync.py,src/panel/act/switch/tests.rs::onto_the_target_tabs_panel_after_announcing_it ; src/panel/act/switch/tests.rs::the_paint_wait_follows_only_an_echo,mapped,,P3
 tests/test_panel_sync.py::test_the_switching_panel_keeps_its_look_until_it_is_hidden,tests/test_panel_sync.py,src/panel/model/tests.rs::the_switching_panel_keeps_its_look_until_it_is_hidden,mapped,,P3
 tests/test_panel_sync.py::test_a_hidden_target_paints_focused_before_it_is_shown,tests/test_panel_sync.py,src/panel/model/tests.rs::a_hidden_target_paints_focused_before_it_is_shown,mapped,,P3
-tests/test_panel_sync.py::test_the_core_side_publishes_an_announced_focus,tests/test_panel_sync.py,,todo,,P4
+tests/test_panel_sync.py::test_the_core_side_publishes_an_announced_focus,tests/test_panel_sync.py,src/app/link/tests/announce.rs::an_announced_focus_is_published_at_once ; src/app/link/tests/focus.rs::an_announced_focus_is_read_again_unless_herdr_confirmed_one,mapped,,P4
 tests/test_panel_sync.py::test_tests_never_reach_a_live_herdr,tests/test_panel_sync.py,tests/no_live_herdr.rs::every_test_that_starts_the_binary_clears_its_environment,mapped,,P3
 tests/test_panel_sync.py::test_a_failed_switch_takes_its_announcement_back,tests/test_panel_sync.py,src/panel/act/switch/tests.rs::a_failed_switch_takes_the_announcement_back ; src/panel/input/arrows/tests.rs::a_switch_that_took_its_announcement_back_leaves_this_panel_focused,mapped,,P3
 tests/test_panel_sync.py::test_the_core_rereads_the_real_focus_after_an_unconfirmed_announcement,tests/test_panel_sync.py,src/app/link/tests/focus.rs::an_announced_focus_is_read_again_unless_herdr_confirmed_one,mapped,,P4
@@ -707,43 +707,43 @@ tests/test_scan_session.py::test_a_resume_reopens_a_finished_agent,tests/test_sc
 tests/test_scan_session.py::test_activity_after_a_notice_reopens_the_agent,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_scan_session.py::test_an_abandoned_tool_call_expires,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_scan_session.py::test_background_agent_without_notice_keeps_running_through_a_long_turn,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
-tests/test_scan_session.py::test_foreground_agent_completes_with_its_result,tests/test_scan_session.py,,todo,,P1
+tests/test_scan_session.py::test_foreground_agent_completes_with_its_result,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::a_foreground_agent_completes_with_its_result,mapped,,P1
 tests/test_scan_session.py::test_nested_agents_are_parented_through_the_spawning_call,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/parentage.rs::parentage_follows_the_spawning_call ; herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_scan_session.py::test_a_fork_does_not_take_over_its_own_spawning_call,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/parentage.rs::a_fork_does_not_take_over_its_own_spawning_call,mapped,,P1
 tests/test_scan_session.py::test_workflow_agents_journal_phases_and_a_killed_run,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
-tests/test_scan_session.py::test_the_fold_does_not_depend_on_record_order,tests/test_scan_session.py,,todo,,P1
-tests/test_scan_session.py::test_titles_and_prompts,tests/test_scan_session.py,,todo,,P1
+tests/test_scan_session.py::test_the_fold_does_not_depend_on_record_order,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_facts.rs::the_fold_does_not_depend_on_record_order,mapped,,P1
+tests/test_scan_session.py::test_titles_and_prompts,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_facts.rs::titles_and_prompts,mapped,,P1
 tests/test_scan_session.py::test_incremental_reads_partial_lines_and_rewrites,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/updates.rs::an_update_reads_partial_lines_and_a_rewrite_rebuilds,mapped,,P1
 tests/test_scan_session.py::test_old_agent_files_are_skipped_until_they_change,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/updates.rs::an_old_agent_file_is_skipped_until_it_changes,mapped,,P1
 tests/test_scan_session.py::test_ask_operator_receipts_belong_to_the_asking_agent,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/questions.rs::ask_operator_results_record_the_askers_question_ids,mapped,,P1
 tests/test_scan_session.py::test_meta_read_mid_write_is_retried,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/updates.rs::a_meta_read_mid_write_is_retried,mapped,,P1
-tests/test_scan_session.py::test_h1_foreground_agent_runs_while_its_spawning_call_is_open,tests/test_scan_session.py,,todo,,P1
-tests/test_scan_session.py::test_m1_a_huge_last_line_keeps_the_timestamp_and_the_call_in_flight,tests/test_scan_session.py,,todo,,P1
+tests/test_scan_session.py::test_h1_foreground_agent_runs_while_its_spawning_call_is_open,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::a_foreground_agent_runs_while_its_spawning_call_is_open,mapped,,P1
+tests/test_scan_session.py::test_m1_a_huge_last_line_keeps_the_timestamp_and_the_call_in_flight,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::a_huge_last_line_keeps_the_timestamp_and_the_call_in_flight,mapped,,P1
 tests/test_scan_session.py::test_m2_every_notice_block_in_a_carrier_counts,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:src/agent_session/claude/wire/notice/tests.rs::notices_parse_as_panorama_reads_them,mapped,,P1
 tests/test_scan_session.py::test_m3_journal_failed_is_a_failure,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
-tests/test_scan_session.py::test_l3_a_failed_resume_does_not_reopen,tests/test_scan_session.py,,todo,,P1
-tests/test_scan_session.py::test_l1_a_bad_record_does_not_break_the_session,tests/test_scan_session.py,,todo,,P1
-tests/test_scan_session.py::test_l4_tool_calls_count_only_the_agents_own_calls,tests/test_scan_session.py,,todo,,P1
+tests/test_scan_session.py::test_l3_a_failed_resume_does_not_reopen,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::a_failed_resume_does_not_reopen,mapped,,P1
+tests/test_scan_session.py::test_l1_a_bad_record_does_not_break_the_session,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::a_bad_record_does_not_break_the_session,mapped,,P1
+tests/test_scan_session.py::test_l4_tool_calls_count_only_the_agents_own_calls,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_facts.rs::tool_calls_count_only_the_agents_own_calls,mapped,,P1
 tests/test_scan_session.py::test_h1_a_workflow_agent_runs_while_its_run_is_live,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_scan_session.py::test_a_relaunched_run_abandons_the_old_instances_unfinished_agents,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_scan_session.py::test_n1_a_fork_of_a_subagent_nests_under_it_even_when_only_its_own_copy_is_read,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/parentage.rs::a_fork_of_a_subagent_nests_under_it_when_only_its_own_copy_is_read,mapped,,P1
 tests/test_scan_session.py::test_n2_an_agent_waiting_on_a_live_child_is_running,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules ; herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/parentage.rs::a_kept_scanner_keeps_a_silent_parent_running_while_its_new_child_runs,mapped,,P1
 tests/test_scan_session.py::test_a_recorded_stop_is_a_confirmed_ending,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules ; herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/updates.rs::hook_records_survive_a_rebuild,mapped,,P1
-tests/test_scan_session.py::test_a_notice_about_the_same_stop_says_how_it_ended,tests/test_scan_session.py,,todo,,P1
+tests/test_scan_session.py::test_a_notice_about_the_same_stop_says_how_it_ended,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::a_notice_about_the_same_stop_says_how_it_ended,mapped,,P1
 tests/test_scan_session.py::test_a_recorded_start_reopens,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
-tests/test_scan_session.py::test_started_never_stopped_and_process_gone_is_lost,tests/test_scan_session.py,,todo,,P1
+tests/test_scan_session.py::test_started_never_stopped_and_process_gone_is_lost,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::a_start_without_its_process_is_never_lost ; herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_scan_session.py::test_m2_no_lost_across_a_session_resume,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_scan_session.py::test_m2_no_lost_from_another_pid_namespace,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules ; herdr-agent-kit@v0.1.0:src/agent_procs/system/alive/tests.rs::a_gone_process_is_dead_and_another_namespace_is_unknown,mapped,,P1
 tests/test_scan_session.py::test_l2_hook_data_survives_a_rebuild,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/updates.rs::hook_records_survive_a_rebuild,mapped,,P1
-tests/test_scan_session.py::test_l3_a_late_failed_notice_still_wins,tests/test_scan_session.py,,todo,,P1
+tests/test_scan_session.py::test_l3_a_late_failed_notice_still_wins,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::a_late_failed_notice_still_wins,mapped,,P1
 tests/test_scan_tail.py::test_partial_line_is_buffered_until_its_newline,tests/test_scan_tail.py,herdr-agent-kit@v0.1.0:src/agent_session/tail/tests.rs::partial_line_is_buffered_until_its_newline,mapped,,P1
 tests/test_scan_tail.py::test_runaway_line_is_dropped_and_reading_resyncs,tests/test_scan_tail.py,herdr-agent-kit@v0.1.0:src/agent_session/tail/tests.rs::runaway_line_is_dropped_and_reading_resyncs,mapped,,P1
 tests/test_scan_tail.py::test_read_appended_offsets_shrink_and_replacement,tests/test_scan_tail.py,herdr-agent-kit@v0.1.0:tests/agent_session_tail.rs::read_appended_offsets_shrink_and_replacement,mapped,,P1
 tests/test_scan_tail.py::test_missing_file,tests/test_scan_tail.py,herdr-agent-kit@v0.1.0:tests/agent_session_tail.rs::missing_file,mapped,,P1
 tests/test_scan_wire.py::test_bad_and_odd_lines_never_raise,tests/test_scan_wire.py,herdr-agent-kit@v0.1.0:src/agent_session/claude/wire/line/tests.rs::bad_and_odd_lines_never_parse ; herdr-agent-kit@v0.1.0:src/agent_session/claude/wire/line/tests.rs::records_are_lenient,mapped,,P1
 tests/test_scan_wire.py::test_notice_from_every_carrier,tests/test_scan_wire.py,herdr-agent-kit@v0.1.0:src/agent_session/claude/wire/notice/tests.rs::notices_parse_as_panorama_reads_them ; herdr-agent-kit@v0.1.0:src/agent_session/claude/wire/line/tests.rs::records_are_lenient ; herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
-tests/test_scan_wire.py::test_notice_statuses,tests/test_scan_wire.py,,todo,,P1
-tests/test_scan_wire.py::test_human_prompt_rule,tests/test_scan_wire.py,,todo,,P1
+tests/test_scan_wire.py::test_notice_statuses,tests/test_scan_wire.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_facts.rs::notice_statuses,mapped,,P1
+tests/test_scan_wire.py::test_human_prompt_rule,tests/test_scan_wire.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_facts.rs::human_prompt_rule,mapped,,P1
 tests/test_scan_wire.py::test_summaries_and_short_paths,tests/test_scan_wire.py,herdr-agent-kit@v0.1.0:src/agent_session/claude/wire/tool_summary/tests.rs::summaries_and_short_paths,mapped,,P1
 tests/test_scan_wire.py::test_wanted_lines_matches_wanted,tests/test_scan_wire.py,herdr-agent-kit@v0.1.0:src/agent_session/claude/wire/markers/tests.rs::wanted_lines_matches_wanted,mapped,,P1
 tests/test_smooth.py::test_restyling_equals_a_full_render[same frame-0.3-2a unseen],tests/test_smooth.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision), so 'restyle equals a full render' holds by construction; the fractional frames themselves are pinned by the design goldens",P3
@@ -1032,11 +1032,11 @@ tests/test_tui.py::test_no_inbox_means_no_inbox_actions,tests/test_tui.py,src/ap
 tests/test_tui.py::test_filter_cycles_and_reselects,tests/test_tui.py,src/app/driver/tests/keys.rs::the_filter_cycles_and_reselects,mapped,,P4
 tests/test_tui.py::test_enter_unfolds_the_complete_card,tests/test_tui.py,src/app/driver/tests/keys.rs::enter_unfolds_the_complete_card,mapped,,P4
 tests/test_tui.py::test_narrow_layout_in_a_side_split,tests/test_tui.py,src/app/driver/tests/narrow.rs::the_narrow_layout_in_a_side_split,mapped,,P4
-tests/test_tui.py::test_refresh_errors_never_kill_the_view,tests/test_tui.py,src/app/model/tests.rs::a_failed_refresh_keeps_the_last_model_and_says_why ; src/app/collect/tests.rs::a_panicking_collect_is_a_failed_refresh_and_the_next_one_still_runs,mapped,,P4
+tests/test_tui.py::test_refresh_errors_never_kill_the_view,tests/test_tui.py,src/app/model/tests.rs::a_failed_refresh_keeps_the_last_model_and_says_why ; src/app/collect/tests.rs::a_failed_or_panicking_refresh_is_a_failed_refresh_and_the_next_one_still_runs,mapped,,P4
 tests/test_tui.py::test_spinner_frames_advance_without_changing_width,tests/test_tui.py,src/app/driver/tests/frames.rs::spinner_frames_advance_without_changing_width,mapped,,P4
 tests/test_tui.py::test_m5_a_new_inbox_question_arms_the_answer_key,tests/test_tui.py,src/app/model/tests.rs::a_background_change_under_the_cursor_arms_the_keys_again,mapped,,P4
 tests/test_tui.py::test_parked_cursor_keys_act_on_nothing,tests/test_tui.py,src/app/driver/tests/keys.rs::parked_cursor_keys_act_on_nothing,mapped,,P4
-tests/test_tui.py::test_h2_collects_never_overlap,tests/test_tui.py,src/app/collect/tests.rs::one_collect_at_a_time_and_its_swarm_is_cleaned,mapped,,P4
+tests/test_tui.py::test_h2_collects_never_overlap,tests/test_tui.py,src/app/collect/tests.rs::one_refresh_at_a_time_its_swarm_cleaned_and_its_marks_kept,mapped,,P4
 tests/test_tui.py::test_l1_a_failing_collect_keeps_the_last_model_and_says_so,tests/test_tui.py,src/app/model/tests.rs::a_failed_refresh_keeps_the_last_model_and_says_why ; src/app/paint/tests.rs::a_failed_refresh_says_so_in_the_header_and_no_size_paints_nothing,mapped,,P4
 tests/test_tui.py::test_frames_never_recollect_rearm_or_move_the_cursor,tests/test_tui.py,src/app/driver/tests/frames.rs::frames_never_rearm_or_move_the_cursor,mapped,,P4
 tests/test_tui.py::test_frames_keep_running_unfocused_and_pause_when_nothing_moves,tests/test_tui.py,src/app/driver/tests/frames.rs::frames_keep_running_unfocused_and_pause_when_nothing_moves ; src/ui/pacing/tests.rs::a_hidden_tab_or_a_still_screen_never_ticks,mapped,,P4
