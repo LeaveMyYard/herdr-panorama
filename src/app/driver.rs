@@ -1,6 +1,7 @@
 //! The app and what is drawn over it (Python `SwarmApp` with its `Grid`): keys and the pointer
 //! go to the app, the notices go over its frame, and each paint feeds the click arming.
 
+use super::collect::Collected;
 use super::model::App;
 use crate::ui::frame::Frame;
 use crate::ui::input::{Clicks, Effect, Key, Painted};
@@ -45,6 +46,24 @@ impl Driver {
             toast_rects: vec![],
             shown: None,
         }
+    }
+
+    /// A refresh's outcome at `now`: the model and its unseen marks, or why it failed (the
+    /// header says so; the last good model stays).
+    pub fn collected(&mut self, c: Collected, now: Instant) {
+        match c {
+            Collected::Swarm(swarm, marks) => self.app.apply(swarm, marks, now),
+            Collected::Failed(why) => self.app.failed(&why),
+        }
+    }
+
+    /// A panel's operator looked at these agents (the core's `seen`): their marks clear here,
+    /// and the effect that clears them in the producer's tracker (and its file) follows, as
+    /// Python routes them through `_seen`; without it they come back on the next refresh.
+    pub fn seen_in_a_panel(&mut self, ids: Vec<String>) -> Vec<Effect> {
+        let mut out = vec![];
+        crate::ui::input::Host::seen(&mut self.app, ids, &mut out);
+        out
     }
 
     /// The view as last drawn, without the notices (its click targets).

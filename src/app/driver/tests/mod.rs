@@ -10,6 +10,8 @@ mod dock;
 mod frames;
 mod keys;
 mod narrow;
+mod phase;
+mod refresh;
 mod wheel;
 
 use super::*;
