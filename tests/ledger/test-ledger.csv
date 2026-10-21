@@ -516,7 +516,7 @@ tests/test_machines.py::test_a_failed_refresh_keeps_the_last_result,tests/test_m
 tests/test_machines.py::test_enter_on_a_remote_orchestrator_focuses_it_there_and_says_where,tests/test_machines.py,,todo,,P4
 tests/test_machines.py::test_remote_groups_get_a_divider_and_it_is_not_clickable,tests/test_machines.py,,todo,,P4
 tests/test_machines.py::test_two_machines_with_the_same_local_ids_are_two_identities,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_a_custom_source_never_starts_machines,tests/test_machines.py,,todo,,P4
+tests/test_machines.py::test_a_custom_source_never_starts_machines,tests/test_machines.py,src/produce/tests.rs::a_producer_without_machines_never_starts_any,mapped,,P4
 tests/test_machines.py::test_two_machines_with_one_label_stay_apart_and_colons_are_fine,tests/test_machines.py,,todo,,P4
 tests/test_machines.py::test_a_changed_machines_setting_applies_without_a_restart,tests/test_machines.py,src/machines/remotes/tests.rs::a_changed_machines_setting_applies_without_a_restart,mapped,,P4
 tests/test_machines.py::test_an_rsync_without_append_verify_gets_a_normal_jsonl_pass,tests/test_machines.py,src/machines/sync/tests.rs::an_rsync_without_append_verify_gets_a_normal_jsonl_pass,mapped,,P4
