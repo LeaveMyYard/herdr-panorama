@@ -48,16 +48,6 @@ async fn the_home_opens_in_a_tab_of_its_own_marked_home() {
 }
 
 #[tokio::test(flavor = "current_thread")]
-async fn the_popup_opens_at_the_entrypoints_own_placement() {
-    let fake = FakeHerdr::start();
-    fake.on("plugin.pane.open", Reply::Result(json!({"type": "ok"})));
-    ops(&fake).open_popup().await.unwrap();
-    let p = &fake.params_of("plugin.pane.open")[0];
-    assert_eq!(p["entrypoint"], "panorama");
-    assert!(p.get("placement").is_none() && p.get("env").is_none());
-}
-
-#[tokio::test(flavor = "current_thread")]
 async fn the_home_moves_to_a_new_first_tab_without_focus() {
     let fake = FakeHerdr::start();
     fake.on(

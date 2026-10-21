@@ -16,6 +16,7 @@ pub mod hook;
 pub mod machines;
 pub mod mcp;
 pub mod new_agent;
+pub mod open;
 pub mod panel;
 pub mod panels;
 pub mod produce;

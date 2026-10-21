@@ -1,10 +1,9 @@
 //! The `panorama` binary (plan §2.2): one binary, subcommands keep today's CLI names. Ported
-//! so far: `panel`, the per-tab panel viewer; `tui`, the graph view (its keys and actions
-//! join in P4 8b/8c); `snapshot`, the derived model; `contract`, the panel contract it
-//! implements (`scripts/panel` checks it before running `panel`); `new-agent`, the + New agent
-//! popup; `hook` and `mcp`, the Claude Code side (`contract claude`). Without a subcommand it prints its version; an
-//! unknown one exits 2.
-
+//! so far: `panel`, the per-tab panel viewer; `tui`, the graph view; `new-agent`, the + New
+//! agent popup; `open` and `home`, the plugin's actions and startup hook; `snapshot`, the
+//! derived model; `contract`, the contracts the launchers check (`scripts/panel`,
+//! `scripts/tui`, the Claude Code side's); `hook` and `mcp`, the Claude Code side. Without a
+//! subcommand it prints its version; an unknown one exits 2.
 fn main() {
     match std::env::args().nth(1).as_deref() {
         Some("panel") => std::process::exit(panorama::panel::run()),
@@ -20,6 +19,10 @@ fn main() {
         Some("emit") => {
             let args: Vec<String> = std::env::args().skip(2).collect();
             std::process::exit(panorama::emit::run(&args))
+        }
+        Some(cmd @ ("open" | "home")) => {
+            let rest: Vec<String> = std::env::args().skip(2).collect();
+            std::process::exit(panorama::open::main(cmd, &rest))
         }
         Some("new-agent") => std::process::exit(panorama::new_agent::popup::run()),
         Some("snapshot") => {

@@ -23,13 +23,14 @@ pub const PANEL: u32 = 1;
 pub const CLAUDE: u32 = 1;
 
 /// The view's contract (`panorama contract tui`): what `scripts/tui` checks before it runs this
-/// binary as the manifest's `panorama` and `new-agent` panes instead of the Python app. It
-/// covers the `tui` and `new-agent` subcommands, the home view's record and lock (the paths
+/// binary as the manifest's `panorama` and `new-agent` panes, its `open` actions and its startup
+/// hook, instead of the Python app. It covers the `tui`, `new-agent`, `open [--popup|--split]`
+/// and `home [--startup]` subcommands (2: `open` and `home`), the home view's record and lock (the paths
 /// Python's `home` reads), the core it serves and the protocol (1.x, what Python's `open` and
 /// `home --startup` speak to it), the + New agent popup's started marker and
 /// `PANORAMA_NEW_AGENT_CWD`. Raise it with `TUI_CONTRACT=` in `scripts/tui` when any of these
 /// changes incompatibly. Answered as `tui <n>`, like `claude <n>`.
-pub const TUI: u32 = 1;
+pub const TUI: u32 = 2;
 
 /// The answer to `panorama contract [name]`: the panel's bare number without a name,
 /// `claude <n>` for `claude`, `tui <n>` for `tui`, nothing for a name this binary does not know.
