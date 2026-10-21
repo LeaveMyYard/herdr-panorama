@@ -4,15 +4,17 @@
 use super::actor::Actor;
 use super::collect::{Source, Worker};
 use super::driver::Driver;
+use super::link::Link;
 use super::model::App;
 use super::panic;
 use crate::settings::Settings;
-use crate::snapshot::source;
+use crate::snapshot::{SelfPane, source_shared};
 use crate::ui::end::End;
 use crate::ui::term;
 use herdr_agent_kit::internal::plugin_paths::panorama::state_dir;
 use herdr_agent_kit::plugin_env::PluginEnv;
 use serde_json::Value;
+use std::sync::{Arc, Mutex};
 use std::time::Instant;
 use tokio::sync::mpsc;
 
@@ -30,10 +32,16 @@ pub fn invocation_pane(context_json: Option<&str>) -> Option<String> {
 /// collector docks by (Python `collector.self_pane`). The exit code.
 pub fn tui() -> i32 {
     let env = PluginEnv::from_env();
-    let self_pane = home_mode(&env)
-        .then(|| env.pane_id().map(str::to_owned))
-        .flatten();
-    run(move || Box::new(source(PluginEnv::from_env(), self_pane)) as Source)
+    let self_pane: SelfPane = Arc::new(Mutex::new(
+        home_mode(&env)
+            .then(|| env.pane_id().map(str::to_owned))
+            .flatten(),
+    ));
+    let pane = self_pane.clone();
+    run_with(
+        move || Box::new(source_shared(PluginEnv::from_env(), pane)) as Source,
+        self_pane,
+    )
 }
 
 /// The home tab's view (`PANORAMA_HOME=1`, Python `home.is_home`).
@@ -43,6 +51,11 @@ fn home_mode(env: &PluginEnv) -> bool {
 
 /// Runs the app until it ends, its swarm from `make`'s source; the exit code.
 pub fn run(make: impl FnOnce() -> Source + Send + 'static) -> i32 {
+    run_with(make, SelfPane::default())
+}
+
+/// [`run`], the view's own pane shared with the collector (the home view moves it).
+pub fn run_with(make: impl FnOnce() -> Source + Send + 'static, self_pane: SelfPane) -> i32 {
     let env = PluginEnv::from_env();
     let log = panic::log_path(&state_dir(&env));
     let default_hook = std::panic::take_hook();
@@ -50,7 +63,7 @@ pub fn run(make: impl FnOnce() -> Source + Send + 'static) -> i32 {
     let result = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
-        .and_then(|rt| rt.block_on(serve(&env, make)));
+        .and_then(|rt| rt.block_on(serve(&env, make, self_pane)));
     term::restore();
     match result {
         Ok(_) => 0,
@@ -65,14 +78,35 @@ pub fn run(make: impl FnOnce() -> Source + Send + 'static) -> i32 {
 async fn serve(
     env: &PluginEnv,
     make: impl FnOnce() -> Source + Send + 'static,
+    self_pane: SelfPane,
 ) -> std::io::Result<End> {
     let focus = invocation_pane(env.plugin_context_json());
     let app = App::new(focus, home_mode(env), Instant::now());
     let (tx, rx) = mpsc::unbounded_channel();
     let worker = Worker::spawn(make, tx)?;
+    let home = home_mode(env);
+    let me = home.then(|| env.pane_id().map(str::to_owned)).flatten();
+    let log = panic::log_path(&state_dir(env));
+    let mut link = Link::start(env, home, me, log.clone()).await;
+    link.collector_pane = Some(self_pane);
     let term = term::setup()?;
-    let mut actor = Actor::new(Driver::new(app), Settings::from_env(env), term, worker, rx);
-    actor.run().await
+    let mut actor = Actor::new(Driver::new(app), Settings::from_env(env), term, worker, rx)
+        .with_link(link, log);
+    let end = actor.run().await;
+    if let Some(a) = actor.after_exit.take() {
+        // the inbox popup once this one is closed (Python `after_exit`)
+        term::restore();
+        let h = herdr_agent_kit::herdr_api::Herdr::from_env().with_client("panorama");
+        crate::panel::act::inbox::InboxLink::default()
+            .open(
+                &h,
+                &crate::panel::act::inbox::UvRunner,
+                a.question,
+                a.pane.as_deref(),
+            )
+            .await;
+    }
+    end
 }
 
 #[cfg(test)]
