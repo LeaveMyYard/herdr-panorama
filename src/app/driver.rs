@@ -48,6 +48,13 @@ impl Driver {
         }
     }
 
+    /// Whether the view has the keyboard (the terminal's focus reports, herdr's focus): the
+    /// docked panel's two looks (Python `on_app_focus` / `on_app_blur`, `herdr_focus`).
+    /// Whether that changed it.
+    pub fn focus(&mut self, focused: bool) -> bool {
+        std::mem::replace(&mut self.app.pane_focused, focused) != focused
+    }
+
     /// A refresh's outcome at `now`: the model and its unseen marks, or why it failed (the
     /// header says so; the last good model stays).
     pub fn collected(&mut self, c: Collected, now: Instant) {

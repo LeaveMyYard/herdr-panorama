@@ -295,19 +295,19 @@ tests/test_focus_theme.py::test_reset_and_unknown_values,tests/test_focus_theme.
 tests/test_focus_theme.py::test_the_terminal_theme_keeps_panoramas_colours_with_a_focus_cue,tests/test_focus_theme.py,src/settings/theme/tests.rs::no_config_is_herdrs_default_theme ; crates/panorama-core/src/view/theme/tests.rs::reset_tokens_and_the_terminal_theme_keep_panoramas_colours,mapped,,P3
 tests/test_focus_theme.py::test_a_changed_file_is_read_again,tests/test_focus_theme.py,src/settings/tests.rs::both_files_are_read_and_re_read_when_they_change,mapped,,P3
 tests/test_focus_theme.py::test_every_built_in_theme_has_the_six_tokens,tests/test_focus_theme.py,crates/panorama-core/src/view/theme/tests.rs::every_built_in_theme_is_herdrs_with_six_tokens,mapped,,P3
-tests/test_focus_theme.py::test_the_view_follows_the_terminals_focus_in_and_out,tests/test_focus_theme.py,,todo,,P4
+tests/test_focus_theme.py::test_the_view_follows_the_terminals_focus_in_and_out,tests/test_focus_theme.py,src/app/driver/tests/focus.rs::the_view_follows_the_terminals_focus_in_and_out,mapped,,P4
 tests/test_focus_theme.py::test_the_table_is_herdrs_measured_values,tests/test_focus_theme.py,crates/panorama-core/src/view/theme/tests.rs::the_table_is_herdrs_measured_values,mapped,,P3
-tests/test_focus_theme.py::test_herdrs_focus_events_switch_the_look_too,tests/test_focus_theme.py,,todo,,P4
+tests/test_focus_theme.py::test_herdrs_focus_events_switch_the_look_too,tests/test_focus_theme.py,src/app/link/tests/focus.rs::herdrs_focus_switches_the_docked_panels_look_too ; src/app/link/tests/focus.rs::the_view_is_focused_exactly_when_herdr_focuses_its_own_pane,mapped,,P4
 tests/test_focus_theme.py::test_the_focus_watcher_forwards_herdrs_pane_focus,tests/test_focus_theme.py,src/app/link/tests/events.rs::focus_events_feed_the_log_the_view_and_one_pass_per_burst,mapped,,P4
 tests/test_focus_theme.py::test_the_hover_row_is_a_step_lighter_than_either_background,tests/test_focus_theme.py,crates/panorama-core/src/view/theme/tests.rs::fixed_is_the_default_and_own_colours_replace_either,mapped,,P3
-tests/test_focus_theme.py::test_a_panorama_started_without_the_keyboard_looks_unfocused,tests/test_focus_theme.py,,todo,,P4
+tests/test_focus_theme.py::test_a_panorama_started_without_the_keyboard_looks_unfocused,tests/test_focus_theme.py,src/app/link/tests/events.rs::focus_events_feed_the_log_the_view_and_one_pass_per_burst ; src/app/link/tests/focus.rs::herdrs_focus_switches_the_docked_panels_look_too,mapped,,P4
 tests/test_follow.py::test_z_zooms_panoramas_own_pane,tests/test_follow.py,src/app/link/tests/acts.rs::zoom_is_the_home_panes_own,mapped,,P4
-tests/test_follow.py::test_the_docked_panel_and_the_graph_show_the_zoom_key,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_event_stream_yields_focus_events_and_reconnects,tests/test_follow.py,,todo,,P4
+tests/test_follow.py::test_the_docked_panel_and_the_graph_show_the_zoom_key,tests/test_follow.py,crates/panorama-core/tests/dock_layout.rs::the_docked_panel_and_the_graph_show_the_zoom_key,mapped,,P4
+tests/test_follow.py::test_event_stream_yields_focus_events_and_reconnects,tests/test_follow.py,herdr-agent-kit@v0.1.0:tests/herdr_api/events.rs::events_mark_connect_and_loss_and_reconnect,mapped,,P4
 tests/test_follow.py::test_r12_l1_backoff_grows_until_data_arrives,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_r12f_l1_the_watcher_tracks_liveness,tests/test_follow.py,src/app/link/tests/events.rs::focus_events_feed_the_log_the_view_and_one_pass_per_burst,mapped,,P4
-tests/test_follow.py::test_r12f_l1_events_marks_connect_and_disconnect,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r16_the_settle_wait_keeps_its_margin,tests/test_follow.py,,todo,,P4
+tests/test_follow.py::test_r12f_l1_events_marks_connect_and_disconnect,tests/test_follow.py,herdr-agent-kit@v0.1.0:tests/herdr_api/events.rs::events_mark_connect_and_loss_and_reconnect,mapped,,P4
+tests/test_follow.py::test_r16_the_settle_wait_keeps_its_margin,tests/test_follow.py,src/panels/tests/batch.rs::the_settle_wait_keeps_its_margin,mapped,,P4
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 46 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 60 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep dock f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
