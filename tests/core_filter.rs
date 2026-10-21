@@ -8,6 +8,8 @@ mod core_common;
 use core_common::*;
 use panorama::app::link::state::{Published, state_message};
 use panorama::core::Event;
+use panorama::proto::framing::encode;
+use panorama::proto::messages::ToCore;
 use panorama::proto::state::State;
 use panorama_core::model::Swarm;
 use panorama_core::view::{Filter, Marks};
@@ -53,9 +55,8 @@ async fn a_filter_chosen_in_one_panel_shows_in_every_panel() {
     assert_eq!(filter_of(&lines(&mut a, 1).await[0]), Some(Filter::All));
     assert_eq!(filter_of(&lines(&mut b, 1).await[0]), Some(Filter::All));
     // f in panel A: its choice goes to the core
-    a.write_all(&line(json!({"filter": {"name": "needs"}})))
-        .await
-        .unwrap();
+    let chose = ToCore::Filter(Filter::Needs.name().to_owned()).to_json(); // the panel's own message
+    a.write_all(&encode(&chose).unwrap()).await.unwrap();
     let got = tokio::time::timeout(std::time::Duration::from_secs(5), rx.recv()).await;
     let Ok(Some(Event::Filter(name))) = got else {
         panic!("no filter from panel A: {got:?}")
