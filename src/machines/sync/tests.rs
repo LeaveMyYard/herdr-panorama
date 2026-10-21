@@ -249,4 +249,13 @@ fn the_remote_mirror_names_sessions_in_lowercase_once() {
         first.iter().filter(|a| a.contains(hex)).count(),
         first.iter().filter(|a| a.contains(SID)).count()
     );
+    // the prune's bookkeeping names exactly the canonical ids
+    let seen = mirror_root(&dir.path().join("state"), &devbox()).join(crate::machines::prune::SEEN);
+    let seen: serde_json::Map<String, serde_json::Value> =
+        serde_json::from_str(&std::fs::read_to_string(seen).unwrap()).unwrap();
+    let mut keys: Vec<&str> = seen.keys().map(String::as_str).collect();
+    keys.sort_unstable();
+    let mut want = [hex, SID];
+    want.sort_unstable();
+    assert_eq!(keys, want);
 }

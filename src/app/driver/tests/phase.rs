@@ -4,19 +4,33 @@
 
 use super::*;
 use crate::panel::input::fixtures::{loaded_at, state};
-use crate::ui::clock::{FRAME_SECONDS, frame_at};
+use crate::ui::clock::FRAME_SECONDS;
+use panorama_core::view::Unseen;
 use serde_json::json;
 
 /// A wall-clock-sized instant, mid-frame (Python's `T`).
 const T: f64 = 1_792_000_000.0 + 0.13;
 
 impl Run {
-    /// Paints at the wall-clock instant `t`, as the actor's colour tick does.
+    /// Paints at the wall-clock instant `t` as the actor's colour tick does: its frame set by
+    /// the actor's own [`Frame::at`].
     fn tick(&mut self, t: f64) -> Screen {
         let (w, h) = self.size;
         let mut l = look(self.now_s);
-        l.frame = frame_at(t);
+        l.at(t);
         self.d.paint(w, h, &l, Painted::Other, self.t0).unwrap()
+    }
+
+    /// The demo with unseen marks: their pulses are in the picture too.
+    fn marked(pane: &str, size: (i32, i32)) -> Self {
+        let mut r = Self::demo(pane, size);
+        r.d.app.graph.view.unseen = [
+            ("a1c3d90".to_owned(), Unseen::Fail),
+            ("b3a9c41".to_owned(), Unseen::Wait),
+            ("a3e1b22".to_owned(), Unseen::Done),
+        ]
+        .into();
+        r
     }
 }
 
@@ -35,20 +49,23 @@ fn two_windows_started_apart_show_the_same_phase() {
     // one window up for minutes, ticking fast; one started 2.3 s before T at 2 fps: at T both
     // draw the same picture, the one a window opened at T draws
     let size = (160, 45);
-    let mut long = Run::demo("w1:p2", size);
+    let mut long = Run::marked("w1:p2", size);
     let mut t = T - 191.7;
     while t < T {
         long.tick(t);
         t += 0.05;
     }
-    let mut late = Run::demo("w1:p2", size);
+    let mut late = Run::marked("w1:p2", size);
     let mut t = T - 2.3;
     while t < T {
         late.tick(t);
         t += 0.5;
     }
     let (a, b) = (long.tick(T), late.tick(T));
-    let fresh = Run::demo("w1:p2", size).tick(T);
+    let fresh = Run::marked("w1:p2", size).tick(T);
+    // the marks pulse: the picture moves between frames, so a phase off by one would show
+    let off = Run::marked("w1:p2", size).tick(T + FRAME_SECONDS);
+    assert_ne!(cells(&fresh), cells(&off));
     assert_eq!(long.d.app.graph.view.frame, T / FRAME_SECONDS);
     assert_eq!(late.d.app.graph.view.frame, T / FRAME_SECONDS);
     assert_eq!(cells(&a), cells(&fresh));
@@ -72,7 +89,7 @@ fn a_panel_and_the_home_view_share_the_frame() {
         t0,
     );
     let mut f = crate::panel::input::fixtures::frame();
-    f.frame = frame_at(T);
+    f.at(T);
     panel.paint(46, 45, &f);
     assert!(panel.tab_shown);
     assert_eq!(panel.graph.view.frame, home.d.app.graph.view.frame);
