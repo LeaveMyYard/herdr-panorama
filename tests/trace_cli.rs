@@ -65,31 +65,63 @@ fn sources(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
+/// The lines of `text` that could make a herdr client outside `src/trace.rs`: the kit's types
+/// named at all (even in a `use`, so no alias dodges it), or a constructor called through
+/// trace's names. Methods on those names (`BlockingHerdrClient::machine_snapshot`) are fine.
+fn offending(text: &str) -> Vec<(usize, String)> {
+    let kit = regex::Regex::new(r"\bHerdr\b").unwrap();
+    let made =
+        regex::Regex::new(r"\b(HerdrClient|BlockingHerdrClient)\s*::\s*(new|from_env|resolve)\b")
+            .unwrap();
+    text.lines()
+        .enumerate()
+        .filter(|(_, l)| kit.is_match(l) || made.is_match(l))
+        .map(|(n, l)| (n + 1, l.trim().to_owned()))
+        .collect()
+}
+
 #[test]
-fn no_herdr_client_is_named_outside_trace() {
-    // the kit's client types (`Herdr`, `blocking::Herdr`) appear only in src/trace.rs: anywhere
-    // else, even under an alias in a `use`, a client could be made untraced
+fn the_scan_flags_what_it_is_for() {
+    // planted lines: each way to make a client outside trace.rs, and the ones that are fine
+    let bad = [
+        "use herdr_agent_kit::herdr_api::Herdr as H;",
+        "let h = herdr_agent_kit::herdr_api::blocking::Herdr::from_env();",
+        "let h = crate::trace::HerdrClient::from_env();",
+        "let h = BlockingHerdrClient::new(server);",
+        "let h = HerdrClient :: resolve(var);",
+    ];
+    for line in bad {
+        assert_eq!(offending(line).len(), 1, "not flagged: {line}");
+    }
+    let fine = [
+        "fn f(h: &HerdrClient) {}",
+        "BlockingHerdrClient::machine_snapshot(self, id)",
+        "let h = crate::trace::client();",
+        "use herdr_agent_kit::herdr_api::{HerdrEvent, HerdrError};",
+    ];
+    for line in fine {
+        assert!(offending(line).is_empty(), "flagged: {line}");
+    }
+}
+
+#[test]
+fn no_herdr_client_is_made_outside_trace() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
     let mut files = vec![];
     sources(&root, &mut files);
     assert!(files.len() > 50, "the scan reads panorama's sources");
-    let word = regex::Regex::new(r"\bHerdr\b").unwrap();
     let mut found = vec![];
     for f in files.iter().filter(|f| **f != root.join("trace.rs")) {
-        for (n, line) in std::fs::read_to_string(f).unwrap().lines().enumerate() {
-            if word.is_match(line) {
-                found.push(format!(
-                    "{}:{}: {}",
-                    f.strip_prefix(&root).unwrap().display(),
-                    n + 1,
-                    line.trim()
-                ));
-            }
+        for (n, line) in offending(&std::fs::read_to_string(f).unwrap()) {
+            found.push(format!(
+                "{}:{n}: {line}",
+                f.strip_prefix(&root).unwrap().display()
+            ));
         }
     }
     assert!(
         found.is_empty(),
-        "use crate::trace::{{HerdrClient, BlockingHerdrClient}} and trace::client():\n{}",
+        "make herdr clients with trace::client() / blocking_client():\n{}",
         found.join("\n")
     );
 }
