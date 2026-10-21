@@ -9,8 +9,9 @@ use herdr_agent_kit::herdr_api::{OpenPluginPane, Placement};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-/// The popup's outer size in cells (the form is 76 wide).
-pub const POPUP: (u16, u16) = (84, 26);
+/// The popup's outer size in cells: the 1C modal is 76 × 27, with room for herdr's frame
+/// (Python's auto-height form fitted 84 × 26).
+pub const POPUP: (u16, u16) = (84, 30);
 /// After an unanswered request: how long the popup's process may take to start.
 pub const POPUP_START: Duration = Duration::from_secs(3);
 /// The operator's wording (Q154).

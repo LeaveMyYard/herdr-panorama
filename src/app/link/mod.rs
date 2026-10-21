@@ -20,13 +20,11 @@ use crate::home::config::per_tab;
 use crate::home::real::RealHome;
 use crate::home::{self, Places};
 use crate::panel::act::inbox::InboxLink;
-use crate::panel::act::new_agent;
 use crate::panel::actor::Place;
 use crate::panels::real::RealOps;
 use crate::panels::{FocusLog, Manager};
 use crate::settings::Settings;
 use crate::trace::HerdrClient;
-use herdr_agent_kit::internal::plugin_paths::PANORAMA_ID;
 use herdr_agent_kit::internal::plugin_paths::panorama::{
     core_lock_path, core_socket_path, home_lock_path, session_key, state_dir,
 };
@@ -106,20 +104,23 @@ impl Link {
         log: PathBuf,
     ) -> Self {
         let herdr = crate::trace::client();
+        Self::start_with(env, herdr, home_mode, my_pane, log).await
+    }
+
+    /// [`Self::start`] with its herdr client.
+    pub async fn start_with(
+        env: &PluginEnv,
+        herdr: HerdrClient,
+        home_mode: bool,
+        my_pane: Option<String>,
+        log: PathBuf,
+    ) -> Self {
         let state = state_dir(env);
-        let place = Place {
-            plugin_id: env.plugin_id(PANORAMA_ID).to_owned(),
-            root: env.plugin_root().map(Path::to_path_buf),
-            new_agent_mark: new_agent::marker(&state, &session_key(env)),
-            home: env
-                .home()
-                .map_or_else(|| "~".to_owned(), |h| h.to_string_lossy().into_owned()),
-        };
         let mut link = Self::bare(
             herdr.clone(),
             home_mode,
             my_pane,
-            place,
+            Place::from_env(env),
             Places::from_env(env),
             log,
         );
