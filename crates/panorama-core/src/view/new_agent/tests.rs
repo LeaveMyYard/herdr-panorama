@@ -92,7 +92,10 @@ fn no_agent_name_no_line_under_the_name_and_the_status_is_a_warning() {
         W,
         H,
     );
-    assert_eq!(m.screen.cell(W - 1, H - 3).ch, '│'); // cut inside the frame
+    // cut two columns inside the frame: its last character, a blank, the border
+    assert_eq!(m.screen.cell(W - 3, H - 3).ch, 'y');
+    assert_eq!(m.screen.cell(W - 2, H - 3).ch, ' ');
+    assert_eq!(m.screen.cell(W - 1, H - 3).ch, '│');
 }
 
 #[test]
@@ -100,6 +103,8 @@ fn the_modal_is_centred_and_a_small_screen_only_clips_it() {
     let m = render(&form(), W + 10, H + 4);
     assert_eq!(m.screen.cell(5, 2).ch, '╭');
     assert_eq!(m.step_at(6, 4), Some(-1));
+    // an odd margin rounds down, as the design's `(W - mw) >> 1`
+    assert_eq!(render(&form(), W + 11, H + 5).screen.cell(5, 2).ch, '╭');
     let small = render(&form(), 20, 5);
     assert_eq!(small.screen.cell(0, 0).ch, '╭');
 }
