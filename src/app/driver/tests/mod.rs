@@ -8,10 +8,13 @@ mod clicks;
 mod core_filter;
 mod deep;
 mod dock;
+mod focus;
 mod frames;
 mod keys;
 mod narrow;
 mod new_agent;
+mod phase;
+mod refresh;
 mod wheel;
 
 use super::*;

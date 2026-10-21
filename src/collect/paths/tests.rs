@@ -37,3 +37,14 @@ fn file_names_are_safe() {
         Path::new(&format!("/h/{id}.jsonl"))
     );
 }
+
+#[test]
+fn an_events_file_is_named_by_the_canonical_id() {
+    // tests/test_bridge_rules.py: an id in any case names one file; any other id keeps its safe
+    // characters
+    let hex = "0e4a6b1c-9d2f-4a3b-8c7d-1e2f3a4b5c6d";
+    let dir = Path::new("/e");
+    assert_eq!(events_path(dir, &hex.to_uppercase()), events_path(dir, hex));
+    assert_eq!(events_path(dir, hex), dir.join(format!("{hex}.jsonl")));
+    assert_eq!(events_path(dir, "not/a-uuid"), dir.join("nota-uuid.jsonl"));
+}
