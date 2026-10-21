@@ -74,3 +74,16 @@ fn no_profile_aborts_on_panic() {
     let compact: String = manifest.chars().filter(|c| !c.is_whitespace()).collect();
     assert!(!compact.contains("panic=\"abort\"") && !compact.contains("panic='abort'"));
 }
+
+#[test]
+fn a_panic_while_writing_the_log_does_not_wait_on_itself() {
+    // the hook calls `log`; were `log` to panic, its own hook call must return, not deadlock
+    let dir = tempfile::tempdir().unwrap();
+    let path = log_path(dir.path());
+    WRITING.with(|w| w.set(true)); // as inside a write on this thread
+    log(&path, "nested");
+    WRITING.with(|w| w.set(false));
+    assert!(!path.exists()); // skipped, at once
+    log(&path, "after");
+    assert_eq!(fs::read_to_string(&path).unwrap(), "after\n");
+}

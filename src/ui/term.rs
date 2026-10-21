@@ -17,6 +17,7 @@ use ratatui::crossterm::terminal::{
 use ratatui::layout::Position;
 use ratatui::style::{Color, Modifier};
 use std::io::{self, Stdout};
+use std::time::Duration;
 
 /// A view's terminal (the panel's or the app's).
 pub type Term = ratatui::Terminal<CrosstermBackend<Stdout>>;
@@ -56,6 +57,17 @@ pub fn restore() {
         LeaveAlternateScreen
     );
     let _ = execute!(io::stdout(), ratatui::crossterm::cursor::Show);
+}
+
+/// How often a view looks whether its terminal hung up (crossterm does not say).
+pub const HANGUP_CHECK: Duration = Duration::from_secs(1);
+
+/// Whether the error `e` says the terminal is gone (its pane closed): EIO, a broken pipe,
+/// no device. The other check, [`hung_up`], polls for it: both ask the same question.
+pub fn hung_up_error(e: &io::Error) -> bool {
+    const EIO: i32 = 5;
+    const ENXIO: i32 = 6;
+    e.kind() == io::ErrorKind::BrokenPipe || matches!(e.raw_os_error(), Some(EIO | ENXIO))
 }
 
 /// Whether the terminal is gone (its other side closed): crossterm's reader never reports

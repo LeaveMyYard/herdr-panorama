@@ -1,6 +1,6 @@
-//! What the panel asks the actor to do after an input: the IO side of a key or a click.
+//! What a view asks its actor to do after an input: the IO side of a key or a click.
 
-/// A notice in the panel's corner (Python's `notify`).
+/// A notice in the corner (Python's `notify`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Toast {
     pub title: Option<String>,

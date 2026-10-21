@@ -1,12 +1,12 @@
 //! Selection by identity (Python `SwarmApp._cur`, `_select`, `_shown`, `_point`).
 
-use crate::panel::model::Panel;
+use super::Graph;
 use panorama_core::view::View;
 use panorama_core::view::nav::{
     agent_depth, default_children, find_orch, find_thread, nav, parent_key,
 };
 
-impl Panel {
+impl Graph {
     /// The selection in column `col`: the orchestrator, the thread, or the agent at any depth.
     pub(crate) fn cur(&self, col: usize) -> Option<&str> {
         match col {
