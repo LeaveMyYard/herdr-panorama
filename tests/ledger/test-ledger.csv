@@ -130,19 +130,19 @@ tests/test_bridge_rules.py::test_is_not_claude[node-argv17],tests/test_bridge_ru
 tests/test_bridge_rules.py::test_is_not_claude[npm exec @anthr-argv18],tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/bridge_rules_is_claude.rs::test_is_not_claude,mapped,,P1
 tests/test_bridge_rules.py::test_a_launcher_above_claude_gives_exactly_one_claude,tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/bridge_rules_is_claude.rs::test_a_launcher_above_claude_gives_exactly_one_claude,mapped,,P1
 tests/test_bridge_rules.py::test_herdr_claude_pid_skips_the_launcher,tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/bridge_rules_is_claude.rs::test_herdr_claude_pid_skips_the_launcher,mapped,,P1
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-120],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-140],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-160],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-200],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-320],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-120],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-140],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-160],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-200],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-320],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_an_unselected_title_is_cut_too[120],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_an_unselected_title_is_cut_too[160],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_fit_segs_keeps_short_titles_and_cuts_long_ones,tests/test_card_title.py,,todo,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-120],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-140],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-160],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-200],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-320],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-120],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-140],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-160],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-200],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-320],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_an_unselected_title_is_cut_too[120],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::an_unselected_title_is_cut_too,mapped,,P4
+tests/test_card_title.py::test_an_unselected_title_is_cut_too[160],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::an_unselected_title_is_cut_too,mapped,,P4
+tests/test_card_title.py::test_fit_segs_keeps_short_titles_and_cuts_long_ones,tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::fit_segs_keeps_short_titles_and_cuts_long_ones,mapped,,P4
 tests/test_cockpit.py::test_config_defaults_off_and_width_is_clamped,tests/test_cockpit.py,src/home/tests/lookalikes.rs::config_defaults_and_python_truthiness,mapped,,P4
 tests/test_cockpit.py::test_the_home_pane_is_labelled_and_found_by_content,tests/test_cockpit.py,src/home/tests/ensure.rs::the_home_pane_is_labelled_and_found_by_content,mapped,,P4
 tests/test_cockpit.py::test_the_fake_tab_focus_moves_focus,tests/test_cockpit.py,src/home/tests/ensure.rs::the_fake_tab_focus_moves_focus,mapped,,P4
@@ -268,8 +268,8 @@ tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[60],tests/test_d
 tests/test_dock_panel.py::test_3a_at_its_design_width_keeps_every_footer_hint,tests/test_dock_panel.py,crates/panorama-core/tests/design_goldens.rs::design_9e_cell_for_cell,mapped,,P3
 tests/test_dock_panel.py::test_trace_records_each_herdr_call,tests/test_dock_panel.py,,todo,,P4
 tests/test_dock_panel.py::test_r16b_the_lock_gives_up_instead_of_hanging,tests/test_dock_panel.py,,todo,,P4
-tests/test_fixture_privacy.py::test_fixtures_hold_no_real_ids,tests/test_fixture_privacy.py,,todo,,P4
-tests/test_fixture_privacy.py::test_docs_hold_no_real_agent_ids,tests/test_fixture_privacy.py,,todo,,P4
+tests/test_fixture_privacy.py::test_fixtures_hold_no_real_ids,tests/test_fixture_privacy.py,tests/fixture_privacy.rs::fixtures_hold_no_real_ids ; tests/fixture_privacy.rs::the_rule_finds_what_it_is_for,mapped,,P4
+tests/test_fixture_privacy.py::test_docs_hold_no_real_agent_ids,tests/test_fixture_privacy.py,tests/fixture_privacy.rs::docs_hold_no_real_agent_ids,mapped,,P4
 tests/test_focus_theme.py::test_turn_10_matches_the_design_cell_for_cell[0-yours-A],tests/test_focus_theme.py,crates/panorama-core/tests/design_goldens.rs::design_10_focused_and_not_in_two_themes_cell_for_cell,mapped,,P3
 tests/test_focus_theme.py::test_turn_10_matches_the_design_cell_for_cell[0-yours-I],tests/test_focus_theme.py,crates/panorama-core/tests/design_goldens.rs::design_10_focused_and_not_in_two_themes_cell_for_cell,mapped,,P3
 tests/test_focus_theme.py::test_turn_10_matches_the_design_cell_for_cell[0-tokyo-A],tests/test_focus_theme.py,crates/panorama-core/tests/design_goldens.rs::design_10_focused_and_not_in_two_themes_cell_for_cell,mapped,,P3
@@ -313,45 +313,45 @@ tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 60 f0-],tests/test_gl
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep dock f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 70 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 70 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 120 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 120 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 160 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 160 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 240 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 240 f0-],tests/test_glyph_spacing.py,,todo,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 120 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 120 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 160 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 160 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 240 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 240 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 46 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 60 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep dock f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 70 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 70 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 120 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 120 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 160 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 160 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 240 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 240 f1-],tests/test_glyph_spacing.py,,todo,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 120 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 120 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 160 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 160 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 240 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 240 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 46 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 60 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep dock f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 70 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 70 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 120 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 120 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 160 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 160 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 240 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 240 f2-],tests/test_glyph_spacing.py,,todo,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 120 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 120 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 160 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 160 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 240 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 240 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 46 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 60 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep dock f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 70 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 70 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 120 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 120 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 160 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 160 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 240 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 240 f3-],tests/test_glyph_spacing.py,,todo,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 120 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 120 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 160 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 160 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 240 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 240 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
 tests/test_glyph_spacing.py::test_the_docked_rows_space_their_glyphs,tests/test_glyph_spacing.py,crates/panorama-core/tests/design_goldens.rs::design_9e_cell_for_cell,mapped,,P3
 tests/test_glyph_spacing.py::test_review_m_many_threads_keep_the_counts_whole[36-15],tests/test_glyph_spacing.py,crates/panorama-core/tests/dock_layout.rs::many_threads_keep_the_counts_whole,mapped,,P3
 tests/test_glyph_spacing.py::test_review_m_many_threads_keep_the_counts_whole[36-30],tests/test_glyph_spacing.py,crates/panorama-core/tests/dock_layout.rs::many_threads_keep_the_counts_whole,mapped,,P3
@@ -363,45 +363,45 @@ tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[dock 60 f0-],te
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep dock f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 70 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 70 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 120 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 120 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 160 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 160 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 240 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 240 f0-],tests/test_glyph_spacing.py,,todo,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 120 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 120 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 160 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 160 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 240 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 240 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[dock 46 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[dock 60 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep dock f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 70 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 70 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 120 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 120 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 160 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 160 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 240 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 240 f1-],tests/test_glyph_spacing.py,,todo,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 120 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 120 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 160 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 160 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 240 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 240 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[dock 46 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[dock 60 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep dock f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 70 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 70 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 120 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 120 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 160 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 160 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 240 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 240 f2-],tests/test_glyph_spacing.py,,todo,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 120 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 120 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 160 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 160 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 240 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 240 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[dock 46 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[dock 60 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep dock f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 70 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 70 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 120 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 120 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 160 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 160 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 240 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 240 f3-],tests/test_glyph_spacing.py,,todo,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 120 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 120 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 160 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 160 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 240 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 240 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
 tests/test_glyph_spacing.py::test_the_spinner_is_the_ten_frame_braille_cycle,tests/test_glyph_spacing.py,crates/panorama-core/src/view/anim/tests.rs::the_spinner_and_the_clock_are_braille_cycles,mapped,,P3
 tests/test_goldens.py::test_the_goldens_are_what_the_code_does[model],tests/test_goldens.py,,retired,"checks that the Python code still reproduces its own captures; the Rust tests read the same goldens (model, screens) directly",P0a
 tests/test_goldens.py::test_the_goldens_are_what_the_code_does[screens],tests/test_goldens.py,,retired,"checks that the Python code still reproduces its own captures; the Rust tests read the same goldens (model, screens) directly",P0a
@@ -1097,14 +1097,14 @@ tests/test_wide.py::test_tiers[299-expect4],tests/test_wide.py,crates/panorama-c
 tests/test_wide.py::test_tiers[300-expect5],tests/test_wide.py,crates/panorama-core/src/view/graph/layout/tests.rs::tiers,mapped,,P4
 tests/test_wide.py::test_tiers[500-expect6],tests/test_wide.py,crates/panorama-core/src/view/graph/layout/tests.rs::tiers,mapped,,P4
 tests/test_wide.py::test_the_full_title_fits_from_240_columns,tests/test_wide.py,crates/panorama-core/tests/wide_layout.rs::the_full_title_fits_from_240_columns,mapped,,P4
-tests/test_wide.py::test_the_model_keeps_its_version[claude-opus-4-5-20251101-opus 4.5],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_model_keeps_its_version[claude-sonnet-4-5-sonnet 4.5],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_model_keeps_its_version[claude-3-5-sonnet-20241022-sonnet 3.5],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_model_keeps_its_version[claude-sonnet-4-20250514-sonnet 4],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_model_keeps_its_version[claude-haiku-4-5-20251001-haiku 4.5],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_model_keeps_its_version[opus-opus],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_model_keeps_its_version[None-None],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_model_keeps_its_version[some-other-model-some-other-model],tests/test_wide.py,,todo,,P4
+tests/test_wide.py::test_the_model_keeps_its_version[claude-opus-4-5-20251101-opus 4.5],tests/test_wide.py,src/collect/text/tests.rs::the_model_keeps_its_version,mapped,,P4
+tests/test_wide.py::test_the_model_keeps_its_version[claude-sonnet-4-5-sonnet 4.5],tests/test_wide.py,src/collect/text/tests.rs::the_model_keeps_its_version,mapped,,P4
+tests/test_wide.py::test_the_model_keeps_its_version[claude-3-5-sonnet-20241022-sonnet 3.5],tests/test_wide.py,src/collect/text/tests.rs::the_model_keeps_its_version,mapped,,P4
+tests/test_wide.py::test_the_model_keeps_its_version[claude-sonnet-4-20250514-sonnet 4],tests/test_wide.py,src/collect/text/tests.rs::the_model_keeps_its_version,mapped,,P4
+tests/test_wide.py::test_the_model_keeps_its_version[claude-haiku-4-5-20251001-haiku 4.5],tests/test_wide.py,src/collect/text/tests.rs::the_model_keeps_its_version,mapped,,P4
+tests/test_wide.py::test_the_model_keeps_its_version[opus-opus],tests/test_wide.py,src/collect/text/tests.rs::the_model_keeps_its_version,mapped,,P4
+tests/test_wide.py::test_the_model_keeps_its_version[None-None],tests/test_wide.py,src/collect/text/tests.rs::the_model_keeps_its_version,mapped,,P4
+tests/test_wide.py::test_the_model_keeps_its_version[some-other-model-some-other-model],tests/test_wide.py,src/collect/text/tests.rs::the_model_keeps_its_version,mapped,,P4
 tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[44],tests/test_wide.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision, kept by the wide graph in P4), so 'restyle equals a full render' holds by construction; the sweep's lap is pinned by cards/tests.rs::a_sweep_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged",P4
 tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[60],tests/test_wide.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision, kept by the wide graph in P4), so 'restyle equals a full render' holds by construction; the sweep's lap is pinned by cards/tests.rs::a_sweep_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged",P4
 tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[64],tests/test_wide.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision, kept by the wide graph in P4), so 'restyle equals a full render' holds by construction; the sweep's lap is pinned by cards/tests.rs::a_sweep_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged",P4
