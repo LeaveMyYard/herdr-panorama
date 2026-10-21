@@ -42,3 +42,21 @@ fn the_claude_answer_is_one_no_older_binary_prints() {
         assert!(script.contains(r#"[ "$got" = "claude $CLAUDE_CONTRACT" ]"#));
     }
 }
+
+#[test]
+fn a_panel_runs_the_rust_viewer_then_the_venv_then_uv_run() {
+    // test_panels.py::test_viewers_start_from_the_venv_not_uv_run: uv run adds a ~31 MB
+    // parent per panel, so the venv's own entry point comes before it; the Rust viewer first
+    let script = include_str!("../../scripts/panel");
+    let at = |s: &str| script.find(s).unwrap_or_else(|| panic!("{s} missing"));
+    assert!(at(r#"exec "$B" panel"#) < at(r#".venv/bin/panorama" panel"#));
+    assert!(at(r#".venv/bin/panorama" panel"#) < at("exec uv run"));
+    assert_eq!(
+        crate::new_agent::real::PANEL_COMMAND,
+        [
+            "sh",
+            "-c",
+            r#"exec sh "${HERDR_PLUGIN_ROOT:-.}/scripts/panel""#
+        ]
+    );
+}

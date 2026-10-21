@@ -8,8 +8,10 @@ mod clicks;
 mod deep;
 mod dock;
 mod frames;
+mod inbox;
 mod keys;
 mod narrow;
+mod states;
 mod wheel;
 
 use super::*;

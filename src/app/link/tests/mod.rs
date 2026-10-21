@@ -1,4 +1,5 @@
 mod acts;
+mod core;
 mod events;
 mod focus;
 mod panels;
