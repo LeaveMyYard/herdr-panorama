@@ -9,7 +9,12 @@
 //! here and `cli api snapshot` in Python's trace. The format and the rounding are Python's.
 
 use crate::snapshot::pyjson::{J, dumps_line_ascii};
-use herdr_agent_kit::herdr_api::{CallTrace, Herdr, Transport, blocking};
+use herdr_agent_kit::herdr_api::{CallTrace, Transport};
+
+/// panorama's herdr client (the kit's): made only here, so each one is traced.
+pub use herdr_agent_kit::herdr_api::Herdr as HerdrClient;
+/// The blocking one.
+pub use herdr_agent_kit::herdr_api::blocking::Herdr as BlockingHerdrClient;
 use std::io::Write;
 use std::path::PathBuf;
 use std::time::UNIX_EPOCH;
@@ -65,19 +70,19 @@ fn file(var: impl Fn(&str) -> Option<std::ffi::OsString>) -> Option<PathBuf> {
 }
 
 /// panorama's async herdr client of this process's server, traced when asked.
-pub fn client() -> Herdr {
+pub fn client() -> HerdrClient {
     client_from(|n| std::env::var_os(n))
 }
 
 /// The same, blocking.
-pub fn blocking_client() -> blocking::Herdr {
+pub fn blocking_client() -> BlockingHerdrClient {
     client_from(|n| std::env::var_os(n)).blocking()
 }
 
 /// [`client`] over `var` instead of the environment (the server, the binary, the trace file).
-pub fn client_from(var: impl Fn(&str) -> Option<std::ffi::OsString>) -> Herdr {
+pub fn client_from(var: impl Fn(&str) -> Option<std::ffi::OsString>) -> HerdrClient {
     let trace = file(&var);
-    let h = Herdr::resolve(var).with_client("panorama");
+    let h = HerdrClient::resolve(var).with_client("panorama");
     match trace {
         Some(path) => h.with_observer(writer(path)),
         None => h,

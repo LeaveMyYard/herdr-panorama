@@ -127,3 +127,68 @@ async fn panoramas_client_is_traced_exactly_when_the_variable_names_a_file() {
         .ok();
     assert_eq!(std::fs::read_to_string(&path).unwrap().lines().count(), 2);
 }
+
+/// The env a child test process gets: the fake herdr's socket and, when given, a trace file.
+fn child(
+    name: &str,
+    socket: &std::path::Path,
+    trace: Option<&std::path::Path>,
+) -> std::process::Output {
+    let mut cmd = std::process::Command::new(std::env::current_exe().unwrap());
+    cmd.env_clear()
+        .args(["--exact", name, "--ignored", "--test-threads=1"])
+        .env("PATH", "/usr/bin:/bin")
+        .env("HERDR_SOCKET_PATH", socket)
+        .env("HERDR_BIN_PATH", "/nonexistent/herdr");
+    if let Some(t) = trace {
+        cmd.env(VAR, t);
+    }
+    cmd.output().unwrap()
+}
+
+#[test]
+#[ignore = "run by panoramas_own_clients_are_traced in a process of its own"]
+fn child_calls_herdr_through_both_clients() {
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    rt.block_on(async { client().raw("pane.layout", json!({})).await })
+        .unwrap();
+    blocking_client().raw("pane.layout", json!({})).unwrap();
+}
+
+#[test]
+fn panoramas_own_clients_are_traced() {
+    // trace::client() and blocking_client() themselves, reading this process's environment:
+    // run in a child process so the variable is its own, never set in the test runner
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("trace.jsonl");
+    let fake = FakeHerdr::start();
+    fake.on("pane.layout", Reply::Result(json!({})));
+    let name = "trace::tests::child_calls_herdr_through_both_clients";
+    let out = child(name, fake.socket(), None);
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stdout)
+    );
+    assert!(!path.exists(), "traced without the variable");
+    let out = child(name, fake.socket(), Some(&path));
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stdout)
+    );
+    let ops: Vec<String> = std::fs::read_to_string(&path)
+        .unwrap()
+        .lines()
+        .map(|l| {
+            serde_json::from_str::<Value>(l).unwrap()["op"]
+                .as_str()
+                .unwrap()
+                .to_owned()
+        })
+        .collect();
+    assert_eq!(ops, ["socket pane.layout", "socket pane.layout"]);
+}

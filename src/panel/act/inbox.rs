@@ -15,7 +15,7 @@ mod run;
 pub use detect::{DEEP_LINK, before_popup, version};
 pub use run::{Ran, Runner, UvRunner, command};
 
-use herdr_agent_kit::herdr_api::Herdr;
+use crate::trace::HerdrClient;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -54,7 +54,7 @@ impl InboxLink {
             .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
-    async fn info(&self, h: &Herdr, now: Instant) -> Option<InboxInfo> {
+    async fn info(&self, h: &HerdrClient, now: Instant) -> Option<InboxInfo> {
         let cached = self.cache().info.clone();
         if let Some((info, at)) = cached
             && (info.is_some() || now.duration_since(at) < RECHECK)
@@ -88,7 +88,7 @@ impl InboxLink {
     /// Opens the inbox on `question`'s group, else on `pane`'s, else plain. Why it failed.
     pub async fn open(
         &self,
-        h: &Herdr,
+        h: &HerdrClient,
         run: &impl Runner,
         question: Option<i64>,
         pane: Option<&str>,

@@ -2,7 +2,8 @@
 //! cannot switch this herdr to another machine, so the pane is focused on that machine's own
 //! server (in front once herdr shows that machine) and the operator is told where it is.
 
-use herdr_agent_kit::herdr_api::{Herdr, PaneId, clean};
+use crate::trace::HerdrClient;
+use herdr_agent_kit::herdr_api::{PaneId, clean};
 
 /// The notice's title.
 pub const TITLE: &str = "another machine";
@@ -12,7 +13,7 @@ pub use crate::machines::local_id;
 
 /// Focuses `pane` on machine `machine_id` (labelled `machine`); the notice's text.
 pub async fn goto_remote(
-    h: &Herdr,
+    h: &HerdrClient,
     machine_id: &str,
     machine: &str,
     pane: &str,

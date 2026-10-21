@@ -8,7 +8,7 @@ use crate::collect::{Collector, Options};
 use crate::machines::sync::{RsyncSync, mirror_root};
 use crate::machines::{Machine, Refresher, Remotes, Selection, Source, Watcher};
 use crate::settings::durations::{done_window, stale_after};
-use herdr_agent_kit::herdr_api::{Machine as Saved, blocking};
+use herdr_agent_kit::herdr_api::Machine as Saved;
 use herdr_agent_kit::internal::plugin_paths::PANORAMA_ID;
 use herdr_agent_kit::plugin_env::{ConfigFile, PluginEnv};
 use serde_json::{Map, Value};
@@ -17,7 +17,7 @@ use std::sync::{Arc, Mutex, PoisonError};
 /// The setting from panorama's config, the machines from herdr's CLI.
 struct HerdrMachines {
     config: ConfigFile,
-    herdr: blocking::Herdr,
+    herdr: crate::trace::BlockingHerdrClient,
 }
 
 impl Source for HerdrMachines {
@@ -47,7 +47,10 @@ pub fn mirror_options(env: &PluginEnv, state: &std::path::Path, m: &Machine) -> 
 }
 
 /// The done window and stale time, read from the config when a machine's collect runs.
-pub fn windows(env: PluginEnv, herdr: blocking::Herdr) -> Box<dyn FnMut() -> (f64, f64) + Send> {
+pub fn windows(
+    env: PluginEnv,
+    herdr: crate::trace::BlockingHerdrClient,
+) -> Box<dyn FnMut() -> (f64, f64) + Send> {
     let mut config =
         ConfigFile::resolve(&env, || herdr.plugin_config_dir(PANORAMA_ID).ok().flatten());
     Box::new(move || {
@@ -61,7 +64,7 @@ pub fn windows(env: PluginEnv, herdr: blocking::Herdr) -> Box<dyn FnMut() -> (f6
 
 /// Every selected machine's watcher, started: herdr's forwarded snapshot, the rsync mirror
 /// (its done window from the config), the collector over the mirror (no process checks).
-pub fn start(env: &PluginEnv, herdr: blocking::Herdr) -> Remotes {
+pub fn start(env: &PluginEnv, herdr: crate::trace::BlockingHerdrClient) -> Remotes {
     let config = ConfigFile::resolve(env, || herdr.plugin_config_dir(PANORAMA_ID).ok().flatten());
     let keep_window = Arc::new(Mutex::new(windows(env.clone(), herdr.clone())));
     let keep = {

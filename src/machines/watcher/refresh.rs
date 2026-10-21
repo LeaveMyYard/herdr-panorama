@@ -5,7 +5,7 @@
 use crate::machines::mirror::STOPPED;
 use crate::machines::sync::Syncer;
 use crate::machines::{CONTINUE_ROUNDS, Machine, cut, namespace};
-use herdr_agent_kit::herdr_api::{HerdrError, Snapshot, blocking};
+use herdr_agent_kit::herdr_api::{HerdrError, Snapshot};
 use panorama_core::model::Swarm;
 use std::sync::Arc;
 use std::time::Instant;
@@ -24,9 +24,10 @@ pub fn error_text(e: &HerdrError) -> String {
     }
 }
 
-impl SnapshotApi for blocking::Herdr {
+impl SnapshotApi for crate::trace::BlockingHerdrClient {
     fn machine_snapshot(&self, machine_id: &str) -> Result<Snapshot, String> {
-        blocking::Herdr::machine_snapshot(self, machine_id).map_err(|e| error_text(&e))
+        crate::trace::BlockingHerdrClient::machine_snapshot(self, machine_id)
+            .map_err(|e| error_text(&e))
     }
 }
 

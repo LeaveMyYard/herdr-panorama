@@ -29,11 +29,11 @@ use super::no_core::{NO_CORE_CHECK, NoCoreClock};
 use super::paint::Frame;
 use crate::proto::client::{Client, Event};
 use crate::settings::Settings;
+use crate::trace::HerdrClient;
 use crate::ui::pacing::{Pacing, ticking};
 use crate::ui::term::Term;
 use crossterm::event::EventStream;
 use futures_util::StreamExt;
-use herdr_agent_kit::herdr_api::Herdr;
 use std::io;
 use std::mem::ManuallyDrop;
 use std::path::PathBuf;
@@ -63,7 +63,7 @@ pub struct Actor {
     term: ManuallyDrop<Term>,
     events: mpsc::UnboundedReceiver<Event>,
     client: Client,
-    herdr: Herdr,
+    herdr: HerdrClient,
     place: Place,
     inbox: super::act::inbox::InboxLink,
     /// The herdr side's reports, and the sender its tasks get.
@@ -84,7 +84,7 @@ impl Actor {
         term: Term,
         events: mpsc::UnboundedReceiver<Event>,
         client: Client,
-        herdr: Herdr,
+        herdr: HerdrClient,
         place: Place,
     ) -> Self {
         let (done_tx, done_rx) = mpsc::unbounded_channel();

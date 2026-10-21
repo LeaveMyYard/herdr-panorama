@@ -4,7 +4,8 @@
 
 use super::done::Done;
 use crate::panels::{Focus, FocusLog};
-use herdr_agent_kit::herdr_api::{EventKind, Herdr, HerdrEvent};
+use crate::trace::HerdrClient;
+use herdr_agent_kit::herdr_api::{EventKind, HerdrEvent};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::mpsc;
@@ -16,7 +17,7 @@ pub const FOLLOW_DEBOUNCE: Duration = Duration::from_millis(150);
 /// Starts the watcher; it ends when the view is gone (its channel closed). `settled`: a burst
 /// of focus events ended (the panels' pass).
 pub fn spawn(
-    h: Herdr,
+    h: HerdrClient,
     log: Arc<FocusLog>,
     done: mpsc::UnboundedSender<Done>,
     settled: impl Fn() + Send + 'static,

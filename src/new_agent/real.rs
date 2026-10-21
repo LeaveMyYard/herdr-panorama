@@ -3,7 +3,8 @@
 use super::ops::{NewTab, StartOps};
 use crate::panels::Ops;
 use crate::panels::real::RealOps;
-use herdr_agent_kit::herdr_api::{Herdr, PaneId, Sanitized, TabId};
+use crate::trace::HerdrClient;
+use herdr_agent_kit::herdr_api::{PaneId, Sanitized, TabId};
 use serde_json::{Map, Value, json};
 
 /// The panel's command (the manifest's `panel` entrypoint, `scripts/panel`).
@@ -21,7 +22,7 @@ pub const START_TIMEOUT_MS: u32 = 60_000;
 pub const LABEL_MAX: usize = 200;
 
 pub struct RealStart {
-    pub herdr: Herdr,
+    pub herdr: HerdrClient,
     /// The plugin's own variables (`HERDR_PLUGIN_ID`, `_ROOT`, `_STATE_DIR`, `_CONFIG_DIR`)
     /// that are set: the panel's environment.
     pub plugin_env: Vec<(String, String)>,

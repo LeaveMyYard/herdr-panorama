@@ -11,7 +11,6 @@ use crate::collect::paths::{events_dir, hooks_dir};
 use crate::collect::{Collector, Options};
 use crate::settings::durations::{done_window, stale_after};
 use herdr_agent_kit::agent_session::claude::io::ProjectsRoot;
-use herdr_agent_kit::herdr_api::blocking;
 use herdr_agent_kit::internal::inbox_contract::sqlite::open_questions;
 use herdr_agent_kit::internal::plugin_paths::{PANORAMA_ID, inbox};
 use herdr_agent_kit::plugin_env::{ConfigFile, PluginEnv};
@@ -50,7 +49,7 @@ impl Format {
 }
 
 /// herdr's live session snapshot, or `None` when herdr cannot give one.
-pub fn herdr_snapshot(herdr: &blocking::Herdr) -> Option<Value> {
+pub fn herdr_snapshot(herdr: &crate::trace::BlockingHerdrClient) -> Option<Value> {
     let res = herdr.raw("session.snapshot", json!({})).ok()?;
     res.get("snapshot").filter(|s| s.is_object()).cloned()
 }

@@ -3,13 +3,14 @@
 use super::ops::{At, HomeOps};
 use crate::panels::shell::runs_panorama;
 use crate::panels::snap::Snap;
+use crate::trace::HerdrClient;
 use herdr_agent_kit::herdr_api::{
-    Herdr, MoveTo, OpenPluginPane, PaneId, PaneInfo, Placement, Sanitized, TabId, WorkspaceId,
+    MoveTo, OpenPluginPane, PaneId, PaneInfo, Placement, Sanitized, TabId, WorkspaceId,
 };
 use std::path::PathBuf;
 
 pub struct RealHome {
-    pub herdr: Herdr,
+    pub herdr: HerdrClient,
     /// Our plugin id (`HERDR_PLUGIN_ID`, else `leavemyyard.herdr-panorama`).
     pub plugin_id: String,
     /// The plugin's root (`HERDR_PLUGIN_ROOT`): the pane's working directory.

@@ -3,7 +3,8 @@
 //! the connecting process itself (docs/DESIGN.md M2). Any doubt is no (fail closed).
 
 use crate::core::Verify;
-use herdr_agent_kit::herdr_api::{Herdr, PaneId, ProcessInfo};
+use crate::trace::HerdrClient;
+use herdr_agent_kit::herdr_api::{PaneId, ProcessInfo};
 use std::path::Path;
 
 /// Whether `info` shows `panorama <command>` as process `pid` itself (`panel` for a viewer:
@@ -19,7 +20,7 @@ pub fn runs_as(info: &ProcessInfo, command: &str, pid: i32) -> bool {
 }
 
 /// herdr's word on a viewer's pane.
-pub struct HerdrVerify(pub Herdr);
+pub struct HerdrVerify(pub HerdrClient);
 
 impl Verify for HerdrVerify {
     async fn verify(&self, pane: &str, pid: i32) -> bool {

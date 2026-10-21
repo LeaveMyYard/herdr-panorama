@@ -25,7 +25,7 @@ use crate::panel::actor::Place;
 use crate::panels::real::RealOps;
 use crate::panels::{FocusLog, Manager};
 use crate::settings::Settings;
-use herdr_agent_kit::herdr_api::Herdr;
+use crate::trace::HerdrClient;
 use herdr_agent_kit::internal::plugin_paths::PANORAMA_ID;
 use herdr_agent_kit::internal::plugin_paths::panorama::{
     core_lock_path, core_socket_path, home_lock_path, session_key, state_dir,
@@ -65,7 +65,7 @@ pub enum LinkEvent {
 
 /// The home view's link to herdr, the core and the panels.
 pub struct Link {
-    herdr: Herdr,
+    herdr: HerdrClient,
     home_mode: bool,
     /// The view's own pane (the home pane).
     pub my_pane: Option<String>,
@@ -136,7 +136,7 @@ impl Link {
 
     /// A link without a core or panels (a popup, a test).
     pub fn bare(
-        herdr: Herdr,
+        herdr: HerdrClient,
         home_mode: bool,
         my_pane: Option<String>,
         place: Place,

@@ -1,6 +1,6 @@
 //! `PANORAMA_TRACE` in a real process: `panorama snapshot` (the blocking client) traces its
-//! herdr call; and no herdr client in panorama's own code is made outside `src/trace.rs`, so
-//! every call can be traced.
+//! herdr call; and the kit's client types are named only in `src/trace.rs`, so every client
+//! panorama makes comes from `trace::client` or `blocking_client`.
 
 mod collect_support;
 
@@ -66,16 +66,18 @@ fn sources(dir: &Path, out: &mut Vec<PathBuf>) {
 }
 
 #[test]
-fn no_herdr_client_is_made_outside_trace() {
+fn no_herdr_client_is_named_outside_trace() {
+    // the kit's client types (`Herdr`, `blocking::Herdr`) appear only in src/trace.rs: anywhere
+    // else, even under an alias in a `use`, a client could be made untraced
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
     let mut files = vec![];
     sources(&root, &mut files);
     assert!(files.len() > 50, "the scan reads panorama's sources");
-    let made = ["Herdr::from_env(", "Herdr::new(", "Herdr::resolve("];
+    let word = regex::Regex::new(r"\bHerdr\b").unwrap();
     let mut found = vec![];
-    for f in files.iter().filter(|f| !f.ends_with("trace.rs")) {
+    for f in files.iter().filter(|f| **f != root.join("trace.rs")) {
         for (n, line) in std::fs::read_to_string(f).unwrap().lines().enumerate() {
-            if made.iter().any(|m| line.contains(m)) {
+            if word.is_match(line) {
                 found.push(format!(
                     "{}:{}: {}",
                     f.strip_prefix(&root).unwrap().display(),
@@ -87,7 +89,7 @@ fn no_herdr_client_is_made_outside_trace() {
     }
     assert!(
         found.is_empty(),
-        "make herdr clients with trace::client / blocking_client:\n{}",
+        "use crate::trace::{{HerdrClient, BlockingHerdrClient}} and trace::client():\n{}",
         found.join("\n")
     );
 }
