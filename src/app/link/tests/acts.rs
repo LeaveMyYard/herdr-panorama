@@ -1,8 +1,8 @@
 //! The input's herdr side for the app: going to a pane, the inbox, + New agent, zoom.
 
 use super::{done, link, quiet};
-use crate::app::link::Done;
 use crate::app::link::acts::NEW_AGENT_MIN_WIDTH;
+use crate::app::link::{Done, Link};
 use herdr_agent_kit::herdr_api::fake::{FakeHerdr, Reply};
 use serde_json::json;
 
@@ -175,5 +175,44 @@ async fn the_forms_start_reports_its_end() {
     assert!(
         fake.requests().is_empty(),
         "refused before herdr is asked anything"
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_forms_start_reads_per_tab_mode_from_the_config() {
+    // per-tab (cockpit = true): the tab is built with its panel (layout.apply); else a plain
+    // tab (tab.create). The config is read at each start.
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    fake.on(
+        "agent.get",
+        Reply::error("agent_not_found", "agent not found"),
+    );
+    fake.on("layout.apply", Reply::error("boom", "no layout"));
+    fake.on("tab.create", Reply::error("boom", "no tab"));
+    let cfg = dir.path().join("cfg");
+    std::fs::create_dir_all(&cfg).unwrap();
+    let mut home = link(&fake, true, dir.path());
+    home.settings = Some(std::sync::Arc::new(std::sync::Mutex::new(
+        crate::settings::Settings::new(Some(cfg.clone()), dir.path().join("herdr"), "p"),
+    )));
+    let start = |l: &mut Link| l.start_agent("docs".into(), None, "claude");
+    start(&mut home);
+    assert!(matches!(done(&mut home).await, Done::Started(Err(_))));
+    assert_eq!(
+        (
+            fake.params_of("layout.apply").len(),
+            fake.params_of("tab.create").len()
+        ),
+        (0, 1)
+    );
+    std::fs::write(cfg.join("config.toml"), "cockpit = true\n").unwrap();
+    start(&mut home);
+    assert!(matches!(done(&mut home).await, Done::Started(Err(_))));
+    assert_eq!(
+        (
+            fake.params_of("layout.apply").len(),
+            fake.params_of("tab.create").len()
+        ),
+        (1, 1)
     );
 }

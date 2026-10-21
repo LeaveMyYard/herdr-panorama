@@ -213,3 +213,116 @@ fn the_form_opens_on_the_default_directory_and_esc_returns_to_the_view() {
     assert_eq!(after.text(), shown.text(), "no modal over the view");
     assert!(!after.targets.is_empty(), "the view takes clicks again");
 }
+
+mod routing {
+    //! While the modal is open every key and click is the modal's: typing a name that holds
+    //! the view's keys (`q`, `n`, `f`, `i`) never quits, filters or opens anything.
+    use super::*;
+    use crossterm::event::{
+        Event, KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind,
+    };
+
+    fn key(c: KeyCode) -> Event {
+        Event::Key(KeyEvent::new(c, KeyModifiers::NONE))
+    }
+
+    fn mouse(kind: MouseEventKind, x: u16, y: u16) -> Event {
+        Event::Mouse(MouseEvent {
+            kind,
+            column: x,
+            row: y,
+            modifiers: KeyModifiers::NONE,
+        })
+    }
+
+    #[test]
+    fn typing_quinn_names_the_agent_and_never_quits_the_view() {
+        let (mut r, now) = opened("/work");
+        let (sel, filter) = (format!("{:?}", r.sel()), r.d.app.view.filter);
+        for c in "quinnfi".chars() {
+            assert_eq!(
+                r.d.modal_input(&key(KeyCode::Char(c)), now),
+                Some(FormStep::Repaint),
+                "{c}"
+            );
+        }
+        assert_eq!(r.d.form.as_ref().unwrap().form.name.value, "quinnfi");
+        assert_eq!(
+            (format!("{:?}", r.sel()), r.d.app.view.filter),
+            (sel, filter)
+        );
+        // a key the form does not read is still the modal's
+        assert_eq!(
+            r.d.modal_input(&key(KeyCode::F(5)), now),
+            Some(FormStep::Nothing)
+        );
+        assert_eq!(
+            r.d.modal_input(&key(KeyCode::Esc), now),
+            Some(FormStep::Closed)
+        );
+        // closed: the view's again
+        assert_eq!(r.d.modal_input(&key(KeyCode::Char('q')), now), None);
+    }
+
+    #[test]
+    fn the_pointer_never_reaches_the_view_behind() {
+        let (mut r, now) = opened("/work");
+        let at = r.spot(&orch("w1:p2")).expect("drawn");
+        let mut frame = r.d.shown().unwrap().clone();
+        r.d.form_over(&mut frame);
+        let sel = format!("{:?}", r.sel());
+        let (x, y) = (at.0 as u16, at.1 as u16);
+        for kind in [
+            MouseEventKind::Down(MouseButton::Left),
+            MouseEventKind::Down(MouseButton::Right),
+            MouseEventKind::ScrollDown,
+            MouseEventKind::ScrollRight,
+            MouseEventKind::Moved,
+        ] {
+            assert_eq!(
+                r.d.modal_input(&mouse(kind, x, y), now),
+                Some(FormStep::Nothing),
+                "{kind:?}"
+            );
+        }
+        assert_eq!(format!("{:?}", r.sel()), sel);
+        let (w, h) = WIDE;
+        let open = &r.d.form.as_ref().unwrap().form;
+        let modal = panorama_core::view::new_agent::render(&open.form(&open.view()), w, h);
+        let next = modal.steps.iter().find(|s| s.d == 1).unwrap();
+        let right = mouse(
+            MouseEventKind::Down(MouseButton::Right),
+            next.x as u16,
+            next.y as u16,
+        );
+        assert_eq!(
+            r.d.modal_input(&right, now),
+            Some(FormStep::Nothing),
+            "a left click only, as the view's"
+        );
+        let click = mouse(
+            MouseEventKind::Down(MouseButton::Left),
+            next.x as u16,
+            next.y as u16,
+        );
+        assert_eq!(
+            r.d.modal_input(&click, now),
+            Some(FormStep::Repaint),
+            "its own carousel"
+        );
+        // a resize or focus change is the view's even with the modal open
+        assert_eq!(r.d.modal_input(&Event::Resize(80, 24), now), None);
+        assert_eq!(r.d.modal_input(&Event::FocusLost, now), None);
+    }
+
+    #[test]
+    fn with_no_modal_every_event_is_the_views() {
+        let mut r = Run::demo("w1:p1", WIDE);
+        let now = r.settled();
+        assert_eq!(r.d.modal_input(&key(KeyCode::Char('q')), now), None);
+        assert_eq!(
+            r.d.modal_input(&mouse(MouseEventKind::Down(MouseButton::Left), 1, 1), now),
+            None
+        );
+    }
+}

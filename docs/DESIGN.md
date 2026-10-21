@@ -927,7 +927,7 @@ an inbox question; otherwise `g`), `i` inbox, `f` cycle filter, `?` help,
 - pane `panorama`: `placement = "popup"`, `width = "100%"`, `height = "100%"`
   (the design's full-screen overlay; popups are session-modal and leave the
   layout untouched);
-- pane `new-agent`: `placement = "popup"`, 84×26 cells, the `+ New agent` form
+- pane `new-agent`: `placement = "popup"`, 84×30 cells, the `+ New agent` form
   alone for panes too narrow for it;
 - action `open` (popup) and action `open-split` (`herdr plugin pane open
   --placement split --direction right`, the design's 70-column side split);

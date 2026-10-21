@@ -4,8 +4,10 @@
 
 use super::driver::Driver;
 use crate::new_agent::form::{FormKey, NewAgentForm, Outcome};
+use crate::new_agent::keys::form_key;
 use crate::new_agent::overlay::over;
 use crate::ui::input::Toast;
+use crossterm::event::{Event, MouseButton, MouseEventKind};
 use panorama_core::view::Screen;
 use panorama_core::view::new_agent::{Modal, render};
 use std::time::Instant;
@@ -54,6 +56,25 @@ impl Driver {
             }
             Outcome::Start { name, cwd, kind } => FormStep::Start { name, cwd, kind },
         }
+    }
+
+    /// A terminal event while the modal is open: its keys and left clicks go to the form, the
+    /// rest of the pointer to nothing, so none reaches the view behind (`Some`, what the modal
+    /// did). `None` while no modal is open, or for an event that is no key or pointer (a
+    /// resize, focus): the view's then.
+    pub fn modal_input(&mut self, ev: &Event, now: Instant) -> Option<FormStep> {
+        self.form.as_ref()?;
+        Some(match ev {
+            Event::Key(k) => match form_key(*k) {
+                Some(k) => self.form_key(k, now),
+                None => FormStep::Nothing,
+            },
+            Event::Mouse(m) if m.kind == MouseEventKind::Down(MouseButton::Left) => {
+                self.form_click(i32::from(m.column), i32::from(m.row))
+            }
+            Event::Mouse(_) => FormStep::Nothing,
+            _ => return None,
+        })
     }
 
     /// A key while the modal is open.
