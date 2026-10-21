@@ -1,6 +1,6 @@
 //! The terminal (plan §2.6): ratatui over crossterm, which sends only the cells that changed.
 //! A [`Screen`] is copied into the frame's buffer at the edge. The terminal is set up for the
-//! panel (alternate screen, raw mode, any-motion SGR mouse, focus reports) and always put back,
+//! view (alternate screen, raw mode, any-motion SGR mouse, focus reports) and always put back,
 //! on a panic too.
 
 use panorama_core::view::palette::BG;
@@ -18,7 +18,7 @@ use ratatui::layout::Position;
 use ratatui::style::{Color, Modifier};
 use std::io::{self, Stdout};
 
-/// The panel's terminal.
+/// A view's terminal (the panel's or the app's).
 pub type Term = ratatui::Terminal<CrosstermBackend<Stdout>>;
 
 fn colour(c: Rgb) -> Color {
@@ -81,11 +81,11 @@ pub fn hung_up() -> bool {
     }
 }
 
-/// Sets the terminal up for the panel.
+/// Sets the terminal up for a view.
 pub fn setup() -> io::Result<Term> {
     enable_raw_mode()?;
     // the screen is cleared directly: ratatui's `clear` asks the terminal where its cursor is,
-    // and a pane that never answers would make the panel fail at start
+    // and a pane that never answers would make the view fail at start
     execute!(
         io::stdout(),
         EnterAlternateScreen,

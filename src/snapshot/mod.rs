@@ -61,12 +61,14 @@ pub fn now() -> f64 {
         .map_or(0.0, |d| d.as_secs_f64())
 }
 
-/// One collect of this machine's swarm, as the CLI builds it.
-pub fn build(env: &PluginEnv) -> Swarm {
+/// This machine's swarm, collected on each call by one collector kept across the calls (the
+/// app refreshes with it; `panorama snapshot` calls it once). The config is read again on
+/// each (it is cached until it changes). `self_pane`: the view's own pane, whose tab's agent
+/// is the one it is docked by.
+pub fn source(env: PluginEnv, self_pane: Option<String>) -> impl FnMut() -> Swarm {
     let herdr = blocking::Herdr::from_env().with_client("panorama");
     let mut config =
-        ConfigFile::resolve(env, || herdr.plugin_config_dir(PANORAMA_ID).ok().flatten());
-    let cfg: Map<String, Value> = config.load_as().unwrap_or_default();
+        ConfigFile::resolve(&env, || herdr.plugin_config_dir(PANORAMA_ID).ok().flatten());
     // no home at all: a relative "~/.claude/projects", which holds nothing (as Python's
     // expanduser leaves "~" when it finds no home)
     let projects = ProjectsRoot::from_env().map_or_else(
@@ -76,22 +78,31 @@ pub fn build(env: &PluginEnv) -> Swarm {
     let lookup = herdr.clone();
     let mut collector = Collector::new(Options {
         projects,
-        events_dir: events_dir(env),
-        hooks_dir: hooks_dir(env),
+        events_dir: events_dir(&env),
+        hooks_dir: hooks_dir(&env),
         procs: true,
         pane_pid: Box::new(move |pane| claude_pid(&lookup, pane)),
     });
-    let snapshot = herdr_snapshot(&herdr);
-    let questions = open_questions(&inbox::db_path(env));
-    let window = done_window(env.var("PANORAMA_DONE_WINDOW"), &cfg);
-    let stale = stale_after(env.var("PANORAMA_STALE_AFTER"), &cfg);
-    collector.collect(
-        snapshot.as_ref(),
-        questions.as_deref(),
-        now(),
-        window,
-        stale,
-    )
+    collector.self_pane = self_pane;
+    move || {
+        let cfg: Map<String, Value> = config.load_as().unwrap_or_default();
+        let snapshot = herdr_snapshot(&herdr);
+        let questions = open_questions(&inbox::db_path(&env));
+        let window = done_window(env.var("PANORAMA_DONE_WINDOW"), &cfg);
+        let stale = stale_after(env.var("PANORAMA_STALE_AFTER"), &cfg);
+        collector.collect(
+            snapshot.as_ref(),
+            questions.as_deref(),
+            now(),
+            window,
+            stale,
+        )
+    }
+}
+
+/// One collect of this machine's swarm, as the CLI builds it.
+pub fn build(env: &PluginEnv) -> Swarm {
+    source(env.clone(), None)()
 }
 
 /// The text `panorama snapshot` prints in `format`, after `seconds` of collecting.

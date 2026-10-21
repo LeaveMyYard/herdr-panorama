@@ -1,5 +1,5 @@
 //! A panic in one of the herdr side's tasks (Python's workers caught everything into an
-//! error): caught and reported, so the panel keeps its terminal and a switch never stays
+//! error): caught and reported, so the view keeps its terminal and a switch never stays
 //! "running". The panic hook asks [`in_task`] and leaves such a panic to the task.
 
 use std::cell::Cell;

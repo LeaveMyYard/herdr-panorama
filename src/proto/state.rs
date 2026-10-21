@@ -40,6 +40,17 @@ fn cleaned(v: &Value) -> Value {
     }
 }
 
+/// `swarm` with every string cleaned, as a state's swarm is read: the app draws its own
+/// collector's swarm, which no state message carried. Its `docked` is kept.
+pub fn cleaned_swarm(swarm: Swarm) -> Swarm {
+    let docked = swarm.docked.clone();
+    let read = serde_json::to_value(&swarm).and_then(|v| serde_json::from_value(cleaned(&v)));
+    // a swarm always writes and reads back; were it not to, nothing unclean is drawn
+    let mut out: Swarm = read.unwrap_or_default();
+    out.docked = docked;
+    out
+}
+
 fn strings(v: &Value) -> impl Iterator<Item = String> + '_ {
     v.as_array()
         .into_iter()

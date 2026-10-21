@@ -275,12 +275,12 @@ async fn a_crash_marker_wins_over_a_connected_viewer() {
     pass(&mut m, &w, &sw, &[&p], false).await;
     let state = dir.path().join("state");
     std::fs::create_dir_all(&state).unwrap();
-    crate::panel::crash::mark(&state, Some(&p), "boom", "now"); // died of an error after connecting
-    assert!(crate::panel::crash::marker(&state, &p).exists());
+    crate::ui::crash::mark(&state, Some(&p), "boom", "now"); // died of an error after connecting
+    assert!(crate::ui::crash::marker(&state, &p).exists());
     *w.s().tab("w1:t2") = vec![agent("w1:p2")];
     pass(&mut m, &w, &sw, &[], false).await;
     assert!(m.closed().is_empty());
-    assert!(!crate::panel::crash::marker(&state, &p).exists(), "used up");
+    assert!(!crate::ui::crash::marker(&state, &p).exists(), "used up");
 }
 
 #[tokio::test]
@@ -366,7 +366,7 @@ async fn a_crash_marker_that_cannot_be_removed_still_counts_as_a_crash() {
     pass(&mut m, &w, &sw, &[], true).await;
     let p = w.order("w1:t2")[0].clone();
     pass(&mut m, &w, &sw, &[&p], false).await;
-    let marker = crate::panel::crash::marker(&dir.path().join("state"), &p);
+    let marker = crate::ui::crash::marker(&dir.path().join("state"), &p);
     std::fs::create_dir_all(&marker).unwrap(); // a directory: remove_file fails, not NotFound
     *w.s().tab("w1:t2") = vec![agent("w1:p2")];
     pass(&mut m, &w, &sw, &[], false).await;

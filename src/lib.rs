@@ -21,3 +21,4 @@ pub mod report;
 pub mod settings;
 pub mod snapshot;
 pub mod ui;
+pub mod unseen;

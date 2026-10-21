@@ -203,7 +203,7 @@ tests/test_core.py::test_messages_before_hello_close_the_connection,tests/test_c
 tests/test_core.py::test_the_client_queues_seen_while_the_core_is_away,tests/test_core.py,tests/proto_client.rs::the_client_reconnects_after_the_core_goes_and_flushes_queued_seen ; tests/proto_client.rs::hello_welcome_state_and_the_viewers_messages,mapped,,P3
 tests/test_core.py::test_the_panel_renders_its_tab_exactly_like_the_docked_panel,tests/test_core.py,tests/panel_screens.rs::the_panels_screens_are_pythons ; src/panel/model/tests.rs::the_docked_entry_is_this_tabs_and_the_selected_row_the_shown_one,mapped,,P3
 tests/test_core.py::test_a_panel_without_a_core_acts_on_nothing,tests/test_core.py,src/panel/input/actions/tests.rs::nothing_acts_before_the_keys_are_armed_or_without_a_core,mapped,,P3
-tests/test_core.py::test_a_hidden_tabs_panel_draws_no_frames,tests/test_core.py,src/panel/pacing/tests.rs::a_hidden_tab_or_a_still_screen_never_ticks ; src/panel/model/tests.rs::the_docked_entry_is_this_tabs_and_the_selected_row_the_shown_one ; src/panel/clock/tests.rs::the_animation_time_is_the_wall_clock_in_quarter_seconds,mapped,,P3
+tests/test_core.py::test_a_hidden_tabs_panel_draws_no_frames,tests/test_core.py,src/ui/pacing/tests.rs::a_hidden_tab_or_a_still_screen_never_ticks ; src/panel/model/tests.rs::the_docked_entry_is_this_tabs_and_the_selected_row_the_shown_one ; src/ui/clock/tests.rs::the_animation_time_is_the_wall_clock_in_quarter_seconds,mapped,,P3
 tests/test_core.py::test_the_panels_focus_look_follows_the_cores_focused_pane,tests/test_core.py,src/panel/model/tests.rs::the_focus_look_follows_herdrs_focus_and_the_terminals ; crates/panorama-core/tests/design_goldens.rs::design_10_focused_and_not_in_two_themes_cell_for_cell,mapped,,P3
 tests/test_core.py::test_the_home_panorama_publishes_each_refresh_and_takes_seen_back,tests/test_core.py,,todo,,P4
 tests/test_core.py::test_the_line_reader_is_linear_and_one_read_reports_seen_once,tests/test_core.py,tests/core_server.rs::one_read_reports_seen_once ; src/proto/framing/tests.rs::a_feed_splits_its_lines_once,mapped,,P4
@@ -581,8 +581,8 @@ tests/test_panel_click.py::test_a_click_anywhere_on_a_panel_keeps_it_open[True],
 tests/test_panel_click.py::test_a_click_anywhere_on_a_panel_keeps_it_open[False],tests/test_panel_click.py,src/panel/input/mouse/tests.rs::a_click_anywhere_on_a_panel_acts_only_with_a_core_and_never_closes_it,mapped,,P3
 tests/test_panel_click.py::test_the_panel_overrides_no_method_with_another_signature,tests/test_panel_click.py,,retired,Pins Python method signatures shared between PanelApp and SwarmApp subclasses; Rust's type checker rules this class out.,P3
 tests/test_panel_click.py::test_no_attribute_shadows_a_textual_member,tests/test_panel_click.py,,retired,Pins Textual DOMNode attribute shadowing; the Rust panel has no Textual base class.,P3
-tests/test_panel_click.py::test_a_crash_leaves_its_traceback_next_to_the_marker,tests/test_panel_click.py,src/panel/crash/tests.rs::a_crash_leaves_the_marker_and_the_errors_end ; src/panel/crash/tests.rs::the_hook_marks_a_crash_but_leaves_a_tasks_panic_to_the_task,mapped,,P3
-tests/test_panel_click.py::test_the_crash_log_is_bounded_in_bytes,tests/test_panel_click.py,src/panel/crash/tests.rs::a_crash_leaves_the_marker_and_the_errors_end,mapped,,P3
+tests/test_panel_click.py::test_a_crash_leaves_its_traceback_next_to_the_marker,tests/test_panel_click.py,src/ui/crash/tests.rs::a_crash_leaves_the_marker_and_the_errors_end ; src/ui/crash/tests.rs::the_hook_marks_a_crash_but_leaves_a_tasks_panic_to_the_task,mapped,,P3
+tests/test_panel_click.py::test_the_crash_log_is_bounded_in_bytes,tests/test_panel_click.py,src/ui/crash/tests.rs::a_crash_leaves_the_marker_and_the_errors_end,mapped,,P3
 tests/test_panel_click.py::test_mark_crash_never_raises_on_an_unencodable_message,tests/test_panel_click.py,,retired,Pins Python's surrogate-escape encoding of the crash log; Rust strings are always valid UTF-8.,P3
 tests/test_panel_filter.py::test_the_core_passes_a_panels_filter_on,tests/test_panel_filter.py,tests/core_server.rs::focusing_counts_only_from_a_verified_panel_and_filters_only_from_panels,mapped,,P4
 tests/test_panel_filter.py::test_the_state_carries_the_filter_and_the_version_says_so,tests/test_panel_filter.py,,todo,,P4
@@ -684,7 +684,7 @@ tests/test_render.py::test_question_and_blocked_detail_lines,tests/test_render.p
 tests/test_render.py::test_explicit_thread_shows_pct_and_worktree,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::an_explicit_thread_shows_its_pct_and_worktree,mapped,,P4
 tests/test_render.py::test_nav_lists_identities_per_column,tests/test_render.py,crates/panorama-core/tests/narrow_layout.rs::nav_lists_identities_per_column,mapped,,P3
 tests/test_render.py::test_filters,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::filters,mapped,,P4
-tests/test_render.py::test_untrusted_text_is_stripped_of_control_characters,tests/test_render.py,,todo,,P4
+tests/test_render.py::test_untrusted_text_is_stripped_of_control_characters,tests/test_render.py,src/app/paint/tests.rs::untrusted_text_is_stripped_of_control_characters,mapped,,P4
 tests/test_render.py::test_empty_and_unreachable_states,tests/test_render.py,crates/panorama-core/tests/empty_pages.rs::herdr_down_shows_the_retry_page ; crates/panorama-core/tests/empty_pages.rs::no_sessions_at_panel_width,mapped,,P3
 tests/test_render.py::test_long_columns_scroll_to_keep_the_selection_visible,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::long_columns_scroll_to_keep_the_selection_visible,mapped,,P4
 tests/test_render.py::test_inferred_and_lost_agents_are_marked,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::inferred_and_lost_agents_are_marked,mapped,,P4
@@ -1060,19 +1060,19 @@ tests/test_unseen.py::test_2a_pulses_the_same_cells_in_the_same_colours_as_the_d
 tests/test_unseen.py::test_2a_pulses_the_same_cells_in_the_same_colours_as_the_design[6],tests/test_unseen.py,crates/panorama-core/tests/design_unseen.rs::design_6_the_2a_graph_pulses_like_the_design,mapped,,P4
 tests/test_unseen.py::test_2a_pulses_the_same_cells_in_the_same_colours_as_the_design[9],tests/test_unseen.py,crates/panorama-core/tests/design_unseen.rs::design_6_the_2a_graph_pulses_like_the_design,mapped,,P4
 tests/test_unseen.py::test_the_pulse_is_slow_and_never_off,tests/test_unseen.py,crates/panorama-core/src/view/anim/tests.rs::the_pulse_is_slow_and_never_off ; crates/panorama-core/src/view/moving/tests.rs::still_unless_something_moves,mapped,,P3
-tests/test_unseen.py::test_the_first_look_marks_nothing_then_changes_are_events,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_most_urgent_wins_and_an_answered_question_clears,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_marks_survive_a_restart_and_are_shared_by_every_panorama,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_what_happened_while_panorama_was_closed_counts,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_focus_moving_onto_the_orchestrator_pane_clears_its_marks,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_review_probe_a_failure_under_resting_focus_is_kept,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_review_probe_the_first_refresh_after_start_never_clears_by_focus,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_review_probe_the_cockpit_focus_on_the_docked_agent_is_not_looking,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_remote_agents_are_keyed_by_machine_in_the_state_file,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_turned_off_marks_nothing,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_a_busy_lock_keeps_the_seen_mark_until_it_is_written,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_a_broken_state_file_starts_over,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_old_agents_are_forgotten,tests/test_unseen.py,,todo,,P4
+tests/test_unseen.py::test_the_first_look_marks_nothing_then_changes_are_events,tests/test_unseen.py,src/unseen/tests.rs::the_first_look_marks_nothing_then_changes_are_events,mapped,,P4
+tests/test_unseen.py::test_most_urgent_wins_and_an_answered_question_clears,tests/test_unseen.py,src/unseen/tests.rs::most_urgent_wins_and_an_answered_question_clears ; src/unseen/rules/tests.rs::events_and_urgency,mapped,,P4
+tests/test_unseen.py::test_marks_survive_a_restart_and_are_shared_by_every_panorama,tests/test_unseen.py,src/unseen/tests.rs::marks_survive_a_restart_and_are_shared_by_every_panorama,mapped,,P4
+tests/test_unseen.py::test_what_happened_while_panorama_was_closed_counts,tests/test_unseen.py,src/unseen/tests.rs::what_happened_while_panorama_was_closed_counts,mapped,,P4
+tests/test_unseen.py::test_focus_moving_onto_the_orchestrator_pane_clears_its_marks,tests/test_unseen.py,src/unseen/tests.rs::focus_moving_onto_the_orchestrator_pane_clears_its_marks,mapped,,P4
+tests/test_unseen.py::test_review_probe_a_failure_under_resting_focus_is_kept,tests/test_unseen.py,src/unseen/tests.rs::review_probe_a_failure_under_resting_focus_is_kept,mapped,,P4
+tests/test_unseen.py::test_review_probe_the_first_refresh_after_start_never_clears_by_focus,tests/test_unseen.py,src/unseen/tests.rs::review_probe_the_first_refresh_after_start_never_clears_by_focus,mapped,,P4
+tests/test_unseen.py::test_review_probe_the_cockpit_focus_on_the_docked_agent_is_not_looking,tests/test_unseen.py,src/unseen/tests.rs::review_probe_the_cockpit_focus_on_the_docked_agent_is_not_looking,mapped,,P4
+tests/test_unseen.py::test_remote_agents_are_keyed_by_machine_in_the_state_file,tests/test_unseen.py,src/unseen/tests.rs::remote_agents_are_keyed_by_machine_in_the_state_file,mapped,,P4
+tests/test_unseen.py::test_turned_off_marks_nothing,tests/test_unseen.py,src/unseen/tests.rs::turned_off_marks_nothing,mapped,,P4
+tests/test_unseen.py::test_a_busy_lock_keeps_the_seen_mark_until_it_is_written,tests/test_unseen.py,src/unseen/tests.rs::a_busy_lock_keeps_the_seen_mark_until_it_is_written,mapped,,P4
+tests/test_unseen.py::test_a_broken_state_file_starts_over,tests/test_unseen.py,src/unseen/tests.rs::a_broken_state_file_starts_over ; src/unseen/store/tests.rs::a_file_that_is_not_the_format_reads_as_none,mapped,,P4
+tests/test_unseen.py::test_old_agents_are_forgotten,tests/test_unseen.py,src/unseen/tests.rs::old_agents_are_forgotten,mapped,,P4
 tests/test_unseen.py::test_click_enter_and_go_to_pane_mark_seen,tests/test_unseen.py,,todo,,P4
 tests/test_unseen.py::test_a_finished_card_clears_its_folded_agents,tests/test_unseen.py,,todo,,P4
 tests/test_unseen.py::test_review_l2_the_state_file_is_read_and_written_off_the_ui_thread,tests/test_unseen.py,,todo,,P4
@@ -1134,3 +1134,4 @@ tests/test_panel_keys.py::test_one_click_still_obeys_arming_and_identity,tests/t
 tests/test_panel_keys.py::test_the_2a_graph_keeps_select_first,tests/test_panel_keys.py,,todo,,P4
 tests/test_panel_keys.py::test_no_graph_flash_while_a_switch_runs,tests/test_panel_keys.py,,todo,,P4
 tests/test_panel_keys.py::test_a_switch_that_ends_judges_the_focus_again,tests/test_panel_keys.py,,todo,,P4
+tests/test_cockpit.py::test_the_cores_open_key_follows_the_home_panes_new_id,tests/test_cockpit.py,,todo,,P4

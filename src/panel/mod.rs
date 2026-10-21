@@ -9,23 +9,21 @@
 //!
 //! - [`model`]: the panel's state as the core's messages change it;
 //! - [`paint`]: a frame of it;
-//! - [`actor`]: the event loop; [`term`]: the terminal; [`clock`]; [`crash`].
+//! - [`actor`]: the event loop; the terminal, the clocks and the crash marker are
+//!   [`crate::ui`]'s, shared with the app.
 
 pub mod act;
 pub mod actor;
-pub mod clock;
-pub mod crash;
 pub mod input;
 pub mod model;
 pub mod no_core;
-pub mod pacing;
 pub mod paint;
-pub mod term;
 pub mod toast;
 
 use crate::proto::client::{BACKOFF, Client, Config};
 use crate::proto::socket;
 use crate::settings::Settings;
+use crate::ui::{clock, crash, term};
 use actor::Actor;
 use herdr_agent_kit::herdr_api::Herdr;
 use herdr_agent_kit::internal::plugin_paths::PANORAMA_ID;
