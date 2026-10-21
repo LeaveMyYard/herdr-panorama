@@ -9,6 +9,7 @@ mod deep;
 mod frames;
 mod keys;
 mod narrow;
+mod phase;
 mod wheel;
 
 use super::*;

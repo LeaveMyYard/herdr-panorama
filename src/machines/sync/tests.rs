@@ -224,3 +224,29 @@ fn two_ids_with_one_mirror_share_its_lock() {
     }
     assert_eq!(peak.load(Ordering::SeqCst), 1);
 }
+
+#[test]
+fn the_remote_mirror_names_sessions_in_lowercase_once() {
+    // tests/test_bridge_rules.py: the rsync rules and the prune bookkeeping get each id
+    // canonical, once (both take the same list)
+    let hex = "0e4a6b1c-9d2f-4a3b-8c7d-1e2f3a4b5c6d";
+    let given = [
+        hex.to_uppercase(),
+        hex.to_owned(),
+        "../x".to_owned(),
+        SID.to_owned(),
+    ];
+    assert_eq!(canonical(&given), [hex, SID]);
+    let dir = scratch("sync-lowercase");
+    let (s, calls) = recording(&dir.path().join("state"), true);
+    s.sync(&devbox(), &given, &|| false);
+    let first = calls.lock().unwrap()[0].clone();
+    assert!(
+        !first.iter().any(|a| a.contains(&hex.to_uppercase())),
+        "{first:?}"
+    );
+    assert_eq!(
+        first.iter().filter(|a| a.contains(hex)).count(),
+        first.iter().filter(|a| a.contains(SID)).count()
+    );
+}

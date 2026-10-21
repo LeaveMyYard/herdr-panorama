@@ -1,6 +1,6 @@
 python_test_id,python_file,rust_test,status,retired_reason,phase
-tests/test_anim_sync.py::test_two_windows_started_apart_show_the_same_phase,tests/test_anim_sync.py,,todo,,P4
-tests/test_anim_sync.py::test_a_panel_and_the_home_view_share_the_frame,tests/test_anim_sync.py,,todo,,P4
+tests/test_anim_sync.py::test_two_windows_started_apart_show_the_same_phase,tests/test_anim_sync.py,src/app/driver/tests/phase.rs::two_windows_started_apart_show_the_same_phase ; src/ui/clock/tests.rs::the_animation_time_is_the_wall_clock_in_quarter_seconds,mapped,,P4
+tests/test_anim_sync.py::test_a_panel_and_the_home_view_share_the_frame,tests/test_anim_sync.py,src/app/driver/tests/phase.rs::a_panel_and_the_home_view_share_the_frame,mapped,,P4
 tests/test_anim_sync.py::test_colour_glides_stay_smooth_at_wall_clock_frames,tests/test_anim_sync.py,crates/panorama-core/src/view/anim/tests.rs::colour_glides_stay_smooth_at_wall_clock_frames,mapped,,P3
 tests/test_background.py::test_a_background_bash_is_open_until_its_notice,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules ; herdr-agent-kit@v0.1.0:tests/panorama_model_goldens.rs::the_background_model_matches_its_golden,mapped,,P1
 tests/test_background.py::test_a_timed_out_bash_moved_to_the_background_counts_too,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/panorama_model_goldens.rs::the_background_model_matches_its_golden,mapped,,P1
@@ -51,8 +51,8 @@ tests/test_bridge_rules.py::test_anything_else_is_not_a_session_id[123],tests/te
 tests/test_bridge_rules.py::test_machines_has_no_validator_of_its_own,tests/test_bridge_rules.py,,retired,"Pins a Python module attribute; in Rust the one validator is the kit's SessionId type, which machines code must take.",P4
 tests/test_bridge_rules.py::test_an_uppercase_id_finds_its_lowercase_transcript[55555555-5555-4555-8555-555555555555],tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_bridge_rules.rs::an_uppercase_id_finds_its_lowercase_transcript,mapped,,P1
 tests/test_bridge_rules.py::test_an_uppercase_id_finds_its_lowercase_transcript[abcdef01-2345-4abc-8def-0123456789ab],tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_bridge_rules.rs::an_uppercase_id_finds_its_lowercase_transcript,mapped,,P1
-tests/test_bridge_rules.py::test_the_remote_mirror_names_sessions_in_lowercase_once,tests/test_bridge_rules.py,,todo,,P4
-tests/test_bridge_rules.py::test_an_events_file_is_named_by_the_canonical_id,tests/test_bridge_rules.py,,todo,,P4
+tests/test_bridge_rules.py::test_the_remote_mirror_names_sessions_in_lowercase_once,tests/test_bridge_rules.py,src/machines/sync/tests.rs::the_remote_mirror_names_sessions_in_lowercase_once ; src/machines/sync/tests.rs::sessions_are_canonical_each_once_and_only_session_ids,mapped,,P4
+tests/test_bridge_rules.py::test_an_events_file_is_named_by_the_canonical_id,tests/test_bridge_rules.py,src/collect/paths/tests.rs::an_events_file_is_named_by_the_canonical_id,mapped,,P4
 tests/test_bridge_rules.py::test_a_continuation_named_in_uppercase_is_found_and_followed,tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_bridge_rules.rs::a_continuation_named_in_uppercase_is_found_and_followed,mapped,,P1
 tests/test_bridge_rules.py::test_bookkeeping_after_continued_in_does_not_clear_it[kinds0],tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_bridge_rules.rs::bookkeeping_after_continued_in_does_not_clear_it,mapped,,P1
 tests/test_bridge_rules.py::test_bookkeeping_after_continued_in_does_not_clear_it[kinds1],tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_bridge_rules.rs::bookkeeping_after_continued_in_does_not_clear_it,mapped,,P1
