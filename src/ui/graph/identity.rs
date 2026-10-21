@@ -20,7 +20,8 @@ impl Graph {
     /// it; a selection change scrolls to the selected card again.
     pub(crate) fn select(&mut self, col: usize, ident: &str) {
         let v = &mut self.view;
-        v.wheel.clear();
+        v.wheel.clear(); // a selection change scrolls to the selected card again
+        v.hcol = None; // and sideways to the focus
         match col {
             0 => {
                 if v.orch.as_deref() != Some(ident) {
@@ -86,6 +87,6 @@ impl Graph {
         if let Some(a) = agent {
             self.select(col, a);
         }
-        self.view.focus = col;
+        self.focus(col);
     }
 }

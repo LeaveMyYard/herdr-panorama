@@ -10,7 +10,7 @@
 //! - [`term`]: the terminal; [`clock`]: the wall clock and the animation time; [`pacing`]:
 //!   when a colour tick draws; [`guard`]: tasks whose panic is caught and reported;
 //!   [`crash`]: the crash marker and the panic hook; [`frame`]: what a frame reads from
-//!   outside the view; [`end`]: why a view ended.
+//!   outside the view; [`end`]: why a view ended; [`toast`]: the notices.
 
 pub mod clock;
 pub mod crash;
@@ -23,3 +23,4 @@ pub mod layout;
 pub mod pacing;
 pub mod selection;
 pub mod term;
+pub mod toast;

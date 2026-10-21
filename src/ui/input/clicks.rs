@@ -7,7 +7,7 @@ use super::actions::Actions;
 use super::effect::Effect;
 use crate::ui::graph::toggle;
 use panorama_core::view::nav::{agent_depth, find_orch, find_thread};
-use panorama_core::view::state::DONE_CARD;
+use panorama_core::view::state::{DONE_CARD, FIN_CARD};
 use panorama_core::view::target::AgentRef;
 use panorama_core::view::{NEW_ROW, Screen, Target};
 use std::time::Instant;
@@ -57,8 +57,34 @@ pub trait Clicks: Actions {
             Target::Transcript(r) => self.click_action(ActionKind::Transcript, r, now),
             Target::Answer(r) => self.click_action(ActionKind::Answer, r, now),
             // the wide graph's (the app wires it, P4 8a); no panel view draws one
-            Target::Fin { .. } => vec![],
+            Target::Fin {
+                pane,
+                thread,
+                group,
+            } => self.click_fin(&pane, &thread, group.as_deref(), now),
         }
+    }
+
+    /// A group's "n finished" card (the wide graph's): it folds and unfolds like Enter on it,
+    /// armed like Enter; its agents are seen.
+    fn click_fin(
+        &mut self,
+        pane: &str,
+        thread: &str,
+        group: Option<&str>,
+        now: Instant,
+    ) -> Vec<Effect> {
+        let key = group.unwrap_or(thread);
+        let fid = format!("{FIN_CARD}{key}");
+        let mut out = vec![];
+        if !self.armed(now) || !self.shown(pane, Some(thread), Some(&fid)) {
+            return out;
+        }
+        self.point(pane, Some(thread), Some(&fid));
+        let fin = self.fin_agents(key);
+        self.seen(fin, &mut out);
+        toggle(&mut self.view.fin_open, key);
+        out
     }
 
     /// An orchestrator: in the docked list one click switches to it (what Enter then does);

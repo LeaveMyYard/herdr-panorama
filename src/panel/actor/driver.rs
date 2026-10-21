@@ -9,8 +9,8 @@ use crate::panel::input::mouse::WHEEL_ROWS;
 use crate::panel::input::{Effect, Painted, Toast};
 use crate::panel::model::Panel;
 use crate::panel::paint::Frame;
-use crate::panel::toast::{Placed, Toasts};
 use crate::proto::state::State;
+use crate::ui::toast::{Placed, Toasts};
 use panorama_core::view::Screen;
 use std::time::Instant;
 

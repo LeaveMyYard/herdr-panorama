@@ -50,7 +50,7 @@ impl Graph {
             let pick = cols[nxt][0].clone();
             self.select(nxt, &pick);
         }
-        self.view.focus = nxt;
+        self.focus(nxt);
     }
 
     /// ←: back a column; from a spawned agent, up to the agent that spawned it.
@@ -67,9 +67,9 @@ impl Graph {
                     self.select(focus - 1, &key);
                 }
             }
-            self.view.focus = focus - 1;
+            self.focus(focus - 1);
         } else if focus > 0 {
-            self.view.focus = focus - 1;
+            self.focus(focus - 1);
         }
     }
 }

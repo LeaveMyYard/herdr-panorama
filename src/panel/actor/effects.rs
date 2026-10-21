@@ -62,6 +62,7 @@ impl Actor {
                 Effect::Toast(t) => self.driver.toasts.push(t, Instant::now()),
                 Effect::ArrowsRestAt(at) => self.arrow_at = Some(at),
                 Effect::Quit => return Ok(Some(End::Quit)),
+                Effect::Zoom => {} // the app's (a panel's z does nothing)
                 Effect::Switch { pane, keep_focus } => self.spawn_switch(pane, keep_focus),
                 Effect::Goto {
                     pane,
