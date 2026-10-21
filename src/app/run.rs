@@ -4,6 +4,7 @@
 use super::actor::Actor;
 use super::collect::{Source, Worker};
 use super::driver::Driver;
+use super::link::Link;
 use super::model::App;
 use super::panic;
 use crate::settings::Settings;
@@ -70,9 +71,28 @@ async fn serve(
     let app = App::new(focus, home_mode(env), Instant::now());
     let (tx, rx) = mpsc::unbounded_channel();
     let worker = Worker::spawn(make, tx)?;
+    let home = home_mode(env);
+    let me = home.then(|| env.pane_id().map(str::to_owned)).flatten();
+    let log = panic::log_path(&state_dir(env));
+    let link = Link::start(env, home, me, log.clone()).await;
     let term = term::setup()?;
-    let mut actor = Actor::new(Driver::new(app), Settings::from_env(env), term, worker, rx);
-    actor.run().await
+    let mut actor = Actor::new(Driver::new(app), Settings::from_env(env), term, worker, rx)
+        .with_link(link, log);
+    let end = actor.run().await;
+    if let Some(a) = actor.after_exit.take() {
+        // the inbox popup once this one is closed (Python `after_exit`)
+        term::restore();
+        let h = herdr_agent_kit::herdr_api::Herdr::from_env().with_client("panorama");
+        crate::panel::act::inbox::InboxLink::default()
+            .open(
+                &h,
+                &crate::panel::act::inbox::UvRunner,
+                a.question,
+                a.pane.as_deref(),
+            )
+            .await;
+    }
+    end
 }
 
 #[cfg(test)]
