@@ -45,3 +45,21 @@ fn a_non_ascii_model_never_panics_and_reads_as_python_reads_it() {
     assert_eq!(m("xésonnet").as_deref(), Some("sonnet"));
     assert_eq!(m("ö4-5-haiku").as_deref(), Some("haiku 4.5"));
 }
+
+#[test]
+fn the_model_keeps_its_version() {
+    // Python tests/test_wide.py::test_the_model_keeps_its_version, its eight cases
+    let cases = [
+        (Some("claude-opus-4-5-20251101"), Some("opus 4.5")),
+        (Some("claude-sonnet-4-5"), Some("sonnet 4.5")),
+        (Some("claude-3-5-sonnet-20241022"), Some("sonnet 3.5")),
+        (Some("claude-sonnet-4-20250514"), Some("sonnet 4")),
+        (Some("claude-haiku-4-5-20251001"), Some("haiku 4.5")),
+        (Some("opus"), Some("opus")),
+        (None, None),
+        (Some("some-other-model"), Some("some-other-model")),
+    ];
+    for (raw, short) in cases {
+        assert_eq!(short_model(raw).as_deref(), short, "{raw:?}");
+    }
+}

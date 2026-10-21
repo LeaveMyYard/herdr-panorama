@@ -5,13 +5,16 @@
 //! - [`paint`]: a frame of it; [`input`]: its keys and clicks (the shared
 //!   [`crate::ui::input`] with the app's own decisions); [`driver`]: the app with its notices;
 //! - [`actor`]: the event loop; [`collect`]: the collects, on a thread of their own;
+//!   [`seen`]: agents the operator looked at, cleared in the unseen state;
 //!   [`panic`]: the panic hook (to the log, never onto the view); [`run`]: `panorama tui`.
 
 pub mod actor;
 pub mod collect;
 pub mod driver;
 pub mod input;
+pub mod link;
 pub mod model;
 pub mod paint;
 pub mod panic;
 pub mod run;
+pub mod seen;

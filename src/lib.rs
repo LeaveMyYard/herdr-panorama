@@ -4,7 +4,7 @@
 //! `machines`, agents on herdr's saved SSH machines; `collect`, the swarm model from herdr and the
 //! transcripts; `snapshot`, the `panorama snapshot` command; `ui`, what the panel and the app
 //! share; `app`, the `panorama tui` app's model; `core`, the panels' core (server side);
-//! `panels`, the per-tab panels' manager; `home`, the home tab.
+//! `panels`, the per-tab panels' manager; `home`, the home tab; `new_agent`, + New agent.
 
 pub mod app;
 pub mod collect;
@@ -15,6 +15,7 @@ pub mod home;
 pub mod hook;
 pub mod machines;
 pub mod mcp;
+pub mod new_agent;
 pub mod panel;
 pub mod panels;
 pub mod produce;
