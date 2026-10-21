@@ -122,10 +122,7 @@ impl Actor {
     fn focused(&mut self, look: Option<bool>) -> io::Result<Option<End>> {
         self.publish();
         match look {
-            Some(f) if f != self.driver.app.pane_focused => {
-                self.driver.app.pane_focused = f;
-                self.repaint(Painted::Other).map(|()| None)
-            }
+            Some(f) if self.driver.focus(f) => self.repaint(Painted::Other).map(|()| None),
             _ => Ok(None),
         }
     }

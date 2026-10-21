@@ -47,6 +47,13 @@ impl Driver {
         }
     }
 
+    /// Whether the view has the keyboard (the terminal's focus reports, herdr's focus): the
+    /// docked panel's two looks (Python `on_app_focus` / `on_app_blur`, `herdr_focus`).
+    /// Whether that changed it.
+    pub fn focus(&mut self, focused: bool) -> bool {
+        std::mem::replace(&mut self.app.pane_focused, focused) != focused
+    }
+
     /// The view as last drawn, without the notices (its click targets).
     pub fn shown(&self) -> Option<&Screen> {
         self.shown.as_ref()
