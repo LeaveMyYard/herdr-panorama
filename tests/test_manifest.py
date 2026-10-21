@@ -200,6 +200,14 @@ def test_a_probe_child_holding_the_output_cannot_keep_the_panel_waiting(tmp_path
     assert out == f"rust {launcher}" and took < 6
 
 
+
+@both
+def test_a_probe_child_holding_the_output_of_a_silent_binary_cannot_keep_it_waiting(tmp_path, launcher):
+    # #125 round 2: the answer goes through a file, not a pipe a left-behind child holds open
+    out, took = _bounded(tmp_path, 'if [ "$1" = contract ]; then sleep 30 & exit 0; fi; echo rust "$@"', launcher)
+    assert out == f"venv {launcher}" and took < 6
+
+
 @both
 def test_the_probe_never_reads_the_panes_input(tmp_path, launcher):
     """#78 final pass N-8: the probe's stdin is /dev/null, so a binary that reads it can never
