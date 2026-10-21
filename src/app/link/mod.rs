@@ -73,6 +73,11 @@ pub struct Link {
     pub collector_pane: Option<crate::snapshot::SelfPane>,
     /// How long quit waits for each step ([`QUIT_STEP`]).
     pub quit_step: Duration,
+    /// panorama's config, read again when an agent starts (per-tab mode builds its tab
+    /// with the panel); none in tests.
+    settings: Option<Arc<Mutex<Settings>>>,
+    /// The plugin's own variables that are set: a new panel's environment.
+    plugin_env: Vec<(String, String)>,
     place: Place,
     inbox: InboxLink,
     done_tx: mpsc::UnboundedSender<Done>,
@@ -118,6 +123,20 @@ impl Link {
             Places::from_env(env),
             log,
         );
+        link.settings = Some(Arc::new(Mutex::new(Settings::from_env(env))));
+        link.plugin_env = [
+            "HERDR_PLUGIN_ID",
+            "HERDR_PLUGIN_ROOT",
+            "HERDR_PLUGIN_STATE_DIR",
+            "HERDR_PLUGIN_CONFIG_DIR",
+        ]
+        .into_iter()
+        .filter_map(|k| {
+            env.var(k)
+                .filter(|v| !v.is_empty())
+                .map(|v| (k.to_owned(), v.to_owned()))
+        })
+        .collect();
         if !home_mode {
             return link;
         }
@@ -156,6 +175,8 @@ impl Link {
             done_rx,
             collector_pane: None,
             quit_step: QUIT_STEP,
+            settings: None,
+            plugin_env: vec![],
             core: None,
             core_events: None,
             panels: None,

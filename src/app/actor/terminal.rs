@@ -3,6 +3,7 @@
 
 use super::{Actor, End};
 use crate::app::driver::Pointer;
+use crate::new_agent::keys::form_key;
 use crate::ui::input::{Painted, key};
 use crossterm::event::{Event as TermEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 use std::io;
@@ -16,6 +17,22 @@ impl Actor {
     ) -> io::Result<Option<End>> {
         let now = Instant::now();
         match ev {
+            Some(Ok(TermEvent::Key(k))) if self.driver.form.is_some() => {
+                let Some(k) = form_key(k) else {
+                    return Ok(None);
+                };
+                let step = self.driver.form_key(k, now);
+                return self.on_form(step);
+            }
+            Some(Ok(TermEvent::Mouse(m))) if self.driver.form.is_some() => {
+                if m.kind != MouseEventKind::Down(MouseButton::Left) {
+                    return Ok(None); // the view behind the modal takes no pointer
+                }
+                let step = self
+                    .driver
+                    .form_click(i32::from(m.column), i32::from(m.row));
+                return self.on_form(step);
+            }
             Some(Ok(TermEvent::Key(k))) => {
                 let Some(k) = key(k) else { return Ok(None) };
                 let effects = self.driver.key(k, now);

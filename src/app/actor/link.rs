@@ -68,7 +68,20 @@ impl Actor {
                 }
                 return Ok(None);
             }
-            Done::NewAgentForm(_cwd) => {} // the form in this pane: P4 PR 9b
+            Done::NewAgentForm(cwd) => self.driver.open_form(&cwd, now),
+            Done::Started(result) => {
+                if let Some(name) = self.driver.form_started(result) {
+                    let t = crate::ui::input::Toast::new(
+                        Some("new agent"),
+                        format!("started {name}"),
+                        6,
+                    );
+                    self.driver.toasts.push(t, now);
+                    if !self.driver.app.home_mode {
+                        return Ok(Some(End::Quit)); // the new tab has the focus: a popup would hide it
+                    }
+                }
+            }
         }
         self.repaint(Painted::Other).map(|()| None)
     }

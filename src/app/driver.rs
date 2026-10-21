@@ -33,6 +33,8 @@ pub enum Pointer {
 pub struct Driver {
     pub app: App,
     pub toasts: Toasts,
+    /// The + New agent modal while it is open (keys and clicks go to it).
+    pub form: Option<super::form::OpenForm>,
     toast_rects: Vec<Placed>,
     shown: Option<Screen>,
 }
@@ -42,6 +44,7 @@ impl Driver {
         Self {
             app,
             toasts: Toasts::default(),
+            form: None,
             toast_rects: vec![],
             shown: None,
         }
@@ -122,6 +125,7 @@ impl Driver {
         let view = self.app.paint(w, h, look)?;
         self.app.stamp(self.shown.as_ref(), &view, cause, now);
         let mut screen = view.clone();
+        self.form_over(&mut screen); // the modal, when open, over the dimmed view
         self.toast_rects = self.toasts.draw(&mut screen);
         self.shown = Some(view);
         Some(screen)
