@@ -16,6 +16,7 @@ pub mod machines;
 pub mod mcp;
 pub mod panel;
 pub mod panels;
+pub mod produce;
 pub mod proto;
 pub mod report;
 pub mod settings;

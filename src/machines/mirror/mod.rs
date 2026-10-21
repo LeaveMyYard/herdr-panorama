@@ -10,7 +10,7 @@ pub mod run;
 
 pub use probe::append_supported;
 pub use rules::{Kind, rules};
-pub use run::{TIMED_OUT, run};
+pub use run::{STOPPED, TIMED_OUT, run};
 
 use std::path::Path;
 use std::time::Duration;
@@ -21,7 +21,7 @@ pub const MAX_FILE: &str = "64M";
 pub const SYNC_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// Runs one rsync argv within a timeout: `None` on success, else the error ([`run`]).
-pub type Runner = dyn Fn(&[String], Duration) -> Option<String> + Send + Sync;
+pub type Runner = dyn Fn(&[String], Duration, &dyn Fn() -> bool) -> Option<String> + Send + Sync;
 
 /// How the passes run.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -70,17 +70,22 @@ impl Rsync {
         [pass(Kind::Jsonl), pass(Kind::Json)]
     }
 
-    /// Both passes, through `runner`; the first error stops it.
+    /// Both passes, through `runner`; the first error stops it, and so does `cancelled()`
+    /// (checked before each pass and, by the runner, while one runs).
     pub fn mirror(
         &self,
         source: &str,
         dest: &Path,
         sessions: &[String],
-        runner: impl Fn(&[String], Duration) -> Option<String>,
+        runner: impl Fn(&[String], Duration, &dyn Fn() -> bool) -> Option<String>,
+        cancelled: &dyn Fn() -> bool,
     ) -> Option<String> {
-        self.passes(source, dest, sessions)
-            .iter()
-            .find_map(|argv| runner(argv, self.timeout))
+        self.passes(source, dest, sessions).iter().find_map(|argv| {
+            if cancelled() {
+                return Some(STOPPED.to_owned());
+            }
+            runner(argv, self.timeout, cancelled)
+        })
     }
 }
 
