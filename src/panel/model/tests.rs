@@ -243,3 +243,35 @@ fn the_shown_orchestrator_is_selected_again_when_the_filter_shows_it_again() {
     feed(&mut p, with_inbox(json!([8])));
     assert_eq!(p.view.orch.as_deref(), Some("w1:p3"));
 }
+
+#[test]
+fn a_switch_that_ends_judges_the_focus_again() {
+    // test_panel_keys.py::test_a_switch_that_ends_judges_the_focus_again
+    let mut p = panel();
+    p.on_connected(true);
+    feed(
+        &mut p,
+        state(json!({"focused_pane": "w1:p92", "visible_tabs": ["w1:t2"]})),
+    );
+    p.herdr_focus("w1:p2");
+    assert!(!p.pane_focused);
+    p.herdr_focused_pane = p.my_pane.clone(); // herdr's last word: this panel
+    p.switched(None, false, std::time::Instant::now());
+    assert!(p.pane_focused);
+}
+
+#[test]
+fn the_docked_panel_stays_while_a_switch_runs_even_at_the_wide_layouts_width() {
+    // test_panel_keys.py::test_no_graph_flash_while_a_switch_runs: herdr may give the pane the
+    // whole width a moment
+    use crate::panel::input::fixtures::frame;
+    let mut p = panel();
+    p.on_connected(true);
+    feed(&mut p, state(json!({"visible_tabs": ["w1:t2"]})));
+    assert!(!p.switch("w1:p4".into(), true).is_empty());
+    p.paint(160, 45, &frame());
+    assert!(p.input.dock); // still the docked panel, not the wide graph
+    p.switched(None, false, std::time::Instant::now());
+    p.paint(160, 45, &frame());
+    assert!(!p.input.dock);
+}

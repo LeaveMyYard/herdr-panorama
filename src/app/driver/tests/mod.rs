@@ -7,6 +7,7 @@ mod arming;
 mod clicks;
 mod core_filter;
 mod deep;
+mod dock;
 mod frames;
 mod keys;
 mod narrow;
