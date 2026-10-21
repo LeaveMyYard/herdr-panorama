@@ -1,11 +1,10 @@
-//! No two status glyphs in adjacent cells and no half-circle spinner, in the docked panel and
-//! the narrow layout: Python's tests/test_glyph_spacing.py `screens()` for the views P3 draws
-//! (the wide graph's widths, 120 and up, come with it in P4).
+//! No two status glyphs in adjacent cells and no half-circle spinner, in the docked panel, the
+//! narrow layout and the wide graph: Python's tests/test_glyph_spacing.py `screens()`.
 
 mod support;
 
 use panorama_core::model::Swarm;
-use panorama_core::view::{Screen, View, render_dock, render_narrow};
+use panorama_core::view::{Screen, View, render_dock, render_graph, render_narrow};
 use support::design::design_swarm;
 use support::glyphs::adjacent;
 use support::{NO_SESSIONS, fixture, wire_swarm};
@@ -23,7 +22,7 @@ fn docked(mut sw: Swarm) -> Swarm {
     sw
 }
 
-/// (name, screen) for every P3 view of `screens()`, frames 0–3.
+/// (name, screen) for every view of `screens()`, frames 0–3.
 fn screens() -> Vec<(String, Screen)> {
     let demo_now = now_of("inputs/swarm-demo.json");
     let mut out = vec![];
@@ -80,13 +79,44 @@ fn screens() -> Vec<(String, Screen)> {
             format!("deep 70 f{frame}"),
             render_narrow(&sw, &v, 70, 45, None, NO_SESSIONS),
         ));
+        // the wide graph's widths, as the narrow ones: the demo and the deep tree
+        for w in [120, 160, 240] {
+            let demo = View {
+                orch: Some("w1:p1".into()),
+                thread: Some("ref:#42".into()),
+                agent: Some("a2f81c0".into()),
+                focus: 2,
+                now: demo_now,
+                frame: f,
+                ..View::default()
+            };
+            let sw = wire_swarm("inputs/swarm-demo.json", None);
+            out.push((
+                format!("demo {w} f{frame}"),
+                render_graph(&sw, &demo, w, 45, None, NO_SESSIONS),
+            ));
+            let deep = View {
+                orch: Some("w1:p3".into()),
+                thread: Some(DEEP_TID.into()),
+                agent: Some("c1".into()),
+                focus: 5,
+                now: DEEP_NOW,
+                frame: f,
+                ..View::default()
+            };
+            let sw = wire_swarm("inputs/swarm-deep.json", None);
+            out.push((
+                format!("deep {w} f{frame}"),
+                render_graph(&sw, &deep, w, 45, None, NO_SESSIONS),
+            ));
+        }
     }
     out
 }
 
 #[test]
 fn no_two_glyphs_touch() {
-    // test_no_two_glyphs_touch[dock 46/60, deep dock, demo 70, deep 70 × f0–f3]
+    // test_no_two_glyphs_touch[dock 46/60, deep dock, demo/deep 70/120/160/240 × f0–f3]
     for (name, s) in screens() {
         assert!(
             s.text()
