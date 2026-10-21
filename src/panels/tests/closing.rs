@@ -373,3 +373,15 @@ async fn a_crash_marker_that_cannot_be_removed_still_counts_as_a_crash() {
     assert!(m.closed().is_empty());
     assert_eq!(m.crashes["w1:t2"], 1);
 }
+
+#[tokio::test]
+async fn remove_all_never_closes_a_pane_running_an_agent() {
+    // our panel's pane now holds an agent (herdr detected one there): not a panel to close
+    let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
+    let mut m = manager(&w, dir.path());
+    pass(&mut m, &w, &orch(&["w1:p2"]), &[], true).await;
+    let panel = w.order("w1:t2")[0].clone();
+    w.s().pane(&panel).agent = Some("claude".into());
+    assert_eq!(m.remove_all(None, &set(&[&panel])).await, 0);
+    assert!(w.closes().is_empty());
+}
