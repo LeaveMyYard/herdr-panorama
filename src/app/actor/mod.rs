@@ -3,24 +3,27 @@
 //!
 //! - every 1.5 s a collect is asked for (one at a time, [`super::collect`]); its swarm
 //!   refreshes the model, its failure says so in the header;
-//! - the terminal: resizes and focus in and out repaint; `q` (and Esc in a popup) ends it;
+//! - the terminal: keys and the pointer go to the [`Driver`] ([`terminal`]); resizes and focus
+//!   in and out repaint;
 //! - the colour tick (`animation_fps`): a new frame only while something moves and the frame
-//!   differs ([`crate::ui::pacing`]);
+//!   differs ([`crate::ui::pacing`]); a notice's time running out;
 //! - SIGTERM and SIGHUP end it; so does a terminal that hung up (looked at every second).
 //!
-//! The app's other keys, the mouse and the herdr side (goto, the inbox, the panels and the
-//! core) join in P4 8b and 8c.
+//! The effects the input asks for go out from [`effects`]; drawing is [`draw`]'s.
+
+mod draw;
+mod effects;
+mod terminal;
 
 use super::collect::{Collected, Worker};
-use super::model::App;
-use crate::panel::actor::{End, HANGUP_CHECK, hung_up};
-use crate::panel::input::keys::key;
+use super::driver::Driver;
 use crate::settings::Settings;
-use crate::ui::clock;
+use crate::ui::end::End;
 use crate::ui::frame::Frame;
+use crate::ui::input::Painted;
 use crate::ui::pacing::{Pacing, ticking};
-use crate::ui::term::{self, Term};
-use crossterm::event::{Event as TermEvent, EventStream};
+use crate::ui::term::{self, HANGUP_CHECK, Term, hung_up_error};
+use crossterm::event::EventStream;
 use futures_util::StreamExt;
 use panorama_core::view::Marks;
 use std::io;
@@ -34,7 +37,7 @@ pub const REFRESH: Duration = Duration::from_millis(1500);
 
 /// The actor's state.
 pub struct Actor {
-    app: App,
+    driver: Driver,
     settings: Settings,
     /// Never dropped: ratatui's drop writes to the terminal and panics when it is gone;
     /// `term::restore` puts it back instead.
@@ -47,14 +50,14 @@ pub struct Actor {
 
 impl Actor {
     pub fn new(
-        app: App,
+        driver: Driver,
         settings: Settings,
         term: Term,
         worker: Worker,
         collected: mpsc::UnboundedReceiver<Collected>,
     ) -> Self {
         Self {
-            app,
+            driver,
             settings,
             term: ManuallyDrop::new(term),
             worker,
@@ -67,7 +70,7 @@ impl Actor {
     /// Runs until the app ends; a terminal that hung up is an end, not an error.
     pub async fn run(&mut self) -> io::Result<End> {
         match self.serve().await {
-            Err(e) if hung_up(&e) => Ok(End::Hangup),
+            Err(e) if hung_up_error(&e) => Ok(End::Hangup),
             r => r,
         }
     }
@@ -84,8 +87,9 @@ impl Actor {
             signal(SignalKind::terminate())?,
             signal(SignalKind::hangup())?,
         );
-        self.repaint()?;
+        self.repaint(Painted::Other)?;
         loop {
+            let toast_at = self.driver.toasts.next_expiry();
             let end = tokio::select! {
                 _ = refresh.tick() => {
                     self.worker.request();
@@ -94,6 +98,10 @@ impl Actor {
                 Some(c) = self.collected.recv() => self.on_collected(c).map(|()| None)?,
                 ev = input.next() => self.on_terminal(ev)?,
                 _ = tick.tick(), if self.moving() => self.animate().map(|()| None)?,
+                () = sleep_until(toast_at), if toast_at.is_some() => {
+                    self.driver.toasts.expire(Instant::now());
+                    self.repaint(Painted::Other).map(|()| None)?
+                }
                 _ = hangup.tick() => term::hung_up().then_some(End::Hangup),
                 _ = term_sig.recv() => Some(End::Signal),
                 _ = hup.recv() => Some(End::Signal),
@@ -105,77 +113,27 @@ impl Actor {
     }
 
     /// A collect's outcome: the model refreshes (the unseen marks join with their tracker),
-    /// or the header says why it failed.
+    /// or the header says why it failed; the cells whose click target moved wait.
     fn on_collected(&mut self, c: Collected) -> io::Result<()> {
         self.worker.done();
+        let app = &mut self.driver.app;
         match c {
-            Collected::Swarm(swarm) => self.app.apply(swarm, Marks::new(), Instant::now()),
-            Collected::Failed(why) => self.app.failed(&why),
+            Collected::Swarm(swarm) => app.apply(swarm, Marks::new(), Instant::now()),
+            Collected::Failed(why) => app.failed(&why),
         }
-        self.repaint()
-    }
-
-    /// A terminal event; `Some` when the app ends.
-    fn on_terminal(&mut self, ev: Option<io::Result<TermEvent>>) -> io::Result<Option<End>> {
-        match ev {
-            Some(Ok(TermEvent::Key(k))) => {
-                if key(k).is_some_and(|k| self.app.quits(k)) {
-                    return Ok(Some(End::Quit));
-                }
-                return Ok(None);
-            }
-            Some(Ok(TermEvent::Resize(..))) => {}
-            Some(Ok(TermEvent::FocusGained)) => self.app.pane_focused = true,
-            Some(Ok(TermEvent::FocusLost)) => self.app.pane_focused = false,
-            Some(Ok(_)) => return Ok(None),
-            Some(Err(e)) => return Err(e),
-            None => return Ok(Some(End::Input)),
-        }
-        self.repaint().map(|()| None)
+        self.repaint(Painted::Refresh)
     }
 
     /// Whether the tick has anything to do (a terminal view is always shown).
     fn moving(&self) -> bool {
-        ticking(true, &self.app.swarm, &self.app.view.unseen)
+        let app = &self.driver.app;
+        ticking(true, &app.graph.swarm, &app.graph.view.unseen)
     }
+}
 
-    /// A full repaint: the settings read again, the frame of the clock now.
-    fn repaint(&mut self) -> io::Result<()> {
-        let now = clock::now();
-        let read = self.settings.read();
-        self.look = Some(Frame {
-            now,
-            frame: clock::frame_at(now),
-            utc_offset: clock::utc_offset(),
-            theme: read.theme,
-            settings: read.panel,
-            open_key: read.open_key,
-        });
-        self.draw(now)
-    }
-
-    /// The colour tick: a new frame only when it would differ.
-    fn animate(&mut self) -> io::Result<()> {
-        let now = clock::now();
-        if !self.pacing.due(clock::frame_at(now)) {
-            return Ok(());
-        }
-        self.draw(now)
-    }
-
-    fn draw(&mut self, now: f64) -> io::Result<()> {
-        let Some(look) = self.look.as_mut() else {
-            return Ok(());
-        };
-        look.now = now;
-        look.frame = clock::frame_at(now);
-        let size = self.term.size()?;
-        let (w, h) = (i32::from(size.width), i32::from(size.height));
-        let Some(screen) = self.app.paint(w, h, look) else {
-            return Ok(());
-        };
-        self.pacing.drawn(look.frame, &screen);
-        self.term.draw(|f| term::copy(&screen, f.buffer_mut()))?;
-        Ok(())
+async fn sleep_until(at: Option<Instant>) {
+    match at {
+        Some(at) => tokio::time::sleep_until(at.into()).await,
+        None => std::future::pending().await,
     }
 }

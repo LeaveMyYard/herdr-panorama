@@ -119,3 +119,33 @@ fn a_click_anywhere_on_a_panel_acts_only_with_a_core_and_never_closes_it() {
         assert_eq!(acted, connected, "connected {connected}");
     }
 }
+
+#[test]
+fn a_wide_panel_folds_a_finished_card_on_click_and_reports_its_agents_seen() {
+    // a panel 120 columns or wider draws the wide graph (Python too): its "n finished" cards
+    // fold like Enter on them, and their agents are seen, as Python's `click_target("fin")`
+    let (mut p, t) = panel("w1:t9", "w1:t1");
+    let s = p.paint(160, 45, &frame());
+    let fin = s
+        .targets
+        .iter()
+        .find(|h| matches!(h.target, Target::Fin { .. }))
+        .expect("a finished card is drawn")
+        .clone();
+    let Target::Fin { thread, group, .. } = &fin.target else {
+        unreachable!()
+    };
+    let key = group.clone().unwrap_or_else(|| thread.clone());
+    let out = p.click(fin.x0 + 1, fin.y, &s, t);
+    assert!(p.view.fin_open.contains(&key));
+    assert!(
+        matches!(&out[..], [Effect::Seen(ids)] if !ids.is_empty()),
+        "{out:?}"
+    );
+    // armed like Enter: right after a change under the keys, a click folds nothing
+    let (mut p, t) = panel("w1:t9", "w1:t1");
+    let s = p.paint(160, 45, &frame());
+    p.input.armed_at = t + Duration::from_secs(30);
+    assert!(p.click(fin.x0 + 1, fin.y, &s, t).is_empty());
+    assert!(p.view.fin_open.is_empty());
+}

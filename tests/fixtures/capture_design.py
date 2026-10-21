@@ -1,7 +1,7 @@
 """Capture the design references: the sample dataset, turn 5's direction 5d (subagents to any
 depth: its dataset and its frames), turn 6 (unseen), turn 7 (wider cards), turn 8 (waiting and stale),
-turn 9's 9e (tiles in the docked panel), turn 10 (the panel focused or not, in herdr's theme) and the
-smooth animation (turn 6 between whole frames).
+turn 9's 9e (tiles in the docked panel), turn 10 (the panel focused or not, in herdr's theme), the
+smooth animation (turn 6 between whole frames) and the new-agent modal (design 1C "Coming soon").
 
     uv run python tests/fixtures/capture_design.py   (needs node)
 """
@@ -106,6 +106,16 @@ def main() -> None:
                    "with the running filter, P the 46 docked-panel columns; rows as runs of [text, fg, bg, bold]",
          "data": json.loads(node("--input-type=module", "-", stdin=STATES_JS)), "frames": eight},
         ensure_ascii=False, separators=(",", ":")))
+
+    new = json.loads(node("render-new-agent.mjs"))
+    for fr in new["frames"]:
+        fr["rows"] = [run_length(r) for r in fr["rows"]]
+    new["input"] = {k: [run_length(r) for r in v] for k, v in new["input"].items()}
+    new["source"] = ("docs/design/herdr-tui.js (Claude Design project aae25d19, `New agent + empty inbox`, card "
+                     "1C-soon) rendered by docs/design/render-new-agent.mjs: frames: modalCSoon(sel) per harness, "
+                     "96x32 with the modal 76x27 at (10, 3), and its click targets; input: the design's input() "
+                     "focused with its cursor on a 76x6 panel at x 3; rows as runs of [text, fg, bg, bold]")
+    (HERE / "design_new_agent.json").write_text(json.dumps(new, ensure_ascii=False, separators=(",", ":")))
 
 
 if __name__ == "__main__":

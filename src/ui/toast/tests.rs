@@ -40,7 +40,7 @@ fn golden(name: &str) -> Vec<Vec<Cell>> {
 }
 
 fn help() -> Toast {
-    Toast::new(Some("keys"), crate::panel::input::actions::HELP, 10)
+    Toast::new(Some("keys"), crate::ui::input::actions::HELP, 10)
 }
 
 fn check(s: &Screen, want: &[Vec<Cell>], p: Placed) {

@@ -1,10 +1,10 @@
-//! The panel's notices (Python's Textual `notify`): toasts stacked in the bottom-right corner
+//! A view's notices (Python's Textual `notify`): toasts stacked in the bottom-right corner
 //! over the view, newest at the bottom, each until its time is up; a click on one dismisses
 //! it. Drawn as Textual draws them (its `Toast` and `ToastRack` CSS, `textual-dark` colours):
 //! 60 cells wide at most half the rack, a left bar in the severity's colour, a cell of
 //! padding all round, the title in bold above the text.
 
-use super::input::Toast;
+use crate::ui::input::Toast;
 use panorama_core::view::{Rgb, Screen};
 use std::time::{Duration, Instant};
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};

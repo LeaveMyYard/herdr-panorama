@@ -1,11 +1,11 @@
 //! ↑/↓ in the focused column, and where a parked cursor resumes (Python `action_move`,
 //! `_resume`).
 
-use crate::panel::model::Panel;
+use super::Graph;
 use panorama_core::view::NEW_ROW;
 use panorama_core::view::nav::nav;
 
-impl Panel {
+impl Graph {
     /// ↑/↓ by `delta` in the focused column; from a parked cursor, the next shown row in that
     /// direction. Whether the cursor moved over orchestrators (the arrows' switch then waits
     /// for them to rest).
