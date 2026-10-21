@@ -312,3 +312,10 @@ async fn the_home_pane_is_never_counted_as_a_panel() {
     assert!(sv.panels["w1:t2"].iter().all(|p| p != "w1:p5"));
     assert!(w.calls().contains(&"open w1:p2".to_string()));
 }
+
+#[test]
+fn the_settle_wait_keeps_its_margin() {
+    // test_follow.py::test_r16_the_settle_wait_keeps_its_margin: herdr delivers focus events
+    // up to ~100 ms late (measured)
+    assert!(crate::panels::SYNC >= std::time::Duration::from_millis(300));
+}
