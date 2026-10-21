@@ -3,6 +3,10 @@
 //! "ms": <duration, 1 place>}`. Off unless the variable names a file; a write that fails is
 //! dropped, never the call's. The kit's call observer hears the calls; every herdr client
 //! panorama makes comes from [`client`] or [`blocking_client`], so each is traced.
+//!
+//! The op names what Rust calls, which is not always what Python called: the kit reaches herdr
+//! over its socket where Python ran the CLI, so the same snapshot is `socket session.snapshot`
+//! here and `cli api snapshot` in Python's trace. The format and the rounding are Python's.
 
 use crate::snapshot::pyjson::{J, dumps_line_ascii};
 use herdr_agent_kit::herdr_api::{CallTrace, Herdr, Transport, blocking};
