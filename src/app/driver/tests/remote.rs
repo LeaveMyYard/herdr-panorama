@@ -2,7 +2,8 @@
 //! herdr cannot switch this view to another machine, so acting on a remote orchestrator asks
 //! for its pane on that machine's own server (by the machine's id) and says where it is:
 //! never a dock, never a local focus. (The call itself and the words are
-//! `panel::act::remote`'s test.)
+//! `panel::act::remote`'s test.) Python runs it in the home view with the moving cockpit off
+//! and on; the cockpit is gone (Q187), and `g` in a popup is `keys.rs`'s test.
 
 use super::*;
 
@@ -10,7 +11,8 @@ const WIDE: (i32, i32) = (160, 45);
 
 #[test]
 fn acting_on_a_remote_orchestrator_asks_its_own_server_never_a_local_focus() {
-    for home in [false, true] {
+    {
+        let home = true; // the home view (Python's)
         let mut r = Run::new(wire("remote"), "abc123:w1:p1", home, WIDE);
         let now = r.settled();
         assert_eq!(r.d.app.view.orch.as_deref(), Some("abc123:w1:p1")); // the same local ids, another identity

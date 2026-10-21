@@ -269,12 +269,19 @@ fn the_state_file_is_read_and_written_off_the_ui_thread() {
     let mut done = sw.clone();
     done.orchestrators[0].threads[0].agents[0].status = panorama_core::model::Status::Done;
     marked.update(&done, 2.0);
+    // the save runs off this thread: it waits for the state file's lock this thread holds
+    // (a save on this thread gives up while the lock is held, leaving the mark pending)
+    let held = herdr_agent_kit::plugin_env::LockFile::new(dir.path().join("unseen.json.lock"))
+        .try_exclusive()
+        .unwrap()
+        .expect("the state file's lock");
     let save = crate::app::seen::mark(&marked, &["a1".into()]).expect("a mark to save");
-    assert_ne!(
-        save.thread().id(),
-        ui,
-        "the seen mark was saved on the UI thread"
-    );
+    drop(held);
     save.join().unwrap();
+    let other = Tracker::new(dir.path().join("unseen.json"), Box::new(|| true));
+    assert!(
+        other.update(&done, 3.0).is_empty(),
+        "the save ran on the caller's thread"
+    );
     assert!(w.stop(Duration::from_secs(10)));
 }
