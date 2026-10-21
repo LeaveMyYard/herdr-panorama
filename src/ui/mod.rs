@@ -4,17 +4,23 @@
 //!
 //! - [`selection`]: what is selected, how a refresh keeps it by identity, what a key would
 //!   act on, and how long the keys wait after it changed.
+//! - [`graph`]: the swarm, the view and the cursor both views move; [`input`]: the keys, the
+//!   effects and the click arming;
 //! - [`layout`]: whether the view is the docked panel at its width.
 //! - [`term`]: the terminal; [`clock`]: the wall clock and the animation time; [`pacing`]:
 //!   when a colour tick draws; [`guard`]: tasks whose panic is caught and reported;
 //!   [`crash`]: the crash marker and the panic hook; [`frame`]: what a frame reads from
-//!   outside the view.
+//!   outside the view; [`end`]: why a view ended; [`toast`]: the notices.
 
 pub mod clock;
 pub mod crash;
+pub mod end;
 pub mod frame;
+pub mod graph;
 pub mod guard;
+pub mod input;
 pub mod layout;
 pub mod pacing;
 pub mod selection;
 pub mod term;
+pub mod toast;

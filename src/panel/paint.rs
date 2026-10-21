@@ -23,12 +23,12 @@ impl Panel {
         self.input.width = w;
         self.update_dock();
         let docked = self.input.dock;
-        let v = &mut self.view;
+        let v = &mut self.graph.view;
         v.now = f.now;
         v.frame = f.frame;
         v.utc_offset = f.utc_offset;
         v.open_key = f.open_key.clone();
-        let stale = self.swarm.errors.first().map(String::as_str);
+        let stale = self.graph.swarm.errors.first().map(String::as_str);
         let mut s = if docked {
             v.panel = Some(panel_look(
                 f.theme.as_ref(),
@@ -36,10 +36,10 @@ impl Panel {
                 OWN,
                 &f.settings,
             ));
-            render_dock(&self.swarm, v, w, h, stale, NO_SESSIONS)
+            render_dock(&self.graph.swarm, v, w, h, stale, NO_SESSIONS)
         } else {
             v.panel = None;
-            render_graph(&self.swarm, v, w, h, stale, NO_SESSIONS)
+            render_graph(&self.graph.swarm, v, w, h, stale, NO_SESSIONS)
         };
         for col in &s.columns {
             v.offsets.insert(col.column, col.offset);

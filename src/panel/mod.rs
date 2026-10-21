@@ -18,7 +18,6 @@ pub mod input;
 pub mod model;
 pub mod no_core;
 pub mod paint;
-pub mod toast;
 
 use crate::proto::client::{BACKOFF, Client, Config};
 use crate::proto::socket;

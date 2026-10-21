@@ -3,11 +3,12 @@
 
 use super::actor::Actor;
 use super::collect::{Source, Worker};
+use super::driver::Driver;
 use super::model::App;
 use super::panic;
-use crate::panel::actor::End;
 use crate::settings::Settings;
 use crate::snapshot::source;
+use crate::ui::end::End;
 use crate::ui::term;
 use herdr_agent_kit::internal::plugin_paths::panorama::state_dir;
 use herdr_agent_kit::plugin_env::PluginEnv;
@@ -70,7 +71,7 @@ async fn serve(
     let (tx, rx) = mpsc::unbounded_channel();
     let worker = Worker::spawn(make, tx)?;
     let term = term::setup()?;
-    let mut actor = Actor::new(app, Settings::from_env(env), term, worker, rx);
+    let mut actor = Actor::new(Driver::new(app), Settings::from_env(env), term, worker, rx);
     actor.run().await
 }
 
