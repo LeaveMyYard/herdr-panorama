@@ -43,6 +43,18 @@ use tokio::sync::mpsc;
 /// An announced focus herdr has not confirmed by then is read again (Python
 /// `FOCUS_CONFIRM_SECONDS`).
 pub const FOCUS_CONFIRM: Duration = Duration::from_millis(750);
+/// The longest quit waits for each of its steps (the panels, the home tab's label).
+pub const QUIT_STEP: Duration = Duration::from_secs(5);
+
+/// The view's own pane moved (herdr gave it a new id): the collector follows.
+impl Link {
+    pub fn moved(&mut self, pane: String) {
+        if let Some(c) = &self.collector_pane {
+            *c.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(pane.clone());
+        }
+        self.my_pane = Some(pane);
+    }
+}
 
 /// What reaches the actor from the herdr side.
 #[derive(Debug)]
@@ -57,6 +69,8 @@ pub struct Link {
     home_mode: bool,
     /// The view's own pane (the home pane).
     pub my_pane: Option<String>,
+    /// The collector's copy of it, moved with it (Python `collector.self_pane`).
+    pub collector_pane: Option<crate::snapshot::SelfPane>,
     place: Place,
     inbox: InboxLink,
     done_tx: mpsc::UnboundedSender<Done>,
@@ -64,7 +78,7 @@ pub struct Link {
     core: Option<Arc<Core>>,
     core_events: Option<mpsc::Receiver<Event>>,
     panels: Option<PanelsLink>,
-    swarm: Arc<Mutex<Swarm>>,
+    swarm: Arc<Mutex<Option<Swarm>>>,
     /// What the last state said besides the model.
     pub published: Published,
     /// The filter the last state carried.
@@ -138,10 +152,11 @@ impl Link {
             inbox: InboxLink::default(),
             done_tx,
             done_rx,
+            collector_pane: None,
             core: None,
             core_events: None,
             panels: None,
-            swarm: Arc::new(Mutex::new(Swarm::default())),
+            swarm: Arc::new(Mutex::new(None)),
             published: Published::default(),
             published_filter: None,
             unconfirmed: None,
@@ -232,9 +247,12 @@ impl Link {
 
     /// Quitting: the panels go with panorama (they come back with it), then a home tab the
     /// operator split loses its label (issue #9).
+    /// Each step is bounded (`QUIT_STEP`): a herdr call that hangs never holds the view open.
     pub async fn quit(&mut self) {
-        if let Some(p) = &self.panels {
-            p.quit().await;
+        if let Some(p) = &self.panels
+            && tokio::time::timeout(QUIT_STEP, p.quit()).await.is_err()
+        {
+            crate::app::panic::log(&self.log, "panels: quit gave up waiting for herdr");
         }
         if self.home_mode
             && let Some(me) = self.my_pane.clone()
@@ -244,7 +262,14 @@ impl Link {
                 plugin_id: self.place.plugin_id.clone(),
                 root: self.place.root.clone(),
             };
-            if let Err(e) = home::leave(&home, &self.places, &me).await {
+            let why = match tokio::time::timeout(QUIT_STEP, home::leave(&home, &self.places, &me))
+                .await
+            {
+                Ok(Ok(())) => None,
+                Ok(Err(e)) => Some(e),
+                Err(_) => Some("herdr did not answer".into()),
+            };
+            if let Some(e) = why {
                 crate::app::panic::log(&self.log, &format!("could not release the home tab: {e}"));
             }
         }

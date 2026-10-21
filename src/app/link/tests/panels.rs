@@ -222,3 +222,111 @@ async fn per_tab_switched_off_closes_the_panels_once() {
     assert_eq!(fake.params_of("plugin.pane.close").len(), 1);
     assert!(rx.try_recv().is_err());
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn no_pass_runs_before_the_first_model() {
+    // a focus burst before the first collect (or after a failed one) must not spend the start
+    // batch, nor run the restore check, on an empty swarm
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    let c = core(dir.path()).await;
+    snapshot(&fake, HOME_LABEL);
+    runs(&fake, "panel");
+    let (t, mut rx) = task(&fake, c, dir.path(), "cockpit = true\n");
+    let swarm = t.swarm.clone();
+    let link = PanelsLink::spawn(t);
+    link.pass();
+    tokio::time::sleep(Duration::from_millis(300)).await;
+    assert!(
+        fake.params_of("session.snapshot").is_empty(),
+        "nothing looked at"
+    );
+    assert!(rx.try_recv().is_err());
+    *swarm.lock().unwrap() = Some(Default::default()); // the first model
+    link.pass();
+    let d = tokio::time::timeout(Duration::from_secs(5), rx.recv())
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(matches!(d, Done::Panels(_)));
+    assert!(!fake.params_of("session.snapshot").is_empty());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn quit_says_shutdown_before_it_closes_anything() {
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    let c = core(dir.path()).await;
+    let mut v = viewer(dir.path()).await;
+    snapshot(&fake, HOME_LABEL);
+    runs(&fake, "panel");
+    fake.on("plugin.pane.close", Reply::Hang); // the close never ends: nothing may wait for it
+    let (mut t, _rx) = task(&fake, c, dir.path(), "cockpit = true\n");
+    t.manager.created.insert("w1:p7".into(), "w1:t2".into());
+    let link = PanelsLink::spawn(t);
+    let quitting = tokio::spawn(async move { link.quit().await });
+    while fake.params_of("plugin.pane.close").is_empty() {
+        tokio::time::sleep(Duration::from_millis(5)).await;
+    }
+    // the close is under way: the viewers have already been told to go
+    let mut l = String::new();
+    let got = tokio::time::timeout(Duration::from_millis(500), v.read_line(&mut l)).await;
+    assert!(got.is_ok() && l.contains("shutdown"), "{l:?}");
+    quitting.abort();
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn quit_closes_our_panels_before_it_releases_the_home_tab() {
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    let c = core(dir.path()).await;
+    fake.on("session.snapshot", Reply::Result(json!({"snapshot": {
+        "tabs": [{"tab_id": "w1:t1", "label": HOME_LABEL, "workspace_id": "w1"}],
+        "panes": [{"pane_id": "w1:p1", "tab_id": "w1:t1", "workspace_id": "w1", "label": HOME_LABEL},
+                  {"pane_id": "w1:p50", "tab_id": "w1:t1", "workspace_id": "w1", "agent": "claude", "name": "billing"},
+                  {"pane_id": "w1:p7", "tab_id": "w1:t2", "workspace_id": "w1", "label": "Panorama panel"}]}})));
+    runs(&fake, "panel");
+    for m in ["plugin.pane.close", "tab.rename"] {
+        fake.on(m, Reply::Result(json!({"type": "ok"})));
+    }
+    let (mut t, _rx) = task(&fake, c, dir.path(), "cockpit = true\n");
+    t.manager.created.insert("w1:p7".into(), "w1:t2".into());
+    let mut l = super::link(&fake, true, dir.path());
+    l.panels = Some(PanelsLink::spawn(t));
+    l.quit().await;
+    let order: Vec<String> = fake
+        .requests()
+        .into_iter()
+        .map(|r| r.method)
+        .filter(|m| m == "plugin.pane.close" || m == "tab.rename")
+        .collect();
+    assert_eq!(order, ["plugin.pane.close", "tab.rename"]);
+}
+
+#[test]
+fn a_step_that_panics_is_logged_and_the_task_goes_on() {
+    let _hook = crate::ui::guard::hook_lock(); // this test panics on purpose
+    crate::ui::guard::block_on(async {
+        let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+        let c = core(dir.path()).await;
+        snapshot(&fake, HOME_LABEL);
+        runs(&fake, "panel");
+        fake.on("plugin.pane.close", Reply::Result(json!({"type": "ok"})));
+        let (t, _rx) = task(&fake, c, dir.path(), "cockpit = true\n");
+        let swarm = t.swarm.clone();
+        let _ = std::thread::spawn(move || {
+            let _held = swarm.lock().unwrap();
+            panic!("poisoning the model on purpose");
+        })
+        .join();
+        let link = PanelsLink::spawn(t);
+        link.pass(); // reads the poisoned model: panics
+        assert_eq!(
+            link.open_key().await,
+            "failed",
+            "the open key still gets an answer"
+        );
+        tokio::time::timeout(Duration::from_secs(5), link.quit())
+            .await
+            .expect("quit still runs");
+        let log = std::fs::read_to_string(dir.path().join("panorama.log")).unwrap_or_default();
+        assert!(log.contains("panels: a pass failed"), "{log}");
+    });
+}

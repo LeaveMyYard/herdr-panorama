@@ -68,3 +68,12 @@ async fn herdrs_answer_decides_and_an_error_is_no() {
     );
     assert!(!v.verify("w1:p9", 77).await, "herdr cannot say: unverified");
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_hello_from_the_home_views_own_process_is_not_trusted() {
+    // the pid runs `panorama tui` in that pane: the home view, never a viewer
+    let fake = FakeHerdr::start();
+    fake.on("pane.process_info", Reply::Result(json!({"type": "pane_process_info", "process_info": {"pane_id": "w1:p1",
+        "shell_pid": 77, "foreground_processes": [{"pid": 77, "name": "panorama", "argv": ["/p/.venv/bin/panorama", "tui"]}]}})));
+    assert!(!HerdrVerify(fake.client()).verify("w1:p1", 77).await);
+}

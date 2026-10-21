@@ -12,6 +12,7 @@ use crate::home::{HomeOps, Places, ensure, find_home};
 use crate::panels::real::RealOps;
 use crate::panels::{HomeRef, Manager, OpenKey, Ops};
 use crate::settings::Settings;
+use crate::ui::guard::guarded;
 use herdr_agent_kit::herdr_api::PaneId;
 use panorama_core::model::Swarm;
 use std::path::PathBuf;
@@ -40,7 +41,9 @@ pub struct PanelsLink {
 pub struct PanelsTask {
     pub manager: Manager<RealOps>,
     pub core: Arc<Core>,
-    pub swarm: Arc<Mutex<Swarm>>,
+    /// The last model; `None` until the first successful collect: no pass runs before it
+    /// (Python's `not self.loaded`), so the start batch and the restore check see real tabs.
+    pub swarm: Arc<Mutex<Option<Swarm>>>,
     pub settings: Settings,
     pub home: RealHome,
     pub places: Places,
@@ -88,17 +91,22 @@ impl PanelsTask {
                 biased;
                 a = ask.recv() => match a {
                     Some(Ask::OpenKey(reply)) => {
-                        let did = self.open_key().await;
+                        let did = guarded(self.open_key()).await;
+                        let did = self.caught("the open key", did).unwrap_or_else(|| "failed".into());
                         let _ = reply.send(did);
                     }
                     Some(Ask::Quit(reply)) => {
-                        self.quit().await;
+                        let done = guarded(self.quit()).await;
+                        self.caught("quit", done);
                         let _ = reply.send(());
                         return;
                     }
                     None => return,
                 },
-                Some(()) = pass.recv() => self.pass().await,
+                Some(()) = pass.recv() => {
+                    let done = guarded(self.pass()).await;
+                    self.caught("a pass", done); // the next pass tries again, as Python's worker
+                }
             }
             for note in self.manager.take_notes() {
                 crate::app::panic::log(&self.log, &format!("panels: {note}"));
@@ -106,7 +114,13 @@ impl PanelsTask {
         }
     }
 
-    fn swarm(&self) -> Swarm {
+    /// A step that panicked is logged, never the task's end.
+    fn caught<T>(&self, what: &str, r: Result<T, String>) -> Option<T> {
+        r.map_err(|why| crate::app::panic::log(&self.log, &format!("panels: {what} failed: {why}")))
+            .ok()
+    }
+
+    fn swarm(&self) -> Option<Swarm> {
         self.swarm.lock().unwrap().clone()
     }
 
@@ -132,11 +146,14 @@ impl PanelsTask {
             }
             return;
         }
+        let Some(swarm) = self.swarm() else {
+            return; // no model yet
+        };
         let Some(snap) = self.manager.ops.snapshot().await else {
             return;
         };
         let home = self.home_ref().await;
-        let (start, swarm) = (!self.manager.started, self.swarm());
+        let start = !self.manager.started;
         let single = follow_tabs_single(&cfg);
         if let Some(sv) = self
             .manager
@@ -157,7 +174,7 @@ impl PanelsTask {
             let snap = self.manager.ops.snapshot().await.unwrap_or_default();
             let (home, swarm, verified) = (
                 self.home_ref().await,
-                self.swarm(),
+                self.swarm().unwrap_or_default(), // before the first model: as empty, as Python
                 self.core.verified_panes(),
             );
             let did = self

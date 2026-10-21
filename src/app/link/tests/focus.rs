@@ -66,3 +66,20 @@ async fn an_announced_focus_is_read_again_unless_herdr_confirmed_one() {
     assert_eq!(l.published.focused_pane.as_deref(), Some("w1:p1"));
     assert!(quiet(&mut l).await);
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_moved_home_pane_moves_the_collectors_copy_too() {
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    let mut l = link(&fake, true, dir.path());
+    let cell: crate::snapshot::SelfPane =
+        std::sync::Arc::new(std::sync::Mutex::new(Some("w1:p1".into())));
+    l.collector_pane = Some(cell.clone());
+    l.moved("w2:p9".into());
+    assert_eq!(l.my_pane.as_deref(), Some("w2:p9"));
+    assert_eq!(cell.lock().unwrap().as_deref(), Some("w2:p9"));
+    assert_eq!(
+        l.herdr_focus("w2:p9"),
+        Some(true),
+        "focus is judged against the new id"
+    );
+}

@@ -110,3 +110,31 @@ async fn zoom_is_the_home_panes_own() {
     };
     assert_eq!(t.title.as_deref(), Some("zoom"));
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn quit_releases_a_shared_home_tab_after_the_panels() {
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    fake.on("session.snapshot", Reply::Result(json!({"snapshot": {
+        "tabs": [{"tab_id": "w1:t1", "label": crate::home::HOME_LABEL, "workspace_id": "w1"}],
+        "panes": [{"pane_id": "w1:p1", "tab_id": "w1:t1", "workspace_id": "w1", "label": crate::home::HOME_LABEL},
+                  {"pane_id": "w1:p50", "tab_id": "w1:t1", "workspace_id": "w1", "agent": "claude"}],
+        "agents": [{"pane_id": "w1:p50", "name": "billing"}]}})));
+    fake.on("tab.rename", Reply::Result(json!({"type": "ok"})));
+    let mut home = link(&fake, true, dir.path());
+    home.quit().await;
+    assert_eq!(
+        fake.params_of("tab.rename"),
+        [json!({"tab_id": "w1:t1", "label": "billing"})]
+    );
+    // a popup releases nothing
+    let mut popup = link(&fake, false, dir.path());
+    popup.quit().await;
+    assert_eq!(fake.params_of("tab.rename").len(), 1);
+    // panorama alone in its tab: the tab closes with it, nothing is renamed
+    fake.on("session.snapshot", Reply::Result(json!({"snapshot": {
+        "tabs": [{"tab_id": "w1:t1", "label": crate::home::HOME_LABEL, "workspace_id": "w1"}],
+        "panes": [{"pane_id": "w1:p1", "tab_id": "w1:t1", "workspace_id": "w1", "label": crate::home::HOME_LABEL}]}})));
+    let mut alone = link(&fake, true, dir.path());
+    alone.quit().await;
+    assert_eq!(fake.params_of("tab.rename").len(), 1);
+}

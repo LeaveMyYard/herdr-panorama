@@ -65,7 +65,7 @@ impl Actor {
             }
             Done::MyPane(pane) => {
                 if let Some(link) = self.link.as_mut() {
-                    link.my_pane = Some(pane);
+                    link.moved(pane);
                 }
                 return Ok(None);
             }

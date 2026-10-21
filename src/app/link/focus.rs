@@ -9,7 +9,7 @@ use panorama_core::view::{Filter, Marks};
 impl Link {
     /// A refresh: the panels hear the new model, and a panels pass follows.
     pub fn refreshed(&mut self, swarm: &Swarm, unseen: &Marks, filter: Filter) {
-        *self.swarm.lock().unwrap() = swarm.clone();
+        *self.swarm.lock().unwrap() = Some(swarm.clone());
         self.publish(swarm, unseen, filter);
         if let Some(p) = &self.panels {
             p.pass();

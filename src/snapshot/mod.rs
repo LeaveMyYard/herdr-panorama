@@ -18,6 +18,7 @@ use herdr_agent_kit::plugin_env::{ConfigFile, PluginEnv};
 use panorama_core::model::Swarm;
 use serde_json::{Map, Value, json};
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 /// How the swarm is printed.
@@ -66,6 +67,16 @@ pub fn now() -> f64 {
 /// each (it is cached until it changes). `self_pane`: the view's own pane, whose tab's agent
 /// is the one it is docked by.
 pub fn source(env: PluginEnv, self_pane: Option<String>) -> impl FnMut() -> Swarm {
+    source_shared(env, Arc::new(Mutex::new(self_pane)))
+}
+
+/// The view's own pane, as the collector reads it on each collect: the home view moves it
+/// when herdr gives its pane a new id (an undock across workspaces, Python
+/// `collector.self_pane = moved.pane_id`).
+pub type SelfPane = Arc<Mutex<Option<String>>>;
+
+/// [`source`] with the view's own pane read again on each collect.
+pub fn source_shared(env: PluginEnv, self_pane: SelfPane) -> impl FnMut() -> Swarm {
     let herdr = blocking::Herdr::from_env().with_client("panorama");
     let mut config =
         ConfigFile::resolve(&env, || herdr.plugin_config_dir(PANORAMA_ID).ok().flatten());
@@ -83,8 +94,11 @@ pub fn source(env: PluginEnv, self_pane: Option<String>) -> impl FnMut() -> Swar
         procs: true,
         pane_pid: Box::new(move |pane| claude_pid(&lookup, pane)),
     });
-    collector.self_pane = self_pane;
     move || {
+        collector.self_pane = self_pane
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone();
         let cfg: Map<String, Value> = config.load_as().unwrap_or_default();
         let snapshot = herdr_snapshot(&herdr);
         let questions = open_questions(&inbox::db_path(&env));

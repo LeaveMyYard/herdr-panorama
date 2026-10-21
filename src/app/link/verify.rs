@@ -6,7 +6,8 @@ use crate::core::Verify;
 use herdr_agent_kit::herdr_api::{Herdr, PaneId, ProcessInfo};
 use std::path::Path;
 
-/// Whether `info` shows `panorama <command>` as process `pid` itself.
+/// Whether `info` shows `panorama <command>` as process `pid` itself (`panel` for a viewer:
+/// the home view's `panorama tui` is no viewer).
 pub fn runs_as(info: &ProcessInfo, command: &str, pid: i32) -> bool {
     info.foreground_processes.iter().flatten().any(|p| {
         p.pid == Some(i64::from(pid))
