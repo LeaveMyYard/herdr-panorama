@@ -20,6 +20,7 @@ pub mod machines;
 pub mod moving;
 pub mod narrow;
 pub mod nav;
+pub mod new_agent;
 pub mod orch_state;
 pub mod palette;
 pub mod pod;
