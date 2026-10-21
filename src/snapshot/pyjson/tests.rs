@@ -40,6 +40,45 @@ fn control_characters_are_escaped_and_del_is_not() {
 }
 
 #[test]
+fn compact_ascii_lines_and_ordered_reads_round_trip_as_python_writes() {
+    let text = r#"{"v":1,"saved":1791972660.25,"agents":{"z":{"s":"fail","q":[3],"ev":null,"t":2.0},"m\u00e4:x":{"s":"inf"}}}"#;
+    let j = J::parse(text).unwrap();
+    let style = Style {
+        item: ",",
+        key: ":",
+        ascii: true,
+    };
+    assert_eq!(dumps_styled(&j, style), text);
+    assert_eq!(
+        j.get("agents")
+            .and_then(|a| a.get("mä:x"))
+            .and_then(|r| r.get("s"))
+            .and_then(J::as_str),
+        Some("inf")
+    );
+    let mut j = j;
+    j.set("saved", J::Float(5.0));
+    j.set("new", J::Null);
+    assert!(dumps_styled(&j, style).starts_with(r#"{"v":1,"saved":5.0,"agents":"#));
+    assert!(dumps_styled(&j, style).ends_with(r#","new":null}"#));
+    assert_eq!(
+        J::parse(r#"{"a":1,"a":2}"#),
+        Some(J::obj([("a", J::Int(2))]))
+    );
+    assert_eq!(
+        dumps_styled(
+            &J::str("\u{7f}é"),
+            Style {
+                item: ", ",
+                key: ": ",
+                ascii: true
+            }
+        ),
+        r#""\u007f\u00e9""#
+    );
+}
+
+#[test]
 fn one_line_matches_python_separators() {
     let j = J::obj([
         ("a", J::Int(1)),

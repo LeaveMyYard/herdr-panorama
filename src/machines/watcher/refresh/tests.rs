@@ -37,7 +37,7 @@ pub(crate) struct Syncs {
 }
 
 impl Syncer for Syncs {
-    fn sync(&self, _: &Machine, sessions: &[String]) -> Option<String> {
+    fn sync(&self, _: &Machine, sessions: &[String], _: &dyn Fn() -> bool) -> Option<String> {
         let mut sorted = sessions.to_vec();
         sorted.sort();
         self.calls.lock().unwrap().push(sorted);
@@ -105,17 +105,20 @@ pub(crate) fn refresher(api: Arc<Api>, syncs: Arc<Syncs>) -> Refresher {
 fn a_failed_refresh_keeps_the_last_result() {
     let api = Arc::new(Api(Mutex::new(Ok(one_agent(None)))));
     let mut r = refresher(api.clone(), Arc::default());
-    let first = r.refresh(&Outcome::default());
+    let first = r.refresh(&Outcome::default(), &|| false);
     let pane = |o: &Outcome| o.swarm.as_ref().unwrap().orchestrators[0].pane_id.clone();
     assert_eq!(pane(&first), "abc123:w1:p1");
     assert!(first.tried && first.error.is_none() && first.at.is_some());
     *api.0.lock().unwrap() = Err("unreachable".into());
-    let second = r.refresh(&first);
+    let second = r.refresh(&first, &|| false);
     assert_eq!(pane(&second), "abc123:w1:p1");
     assert_eq!(second.error.as_deref(), Some("unreachable"));
     assert_eq!(second.at, first.at);
     *api.0.lock().unwrap() = Err(String::new());
-    assert_eq!(r.refresh(&second).error.as_deref(), Some("unreachable"));
+    assert_eq!(
+        r.refresh(&second, &|| false).error.as_deref(),
+        Some("unreachable")
+    );
 }
 
 #[test]
@@ -123,7 +126,7 @@ fn continuations_are_mirrored_in_the_same_refresh() {
     let api = Arc::new(Api(Mutex::new(Ok(one_agent(Some(OLD))))));
     let syncs: Arc<Syncs> = Arc::default();
     let mut r = refresher(api, syncs.clone());
-    let out = r.refresh(&Outcome::default());
+    let out = r.refresh(&Outcome::default(), &|| false);
     let o = &out.swarm.unwrap().orchestrators[0];
     assert_eq!(o.session_id.as_deref(), Some(NEW));
     let mut both = vec![OLD.to_owned(), NEW.to_owned()];
@@ -132,7 +135,7 @@ fn continuations_are_mirrored_in_the_same_refresh() {
         *syncs.calls.lock().unwrap(),
         [vec![OLD.to_owned()], both.clone()]
     );
-    r.refresh(&Outcome::default()); // known now: one sync with both
+    r.refresh(&Outcome::default(), &|| false); // known now: one sync with both
     let calls = syncs.calls.lock().unwrap();
     assert_eq!(calls.len(), 3);
     assert_eq!(calls[2], both);
@@ -143,7 +146,7 @@ fn a_failed_sync_is_said_and_stops_the_rounds() {
     let api = Arc::new(Api(Mutex::new(Ok(one_agent(Some(OLD))))));
     let syncs: Arc<Syncs> = Arc::default();
     *syncs.error.lock().unwrap() = Some("rsync timed out".into());
-    let out = refresher(api, syncs.clone()).refresh(&Outcome::default());
+    let out = refresher(api, syncs.clone()).refresh(&Outcome::default(), &|| false);
     assert_eq!(syncs.calls.lock().unwrap().len(), 1);
     let swarm = out.swarm.unwrap();
     assert_eq!(

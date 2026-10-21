@@ -2,6 +2,8 @@ use super::*;
 
 #[test]
 fn a_panicking_orchestrator_becomes_an_error_and_the_rest_go_on() {
+    // a panic while another test holds a panic hook would reach that hook
+    let _hook = crate::ui::guard::hook_lock();
     assert_eq!(contain("w1:p1", || 7), Ok(7));
     let err = contain("w1:p2", || -> i32 {
         panic!("byte index 3 is not a char boundary")

@@ -1,14 +1,14 @@
 //! A frame of the panel (Python `SwarmApp.repaint` plus `PanelApp.decorate`): the docked view
-//! of its tab's orchestrator in herdr's theme, focused or not; the narrow layout when its tab
-//! has none (Python's `_update_dock`); dimmed with the notice while there is no core.
-//!
-//! Python draws the wide graph at 120 columns and more (P4); a panel that wide shows the
-//! narrow layout here, a stated gap until P4 (panels are 46 columns).
+//! of its tab's orchestrator in herdr's theme, focused or not; the graph when its tab has
+//! none (Python's `_update_dock`): the narrow layout, or the wide one from 120 columns;
+//! dimmed with the notice while there is no core.
 
 use super::model::Panel;
-use panorama_core::view::palette::{BG, DIM, DOCK_HOV, FAINT, FG};
-use panorama_core::view::theme::{OwnColours, panel_look};
-use panorama_core::view::{PanelSettings, Screen, Tokens, render_dock, render_narrow};
+pub use crate::ui::frame::Frame;
+use crate::ui::frame::OWN;
+use panorama_core::view::palette::{BG, DIM, FG};
+use panorama_core::view::theme::panel_look;
+use panorama_core::view::{Screen, render_dock, render_graph};
 
 /// The operator's notice while there is no core (Q139).
 pub const NOTICE: &str = "panorama is restarting…";
@@ -16,27 +16,6 @@ pub const NOTICE: &str = "panorama is restarting…";
 pub const DIM_BY: f64 = 0.5;
 /// The empty page's words: this panel follows Claude Code sessions.
 pub const NO_SESSIONS: &str = "No Claude Code sessions in herdr";
-
-const OWN: OwnColours = OwnColours {
-    fg: FG,
-    dim: DIM,
-    faint: FAINT,
-    fallback: (DOCK_HOV, BG),
-};
-
-/// Everything a frame needs besides the panel's state.
-#[derive(Clone, Debug)]
-pub struct Frame {
-    /// The wall clock (POSIX seconds) and the animation time in frames of 250 ms.
-    pub now: f64,
-    pub frame: f64,
-    /// Seconds east of UTC, for the clock.
-    pub utc_offset: i64,
-    /// herdr's theme, panorama's colour settings, and the open key as herdr binds it.
-    pub theme: Option<Tokens>,
-    pub settings: PanelSettings,
-    pub open_key: (String, String),
-}
 
 impl Panel {
     /// The frame at `f`, `w` × `h`. The list's scroll offset is kept for the next frame.
@@ -60,7 +39,7 @@ impl Panel {
             render_dock(&self.swarm, v, w, h, stale, NO_SESSIONS)
         } else {
             v.panel = None;
-            render_narrow(&self.swarm, v, w, h, stale, NO_SESSIONS)
+            render_graph(&self.swarm, v, w, h, stale, NO_SESSIONS)
         };
         for col in &s.columns {
             v.offsets.insert(col.column, col.offset);

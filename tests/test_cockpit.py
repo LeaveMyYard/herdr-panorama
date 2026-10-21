@@ -190,6 +190,27 @@ def test_the_cores_open_key_brings_a_docked_home_back_to_its_own_tab(herdr):
     assert app._open_key({}) == "home" and len(herdr.calls("pane", "move")) == moves  # home now: no move
 
 
+def test_the_cores_open_key_follows_the_home_panes_new_id(monkeypatch):
+    """When the undock gives panorama's pane a new id (herdr does across workspaces), the
+    view keeps it: the next open key and the collector use the new pane."""
+    from herdr_panorama import herdr as herdr_mod
+    from herdr_panorama.tui import SwarmApp
+
+    from .demo import NOW, demo_swarm
+    snap = {"panes": [{"pane_id": "w1:p5", "tab_id": "w1:t2"}], "tabs": [{"tab_id": "w1:t2", "label": "billing"}]}
+    monkeypatch.setattr(herdr_mod, "snapshot", lambda: snap)
+    monkeypatch.setattr(home, "find", lambda s, found=None, prefer=None: home.Home(prefer, "w1:t2"))
+    monkeypatch.setattr(home, "ensure", lambda focus: (home.Home("w2:p9", "w2:t9"), None))
+    focused = []
+    monkeypatch.setattr(herdr_mod, "focus_tab", lambda t: focused.append(t))
+    monkeypatch.setattr(herdr_mod, "focus_pane", lambda p: focused.append(p))
+    app = SwarmApp(source=demo_swarm, live_refresh=False, clock=lambda: NOW, home_mode=True)
+    app.my_pane = "w1:p5"
+    assert app._open_key({}) == "home"
+    assert app.my_pane == "w2:p9" and app.collector.self_pane == "w2:p9"
+    assert focused == ["w2:t9", "w2:p9"]
+
+
 def test_an_older_home_pane_is_adopted_and_labelled(herdr):
     st = {"tabs": [{"tab_id": "w1:t1", "label": "❓2 " + home.HOME_LABEL, "workspace_id": "w1"}],
           "panes": [{"pane_id": "w1:p1", "tab_id": "w1:t1", "workspace_id": "w1", "label": "Panorama",

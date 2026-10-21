@@ -5,6 +5,7 @@
 //! The moving cockpit is dropped (Q187): no dock or follow runs here, so nothing holds the
 //! docked panel while a move resizes the pane, and no dock hint outlives a collect.
 
+use crate::panel::input::Key;
 use crate::ui::layout;
 use crate::ui::selection::{self, ARM, SelectedCard};
 use panorama_core::model::Swarm;
@@ -35,6 +36,8 @@ pub struct App {
     pub dock: bool,
     /// The pane's width at the last paint (0 before the first).
     pub width: i32,
+    /// The terminal has the keyboard: the docked panel's focused look.
+    pub pane_focused: bool,
     /// Where the arrows resume from while no orchestrator is selected.
     parked: Option<String>,
 }
@@ -52,6 +55,7 @@ impl App {
             armed_at: now,
             dock: false,
             width: 0,
+            pane_focused: true,
             parked: None,
         }
     }
@@ -124,17 +128,27 @@ impl App {
         true
     }
 
-    /// After a paint: each column's scroll offset, kept for the next one (Python's `scroll`
-    /// wrote them into the view as it rendered).
+    /// After a paint: each column's scroll offset, kept for the next one, and a sideways
+    /// scroll clamped to the first column shown (Python's `scroll` and `_wide` wrote them into
+    /// the view as they rendered).
     pub fn painted(&mut self, s: &Screen) {
         for col in &s.columns {
             self.view.offsets.insert(col.column, col.offset);
+        }
+        if self.view.hcol.is_some() {
+            self.view.hcol = Some(s.hlo);
         }
     }
 
     /// What an action key would act on.
     pub fn selected_card(&self) -> SelectedCard {
         selection::selected_card(&self.swarm, &self.view, self.dock)
+    }
+
+    /// Whether `key` ends the app: `q`, and Esc in a popup (the home tab is not dismissed by
+    /// a stray Esc). The other keys join with the app's input (P4 8b).
+    pub fn quits(&self, key: Key) -> bool {
+        key == Key::Quit || (key == Key::Escape && !self.home_mode)
     }
 
     /// Where the arrows resume from while no orchestrator is selected.

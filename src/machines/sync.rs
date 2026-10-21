@@ -19,7 +19,13 @@ pub const UNSAFE_TARGET: &str = "unsafe ssh target";
 /// Mirrors a machine's sessions; `None` on success, else the error.
 pub trait Syncer: Send + Sync {
     /// Mirror what the scanner reads of `sessions` from `machine`, then prune.
-    fn sync(&self, machine: &Machine, sessions: &[String]) -> Option<String>;
+    /// `cancelled()` says the watcher is stopping: a pass under way is killed.
+    fn sync(
+        &self,
+        machine: &Machine,
+        sessions: &[String],
+        cancelled: &dyn Fn() -> bool,
+    ) -> Option<String>;
 }
 
 /// A machine's mirror: `<state dir>/remote/<its id, alphanumerics only>/projects`.
@@ -102,7 +108,12 @@ fn now() -> f64 {
 }
 
 impl Syncer for RsyncSync {
-    fn sync(&self, machine: &Machine, sessions: &[String]) -> Option<String> {
+    fn sync(
+        &self,
+        machine: &Machine,
+        sessions: &[String],
+        cancelled: &dyn Fn() -> bool,
+    ) -> Option<String> {
         let dest = mirror_root(&self.state_dir, machine);
         let _ = std::fs::create_dir_all(&dest);
         let sessions = canonical(sessions);
@@ -114,7 +125,9 @@ impl Syncer for RsyncSync {
                 return Some(UNSAFE_TARGET.to_owned());
             }
             let source = format!("{}:.claude/projects/", machine.target);
-            err = self.rsync.mirror(&source, &dest, &sessions, &*self.runner);
+            err = self
+                .rsync
+                .mirror(&source, &dest, &sessions, &*self.runner, cancelled);
         }
         prune(&dest, &sessions, (self.keep)(), now());
         err
