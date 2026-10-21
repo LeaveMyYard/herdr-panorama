@@ -216,3 +216,64 @@ async fn the_forms_start_reads_per_tab_mode_from_the_config() {
         (1, 1)
     );
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_popups_start_reads_the_plugins_config_and_environment() {
+    // #124 final pass L2: the settings Link::start wires in (a graph-view popup, cockpit = true)
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    fake.on(
+        "agent.get",
+        Reply::error("agent_not_found", "agent not found"),
+    );
+    fake.on("layout.apply", Reply::error("boom", "no layout"));
+    fake.on("tab.create", Reply::error("boom", "no tab"));
+    let cfg = dir.path().join("cfg");
+    std::fs::create_dir_all(&cfg).unwrap();
+    std::fs::write(cfg.join("config.toml"), "cockpit = true\n").unwrap();
+    let (cfg_s, state_s) = (
+        cfg.to_string_lossy().into_owned(),
+        dir.path().join("state").to_string_lossy().into_owned(),
+    );
+    let env = herdr_agent_kit::plugin_env::PluginEnv::from_vars(
+        [
+            ("HERDR_PLUGIN_ID", "leavemyyard.herdr-panorama"),
+            ("HERDR_PLUGIN_ROOT", "/plugins/p"),
+            ("HERDR_PLUGIN_CONFIG_DIR", cfg_s.as_str()),
+            ("HERDR_PLUGIN_STATE_DIR", state_s.as_str()),
+        ],
+        Some(dir.path().to_path_buf()),
+        1000,
+    );
+    let mut popup =
+        Link::start_with(&env, fake.client(), false, None, dir.path().join("log")).await;
+    popup.start_agent("docs".into(), None, "claude");
+    assert!(matches!(done(&mut popup).await, Done::Started(Err(_))));
+    assert_eq!(
+        fake.params_of("tab.create").len(),
+        0,
+        "per-tab: no plain tab"
+    );
+    let layout = &fake.params_of("layout.apply")[0];
+    assert_eq!(
+        layout["root"]["first"]["env"]["HERDR_PLUGIN_ROOT"], "/plugins/p",
+        "{layout}"
+    );
+}
+
+#[test]
+fn a_start_that_panics_ends_as_a_failed_start() {
+    // #124 final pass L1: the modal never stays busy
+    let _hook = crate::ui::guard::hook_lock(); // the start panics on purpose
+    crate::ui::guard::block_on(async {
+        let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+        let mut home = link(&fake, true, dir.path());
+        home.report_start(async { panic!("boom") });
+        match done(&mut home).await {
+            Done::Started(Err(why)) => assert!(
+                why.starts_with("+ New agent failed:") && why.contains("boom"),
+                "{why}"
+            ),
+            other => panic!("{other:?}"),
+        }
+    });
+}

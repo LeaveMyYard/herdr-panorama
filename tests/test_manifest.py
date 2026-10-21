@@ -27,6 +27,8 @@ def test_plugin_manifest():
     form = next(p for p in m["panes"] if p["id"] == "new-agent")  # + New agent as its own popup
     assert form["placement"] == "popup" and form["command"] == VIEW_COMMAND("new-agent")
     assert isinstance(form["width"], int) and form["width"] >= 80 and form["height"] >= 24
+    from herdr_panorama import herdr as hp
+    assert (form["width"], form["height"]) == hp.NEW_AGENT_POPUP  # what the Python opener asks for
     panel = next(p for p in m["panes"] if p["id"] == "panel")  # a per-tab panel
     from herdr_panorama import herdr
     assert panel["placement"] == "split" and panel["command"] == herdr.PANEL_COMMAND  # layout.apply uses it too
@@ -57,21 +59,28 @@ def test_claude_plugin_manifests():
         assert spec["timeout"] <= 10
 
 
-def _launch(root, env_extra=None, timeout=10, stdin=None):
-    """Runs herdr.PANEL_COMMAND for a plugin root whose stubs echo who ran; (stdout, stderr).
-    The probe's temp files must all be gone afterwards (#78 final pass, L-2)."""
+# The two launchers that probe the binary the same way: scripts/panel (the panel contract, a bare
+# number) and scripts/tui (the view contract, `tui <n>`), each with the command it runs.
+LAUNCHERS = {"panel": ("panel", "1"), "tui": ("tui", "tui 1")}
+
+
+def _launch(root, env_extra=None, timeout=10, stdin=None, launcher="panel", path=None):
+    """Runs the manifest's command for `launcher` (herdr.PANEL_COMMAND, or the view's) for a
+    plugin root whose stubs echo who ran; (stdout, stderr). The probe's temp files must all be
+    gone afterwards (#78 final pass, L-2)."""
     import os
     import subprocess
 
     from herdr_panorama import herdr
+    command = herdr.PANEL_COMMAND if launcher == "panel" else VIEW_COMMAND("tui")
     env = {k: v for k, v in os.environ.items() if not k.startswith("HERDR_") and k != "CARGO_TARGET_DIR"}
     env.update({"HERDR_PLUGIN_ROOT": str(root), "HERDR_PLUGIN_STATE_DIR": str(root / "state"),
-                "PATH": f"{root / 'bin'}:/usr/bin:/bin", "TMPDIR": str(root / "tmp")}, **(env_extra or {}))
+                "PATH": path or f"{root / 'bin'}:/usr/bin:/bin", "TMPDIR": str(root / "tmp")}, **(env_extra or {}))
     (root / "state").mkdir(exist_ok=True)
     (root / "tmp").mkdir(exist_ok=True)
     (root / "scripts").mkdir(exist_ok=True)  # the plugin root holds this checkout's launcher
-    (root / "scripts" / "panel").write_text((ROOT / "scripts" / "panel").read_text())
-    out = subprocess.run(herdr.PANEL_COMMAND, env=env, capture_output=True, text=True, timeout=timeout,
+    (root / "scripts" / launcher).write_text((ROOT / "scripts" / launcher).read_text())
+    out = subprocess.run(command, env=env, capture_output=True, text=True, timeout=timeout,
                          check=True, stdin=stdin)
     assert list((root / "tmp").iterdir()) == [], "the probe left its temp file"
     return out.stdout.strip(), out.stderr.strip()
@@ -137,46 +146,71 @@ def test_a_directory_named_like_the_binary_is_not_run(tmp_path):
     assert _launch(tmp_path) == ("venv panel", "")
 
 
-def _bounded(tmp_path, body):
+def _bounded(tmp_path, body, launcher, path=None):
     import shutil
     import time
     if not (shutil.which("timeout") or shutil.which("perl")):
         pytest.skip("neither timeout(1) nor perl: the probe is unbounded here")
     _stub(tmp_path / ".venv" / "bin" / "panorama", 'echo venv "$@"')
-    _stub(tmp_path / "target" / "release" / "panorama", body)
+    _stub(tmp_path / "target" / "release" / "panorama", body.replace("ANSWER", LAUNCHERS[launcher][1]))
     t = time.monotonic()
-    out = _launch(tmp_path, timeout=20)[0]
+    out = _launch(tmp_path, timeout=20, launcher=launcher, path=path)[0]
     return out, time.monotonic() - t
 
 
-def test_a_binary_that_hangs_on_the_probe_is_given_two_seconds(tmp_path):
-    out, took = _bounded(tmp_path, "exec sleep 30")
-    assert out == "venv panel" and took < 6
+both = pytest.mark.parametrize("launcher", sorted(LAUNCHERS))
 
 
-def test_a_probe_that_ignores_term_is_killed_a_second_later(tmp_path):
+@both
+def test_a_binary_that_hangs_on_the_probe_is_given_two_seconds(tmp_path, launcher):
+    out, took = _bounded(tmp_path, "exec sleep 30", launcher)
+    assert out == f"venv {launcher}" and took < 6
+
+
+@both
+def test_a_probe_that_ignores_term_is_killed_a_second_later(tmp_path, launcher):
     # #78 review L-3: `timeout 2` sent TERM only
-    out, took = _bounded(tmp_path, "trap '' TERM; sleep 30")
-    assert out == "venv panel" and took < 6
+    out, took = _bounded(tmp_path, "trap '' TERM; sleep 30", launcher)
+    assert out == f"venv {launcher}" and took < 6
 
 
-def test_a_probe_child_holding_the_output_cannot_keep_the_panel_waiting(tmp_path):
+@both
+def test_without_timeout_perls_alarm_bounds_the_probe(tmp_path, launcher):
+    """A system without timeout(1) (stock macOS): perl's alarm bounds the probe instead."""
+    import os
+    import shutil
+    if not shutil.which("perl"):
+        pytest.skip("no perl")
+    bin_ = tmp_path / "nobin"
+    bin_.mkdir()
+    for tool in ("sh", "perl", "mktemp", "head", "rm", "date", "sleep", "cat"):
+        os.symlink(shutil.which(tool), bin_ / tool)  # everything the launcher uses but timeout
+    out, took = _bounded(tmp_path, "exec sleep 30", launcher, path=str(bin_))
+    assert out == f"venv {launcher}" and took < 6
+    out, took = _bounded(tmp_path, 'if [ "$1" = contract ]; then echo "ANSWER"; exit 0; fi; echo rust "$@"',
+                         launcher, path=str(bin_))
+    assert out == f"rust {launcher}", "a binary that answers still passes"
+
+
+@both
+def test_a_probe_child_holding_the_output_cannot_keep_the_panel_waiting(tmp_path, launcher):
     # #78 review L-3: a child left behind with the probe's stdout no longer holds the read
-    body = 'if [ "$1" = contract ]; then sleep 30 & echo 1; exit 0; fi; echo rust "$@"'
-    out, took = _bounded(tmp_path, body)
-    assert out == "rust panel" and took < 6
+    body = 'if [ "$1" = contract ]; then sleep 30 & echo "ANSWER"; exit 0; fi; echo rust "$@"'
+    out, took = _bounded(tmp_path, body, launcher)
+    assert out == f"rust {launcher}" and took < 6
 
 
-def test_the_probe_never_reads_the_panes_input(tmp_path):
+@both
+def test_the_probe_never_reads_the_panes_input(tmp_path, launcher):
     """#78 final pass N-8: the probe's stdin is /dev/null, so a binary that reads it can never
     take what the operator types into a new panel (here: an open, silent stdin)."""
     import os
     _stub(tmp_path / ".venv" / "bin" / "panorama", 'echo venv "$@"')
     _stub(tmp_path / "target" / "release" / "panorama",
-          'if [ "$1" = contract ]; then read x; echo 1; exit 0; fi; echo rust "$@"')
+          f'if [ "$1" = contract ]; then read x; echo "{LAUNCHERS[launcher][1]}"; exit 0; fi; echo rust "$@"')
     r, w = os.pipe()  # the write end stays open: a probe reading it would wait out its 2 s
     try:
-        assert _launch(tmp_path, stdin=r)[0] == "rust panel"
+        assert _launch(tmp_path, stdin=r, launcher=launcher)[0] == f"rust {launcher}"
     finally:
         os.close(r)
         os.close(w)

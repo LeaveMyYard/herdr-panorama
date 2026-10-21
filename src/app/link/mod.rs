@@ -106,6 +106,17 @@ impl Link {
         log: PathBuf,
     ) -> Self {
         let herdr = Herdr::from_env().with_client("panorama");
+        Self::start_with(env, herdr, home_mode, my_pane, log).await
+    }
+
+    /// [`Self::start`] with its herdr client.
+    pub async fn start_with(
+        env: &PluginEnv,
+        herdr: Herdr,
+        home_mode: bool,
+        my_pane: Option<String>,
+        log: PathBuf,
+    ) -> Self {
         let state = state_dir(env);
         let place = Place {
             plugin_id: env.plugin_id(PANORAMA_ID).to_owned(),
