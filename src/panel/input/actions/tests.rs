@@ -142,3 +142,50 @@ fn after_a_lost_core_the_next_cores_filter_wins_at_once() {
     );
     assert_eq!(p.view.filter, Filter::All);
 }
+
+#[test]
+fn g_in_the_docked_list_goes_into_the_agent() {
+    // test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[g-False-True]
+    let (mut p, t) = panel("w1:t2", "w1:t2");
+    p.view.orch = Some("w1:p4".into());
+    let out = p.on_key(Key::Goto, t);
+    assert!(
+        matches!(&out[..], [Effect::Goto { pane, keep_focus: false, .. }] if pane == "w1:p4"),
+        "{out:?}"
+    );
+}
+
+#[test]
+fn enter_with_neither_the_arrows_nor_keep_focus_goes_into_the_agent() {
+    // test_panel_keys.py::test_docked_enter_with_keep_focus_off_focuses_the_agent
+    let (mut p, t) = panel("w1:t2", "w1:t2");
+    p.input.settings.arrows = false;
+    p.input.settings.keep_focus = false;
+    p.view.orch = Some("w1:p4".into());
+    let out = p.on_key(Key::Enter, t);
+    assert!(
+        matches!(&out[..], [Effect::Goto { pane, keep_focus: false, .. }] if pane == "w1:p4"),
+        "{out:?}"
+    );
+}
+
+#[test]
+fn the_wide_graphs_enter_still_goes_into_the_agent() {
+    // test_panel_keys.py::test_the_2a_graph_enter_still_focuses_the_agent
+    let (mut p, t) = panel("w1:t2", "w1:t2");
+    p.paint(160, 45, &crate::panel::input::fixtures::frame()); // wide: the full graph
+    assert!(!p.input.dock);
+    p.on_key(Key::Move(1), t);
+    let out = p.on_key(Key::Enter, t);
+    assert!(
+        !out.is_empty()
+            && out.iter().all(|e| matches!(
+                e,
+                Effect::Goto {
+                    keep_focus: false,
+                    ..
+                }
+            )),
+        "{out:?}"
+    );
+}

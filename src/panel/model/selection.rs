@@ -63,7 +63,7 @@ impl Panel {
     /// and the pane (as last painted) is narrower than the wide layout; the docked list is
     /// one column. Decided on each refresh before the arming comparison, and on each paint.
     pub(crate) fn update_dock(&mut self) {
-        self.input.dock = layout::docked(&self.graph.swarm, self.input.width);
+        self.input.dock = layout::docked(&self.graph.swarm, self.input.width, self.input.docking);
         if self.input.dock {
             self.graph.view.focus = 0;
         }

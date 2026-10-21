@@ -6,6 +6,7 @@
 mod arming;
 mod clicks;
 mod deep;
+mod dock;
 mod focus;
 mod frames;
 mod keys;

@@ -26,6 +26,7 @@ fn form(harness: usize, focus: Option<(Field, usize)>) -> Form<'static> {
         cwd: CWD,
         focus,
         status: None,
+        carousel: false,
     }
 }
 
