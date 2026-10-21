@@ -2,18 +2,18 @@
 //! `PANORAMA_HOME=1`, opened on the pane herdr says was focused.
 
 use super::actor::Actor;
-use super::collect::{Source, Worker};
+use super::collect::{Refresher, Worker};
 use super::driver::Driver;
 use super::model::App;
 use super::panic;
+use crate::produce::Producer;
 use crate::settings::Settings;
-use crate::snapshot::source;
 use crate::ui::end::End;
 use crate::ui::term;
 use herdr_agent_kit::internal::plugin_paths::panorama::state_dir;
 use herdr_agent_kit::plugin_env::PluginEnv;
 use serde_json::Value;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
 
 /// The pane that was focused when herdr invoked the plugin (Python `invocation_pane`).
@@ -25,15 +25,19 @@ pub fn invocation_pane(context_json: Option<&str>) -> Option<String> {
         .map(str::to_owned)
 }
 
-/// `panorama tui`: this machine's swarm (herdr, the transcripts, the inbox), collected by one
-/// collector on the collect thread. In the home tab the view's own pane is the one the
+/// How long quitting waits for the refresher to stop: long enough for a remote sync under way
+/// to be killed, never a forwarded snapshot's herdr call (Python quits at once).
+pub const STOP_WAIT: Duration = Duration::from_millis(500);
+
+/// `panorama tui`: the core's producer (this machine's swarm, herdr's saved machines, the
+/// unseen marks) on the refresh thread. In the home tab the view's own pane is the one the
 /// collector docks by (Python `collector.self_pane`). The exit code.
 pub fn tui() -> i32 {
     let env = PluginEnv::from_env();
     let self_pane = home_mode(&env)
         .then(|| env.pane_id().map(str::to_owned))
         .flatten();
-    run(move || Box::new(source(PluginEnv::from_env(), self_pane)) as Source)
+    run(move || Producer::from_env(PluginEnv::from_env(), self_pane))
 }
 
 /// The home tab's view (`PANORAMA_HOME=1`, Python `home.is_home`).
@@ -41,8 +45,8 @@ fn home_mode(env: &PluginEnv) -> bool {
     env.var("PANORAMA_HOME") == Some("1")
 }
 
-/// Runs the app until it ends, its swarm from `make`'s source; the exit code.
-pub fn run(make: impl FnOnce() -> Source + Send + 'static) -> i32 {
+/// Runs the app until it ends, refreshed by `make`'s refresher; the exit code.
+pub fn run<R: Refresher + 'static>(make: impl FnOnce() -> R + Send + 'static) -> i32 {
     let env = PluginEnv::from_env();
     let log = panic::log_path(&state_dir(&env));
     let default_hook = std::panic::take_hook();
@@ -62,9 +66,9 @@ pub fn run(make: impl FnOnce() -> Source + Send + 'static) -> i32 {
     }
 }
 
-async fn serve(
+async fn serve<R: Refresher + 'static>(
     env: &PluginEnv,
-    make: impl FnOnce() -> Source + Send + 'static,
+    make: impl FnOnce() -> R + Send + 'static,
 ) -> std::io::Result<End> {
     let focus = invocation_pane(env.plugin_context_json());
     let app = App::new(focus, home_mode(env), Instant::now());
@@ -72,7 +76,9 @@ async fn serve(
     let worker = Worker::spawn(make, tx)?;
     let term = term::setup()?;
     let mut actor = Actor::new(Driver::new(app), Settings::from_env(env), term, worker, rx);
-    actor.run().await
+    let end = actor.run().await;
+    actor.stop(STOP_WAIT); // then the thread is left behind: the process exits
+    end
 }
 
 #[cfg(test)]

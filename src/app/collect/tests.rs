@@ -1,7 +1,42 @@
-//! The collect thread: one collect at a time, a cleaned swarm, a panic as a failed refresh.
+//! The refresh thread: one refresh at a time, a cleaned swarm with its marks, a failure as a
+//! failed refresh, and quitting that stops the refresher without waiting it out.
 
 use super::*;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
+
+/// A refresher from a closure; `stopped` says whether it was stopped.
+struct Fake {
+    refresh: Box<dyn FnMut() -> Refreshed + Send>,
+    stopped: Arc<AtomicBool>,
+}
+
+impl Refresher for Fake {
+    fn refresh(&mut self) -> Refreshed {
+        (self.refresh)()
+    }
+
+    fn stop(&mut self) {
+        self.stopped.store(true, Ordering::SeqCst);
+    }
+}
+
+fn fake(refresh: impl FnMut() -> Refreshed + Send + 'static) -> (Fake, Arc<AtomicBool>) {
+    let stopped = Arc::new(AtomicBool::new(false));
+    let f = Fake {
+        refresh: Box::new(refresh),
+        stopped: stopped.clone(),
+    };
+    (f, stopped)
+}
+
+fn swarm(sw: Swarm) -> Refreshed {
+    Refreshed {
+        swarm: sw,
+        ..Refreshed::default()
+    }
+}
 
 fn recv(rx: &mut mpsc::UnboundedReceiver<Collected>) -> Collected {
     let rt = tokio::runtime::Builder::new_current_thread()
@@ -17,71 +52,87 @@ fn recv(rx: &mut mpsc::UnboundedReceiver<Collected>) -> Collected {
 }
 
 #[test]
-fn one_collect_at_a_time_and_its_swarm_is_cleaned() {
+fn one_refresh_at_a_time_its_swarm_cleaned_and_its_marks_kept() {
     let (tx, mut rx) = mpsc::unbounded_channel();
-    let mut w = Worker::spawn(
-        || {
-            Box::new(|| Swarm {
-                errors: vec!["bad \u{1b}[31mrecord\u{7}".into()],
-                docked: Some("w1:p3".into()),
-                ..Swarm::default()
-            }) as Source
-        },
-        tx,
-    )
-    .unwrap();
+    let (f, _) = fake(|| {
+        let mut out = swarm(Swarm {
+            errors: vec!["bad \u{1b}[31mrecord\u{7}".into()],
+            docked: Some("w1:p3".into()),
+            ..Swarm::default()
+        });
+        for (id, ev) in [
+            ("a1", Event::Fail),
+            ("a2", Event::Wait),
+            ("a3", Event::Done),
+        ] {
+            out.marks.insert(id.into(), ev);
+        }
+        out
+    });
+    let mut w = Worker::spawn(move || f, tx).unwrap();
     assert!(w.request());
     assert!(!w.request()); // one is running: the tick is skipped
     match recv(&mut rx) {
-        Collected::Swarm(sw) => {
+        Collected::Swarm(sw, marks) => {
             assert!(!sw.errors[0].contains('\u{1b}') && !sw.errors[0].contains('\u{7}'));
             assert_eq!(sw.docked.as_deref(), Some("w1:p3")); // kept through the cleaning
+            let want = [
+                ("a1", Unseen::Fail),
+                ("a2", Unseen::Wait),
+                ("a3", Unseen::Done),
+            ];
+            assert_eq!(marks, want.map(|(i, u)| (i.to_owned(), u)).into());
         }
         other => panic!("{other:?}"),
     }
     w.done();
     assert!(w.request());
-    assert!(matches!(recv(&mut rx), Collected::Swarm(_)));
+    assert!(matches!(recv(&mut rx), Collected::Swarm(..)));
 }
 
 #[test]
-fn a_panicking_collect_is_a_failed_refresh_and_the_next_one_still_runs() {
+fn a_failed_or_panicking_refresh_is_a_failed_refresh_and_the_next_one_still_runs() {
     let _hook = crate::ui::guard::hook_lock();
     let prev = std::panic::take_hook();
     std::panic::set_hook(Box::new(|_| {})); // keep the test's output quiet
     let (tx, mut rx) = mpsc::unbounded_channel();
     let mut n = 0;
-    let mut w = Worker::spawn(
-        move || {
-            Box::new(move || {
-                n += 1;
-                assert!(n != 1, "bad record");
-                Swarm::default()
-            }) as Source
-        },
-        tx,
-    )
-    .unwrap();
-    w.request();
-    let first = recv(&mut rx);
-    w.done();
-    w.request();
-    let second = recv(&mut rx);
+    let (f, _) = fake(move || {
+        n += 1;
+        assert!(n != 1, "bad record");
+        Refreshed {
+            error: (n == 2).then(|| "panic: a bad transcript".into()),
+            ..Refreshed::default()
+        }
+    });
+    let mut w = Worker::spawn(move || f, tx).unwrap();
+    let mut next = || {
+        w.request();
+        let c = recv(&mut rx);
+        w.done();
+        c
+    };
+    let (first, second, third) = (next(), next(), next());
     std::panic::set_hook(prev);
     assert!(
         matches!(&first, Collected::Failed(m) if m.contains("bad record")),
         "{first:?}"
     );
-    assert!(matches!(second, Collected::Swarm(_)));
+    // the producer's own failure (it kept the last good swarm): the header says why
+    assert!(
+        matches!(&second, Collected::Failed(m) if m == "panic: a bad transcript"),
+        "{second:?}"
+    );
+    assert!(matches!(third, Collected::Swarm(..)));
 }
 
 #[test]
-fn a_source_that_cannot_start_fails_every_collect() {
+fn a_refresher_that_cannot_start_fails_every_refresh() {
     let _hook = crate::ui::guard::hook_lock();
     let prev = std::panic::take_hook();
     std::panic::set_hook(Box::new(|_| {}));
     let (tx, mut rx) = mpsc::unbounded_channel();
-    let mut w = Worker::spawn(|| -> Source { panic!("no herdr") }, tx).unwrap();
+    let mut w = Worker::spawn(|| -> Fake { panic!("no herdr") }, tx).unwrap();
     let started = recv(&mut rx);
     w.request();
     let asked = recv(&mut rx);
@@ -91,4 +142,51 @@ fn a_source_that_cannot_start_fails_every_collect() {
         "{started:?}"
     );
     assert!(matches!(asked, Collected::Failed(_)));
+    assert!(w.stop(Duration::from_secs(10))); // nothing to stop: the thread still ends
+}
+
+#[test]
+fn quitting_stops_the_refresher() {
+    let (tx, _rx) = mpsc::unbounded_channel();
+    let (f, stopped) = fake(|| swarm(Swarm::default()));
+    let w = Worker::spawn(move || f, tx).unwrap();
+    assert!(w.stop(Duration::from_secs(10)));
+    assert!(stopped.load(Ordering::SeqCst));
+}
+
+#[test]
+fn quitting_during_a_long_refresh_does_not_wait_it_out_and_it_stops_after() {
+    let (tx, _rx) = mpsc::unbounded_channel();
+    let (go, wait) = std::sync::mpsc::channel::<()>();
+    let (f, stopped) = fake(move || {
+        let _ = wait.recv(); // a refresh stuck in a slow herdr call
+        swarm(Swarm::default())
+    });
+    let mut w = Worker::spawn(move || f, tx).unwrap();
+    assert!(w.request());
+    let asked = std::time::Instant::now();
+    assert!(!w.stop(Duration::from_millis(50)));
+    assert!(asked.elapsed() < Duration::from_secs(5));
+    assert!(!stopped.load(Ordering::SeqCst));
+    go.send(()).unwrap(); // the call returns: the thread stops the refresher on its own
+    eventually(&stopped);
+}
+
+#[test]
+fn an_ended_app_stops_the_refresher() {
+    let (tx, rx) = mpsc::unbounded_channel();
+    let (f, stopped) = fake(|| swarm(Swarm::default()));
+    let mut w = Worker::spawn(move || f, tx).unwrap();
+    drop(rx);
+    assert!(w.request()); // its outcome has nowhere to go: the thread ends, the worker kept
+    eventually(&stopped);
+    drop(w);
+}
+
+fn eventually(stopped: &AtomicBool) {
+    let deadline = std::time::Instant::now() + Duration::from_secs(10);
+    while !stopped.load(Ordering::SeqCst) {
+        assert!(std::time::Instant::now() < deadline, "never stopped");
+        std::thread::yield_now();
+    }
 }

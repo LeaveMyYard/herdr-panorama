@@ -1,6 +1,7 @@
 //! The app and what is drawn over it (Python `SwarmApp` with its `Grid`): keys and the pointer
 //! go to the app, the notices go over its frame, and each paint feeds the click arming.
 
+use super::collect::Collected;
 use super::model::App;
 use crate::ui::frame::Frame;
 use crate::ui::input::{Clicks, Effect, Key, Painted};
@@ -44,6 +45,15 @@ impl Driver {
             toasts: Toasts::default(),
             toast_rects: vec![],
             shown: None,
+        }
+    }
+
+    /// A refresh's outcome at `now`: the model and its unseen marks, or why it failed (the
+    /// header says so; the last good model stays).
+    pub fn collected(&mut self, c: Collected, now: Instant) {
+        match c {
+            Collected::Swarm(swarm, marks) => self.app.apply(swarm, marks, now),
+            Collected::Failed(why) => self.app.failed(&why),
         }
     }
 

@@ -8,6 +8,7 @@ mod clicks;
 mod deep;
 mod keys;
 mod narrow;
+mod refresh;
 mod wheel;
 
 use super::*;
