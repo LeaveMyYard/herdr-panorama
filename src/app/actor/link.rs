@@ -5,7 +5,7 @@
 use super::{Actor, End};
 use crate::app::link::{Done, LinkEvent};
 use crate::core::Event;
-use crate::ui::input::{Effect, Host, Painted};
+use crate::ui::input::Painted;
 use std::io;
 use std::time::Instant;
 
@@ -82,10 +82,7 @@ impl Actor {
         let now = Instant::now();
         match e {
             Event::Seen(ids) => {
-                let mut out = vec![];
-                self.driver.app.seen(ids, &mut out);
-                // the marks cleared here; who keeps them hears it (the unseen store)
-                out.retain(|e| !matches!(e, Effect::Seen(_)));
+                let out = self.driver.seen_in_a_panel(ids);
                 if let Some(end) = self.act(out) {
                     return Ok(Some(end));
                 }
@@ -123,10 +120,7 @@ impl Actor {
     fn focused(&mut self, look: Option<bool>) -> io::Result<Option<End>> {
         self.publish();
         match look {
-            Some(f) if f != self.driver.app.pane_focused => {
-                self.driver.app.pane_focused = f;
-                self.repaint(Painted::Other).map(|()| None)
-            }
+            Some(f) if self.driver.focus(f) => self.repaint(Painted::Other).map(|()| None),
             _ => Ok(None),
         }
     }

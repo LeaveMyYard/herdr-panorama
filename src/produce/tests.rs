@@ -235,20 +235,19 @@ impl SnapshotApi for Names {
     }
 }
 
-#[test]
-fn stop_kills_a_hung_rsync_instead_of_waiting_it_out() {
+/// A producer on `source` whose one machine's sync hangs (the rsync a hung ssh leaves: it
+/// never ends on its own, 30 s timeout), refreshed once; the hung child's pid, which only
+/// this test started.
+fn hung_rsync(
+    dir: &std::path::Path,
+    source: Box<dyn FnMut() -> Swarm + Send>,
+) -> (Producer, rustix::process::Pid) {
     use crate::machines::mirror::run;
     use crate::machines::sync::RsyncSync;
-    let dir = tempfile::tempdir().unwrap();
-    let pidfile = dir.path().join("rsync.pid");
-    let env = PluginEnv::from_vars(
-        [("HERDR_PLUGIN_STATE_DIR", dir.path().join("state"))],
-        None,
-        1000,
-    );
+    let pidfile = dir.join("rsync.pid");
+    let env = PluginEnv::from_vars([("HERDR_PLUGIN_STATE_DIR", dir.join("state"))], None, 1000);
     let mut syncer = RsyncSync::new(&env, Arc::new(|| 3600.0));
     let pf = pidfile.clone();
-    // the rsync a hung ssh leaves: it never ends on its own (30 s timeout)
     syncer.runner = Arc::new(move |_: &[String], t, cancelled: &dyn Fn() -> bool| {
         let script = format!("sleep 60 & echo $! > {}; wait", pf.display());
         run(&["sh".to_owned(), "-c".to_owned(), script], t, cancelled)
@@ -266,12 +265,7 @@ fn stop_kills_a_hung_rsync_instead_of_waiting_it_out() {
         };
         Remotes::start(Box::new(OneMachine), Box::new(spawn))
     });
-    let mut p = Producer::new(
-        Box::new(Swarm::default),
-        Some(start),
-        tracker(dir.path()),
-        Box::new(|| 1.0),
-    );
+    let mut p = Producer::new(source, Some(start), tracker(dir), Box::new(|| 1.0));
     p.refresh();
     let until = Instant::now() + Duration::from_secs(5);
     while !pidfile.exists() && Instant::now() < until {
@@ -282,6 +276,22 @@ fn stop_kills_a_hung_rsync_instead_of_waiting_it_out() {
         .trim()
         .parse()
         .unwrap();
+    (p, rustix::process::Pid::from_raw(child).unwrap())
+}
+
+/// Whether `pid` is gone by `within` (signal 0 only: nothing is sent to it).
+fn gone_within(pid: rustix::process::Pid, within: Duration) -> bool {
+    let until = Instant::now() + within;
+    while rustix::process::test_kill_process(pid).is_ok() && Instant::now() < until {
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    rustix::process::test_kill_process(pid).is_err()
+}
+
+#[test]
+fn stop_kills_a_hung_rsync_instead_of_waiting_it_out() {
+    let dir = tempfile::tempdir().unwrap();
+    let (p, child) = hung_rsync(dir.path(), Box::new(Swarm::default));
     let started = Instant::now();
     drop(p);
     assert!(
@@ -289,15 +299,42 @@ fn stop_kills_a_hung_rsync_instead_of_waiting_it_out() {
         "{:?}",
         started.elapsed()
     );
-    let pid = rustix::process::Pid::from_raw(child).unwrap();
-    let gone = Instant::now() + Duration::from_secs(2);
-    while rustix::process::test_kill_process(pid).is_ok() && Instant::now() < gone {
-        std::thread::sleep(Duration::from_millis(20));
-    }
     assert!(
-        rustix::process::test_kill_process(pid).is_err(),
+        gone_within(child, Duration::from_secs(2)),
         "the rsync's group is gone"
     );
+}
+
+#[test]
+fn quitting_mid_refresh_halts_a_hung_rsync_within_the_stop_wait() {
+    // the app's quit while a local refresh hangs (herdr's snapshot timeout): the halt reaches
+    // the watcher from the quitting thread, not through the refresh thread's queue
+    use crate::app::collect::{Collected, Worker};
+    use crate::app::run::STOP_WAIT;
+    let dir = tempfile::tempdir().unwrap();
+    let (entered, inside) = std::sync::mpsc::channel::<()>();
+    let (release, gate) = std::sync::mpsc::channel::<()>();
+    let mut n = 0;
+    let source = Box::new(move || {
+        n += 1;
+        if n > 1 {
+            let _ = entered.send(());
+            let _ = gate.recv_timeout(Duration::from_secs(30)); // a local refresh that hangs
+        }
+        Swarm::default()
+    });
+    let (p, child) = hung_rsync(dir.path(), source);
+    let (tx, _rx) = tokio::sync::mpsc::unbounded_channel::<Collected>();
+    let mut w = Worker::spawn(move || p, tx).unwrap();
+    assert!(w.request());
+    inside.recv().unwrap(); // the refresh is under way
+    let quit = Instant::now();
+    assert!(!w.stop(STOP_WAIT)); // not waited out
+    assert!(
+        gone_within(child, STOP_WAIT.saturating_sub(quit.elapsed())),
+        "the hung rsync outlived the quit"
+    );
+    release.send(()).unwrap();
 }
 
 #[test]
@@ -371,6 +408,41 @@ fn highlight_unseen_follows_the_config() {
     assert!(!enabled());
     std::fs::write(&file, "").unwrap();
     assert!(enabled()); // the default
+}
+
+#[test]
+fn after_a_halt_no_watcher_starts_and_one_starting_meanwhile_is_stopped() {
+    let dir = tempfile::tempdir().unwrap();
+    let flags = Arc::new(Mutex::new(Vec::new()));
+    // halted before the first refresh: its remotes never start
+    let f = flags.clone();
+    let start: StartRemotes = Box::new(move || remotes(f.clone()));
+    let mut p = Producer::new(
+        Box::new(Swarm::default),
+        Some(start),
+        tracker(dir.path()),
+        Box::new(|| 1.0),
+    );
+    p.halt().stop();
+    p.refresh();
+    assert!(p.remotes.is_none() && flags.lock().unwrap().is_empty());
+    // halted while the first refresh starts them (the quit races the refresh)
+    let late: Arc<Mutex<Option<Halt>>> = Arc::default();
+    let (f, l) = (flags.clone(), late.clone());
+    let start: StartRemotes = Box::new(move || {
+        let r = remotes(f.clone());
+        l.lock().unwrap().as_ref().unwrap().stop();
+        r
+    });
+    let mut p = Producer::new(
+        Box::new(Swarm::default),
+        Some(start),
+        tracker(dir.path()),
+        Box::new(|| 1.0),
+    );
+    *late.lock().unwrap() = Some(p.halt());
+    p.refresh();
+    assert!(flags.lock().unwrap()[0].is_set());
 }
 
 #[test]

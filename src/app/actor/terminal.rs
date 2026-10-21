@@ -31,8 +31,12 @@ impl Actor {
             }
             Some(Ok(TermEvent::Mouse(m))) => return self.on_mouse(m, now),
             Some(Ok(TermEvent::Resize(..))) => {}
-            Some(Ok(TermEvent::FocusGained)) => self.driver.app.pane_focused = true,
-            Some(Ok(TermEvent::FocusLost)) => self.driver.app.pane_focused = false,
+            Some(Ok(TermEvent::FocusGained)) => {
+                self.driver.focus(true);
+            }
+            Some(Ok(TermEvent::FocusLost)) => {
+                self.driver.focus(false);
+            }
             Some(Ok(_)) => return Ok(None),
             Some(Err(e)) => return Err(e),
             None => return Ok(Some(End::Input)),
