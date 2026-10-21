@@ -46,3 +46,17 @@ fn a_line_over_the_limit_ends_the_connection() {
     assert_eq!(r.feed(&ok).unwrap().len(), 1);
     assert!(encode(&json!({"a": "z".repeat(MAX_LINE)})).is_err());
 }
+
+#[test]
+fn a_feed_splits_its_lines_once() {
+    // test_core.py::test_the_line_reader_is_linear_and_one_read_reports_seen_once: 3 MB of
+    // small lines in one feed (about 6 s in Python when every line re-copied the rest)
+    let many = b"{\"seen\":[\"a1\"]}\n".repeat(200_000);
+    let t0 = std::time::Instant::now();
+    assert_eq!(LineReader::default().feed(&many).unwrap().len(), 200_000);
+    assert!(
+        t0.elapsed() < std::time::Duration::from_millis(1500),
+        "{:?}",
+        t0.elapsed()
+    );
+}

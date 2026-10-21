@@ -1,0 +1,34 @@
+# herdr-panorama: the Claude Code plugin's MCP server launcher (.claude-plugin/plugin.json;
+# POSIX sh).
+#
+#   sh scripts/mcp <plugin root> mcp      (plugin.json: the root and the subcommand, as uv took them)
+#
+# It runs the Rust server (`panorama mcp`) when this plugin root has the binary built
+# (target/release/panorama: a linked checkout's `cargo build --release`, or Claude Code's copy
+# of one) and it speaks this checkout's Claude-side contract (`panorama contract claude`: the
+# tool's name, text and schemas, the events format). Anything else (no binary, a stale one, one
+# that fails on the probe, or hangs on it: 2 s with timeout(1), then KILL; where there is no
+# timeout(1), as on stock macOS, perl's alarm ends the probed process after 2 s (only that
+# process: a child it left holding the output would keep the probe waiting); unbounded with
+# neither) runs the Python
+# server through uv, as before, in the plugin data dir's venv (plugin.json's
+# UV_PROJECT_ENVIRONMENT). The answer is `claude <n>`: a binary from before the contract
+# answers a bare number and is passed over.
+CLAUDE_CONTRACT=1
+
+R=${1:-${CLAUDE_PLUGIN_ROOT:-.}}
+B="$R/target/release/panorama"
+
+if [ -f "$B" ] && [ -x "$B" ]; then
+	if command -v timeout >/dev/null 2>&1; then
+		got=$(timeout -k 1 2 "$B" contract claude </dev/null 2>/dev/null)
+	elif command -v perl >/dev/null 2>&1; then
+		got=$(perl -e 'alarm shift; exec @ARGV or exit 127' 2 "$B" contract claude </dev/null 2>/dev/null)
+	else
+		got=$("$B" contract claude </dev/null 2>/dev/null)
+	fi
+	if [ "$got" = "claude $CLAUDE_CONTRACT" ]; then
+		exec "$B" mcp
+	fi
+fi
+exec uv run --quiet --frozen --no-dev --project "$R" panorama mcp

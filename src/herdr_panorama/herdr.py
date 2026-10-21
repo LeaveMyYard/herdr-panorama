@@ -437,16 +437,6 @@ def claude_pid(pane_id: str) -> int | None:
     return None
 
 
-def move_pane_to_tab(pane_id: str, tab_id: str, target_pane: str | None = None) -> tuple[dict | None, str | None]:
-    """``pane move <pane> --tab <tab> --split right [--target-pane P] --no-focus``; returns
-    ``move_result`` (its ``pane.pane_id`` is the pane's id from now on)."""
-    args = ["pane", "move", pane_id, "--tab", tab_id, "--split", "right", "--no-focus"]
-    if target_pane:
-        args += ["--target-pane", target_pane]
-    res, err = call(*args)
-    return ((res or {}).get("move_result") or {}, None) if res is not None else (None, err)
-
-
 def move_pane_new_tab(pane_id: str, workspace_id: str | None, label: str) -> tuple[dict | None, str | None]:
     """``pane move <pane> --new-tab [--workspace W] --label L --no-focus``; returns ``move_result``."""
     args = ["pane", "move", pane_id, "--new-tab", "--label", label, "--no-focus"]
