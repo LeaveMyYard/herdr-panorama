@@ -43,14 +43,14 @@ impl RealOpen {
         }
     }
 
-    /// The `panorama` pane to open: its own placement, or a focused right split.
+    /// The `panorama` pane to open, focused (`OpenPluginPane::new`'s default): its own
+    /// placement, or a right split of the pane the action came from.
     pub fn view(&self, split: bool) -> OpenPluginPane {
         let mut open = OpenPluginPane::new(self.home.plugin_id.clone(), "panorama");
         open.cwd = self.home.root.clone();
         if split {
             open.placement = Some(Placement::Split);
             open.direction = Some(Direction::Right);
-            open.focus = true;
             open.target_pane = self.invoked_from.as_deref().map(PaneId::new);
         }
         open
