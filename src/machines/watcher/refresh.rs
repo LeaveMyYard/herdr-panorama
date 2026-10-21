@@ -2,6 +2,7 @@
 //! transcripts mirrored (following continuations, #39), the collector over the mirror, and the
 //! result namespaced. A failed snapshot keeps the last good swarm, with the error.
 
+use crate::machines::mirror::STOPPED;
 use crate::machines::sync::Syncer;
 use crate::machines::{CONTINUE_ROUNDS, Machine, cut, namespace};
 use herdr_agent_kit::herdr_api::{HerdrError, Snapshot, blocking};
@@ -85,8 +86,9 @@ pub struct Refresher {
 }
 
 impl Refresher {
-    /// One refresh after `last`.
-    pub fn refresh(&mut self, last: &Outcome) -> Outcome {
+    /// One refresh after `last`; `cancelled()` says the watcher is stopping (checked between
+    /// steps, and by the syncs while rsync runs: a stop never waits out a sync).
+    pub fn refresh(&mut self, last: &Outcome, cancelled: &dyn Fn() -> bool) -> Outcome {
         let snap = match self.api.machine_snapshot(&self.machine.id) {
             Ok(snap) => snap,
             Err(e) => {
@@ -97,10 +99,13 @@ impl Refresher {
                 });
             }
         };
+        if cancelled() {
+            return last.failed(STOPPED.into());
+        }
         let named = session_ids(&snap);
         let mut sessions = named.clone();
         sessions.extend(self.collector.continuations(&named));
-        let mut err = self.syncer.sync(&self.machine, &sessions);
+        let mut err = self.syncer.sync(&self.machine, &sessions, cancelled);
         let mut swarm = self.collector.collect(&snap);
         for _ in 0..CONTINUE_ROUNDS {
             // herdr names a conversation's first session; its mirrored transcript may say it
@@ -111,11 +116,11 @@ impl Refresher {
                 .into_iter()
                 .filter(|s| !sessions.contains(s))
                 .collect();
-            if err.is_some() || more.is_empty() {
+            if err.is_some() || more.is_empty() || cancelled() {
                 break;
             }
             sessions.extend(more);
-            err = self.syncer.sync(&self.machine, &sessions);
+            err = self.syncer.sync(&self.machine, &sessions, cancelled);
             swarm = self.collector.collect(&snap);
         }
         let mut swarm = namespace(swarm, &self.machine);

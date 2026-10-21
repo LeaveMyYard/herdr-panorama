@@ -11,7 +11,12 @@ pub const HELP_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Whether `<bin> --help` names `--append-verify` (on stdout or stderr) within `timeout`.
 pub fn knows_append_verify(bin: &str, timeout: Duration) -> bool {
-    match bounded(&[bin.to_owned(), "--help".to_owned()], timeout, true) {
+    match bounded(
+        &[bin.to_owned(), "--help".to_owned()],
+        timeout,
+        true,
+        &|| false,
+    ) {
         Ended::Exited { stdout, stderr, .. } => {
             String::from_utf8_lossy(&[stdout, stderr].concat()).contains("--append-verify")
         }
