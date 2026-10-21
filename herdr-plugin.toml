@@ -28,7 +28,7 @@ id = "new-agent"
 title = "New agent"
 placement = "popup"
 width = 84
-height = 26
+height = 30
 command = ["sh", "-c", "exec uv run --quiet --frozen --no-dev --project \"${HERDR_PLUGIN_ROOT:-.}\" panorama new-agent"]
 
 # A per-tab panel (cockpit = true): this tab's docked panel, drawn from the core's

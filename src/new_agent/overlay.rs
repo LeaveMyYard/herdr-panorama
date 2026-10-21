@@ -11,10 +11,17 @@ pub const SHADE_ALPHA: f64 = 0.55;
 
 /// `view` dimmed, with `modal` (the 1C modal rendered at the view's size) on top.
 pub fn over(view: &mut Screen, modal: &Screen) {
-    for c in view.cells_mut() {
-        c.fg = c.fg.mix(SHADE, SHADE_ALPHA);
-        c.bg = Some(c.bg.map_or(SHADE, |b| b.mix(SHADE, SHADE_ALPHA)));
-        (c.fg_moves, c.bg_moves) = (false, false); // nothing behind the modal animates
+    let (w, h) = (view.w(), view.h());
+    for y in 0..h {
+        for x in 0..w {
+            // every cell, drawn on or not: an undrawn one takes the shade
+            let Some(c) = view.cell_mut(x, y) else {
+                continue;
+            };
+            c.fg = c.fg.mix(SHADE, SHADE_ALPHA);
+            c.bg = Some(c.bg.map_or(SHADE, |b| b.mix(SHADE, SHADE_ALPHA)));
+            (c.fg_moves, c.bg_moves) = (false, false); // nothing behind the modal animates
+        }
     }
     place(view, modal);
     view.targets.clear(); // the view behind takes no clicks

@@ -5,6 +5,7 @@
 use super::driver::Driver;
 use crate::new_agent::form::{FormKey, NewAgentForm, Outcome};
 use crate::new_agent::overlay::over;
+use crate::ui::input::Toast;
 use panorama_core::view::Screen;
 use panorama_core::view::new_agent::{Modal, render};
 use std::time::Instant;
@@ -86,8 +87,22 @@ impl Driver {
         Some(name)
     }
 
+    /// The modal's start ended (Python `_new_agent_done`): when it runs, the modal closes and
+    /// "started <name>" shows; whether the view closes then (a popup, which would hide the
+    /// new tab). An error stays on the modal's status row.
+    pub fn agent_started(&mut self, result: Result<String, String>, now: Instant) -> bool {
+        let Some(name) = self.form_started(result) else {
+            return false;
+        };
+        self.toasts.push(
+            Toast::new(Some("new agent"), format!("started {name}"), 6),
+            now,
+        );
+        !self.app.home_mode
+    }
+
     /// The modal, when open, over the dimmed view; its picture is kept for its clicks.
-    pub(super) fn form_over(&mut self, screen: &mut Screen) {
+    pub fn form_over(&mut self, screen: &mut Screen) {
         let Some(open) = self.form.as_mut() else {
             return;
         };

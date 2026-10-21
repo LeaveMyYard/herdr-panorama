@@ -10,6 +10,7 @@ mod deep;
 mod frames;
 mod keys;
 mod narrow;
+mod new_agent;
 mod wheel;
 
 use super::*;

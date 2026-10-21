@@ -143,3 +143,37 @@ async fn quit_releases_a_shared_home_tab_after_the_panels() {
     alone.quit().await;
     assert_eq!(fake.params_of("tab.rename").len(), 1);
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn an_unanswered_popup_request_never_also_opens_the_form() {
+    // tests/test_tui.py: herdr may have opened it all the same; one that never started is said
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    fake.on("plugin.pane.open", Reply::Close);
+    let mut home = link(&fake, true, dir.path());
+    let mark = dir.path().join("new-agent.mark");
+    std::fs::write(&mark, "99999999999").unwrap(); // the popup's process marked its start
+    home.new_agent(Some("/work".into()), 46);
+    assert!(quiet(&mut home).await, "it started: no form, no notice");
+    std::fs::remove_file(&mark).unwrap();
+    home.new_agent(Some("/work".into()), 46);
+    match done(&mut home).await {
+        Done::Toast(t) => assert_eq!(t.text, crate::panel::act::new_agent::DID_NOT_OPEN),
+        other => panic!("{other:?}"),
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_forms_start_reports_its_end() {
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    let mut home = link(&fake, true, dir.path());
+    let missing = dir.path().join("gone").to_string_lossy().into_owned();
+    home.start_agent("docs".into(), Some(missing), "claude");
+    match done(&mut home).await {
+        Done::Started(Err(why)) => assert!(why.contains("gone"), "{why}"),
+        other => panic!("{other:?}"),
+    }
+    assert!(
+        fake.requests().is_empty(),
+        "refused before herdr is asked anything"
+    );
+}
