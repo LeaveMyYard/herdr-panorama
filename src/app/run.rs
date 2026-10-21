@@ -107,7 +107,7 @@ async fn serve<R: Refresher + 'static>(
     if let Some(a) = actor.after_exit.take() {
         // the inbox popup once this one is closed (Python `after_exit`)
         term::restore();
-        let h = herdr_agent_kit::herdr_api::Herdr::from_env().with_client("panorama");
+        let h = crate::trace::client();
         crate::panel::act::inbox::InboxLink::default()
             .open(
                 &h,

@@ -77,7 +77,7 @@ pub type SelfPane = Arc<Mutex<Option<String>>>;
 
 /// [`source`] with the view's own pane read again on each collect.
 pub fn source_shared(env: PluginEnv, self_pane: SelfPane) -> impl FnMut() -> Swarm {
-    let herdr = blocking::Herdr::from_env().with_client("panorama");
+    let herdr = crate::trace::blocking_client();
     let mut config =
         ConfigFile::resolve(&env, || herdr.plugin_config_dir(PANORAMA_ID).ok().flatten());
     // no home at all: a relative "~/.claude/projects", which holds nothing (as Python's

@@ -24,7 +24,6 @@ use crate::proto::socket;
 use crate::settings::Settings;
 use crate::ui::{clock, crash, term};
 use actor::Actor;
-use herdr_agent_kit::herdr_api::Herdr;
 use herdr_agent_kit::internal::plugin_paths::PANORAMA_ID;
 use herdr_agent_kit::internal::plugin_paths::panorama::{session_key, state_dir};
 use herdr_agent_kit::plugin_env::PluginEnv;
@@ -82,7 +81,7 @@ async fn serve(env: &PluginEnv) -> std::io::Result<actor::End> {
             .home()
             .map_or_else(|| "~".to_owned(), |h| h.to_string_lossy().into_owned()),
     };
-    let herdr = Herdr::from_env().with_client("panorama");
+    let herdr = crate::trace::client();
     let term = term::setup()?;
     let mut actor = Actor::new(
         panel,

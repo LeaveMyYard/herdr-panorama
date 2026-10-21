@@ -266,7 +266,7 @@ tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[46],tests/test_d
 tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[50],tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::the_panel_lays_out_to_the_width_it_gets,mapped,,P3
 tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[60],tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::the_panel_lays_out_to_the_width_it_gets,mapped,,P3
 tests/test_dock_panel.py::test_3a_at_its_design_width_keeps_every_footer_hint,tests/test_dock_panel.py,crates/panorama-core/tests/design_goldens.rs::design_9e_cell_for_cell,mapped,,P3
-tests/test_dock_panel.py::test_trace_records_each_herdr_call,tests/test_dock_panel.py,,todo,,P4
+tests/test_dock_panel.py::test_trace_records_each_herdr_call,tests/test_dock_panel.py,src/trace/tests.rs::each_herdr_call_is_one_line_named_as_python_names_it ; src/trace/tests.rs::lines_are_pythons_byte_for_byte,mapped,,P4
 tests/test_dock_panel.py::test_r16b_the_lock_gives_up_instead_of_hanging,tests/test_dock_panel.py,,todo,,P4
 tests/test_fixture_privacy.py::test_fixtures_hold_no_real_ids,tests/test_fixture_privacy.py,tests/fixture_privacy.rs::fixtures_hold_no_real_ids ; tests/fixture_privacy.rs::the_rule_finds_what_it_is_for,mapped,,P4
 tests/test_fixture_privacy.py::test_docs_hold_no_real_agent_ids,tests/test_fixture_privacy.py,tests/fixture_privacy.rs::docs_hold_no_real_agent_ids,mapped,,P4
@@ -304,7 +304,7 @@ tests/test_focus_theme.py::test_a_panorama_started_without_the_keyboard_looks_un
 tests/test_follow.py::test_z_zooms_panoramas_own_pane,tests/test_follow.py,src/app/link/tests/acts.rs::zoom_is_the_home_panes_own,mapped,,P4
 tests/test_follow.py::test_the_docked_panel_and_the_graph_show_the_zoom_key,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_event_stream_yields_focus_events_and_reconnects,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r12_l1_backoff_grows_until_data_arrives,tests/test_follow.py,,todo,,P4
+tests/test_follow.py::test_r12_l1_backoff_grows_until_data_arrives,tests/test_follow.py,herdr-agent-kit@v0.1.2:src/herdr_api/events/stream/tests.rs::the_backoff_grows_until_it_is_capped,mapped,,P4
 tests/test_follow.py::test_r12f_l1_the_watcher_tracks_liveness,tests/test_follow.py,src/app/link/tests/events.rs::focus_events_feed_the_log_the_view_and_one_pass_per_burst,mapped,,P4
 tests/test_follow.py::test_r12f_l1_events_marks_connect_and_disconnect,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_r16_the_settle_wait_keeps_its_margin,tests/test_follow.py,,todo,,P4

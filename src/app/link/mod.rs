@@ -98,7 +98,7 @@ impl Link {
         my_pane: Option<String>,
         log: PathBuf,
     ) -> Self {
-        let herdr = Herdr::from_env().with_client("panorama");
+        let herdr = crate::trace::client();
         let state = state_dir(env);
         let place = Place {
             plugin_id: env.plugin_id(PANORAMA_ID).to_owned(),

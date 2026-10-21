@@ -1,0 +1,47 @@
+{
+ "source": "herdr_panorama.herdr.trace (main), run by tools/capture_trace.py",
+ "cases": [
+  {
+   "op": "cli api snapshot",
+   "at_raw": 1792000000.1234567,
+   "ms_raw": 12.345600000003287,
+   "line": "{\"at\": 1792000000.123, \"op\": \"cli api snapshot\", \"ms\": 12.3}"
+  },
+  {
+   "op": "socket pane.layout",
+   "at_raw": 1792000000.0005,
+   "ms_raw": 0.04999999998744897,
+   "line": "{\"at\": 1792000000.0, \"op\": \"socket pane.layout\", \"ms\": 0.0}"
+  },
+  {
+   "op": "socket tab.move",
+   "at_raw": 1792000001.9995,
+   "ms_raw": 1234.567889999994,
+   "line": "{\"at\": 1792000002.0, \"op\": \"socket tab.move\", \"ms\": 1234.6}"
+  },
+  {
+   "op": "cli --machine m1",
+   "at_raw": 1792000002.25,
+   "ms_raw": 0.14999999996234692,
+   "line": "{\"at\": 1792000002.25, \"op\": \"cli --machine m1\", \"ms\": 0.1}"
+  },
+  {
+   "op": "socket session.snapshot",
+   "at_raw": 1792000003.0,
+   "ms_raw": 0.0,
+   "line": "{\"at\": 1792000003.0, \"op\": \"socket session.snapshot\", \"ms\": 0.0}"
+  },
+  {
+   "op": "cli plugin config-dir",
+   "at_raw": 1792000004.0625,
+   "ms_raw": 12344.999899999948,
+   "line": "{\"at\": 1792000004.062, \"op\": \"cli plugin config-dir\", \"ms\": 12345.0}"
+  },
+  {
+   "op": "cli --machine caf\u00e9",
+   "at_raw": 1792000005.5,
+   "ms_raw": 1.9999999999527063,
+   "line": "{\"at\": 1792000005.5, \"op\": \"cli --machine caf\\u00e9\", \"ms\": 2.0}"
+  }
+ ]
+}
