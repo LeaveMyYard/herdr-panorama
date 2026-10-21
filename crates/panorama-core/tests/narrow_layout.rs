@@ -292,3 +292,15 @@ fn the_narrow_layouts_colours_glide_between_whole_frames() {
     assert!(colours > 0, "nothing glides between frames 1 and 1.5");
     assert_eq!(at(2.0).text(), at(2.999).text()); // glyphs step only at whole frames
 }
+
+#[test]
+fn the_new_row_in_the_narrow_layout() {
+    // test_tui.py::test_new_row_in_narrow_layout
+    let v = View {
+        orch: Some(NEW_ROW.into()),
+        now: demo_view().now,
+        ..View::default()
+    };
+    let text = render_narrow(&demo(), &v, 70, 45, None, NO_SESSIONS).text();
+    assert!(text.contains(" +   New agent  n"), "{text}");
+}

@@ -85,6 +85,27 @@ async fn a_moved_home_pane_moves_the_collectors_copy_too() {
 }
 
 #[tokio::test(flavor = "current_thread")]
+async fn the_link_takes_its_new_id_from_the_report() {
+    // the panels task reports the home pane's new id; the link (its focus, the collector's
+    // copy) takes it before the actor sees the report
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    let mut l = link(&fake, true, dir.path());
+    let cell: crate::snapshot::SelfPane =
+        std::sync::Arc::new(std::sync::Mutex::new(Some("w1:p1".into())));
+    l.collector_pane = Some(cell.clone());
+    l.done_tx.send(Done::MyPane("w2:p9".into())).unwrap();
+    let got = tokio::time::timeout(std::time::Duration::from_secs(5), l.next())
+        .await
+        .unwrap();
+    assert!(matches!(
+        got,
+        crate::app::link::LinkEvent::Done(Done::MyPane(_))
+    ));
+    assert_eq!(l.my_pane.as_deref(), Some("w2:p9"));
+    assert_eq!(cell.lock().unwrap().as_deref(), Some("w2:p9"));
+}
+
+#[tokio::test(flavor = "current_thread")]
 async fn herdrs_focus_switches_the_docked_panels_look_too() {
     // test_focus_theme.py::test_herdrs_focus_events_switch_the_look_too: the open key focuses
     // panorama's pane through herdr, and no terminal focus report may come

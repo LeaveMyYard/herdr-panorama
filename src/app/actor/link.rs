@@ -62,12 +62,7 @@ impl Actor {
                     .and_then(|l| l.focus_read(&announced, real));
                 return self.focused(look);
             }
-            Done::MyPane(pane) => {
-                if let Some(link) = self.link.as_mut() {
-                    link.moved(pane);
-                }
-                return Ok(None);
-            }
+            Done::MyPane(_) => return Ok(None), // the link took its new id (`Link::next`)
             Done::NewAgentForm(cwd) => self.driver.open_form(&cwd, now),
             Done::Started(result) => {
                 if self.driver.agent_started(result, now) {
