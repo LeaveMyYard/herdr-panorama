@@ -267,7 +267,7 @@ tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[50],tests/test_d
 tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[60],tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::the_panel_lays_out_to_the_width_it_gets,mapped,,P3
 tests/test_dock_panel.py::test_3a_at_its_design_width_keeps_every_footer_hint,tests/test_dock_panel.py,crates/panorama-core/tests/design_goldens.rs::design_9e_cell_for_cell,mapped,,P3
 tests/test_dock_panel.py::test_trace_records_each_herdr_call,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_r16b_the_lock_gives_up_instead_of_hanging,tests/test_dock_panel.py,,todo,,P4
+tests/test_dock_panel.py::test_r16b_the_lock_gives_up_instead_of_hanging,tests/test_dock_panel.py,src/home/tests/ensure.rs::ensure_with_the_lock_held_elsewhere_gives_up ; src/home/tests/label.rs::quit_never_waits_long_for_a_busy_lock,mapped,,P4
 tests/test_fixture_privacy.py::test_fixtures_hold_no_real_ids,tests/test_fixture_privacy.py,tests/fixture_privacy.rs::fixtures_hold_no_real_ids ; tests/fixture_privacy.rs::the_rule_finds_what_it_is_for,mapped,,P4
 tests/test_fixture_privacy.py::test_docs_hold_no_real_agent_ids,tests/test_fixture_privacy.py,tests/fixture_privacy.rs::docs_hold_no_real_agent_ids,mapped,,P4
 tests/test_focus_theme.py::test_turn_10_matches_the_design_cell_for_cell[0-yours-A],tests/test_focus_theme.py,crates/panorama-core/tests/design_goldens.rs::design_10_focused_and_not_in_two_themes_cell_for_cell,mapped,,P3
@@ -513,11 +513,11 @@ tests/test_machines.py::test_unsafe_ssh_targets_are_never_used,tests/test_machin
 tests/test_machines.py::test_namespacing_keeps_machines_apart,tests/test_machines.py,src/machines/namespace/tests.rs::namespacing_keeps_machines_apart,mapped,,P4
 tests/test_machines.py::test_merge_marks_stale_and_unreachable,tests/test_machines.py,src/machines/remotes/tests.rs::merge_marks_stale_and_unreachable,mapped,,P4
 tests/test_machines.py::test_a_failed_refresh_keeps_the_last_result,tests/test_machines.py,src/machines/watcher/refresh/tests.rs::a_failed_refresh_keeps_the_last_result,mapped,,P4
-tests/test_machines.py::test_enter_on_a_remote_orchestrator_focuses_it_there_and_says_where,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_remote_groups_get_a_divider_and_it_is_not_clickable,tests/test_machines.py,,todo,,P4
-tests/test_machines.py::test_two_machines_with_the_same_local_ids_are_two_identities,tests/test_machines.py,,todo,,P4
+tests/test_machines.py::test_enter_on_a_remote_orchestrator_focuses_it_there_and_says_where,tests/test_machines.py,src/app/driver/tests/remote.rs::acting_on_a_remote_orchestrator_asks_its_own_server_never_a_local_focus ; src/panel/act/remote/tests.rs::the_pane_is_focused_on_its_machine_and_the_operator_told,mapped,,P4
+tests/test_machines.py::test_remote_groups_get_a_divider_and_it_is_not_clickable,tests/test_machines.py,tests/machines_view.rs::remote_groups_get_a_divider_and_it_is_not_clickable,mapped,,P4
+tests/test_machines.py::test_two_machines_with_the_same_local_ids_are_two_identities,tests/test_machines.py,tests/machines_view.rs::two_machines_with_the_same_local_ids_are_two_identities,mapped,,P4
 tests/test_machines.py::test_a_custom_source_never_starts_machines,tests/test_machines.py,src/produce/tests.rs::a_producer_without_machines_never_starts_any,mapped,,P4
-tests/test_machines.py::test_two_machines_with_one_label_stay_apart_and_colons_are_fine,tests/test_machines.py,,todo,,P4
+tests/test_machines.py::test_two_machines_with_one_label_stay_apart_and_colons_are_fine,tests/test_machines.py,tests/machines_view.rs::two_machines_with_one_label_stay_apart_and_colons_are_fine ; src/machines/namespace/tests.rs::two_machines_with_one_label_stay_apart_and_colons_are_fine,mapped,,P4
 tests/test_machines.py::test_a_changed_machines_setting_applies_without_a_restart,tests/test_machines.py,src/machines/remotes/tests.rs::a_changed_machines_setting_applies_without_a_restart,mapped,,P4
 tests/test_machines.py::test_an_rsync_without_append_verify_gets_a_normal_jsonl_pass,tests/test_machines.py,src/machines/sync/tests.rs::an_rsync_without_append_verify_gets_a_normal_jsonl_pass,mapped,,P4
 tests/test_machines.py::test_prune_never_touches_live_sessions_or_leaves_the_project,tests/test_machines.py,src/machines/prune/tests.rs::prune_never_touches_live_sessions_or_leaves_the_project ; src/machines/prune/tests.rs::a_symlinked_project_dir_is_never_entered,mapped,,P4
