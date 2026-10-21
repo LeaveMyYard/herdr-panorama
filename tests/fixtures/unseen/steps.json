@@ -1,0 +1,319 @@
+{
+ "source": "tools/capture_unseen.py: herdr_panorama.unseen.Tracker",
+ "steps": [
+  {
+   "now": 100.0,
+   "swarm": [
+    {
+     "pane": "w1:p1",
+     "focused": false,
+     "machine": null,
+     "machine_id": null,
+     "agents": [
+      {
+       "id": "a",
+       "status": "run",
+       "qids": [],
+       "ended": null,
+       "last_at": null,
+       "started": null
+      },
+      {
+       "id": "b",
+       "status": "run",
+       "qids": [],
+       "ended": null,
+       "last_at": null,
+       "started": null
+      },
+      {
+       "id": "c",
+       "status": "cxl",
+       "qids": [],
+       "ended": null,
+       "last_at": null,
+       "started": null
+      }
+     ]
+    },
+    {
+     "pane": "m1:w1:p1",
+     "focused": false,
+     "machine": "mä",
+     "machine_id": "mä",
+     "agents": [
+      {
+       "id": "x",
+       "status": "run",
+       "qids": [],
+       "ended": null,
+       "last_at": null,
+       "started": null
+      }
+     ]
+    }
+   ],
+   "marks": {},
+   "file": "{\"v\":1,\"saved\":100.0,\"agents\":{\"a\":{\"s\":\"run\",\"q\":[],\"ev\":null,\"t\":100.0},\"b\":{\"s\":\"run\",\"q\":[],\"ev\":null,\"t\":100.0},\"c\":{\"s\":\"cxl\",\"q\":[],\"ev\":null,\"t\":100.0},\"m\\u00e4:x\":{\"s\":\"run\",\"q\":[],\"ev\":null,\"t\":100.0}}}"
+  },
+  {
+   "now": 101.0,
+   "swarm": [
+    {
+     "pane": "w1:p1",
+     "focused": false,
+     "machine": null,
+     "machine_id": null,
+     "agents": [
+      {
+       "id": "a",
+       "status": "fail",
+       "qids": [],
+       "ended": null,
+       "last_at": null,
+       "started": null
+      },
+      {
+       "id": "b",
+       "status": "wait",
+       "qids": [
+        7
+       ],
+       "ended": null,
+       "last_at": null,
+       "started": null
+      },
+      {
+       "id": "c",
+       "status": "done",
+       "qids": [],
+       "ended": null,
+       "last_at": null,
+       "started": null
+      }
+     ]
+    },
+    {
+     "pane": "m1:w1:p1",
+     "focused": false,
+     "machine": "mä",
+     "machine_id": "mä",
+     "agents": [
+      {
+       "id": "x",
+       "status": "inf",
+       "qids": [],
+       "ended": null,
+       "last_at": null,
+       "started": null
+      }
+     ]
+    }
+   ],
+   "marks": {
+    "a": "fail",
+    "b": "wait",
+    "x": "done"
+   },
+   "file": "{\"v\":1,\"saved\":101.0,\"agents\":{\"a\":{\"s\":\"fail\",\"q\":[],\"ev\":\"fail\",\"t\":101.0},\"b\":{\"s\":\"wait\",\"q\":[7],\"ev\":\"wait\",\"t\":101.0},\"c\":{\"s\":\"done\",\"q\":[],\"ev\":null,\"t\":101.0},\"m\\u00e4:x\":{\"s\":\"inf\",\"q\":[],\"ev\":\"done\",\"t\":101.0}}}"
+  },
+  {
+   "now": 102.0,
+   "restart": true,
+   "swarm": [
+    {
+     "pane": "w1:p1",
+     "focused": false,
+     "machine": null,
+     "machine_id": null,
+     "agents": [
+      {
+       "id": "a",
+       "status": "fail",
+       "qids": [],
+       "ended": null,
+       "last_at": null,
+       "started": null
+      },
+      {
+       "id": "b",
+       "status": "wait",
+       "qids": [],
+       "ended": null,
+       "last_at": null,
+       "started": null
+      },
+      {
+       "id": "c",
+       "status": "done",
+       "qids": [],
+       "ended": null,
+       "last_at": null,
+       "started": null
+      },
+      {
+       "id": "eq",
+       "status": "done",
+       "qids": [],
+       "ended": 101.0,
+       "last_at": null,
+       "started": null
+      },
+      {
+       "id": "old",
+       "status": "done",
+       "qids": [],
+       "ended": 50.0,
+       "last_at": null,
+       "started": null
+      },
+      {
+       "id": "new",
+       "status": "fail",
+       "qids": [],
+       "ended": null,
+       "last_at": 150.0,
+       "started": null
+      }
+     ]
+    },
+    {
+     "pane": "m1:w1:p1",
+     "focused": false,
+     "machine": "mä",
+     "machine_id": "mä",
+     "agents": [
+      {
+       "id": "x",
+       "status": "inf",
+       "qids": [],
+       "ended": null,
+       "last_at": null,
+       "started": null
+      }
+     ]
+    }
+   ],
+   "marks": {
+    "a": "fail",
+    "b": "wait",
+    "eq": "done",
+    "new": "fail",
+    "x": "done"
+   },
+   "file": "{\"v\":1,\"saved\":102.0,\"agents\":{\"a\":{\"s\":\"fail\",\"q\":[],\"ev\":\"fail\",\"t\":102.0},\"b\":{\"s\":\"wait\",\"q\":[7],\"ev\":\"wait\",\"t\":102.0},\"c\":{\"s\":\"done\",\"q\":[],\"ev\":null,\"t\":102.0},\"m\\u00e4:x\":{\"s\":\"inf\",\"q\":[],\"ev\":\"done\",\"t\":102.0},\"eq\":{\"s\":\"done\",\"q\":[],\"ev\":\"done\",\"t\":102.0},\"old\":{\"s\":\"done\",\"q\":[],\"ev\":null,\"t\":102.0},\"new\":{\"s\":\"fail\",\"q\":[],\"ev\":\"fail\",\"t\":102.0}}}"
+  },
+  {
+   "now": 103.0,
+   "swarm": [
+    {
+     "pane": "w1:p1",
+     "focused": false,
+     "machine": null,
+     "machine_id": null,
+     "agents": [
+      {
+       "id": "a",
+       "status": "fail",
+       "qids": [],
+       "ended": null,
+       "last_at": null,
+       "started": null
+      },
+      {
+       "id": "b",
+       "status": "run",
+       "qids": [],
+       "ended": null,
+       "last_at": null,
+       "started": null
+      },
+      {
+       "id": "c",
+       "status": "done",
+       "qids": [],
+       "ended": null,
+       "last_at": null,
+       "started": null
+      },
+      {
+       "id": "eq",
+       "status": "done",
+       "qids": [],
+       "ended": null,
+       "last_at": null,
+       "started": null
+      }
+     ]
+    }
+   ],
+   "seen": [
+    "a"
+   ],
+   "marks": {
+    "a": "fail",
+    "eq": "done"
+   },
+   "file": "{\"v\":1,\"saved\":103.0,\"agents\":{\"a\":{\"s\":\"fail\",\"q\":[],\"ev\":null,\"t\":103.0},\"b\":{\"s\":\"run\",\"q\":[7],\"ev\":null,\"t\":103.0},\"c\":{\"s\":\"done\",\"q\":[],\"ev\":null,\"t\":103.0},\"m\\u00e4:x\":{\"s\":\"inf\",\"q\":[],\"ev\":\"done\",\"t\":102.0},\"eq\":{\"s\":\"done\",\"q\":[],\"ev\":\"done\",\"t\":103.0},\"old\":{\"s\":\"done\",\"q\":[],\"ev\":null,\"t\":102.0},\"new\":{\"s\":\"fail\",\"q\":[],\"ev\":\"fail\",\"t\":102.0}}}"
+  },
+  {
+   "now": 104.0,
+   "swarm": [
+    {
+     "pane": "w1:p1",
+     "focused": true,
+     "machine": null,
+     "machine_id": null,
+     "agents": [
+      {
+       "id": "a",
+       "status": "fail",
+       "qids": [],
+       "ended": null,
+       "last_at": null,
+       "started": null
+      },
+      {
+       "id": "b",
+       "status": "done",
+       "qids": [
+        9
+       ],
+       "ended": null,
+       "last_at": null,
+       "started": null
+      }
+     ]
+    }
+   ],
+   "marks": {
+    "b": "wait"
+   },
+   "file": "{\"v\":1,\"saved\":104.0,\"agents\":{\"a\":{\"s\":\"fail\",\"q\":[],\"ev\":null,\"t\":104.0},\"b\":{\"s\":\"done\",\"q\":[7,9],\"ev\":\"wait\",\"t\":104.0},\"c\":{\"s\":\"done\",\"q\":[],\"ev\":null,\"t\":103.0},\"m\\u00e4:x\":{\"s\":\"inf\",\"q\":[],\"ev\":\"done\",\"t\":102.0},\"eq\":{\"s\":\"done\",\"q\":[],\"ev\":\"done\",\"t\":103.0},\"old\":{\"s\":\"done\",\"q\":[],\"ev\":null,\"t\":102.0},\"new\":{\"s\":\"fail\",\"q\":[],\"ev\":\"fail\",\"t\":102.0}}}"
+  },
+  {
+   "now": 691305.0,
+   "restart": true,
+   "swarm": [
+    {
+     "pane": "w1:p1",
+     "focused": false,
+     "machine": null,
+     "machine_id": null,
+     "agents": [
+      {
+       "id": "b",
+       "status": "done",
+       "qids": [],
+       "ended": null,
+       "last_at": null,
+       "started": null
+      }
+     ]
+    }
+   ],
+   "marks": {},
+   "file": "{\"v\":1,\"saved\":691305.0,\"agents\":{\"b\":{\"s\":\"done\",\"q\":[7,9],\"ev\":null,\"t\":691305.0}}}"
+  }
+ ]
+}

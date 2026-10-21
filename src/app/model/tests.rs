@@ -199,3 +199,14 @@ fn a_pane_with_no_size_is_not_painted_and_keeps_its_layout() {
     assert!(!app.before_paint(0, 45) && app.dock && app.width == 46);
     assert!(!app.before_paint(46, 0) && app.dock);
 }
+
+#[test]
+fn q_quits_and_esc_only_a_popup() {
+    use crate::panel::input::Key;
+    let t0 = Instant::now();
+    let popup = App::new(None, false, t0);
+    let home = App::new(None, true, t0);
+    assert!(popup.quits(Key::Quit) && home.quits(Key::Quit));
+    assert!(popup.quits(Key::Escape) && !home.quits(Key::Escape));
+    assert!(!popup.quits(Key::Enter));
+}
