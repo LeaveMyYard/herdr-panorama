@@ -549,7 +549,7 @@ tests/test_mouse.py::test_a_selected_card_without_focus_is_focused_first,tests/t
 tests/test_mouse.py::test_pods_in_a_thread_card_select_their_agent,tests/test_mouse.py,src/app/driver/tests/clicks.rs::pods_in_a_thread_card_select_their_agent,mapped,,P4
 tests/test_mouse.py::test_complete_and_finished_cards_fold_like_enter,tests/test_mouse.py,src/app/driver/tests/clicks.rs::complete_and_finished_cards_fold_like_enter,mapped,,P4
 tests/test_mouse.py::test_header_filters_switch_on_click,tests/test_mouse.py,src/app/driver/tests/clicks.rs::header_filters_switch_on_click,mapped,,P4
-tests/test_mouse.py::test_new_agent_row_opens_the_form_only_when_armed,tests/test_mouse.py,src/app/driver/tests/clicks.rs::the_new_agent_row_opens_the_form_only_when_armed ; src/app/link/tests/acts.rs::new_agent_uses_the_form_where_it_fits_else_the_popup,mapped,,P4
+tests/test_mouse.py::test_new_agent_row_opens_the_form_only_when_armed,tests/test_mouse.py,src/app/driver/tests/clicks.rs::the_new_agent_row_opens_the_form_only_when_armed ; src/app/link/tests/acts.rs::new_agent_uses_the_form_where_it_fits_else_the_popup ; src/app/driver/tests/new_agent.rs::a_click_outside_the_modal_reaches_nothing_behind_it,mapped,,P4
 tests/test_mouse.py::test_action_labels_act_on_their_agent,tests/test_mouse.py,src/app/driver/tests/clicks.rs::action_labels_act_on_their_agent,mapped,,P4
 tests/test_mouse.py::test_a_click_on_empty_space_does_nothing,tests/test_mouse.py,src/app/driver/tests/clicks.rs::a_click_on_empty_space_does_nothing,mapped,,P4
 tests/test_mouse.py::test_a_vanished_identity_is_not_acted_on,tests/test_mouse.py,src/app/driver/tests/clicks.rs::a_vanished_identity_is_not_acted_on,mapped,,P4
@@ -1040,7 +1040,7 @@ tests/test_tui.py::test_h2_collects_never_overlap,tests/test_tui.py,src/app/coll
 tests/test_tui.py::test_l1_a_failing_collect_keeps_the_last_model_and_says_so,tests/test_tui.py,src/app/model/tests.rs::a_failed_refresh_keeps_the_last_model_and_says_why ; src/app/paint/tests.rs::a_failed_refresh_says_so_in_the_header_and_no_size_paints_nothing,mapped,,P4
 tests/test_tui.py::test_frames_never_recollect_rearm_or_move_the_cursor,tests/test_tui.py,src/app/driver/tests/frames.rs::frames_never_rearm_or_move_the_cursor,mapped,,P4
 tests/test_tui.py::test_frames_keep_running_unfocused_and_pause_when_nothing_moves,tests/test_tui.py,src/app/driver/tests/frames.rs::frames_keep_running_unfocused_and_pause_when_nothing_moves ; src/ui/pacing/tests.rs::a_hidden_tab_or_a_still_screen_never_ticks,mapped,,P4
-tests/test_tui.py::test_new_row_is_last_stable_and_opens_the_form,tests/test_tui.py,src/app/driver/tests/keys.rs::the_new_row_is_last_stable_and_opens_new_agent ; src/app/driver/tests/new_agent.rs::esc_closes_it_and_a_second_open_keeps_the_first,mapped,,P4
+tests/test_tui.py::test_new_row_is_last_stable_and_opens_the_form,tests/test_tui.py,src/app/driver/tests/keys.rs::the_new_row_is_last_stable_and_opens_new_agent ; src/app/driver/tests/new_agent.rs::the_form_opens_on_the_default_directory_and_esc_returns_to_the_view ; src/app/link/tests/acts.rs::new_agent_uses_the_form_where_it_fits_else_the_popup,mapped,,P4
 tests/test_tui.py::test_form_submit_is_armed_validated_and_runs_the_flow,tests/test_tui.py,src/new_agent/tests/form.rs::enter_on_the_last_field_or_ctrl_s_starts_once_armed ; src/new_agent/tests/form.rs::a_bad_name_or_directory_is_said_on_the_status_row,mapped,,P4
 tests/test_tui.py::test_home_mode_keeps_the_view_open,tests/test_tui.py,,todo,,P4
 tests/test_tui.py::test_new_row_in_narrow_layout,tests/test_tui.py,,todo,,P4

@@ -163,3 +163,52 @@ fn a_started_agent_is_said_and_a_popup_closes_over_its_tab() {
         "nothing open: nothing to say"
     );
 }
+
+#[test]
+fn a_click_outside_the_modal_reaches_nothing_behind_it() {
+    // tests/test_mouse.py::test_new_agent_row_opens_the_form_only_when_armed, the form's half:
+    // with the form open, a click on a view target outside it does nothing
+    let mut r = Run::new(wire("demo"), "w1:p1", true, WIDE);
+    let now = r.settled();
+    let at = r.spot(&orch("w1:p2")).expect("the orchestrator is drawn");
+    r.d.open_form("/work", now - ARM);
+    let sel = format!("{:?}", r.sel());
+    assert_eq!(
+        r.d.form_click(at.0, at.1),
+        FormStep::Nothing,
+        "no modal picture yet"
+    );
+    let mut frame = r.d.shown().unwrap().clone();
+    r.d.form_over(&mut frame);
+    assert_eq!(r.d.form_click(at.0, at.1), FormStep::Nothing);
+    assert_eq!(
+        format!("{:?}", r.sel()),
+        sel,
+        "the view's cursor never moved"
+    );
+    assert!(r.d.form.is_some(), "the modal stays open");
+}
+
+#[test]
+fn the_form_opens_on_the_default_directory_and_esc_returns_to_the_view() {
+    // tests/test_tui.py::test_new_row_is_last_stable_and_opens_the_form, the form's half: the
+    // + row's NewAgent { cwd: None } reaches the form as the home directory (the link's
+    // `new_agent`); Esc closes it and the view goes on
+    let mut r = Run::new(wire("demo"), "w1:p1", true, WIDE);
+    let now = r.settled();
+    r.d.open_form("/home/op", now - ARM);
+    let mut frame = r.d.shown().unwrap().clone();
+    r.d.form_over(&mut frame);
+    assert_eq!(r.d.form.as_ref().unwrap().form.cwd.value, "/home/op");
+    assert!(frame.text().contains("/home/op"));
+    assert_eq!(r.d.form_key(FormKey::Esc, now), FormStep::Closed);
+    assert!(r.d.form.is_none());
+    let sel = format!("{:?}", r.sel());
+    r.key(Key::Move(1), now); // the view's keys again
+    assert_ne!(format!("{:?}", r.sel()), sel);
+    let shown = r.d.shown().unwrap().clone();
+    let mut after = shown.clone();
+    r.d.form_over(&mut after);
+    assert_eq!(after.text(), shown.text(), "no modal over the view");
+    assert!(!after.targets.is_empty(), "the view takes clicks again");
+}
