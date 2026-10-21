@@ -6,7 +6,6 @@ use super::{Actor, End};
 use crate::app::link::{Done, LinkEvent};
 use crate::core::Event;
 use crate::ui::input::{Effect, Host, Painted};
-use panorama_core::view::Filter;
 use std::io;
 use std::time::Instant;
 
@@ -87,14 +86,11 @@ impl Actor {
                 }
             }
             Event::Filter(name) => {
-                let Some(f) = Filter::from_name(&name) else {
-                    return Ok(None);
+                let Some(out) = self.driver.app.filter_from_core(&name, now) else {
+                    return Ok(None); // no such filter: ignored
                 };
-                if f != self.driver.app.view.filter {
-                    let out = self.driver.app.set_filter(f, now);
-                    if let Some(end) = self.act(out) {
-                        return Ok(Some(end));
-                    }
+                if let Some(end) = self.act(out) {
+                    return Ok(Some(end));
                 }
                 self.publish();
             }

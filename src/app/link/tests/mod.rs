@@ -1,5 +1,6 @@
 mod acts;
 mod events;
+mod filter;
 mod focus;
 mod panels;
 mod verify;

@@ -92,9 +92,14 @@ async fn zoom_is_the_home_panes_own() {
         Reply::Result(json!({"type": "ok", "zoom": {}})),
     );
     let mut home = link(&fake, true, dir.path());
+    home.published.focused_pane = Some("w1:p3".into()); // herdr's focus is elsewhere
     home.zoom();
     assert!(quiet(&mut home).await);
-    assert_eq!(fake.params_of("pane.zoom")[0]["pane_id"], "w1:p1");
+    assert_eq!(
+        fake.params_of("pane.zoom")[0]["pane_id"],
+        "w1:p1",
+        "its own pane, never herdr's focused one"
+    );
     let mut popup = link(&fake, false, dir.path());
     popup.zoom();
     assert!(quiet(&mut popup).await);

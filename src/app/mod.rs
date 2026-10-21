@@ -10,6 +10,7 @@
 pub mod actor;
 pub mod collect;
 pub mod driver;
+pub mod from_core;
 pub mod input;
 pub mod link;
 pub mod model;

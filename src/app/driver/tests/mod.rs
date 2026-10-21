@@ -5,6 +5,7 @@
 
 mod arming;
 mod clicks;
+mod core_filter;
 mod deep;
 mod frames;
 mod keys;
