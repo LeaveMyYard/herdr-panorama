@@ -268,8 +268,8 @@ tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[60],tests/test_d
 tests/test_dock_panel.py::test_3a_at_its_design_width_keeps_every_footer_hint,tests/test_dock_panel.py,crates/panorama-core/tests/design_goldens.rs::design_9e_cell_for_cell,mapped,,P3
 tests/test_dock_panel.py::test_trace_records_each_herdr_call,tests/test_dock_panel.py,,todo,,P4
 tests/test_dock_panel.py::test_r16b_the_lock_gives_up_instead_of_hanging,tests/test_dock_panel.py,,todo,,P4
-tests/test_fixture_privacy.py::test_fixtures_hold_no_real_ids,tests/test_fixture_privacy.py,,todo,,P4
-tests/test_fixture_privacy.py::test_docs_hold_no_real_agent_ids,tests/test_fixture_privacy.py,,todo,,P4
+tests/test_fixture_privacy.py::test_fixtures_hold_no_real_ids,tests/test_fixture_privacy.py,tests/fixture_privacy.rs::fixtures_hold_no_real_ids ; tests/fixture_privacy.rs::the_rule_finds_what_it_is_for,mapped,,P4
+tests/test_fixture_privacy.py::test_docs_hold_no_real_agent_ids,tests/test_fixture_privacy.py,tests/fixture_privacy.rs::docs_hold_no_real_agent_ids,mapped,,P4
 tests/test_focus_theme.py::test_turn_10_matches_the_design_cell_for_cell[0-yours-A],tests/test_focus_theme.py,crates/panorama-core/tests/design_goldens.rs::design_10_focused_and_not_in_two_themes_cell_for_cell,mapped,,P3
 tests/test_focus_theme.py::test_turn_10_matches_the_design_cell_for_cell[0-yours-I],tests/test_focus_theme.py,crates/panorama-core/tests/design_goldens.rs::design_10_focused_and_not_in_two_themes_cell_for_cell,mapped,,P3
 tests/test_focus_theme.py::test_turn_10_matches_the_design_cell_for_cell[0-tokyo-A],tests/test_focus_theme.py,crates/panorama-core/tests/design_goldens.rs::design_10_focused_and_not_in_two_themes_cell_for_cell,mapped,,P3
@@ -407,7 +407,7 @@ tests/test_goldens.py::test_the_goldens_are_what_the_code_does[model],tests/test
 tests/test_goldens.py::test_the_goldens_are_what_the_code_does[screens],tests/test_goldens.py,,retired,"checks that the Python code still reproduces its own captures; the Rust tests read the same goldens (model, screens) directly",P0a
 tests/test_herdr.py::test_clean_strips_controls_and_caps,tests/test_herdr.py,herdr-agent-kit@v0.1.0:src/herdr_api/sanitize/tests.rs::clean_strips_controls_and_caps,mapped,,P1
 tests/test_herdr.py::test_missing_binary_is_an_error_not_an_exception,tests/test_herdr.py,herdr-agent-kit@v0.1.0:tests/herdr_api/cli.rs::a_missing_binary_is_unreachable,mapped,,P1
-tests/test_herdr.py::test_snapshot_and_focus_through_the_fake,tests/test_herdr.py,,todo,,P4
+tests/test_herdr.py::test_snapshot_and_focus_through_the_fake,tests/test_herdr.py,herdr-agent-kit@v0.1.0:tests/herdr_api/parity_tabs_panes.rs::tabs_and_workspaces_send_what_herdrs_cli_sends ; herdr-agent-kit@v0.1.0:tests/herdr_api/cli.rs::cli_arguments_are_cleaned,mapped,,P4
 tests/test_herdr.py::test_open_view_split_targets_the_invoking_pane,tests/test_herdr.py,,todo,,P4
 tests/test_home.py::test_home_opens_once_renamed_first_and_focused_on_demand,tests/test_home.py,src/home/tests/ensure.rs::home_opens_once_renamed_first_and_focused_on_demand,mapped,,P4
 tests/test_home.py::test_concurrent_openers_make_one_home,tests/test_home.py,src/home/tests/ensure.rs::concurrent_openers_make_one_home,mapped,,P4
