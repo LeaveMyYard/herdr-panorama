@@ -208,6 +208,9 @@ impl PanelsTask {
     }
 
     async fn show_home(&mut self) -> String {
+        if self.my_pane.is_none() {
+            return "home".into(); // no pane of its own to show (Python: `and self.my_pane`)
+        }
         let Some(mut me) = find_home(&self.home, &self.places, self.my_pane.as_deref()).await
         else {
             return "failed".into();

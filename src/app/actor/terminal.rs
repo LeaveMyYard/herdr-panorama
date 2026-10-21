@@ -15,6 +15,11 @@ impl Actor {
         ev: Option<io::Result<TermEvent>>,
     ) -> io::Result<Option<End>> {
         let now = Instant::now();
+        if let Some(Ok(e)) = &ev
+            && let Some(step) = self.driver.modal_input(e, now)
+        {
+            return self.on_form(step); // the modal is open: it takes every key and click
+        }
         match ev {
             Some(Ok(TermEvent::Key(k))) => {
                 let Some(k) = key(k) else { return Ok(None) };
@@ -26,8 +31,12 @@ impl Actor {
             }
             Some(Ok(TermEvent::Mouse(m))) => return self.on_mouse(m, now),
             Some(Ok(TermEvent::Resize(..))) => {}
-            Some(Ok(TermEvent::FocusGained)) => self.driver.app.pane_focused = true,
-            Some(Ok(TermEvent::FocusLost)) => self.driver.app.pane_focused = false,
+            Some(Ok(TermEvent::FocusGained)) => {
+                self.driver.focus(true);
+            }
+            Some(Ok(TermEvent::FocusLost)) => {
+                self.driver.focus(false);
+            }
             Some(Ok(_)) => return Ok(None),
             Some(Err(e)) => return Err(e),
             None => return Ok(Some(End::Input)),

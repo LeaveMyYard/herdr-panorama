@@ -21,7 +21,7 @@ use tokio::sync::mpsc;
 
 const ID: &str = "leavemyyard.herdr-panorama";
 
-async fn core(dir: &Path) -> Arc<Core> {
+pub(super) async fn core(dir: &Path) -> Arc<Core> {
     let uid = std::fs::metadata(dir).unwrap().uid();
     let cfg = Config::new(
         dir.join("s").join("core.sock"),
@@ -100,7 +100,7 @@ fn runs(fake: &FakeHerdr, command: &str) {
 }
 
 /// A panel viewer connected to the core: its socket, after hello.
-async fn viewer(dir: &Path) -> BufReader<UnixStream> {
+pub(super) async fn viewer(dir: &Path) -> BufReader<UnixStream> {
     let mut s = UnixStream::connect(dir.join("s").join("core.sock"))
         .await
         .unwrap();
@@ -338,4 +338,78 @@ fn a_step_that_panics_is_logged_and_the_task_goes_on() {
         let log = std::fs::read_to_string(dir.path().join("panorama.log")).unwrap_or_default();
         assert!(log.contains("panels: a pass failed"), "{log}");
     });
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_open_key_follows_the_home_panes_new_id() {
+    // test_cockpit.py::test_the_cores_open_key_follows_the_home_panes_new_id: the undock
+    // gives panorama's pane a new id (herdr does across workspaces); the focus and the
+    // report use it
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    let c = core(dir.path()).await;
+    snapshot(&fake, "billing");
+    runs(&fake, "tui");
+    fake.on(
+        "pane.move",
+        Reply::Result(json!({"type": "pane_move", "move_result": {"changed": true,
+        "pane": {"pane_id": "w2:p9", "tab_id": "w2:t9"}}})),
+    );
+    for m in [
+        "tab.focus",
+        "pane.focus",
+        "tab.move",
+        "tab.rename",
+        "pane.rename",
+    ] {
+        fake.on(m, Reply::Result(json!({"type": "ok"})));
+    }
+    let (t, mut rx) = task(&fake, c, dir.path(), "");
+    let link = PanelsLink::spawn(t);
+    assert_eq!(link.open_key().await, "home");
+    assert_eq!(fake.params_of("pane.move")[0]["pane_id"], "w1:p1"); // the old id moved
+    assert_eq!(
+        fake.params_of("tab.focus").last().unwrap(),
+        &json!({"tab_id": "w2:t9"})
+    );
+    assert_eq!(
+        fake.params_of("pane.focus").last().unwrap(),
+        &json!({"pane_id": "w2:p9"})
+    );
+    assert!(matches!(rx.try_recv(), Ok(Done::MyPane(p)) if p == "w2:p9"));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn quit_gives_up_on_a_panels_step_herdr_never_answers() {
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    let c = core(dir.path()).await;
+    snapshot(&fake, HOME_LABEL);
+    runs(&fake, "panel");
+    fake.on("plugin.pane.close", Reply::Hang);
+    let (mut t, _rx) = task(&fake, c, dir.path(), "cockpit = true\n");
+    t.manager.created.insert("w1:p7".into(), "w1:t2".into());
+    let mut l = super::link(&fake, false, dir.path()); // a popup: no home tab to release
+    l.panels = Some(PanelsLink::spawn(t));
+    l.quit_step = Duration::from_millis(300);
+    let t0 = Instant::now();
+    l.quit().await;
+    assert!(
+        t0.elapsed() < Duration::from_secs(3),
+        "quit waited {:?}",
+        t0.elapsed()
+    );
+    let log = std::fs::read_to_string(dir.path().join("panorama.log")).unwrap_or_default();
+    assert!(log.contains("quit gave up waiting for herdr"), "{log}");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_open_key_without_a_pane_of_its_own_shows_nothing() {
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    let c = core(dir.path()).await;
+    snapshot(&fake, HOME_LABEL);
+    runs(&fake, "tui");
+    let (mut t, _rx) = task(&fake, c, dir.path(), "");
+    t.my_pane = None;
+    let link = PanelsLink::spawn(t);
+    assert_eq!(link.open_key().await, "home");
+    assert!(fake.params_of("tab.focus").is_empty() && fake.params_of("pane.focus").is_empty());
 }

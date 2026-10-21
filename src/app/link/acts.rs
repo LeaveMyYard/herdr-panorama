@@ -4,8 +4,11 @@
 
 use super::Link;
 use super::done::Done;
+use crate::new_agent::real::{RealStart, START_TIMEOUT_MS};
+use crate::new_agent::start;
 use crate::panel::act::inbox::UvRunner;
 use crate::panel::act::{new_agent, remote};
+use crate::panels::real::RealOps;
 use crate::ui::guard::guarded;
 use crate::ui::input::Toast;
 use herdr_agent_kit::herdr_api::{PaneId, clean};
@@ -121,6 +124,47 @@ impl Link {
             h.toggle_zoom(&PaneId::new(&me)).await.err().map(|e| {
                 Done::Toast(Toast::new(Some("zoom"), clean(&e.to_string(), 200), 5).warning())
             })
+        });
+    }
+
+    /// The + New agent modal's start: off the actor, its end back as [`Done::Started`].
+    pub fn start_agent(&self, name: String, cwd: Option<String>, kind: &'static str) {
+        let per_tab = self.settings.as_ref().is_some_and(|s| {
+            crate::home::config::per_tab(
+                &s.lock().unwrap_or_else(|e| e.into_inner()).panorama_table(),
+            )
+        });
+        let width = self
+            .settings
+            .as_ref()
+            .map_or(crate::panels::fit::DEFAULT_WIDTH, |s| {
+                crate::panels::fit::width(
+                    s.lock()
+                        .unwrap_or_else(|e| e.into_inner())
+                        .panorama_table()
+                        .get("cockpit_width"),
+                )
+            });
+        let ops = RealStart {
+            herdr: self.herdr.clone(),
+            plugin_env: self.plugin_env.clone(),
+            root: self
+                .place
+                .root
+                .as_ref()
+                .map(|r| r.to_string_lossy().into_owned()),
+            panels: RealOps {
+                herdr: self.herdr.clone(),
+                plugin_id: self.place.plugin_id.clone(),
+                root: self.place.root.clone(),
+                width,
+            },
+            start_timeout_ms: START_TIMEOUT_MS,
+        };
+        self.spawn("+ New agent", async move {
+            Some(Done::Started(
+                start::new_agent(&ops, &name, cwd.as_deref(), kind, per_tab).await,
+            ))
         });
     }
 }

@@ -2,7 +2,7 @@
 //! `herdr_focus`, `focusing`, `_focus_read`, `_tab_shown`).
 
 use super::state::state_message;
-use super::{Done, FOCUS_CONFIRM, Link};
+use super::{Done, FOCUS_CONFIRM, Link, LinkEvent};
 use panorama_core::model::Swarm;
 use panorama_core::view::{Filter, Marks};
 
@@ -31,6 +31,15 @@ impl Link {
     /// Whether `filter` differs from what the panels last heard.
     pub fn filter_changed(&self, filter: Filter) -> bool {
         self.core.is_some() && self.published_filter != Some(filter)
+    }
+
+    /// A report from the herdr side, for the actor: the home pane's new id is taken here
+    /// first (the open key moved it; the focus and the collector use it from now on).
+    pub(super) fn reported(&mut self, d: Done) -> LinkEvent {
+        if let Done::MyPane(pane) = &d {
+            self.moved(pane.clone());
+        }
+        LinkEvent::Done(d)
     }
 
     /// herdr says `pane` has the focus: the view is focused exactly when it is its own pane;

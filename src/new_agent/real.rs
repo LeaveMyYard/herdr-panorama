@@ -5,6 +5,7 @@ use crate::panels::Ops;
 use crate::panels::real::RealOps;
 use crate::trace::HerdrClient;
 use herdr_agent_kit::herdr_api::{PaneId, Sanitized, TabId};
+use herdr_agent_kit::plugin_env::PluginEnv;
 use serde_json::{Map, Value, json};
 
 /// The panel's command (the manifest's `panel` entrypoint, `scripts/panel`).
@@ -20,6 +21,20 @@ pub const PANEL_RATIO: f64 = 0.3;
 pub const START_TIMEOUT_MS: u32 = 60_000;
 /// A tab label's longest (Python `clean(label, 200)`).
 pub const LABEL_MAX: usize = 200;
+
+/// The plugin's own variables that are set (`HERDR_PLUGIN_ID`, `_ROOT`, `_STATE_DIR`,
+/// `_CONFIG_DIR`; `var` reads an empty one as unset): a new panel's environment.
+pub fn plugin_env(env: &PluginEnv) -> Vec<(String, String)> {
+    [
+        "HERDR_PLUGIN_ID",
+        "HERDR_PLUGIN_ROOT",
+        "HERDR_PLUGIN_STATE_DIR",
+        "HERDR_PLUGIN_CONFIG_DIR",
+    ]
+    .into_iter()
+    .filter_map(|k| env.var(k).map(|v| (k.to_owned(), v.to_owned())))
+    .collect()
+}
 
 pub struct RealStart {
     pub herdr: HerdrClient,
