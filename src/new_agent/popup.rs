@@ -51,7 +51,6 @@ pub fn mark_started(path: &Path) {
 /// The form's directory: `PANORAMA_NEW_AGENT_CWD`, else the home directory.
 pub fn cwd(env: &PluginEnv) -> String {
     env.var("PANORAMA_NEW_AGENT_CWD")
-        .filter(|c| !c.is_empty())
         .map(str::to_owned)
         .or_else(|| env.home().map(|h| h.to_string_lossy().into_owned()))
         .unwrap_or_else(|| "~".into())

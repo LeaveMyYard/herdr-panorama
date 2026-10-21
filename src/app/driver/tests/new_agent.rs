@@ -149,6 +149,7 @@ fn a_started_agent_is_said_and_a_popup_closes_over_its_tab() {
         "the home view stays"
     );
     assert!(r.d.form.is_none());
+    assert_eq!(r.d.toasts.next_expiry(), Some(now + Duration::from_secs(6)));
     let mut s = panorama_core::view::Screen::new(160, 45);
     r.d.toasts.draw(&mut s);
     assert!(

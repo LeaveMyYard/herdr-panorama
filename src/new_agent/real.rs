@@ -22,7 +22,7 @@ pub const START_TIMEOUT_MS: u32 = 60_000;
 pub const LABEL_MAX: usize = 200;
 
 /// The plugin's own variables that are set (`HERDR_PLUGIN_ID`, `_ROOT`, `_STATE_DIR`,
-/// `_CONFIG_DIR`): a new panel's environment.
+/// `_CONFIG_DIR`; `var` reads an empty one as unset): a new panel's environment.
 pub fn plugin_env(env: &PluginEnv) -> Vec<(String, String)> {
     [
         "HERDR_PLUGIN_ID",
@@ -31,11 +31,7 @@ pub fn plugin_env(env: &PluginEnv) -> Vec<(String, String)> {
         "HERDR_PLUGIN_CONFIG_DIR",
     ]
     .into_iter()
-    .filter_map(|k| {
-        env.var(k)
-            .filter(|v| !v.is_empty())
-            .map(|v| (k.to_owned(), v.to_owned()))
-    })
+    .filter_map(|k| env.var(k).map(|v| (k.to_owned(), v.to_owned())))
     .collect()
 }
 
