@@ -29,11 +29,17 @@ pub fn emit(path: &Path, record: Vec<(String, J)>, now: f64) -> io::Result<()> {
         fs::create_dir_all(dir)?;
     }
     let _held = LockFile::new(lock_path(path)).mode(0o644).exclusive()?;
+    // Python's `{"v": …, "ts": …, **record}`: a record's own `v` or `ts` replaces these in place
     let mut fields = vec![
         ("v".to_owned(), J::Int(VERSION)),
         ("ts".to_owned(), J::Str(stamp(now))),
     ];
-    fields.extend(record);
+    for (k, v) in record {
+        match fields.iter_mut().find(|(key, _)| *key == k) {
+            Some(slot) => slot.1 = v,
+            None => fields.push((k, v)),
+        }
+    }
     let line = dumps_line(&J::Obj(fields)) + "\n";
     let mut file = OpenOptions::new()
         .append(true)

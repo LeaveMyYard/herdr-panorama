@@ -1,0 +1,19 @@
+usage: panorama emit [-h] [--session SESSION] --thread THREAD [--name NAME]
+                     [--flavour FLAVOUR]
+                     [--status {active,done,failed,cancelled}]
+                     [--worktree WORKTREE] [--pct PCT] [--phase PHASE]
+                     [--agent AGENT] [--json JSON]
+
+options:
+  -h, --help            show this help message and exit
+  --session SESSION     Claude session id (default: $CLAUDE_CODE_SESSION_ID)
+  --thread THREAD
+  --name NAME
+  --flavour FLAVOUR
+  --status {active,done,failed,cancelled}
+  --worktree WORKTREE
+  --pct PCT
+  --phase PHASE         "name=state[@HH:MM[-HH:MM]][:note]", repeatable,
+                        replaces all phases
+  --agent AGENT         "agentId|description[*][=role[@phase]]", repeatable
+  --json JSON           extra fields as a JSON object
