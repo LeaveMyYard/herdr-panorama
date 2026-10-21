@@ -295,19 +295,19 @@ tests/test_focus_theme.py::test_reset_and_unknown_values,tests/test_focus_theme.
 tests/test_focus_theme.py::test_the_terminal_theme_keeps_panoramas_colours_with_a_focus_cue,tests/test_focus_theme.py,src/settings/theme/tests.rs::no_config_is_herdrs_default_theme ; crates/panorama-core/src/view/theme/tests.rs::reset_tokens_and_the_terminal_theme_keep_panoramas_colours,mapped,,P3
 tests/test_focus_theme.py::test_a_changed_file_is_read_again,tests/test_focus_theme.py,src/settings/tests.rs::both_files_are_read_and_re_read_when_they_change,mapped,,P3
 tests/test_focus_theme.py::test_every_built_in_theme_has_the_six_tokens,tests/test_focus_theme.py,crates/panorama-core/src/view/theme/tests.rs::every_built_in_theme_is_herdrs_with_six_tokens,mapped,,P3
-tests/test_focus_theme.py::test_the_view_follows_the_terminals_focus_in_and_out,tests/test_focus_theme.py,,todo,,P4
+tests/test_focus_theme.py::test_the_view_follows_the_terminals_focus_in_and_out,tests/test_focus_theme.py,src/app/driver/tests/focus.rs::the_view_follows_the_terminals_focus_in_and_out,mapped,,P4
 tests/test_focus_theme.py::test_the_table_is_herdrs_measured_values,tests/test_focus_theme.py,crates/panorama-core/src/view/theme/tests.rs::the_table_is_herdrs_measured_values,mapped,,P3
-tests/test_focus_theme.py::test_herdrs_focus_events_switch_the_look_too,tests/test_focus_theme.py,,todo,,P4
+tests/test_focus_theme.py::test_herdrs_focus_events_switch_the_look_too,tests/test_focus_theme.py,src/app/link/tests/focus.rs::herdrs_focus_switches_the_docked_panels_look_too ; src/app/link/tests/focus.rs::the_view_is_focused_exactly_when_herdr_focuses_its_own_pane,mapped,,P4
 tests/test_focus_theme.py::test_the_focus_watcher_forwards_herdrs_pane_focus,tests/test_focus_theme.py,src/app/link/tests/events.rs::focus_events_feed_the_log_the_view_and_one_pass_per_burst,mapped,,P4
 tests/test_focus_theme.py::test_the_hover_row_is_a_step_lighter_than_either_background,tests/test_focus_theme.py,crates/panorama-core/src/view/theme/tests.rs::fixed_is_the_default_and_own_colours_replace_either,mapped,,P3
-tests/test_focus_theme.py::test_a_panorama_started_without_the_keyboard_looks_unfocused,tests/test_focus_theme.py,,todo,,P4
+tests/test_focus_theme.py::test_a_panorama_started_without_the_keyboard_looks_unfocused,tests/test_focus_theme.py,src/app/link/tests/events.rs::focus_events_feed_the_log_the_view_and_one_pass_per_burst ; src/app/link/tests/focus.rs::herdrs_focus_switches_the_docked_panels_look_too,mapped,,P4
 tests/test_follow.py::test_z_zooms_panoramas_own_pane,tests/test_follow.py,src/app/link/tests/acts.rs::zoom_is_the_home_panes_own,mapped,,P4
-tests/test_follow.py::test_the_docked_panel_and_the_graph_show_the_zoom_key,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_event_stream_yields_focus_events_and_reconnects,tests/test_follow.py,,todo,,P4
+tests/test_follow.py::test_the_docked_panel_and_the_graph_show_the_zoom_key,tests/test_follow.py,crates/panorama-core/tests/dock_layout.rs::the_docked_panel_and_the_graph_show_the_zoom_key,mapped,,P4
+tests/test_follow.py::test_event_stream_yields_focus_events_and_reconnects,tests/test_follow.py,herdr-agent-kit@v0.1.0:tests/herdr_api/events.rs::events_mark_connect_and_loss_and_reconnect,mapped,,P4
 tests/test_follow.py::test_r12_l1_backoff_grows_until_data_arrives,tests/test_follow.py,,todo,,P4
 tests/test_follow.py::test_r12f_l1_the_watcher_tracks_liveness,tests/test_follow.py,src/app/link/tests/events.rs::focus_events_feed_the_log_the_view_and_one_pass_per_burst,mapped,,P4
-tests/test_follow.py::test_r12f_l1_events_marks_connect_and_disconnect,tests/test_follow.py,,todo,,P4
-tests/test_follow.py::test_r16_the_settle_wait_keeps_its_margin,tests/test_follow.py,,todo,,P4
+tests/test_follow.py::test_r12f_l1_events_marks_connect_and_disconnect,tests/test_follow.py,herdr-agent-kit@v0.1.0:tests/herdr_api/events.rs::events_mark_connect_and_loss_and_reconnect,mapped,,P4
+tests/test_follow.py::test_r16_the_settle_wait_keeps_its_margin,tests/test_follow.py,src/panels/tests/batch.rs::the_settle_wait_keeps_its_margin,mapped,,P4
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 46 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 60 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep dock f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
@@ -549,7 +549,7 @@ tests/test_mouse.py::test_a_selected_card_without_focus_is_focused_first,tests/t
 tests/test_mouse.py::test_pods_in_a_thread_card_select_their_agent,tests/test_mouse.py,src/app/driver/tests/clicks.rs::pods_in_a_thread_card_select_their_agent,mapped,,P4
 tests/test_mouse.py::test_complete_and_finished_cards_fold_like_enter,tests/test_mouse.py,src/app/driver/tests/clicks.rs::complete_and_finished_cards_fold_like_enter,mapped,,P4
 tests/test_mouse.py::test_header_filters_switch_on_click,tests/test_mouse.py,src/app/driver/tests/clicks.rs::header_filters_switch_on_click,mapped,,P4
-tests/test_mouse.py::test_new_agent_row_opens_the_form_only_when_armed,tests/test_mouse.py,,todo,,P4
+tests/test_mouse.py::test_new_agent_row_opens_the_form_only_when_armed,tests/test_mouse.py,src/app/driver/tests/clicks.rs::the_new_agent_row_opens_the_form_only_when_armed ; src/app/link/tests/acts.rs::new_agent_uses_the_form_where_it_fits_else_the_popup ; src/app/driver/tests/new_agent.rs::a_click_outside_the_modal_reaches_nothing_behind_it,mapped,,P4
 tests/test_mouse.py::test_action_labels_act_on_their_agent,tests/test_mouse.py,src/app/driver/tests/clicks.rs::action_labels_act_on_their_agent,mapped,,P4
 tests/test_mouse.py::test_a_click_on_empty_space_does_nothing,tests/test_mouse.py,src/app/driver/tests/clicks.rs::a_click_on_empty_space_does_nothing,mapped,,P4
 tests/test_mouse.py::test_a_vanished_identity_is_not_acted_on,tests/test_mouse.py,src/app/driver/tests/clicks.rs::a_vanished_identity_is_not_acted_on,mapped,,P4
@@ -587,7 +587,7 @@ tests/test_panel_click.py::test_mark_crash_never_raises_on_an_unencodable_messag
 tests/test_panel_filter.py::test_the_core_passes_a_panels_filter_on,tests/test_panel_filter.py,tests/core_server.rs::focusing_counts_only_from_a_verified_panel_and_filters_only_from_panels,mapped,,P4
 tests/test_panel_filter.py::test_the_state_carries_the_filter_and_the_version_says_so,tests/test_panel_filter.py,tests/core_filter.rs::the_state_carries_the_filter_and_the_version_says_so ; src/app/link/state/tests.rs::the_state_carries_focus_tab_panels_and_filter_and_the_panel_reads_it,mapped,,P4
 tests/test_panel_filter.py::test_a_filter_chosen_in_one_panel_shows_in_every_panel,tests/test_panel_filter.py,tests/core_filter.rs::a_filter_chosen_in_one_panel_shows_in_every_panel,mapped,,P4
-tests/test_panel_filter.py::test_the_home_panorama_takes_a_panels_filter_and_publishes_it,tests/test_panel_filter.py,,todo,,P4
+tests/test_panel_filter.py::test_the_home_panorama_takes_a_panels_filter_and_publishes_it,tests/test_panel_filter.py,src/app/driver/tests/core_filter.rs::a_panels_filter_is_taken_and_a_bogus_one_ignored ; src/app/link/tests/filter.rs::the_home_views_own_filter_and_a_panels_go_out_to_every_panel,mapped,,P4
 tests/test_panel_filter.py::test_a_panel_keeps_its_choice_against_an_older_state,tests/test_panel_filter.py,src/panel/input/actions/tests.rs::a_panel_keeps_its_choice_against_an_older_state_and_follows_the_echo,mapped,,P3
 tests/test_panel_filter.py::test_an_unechoed_choice_gives_way_to_the_core_after_a_moment,tests/test_panel_filter.py,src/panel/input/actions/tests.rs::the_filter_echo_lasts_exactly_a_second ; src/panel/input/actions/tests.rs::f_cycles_the_filter_and_keeps_it_against_the_cores_older_word,mapped,,P3
 tests/test_panel_filter.py::test_after_a_lost_core_the_next_cores_filter_wins_at_once,tests/test_panel_filter.py,src/panel/input/actions/tests.rs::after_a_lost_core_the_next_cores_filter_wins_at_once,mapped,,P3
@@ -1040,21 +1040,21 @@ tests/test_tui.py::test_h2_collects_never_overlap,tests/test_tui.py,src/app/coll
 tests/test_tui.py::test_l1_a_failing_collect_keeps_the_last_model_and_says_so,tests/test_tui.py,src/app/model/tests.rs::a_failed_refresh_keeps_the_last_model_and_says_why ; src/app/paint/tests.rs::a_failed_refresh_says_so_in_the_header_and_no_size_paints_nothing,mapped,,P4
 tests/test_tui.py::test_frames_never_recollect_rearm_or_move_the_cursor,tests/test_tui.py,src/app/driver/tests/frames.rs::frames_never_rearm_or_move_the_cursor,mapped,,P4
 tests/test_tui.py::test_frames_keep_running_unfocused_and_pause_when_nothing_moves,tests/test_tui.py,src/app/driver/tests/frames.rs::frames_keep_running_unfocused_and_pause_when_nothing_moves ; src/ui/pacing/tests.rs::a_hidden_tab_or_a_still_screen_never_ticks,mapped,,P4
-tests/test_tui.py::test_new_row_is_last_stable_and_opens_the_form,tests/test_tui.py,,todo,,P4
+tests/test_tui.py::test_new_row_is_last_stable_and_opens_the_form,tests/test_tui.py,src/app/driver/tests/keys.rs::the_new_row_is_last_stable_and_opens_new_agent ; src/app/driver/tests/new_agent.rs::the_form_opens_on_the_default_directory_and_esc_returns_to_the_view ; src/app/link/tests/acts.rs::new_agent_uses_the_form_where_it_fits_else_the_popup,mapped,,P4
 tests/test_tui.py::test_form_submit_is_armed_validated_and_runs_the_flow,tests/test_tui.py,src/new_agent/tests/form.rs::enter_on_the_last_field_or_ctrl_s_starts_once_armed ; src/new_agent/tests/form.rs::a_bad_name_or_directory_is_said_on_the_status_row,mapped,,P4
 tests/test_tui.py::test_home_mode_keeps_the_view_open,tests/test_tui.py,src/app/driver/tests/keys.rs::the_home_view_stays_open ; src/app/link/tests/acts.rs::goto_focuses_the_agent_and_a_popup_closes_then,mapped,,P4
 tests/test_tui.py::test_new_row_in_narrow_layout,tests/test_tui.py,crates/panorama-core/tests/narrow_layout.rs::the_new_row_in_the_narrow_layout,mapped,,P4
-tests/test_tui.py::test_refreshes_and_frames_keep_running_under_the_form,tests/test_tui.py,,todo,,P4
+tests/test_tui.py::test_refreshes_and_frames_keep_running_under_the_form,tests/test_tui.py,src/app/driver/tests/new_agent.rs::its_keys_never_reach_the_view_and_refreshes_go_on_under_it,mapped,,P4
 tests/test_tui.py::test_r5_m3_submit_freezes_the_fields,tests/test_tui.py,,todo,,P4
-tests/test_tui.py::test_r5_l1_arrows_in_the_form_do_not_move_the_cursor,tests/test_tui.py,,todo,,P4
+tests/test_tui.py::test_r5_l1_arrows_in_the_form_do_not_move_the_cursor,tests/test_tui.py,src/app/driver/tests/new_agent.rs::its_keys_never_reach_the_view_and_refreshes_go_on_under_it,mapped,,P4
 tests/test_tui.py::test_a_narrow_pane_opens_new_agent_as_its_own_popup,tests/test_tui.py,src/app/link/tests/acts.rs::new_agent_uses_the_form_where_it_fits_else_the_popup,mapped,,P4
-tests/test_tui.py::test_a_wide_pane_keeps_the_form_in_place_and_a_failed_popup_falls_back,tests/test_tui.py,,todo,,P4
-tests/test_tui.py::test_a_popup_request_herdr_never_answered_does_not_also_open_the_form,tests/test_tui.py,,todo,,P4
+tests/test_tui.py::test_a_wide_pane_keeps_the_form_in_place_and_a_failed_popup_falls_back,tests/test_tui.py,src/app/link/tests/acts.rs::new_agent_uses_the_form_where_it_fits_else_the_popup,mapped,,P4
+tests/test_tui.py::test_a_popup_request_herdr_never_answered_does_not_also_open_the_form,tests/test_tui.py,src/app/link/tests/acts.rs::an_unanswered_popup_request_never_also_opens_the_form ; src/panel/act/new_agent/tests.rs::no_reply_waits_for_the_popups_own_mark,mapped,,P4
 tests/test_tui.py::test_a_socket_request_that_was_sent_but_never_answered_says_so,tests/test_tui.py,,todo,,P4
-tests/test_tui.py::test_an_unanswered_popup_that_never_starts_says_so,tests/test_tui.py,,todo,,P4
+tests/test_tui.py::test_an_unanswered_popup_that_never_starts_says_so,tests/test_tui.py,src/app/link/tests/acts.rs::an_unanswered_popup_request_never_also_opens_the_form ; src/new_agent/tests/wire.rs::the_popup_says_it_started_and_takes_its_directory,mapped,,P4
 tests/test_tui.py::test_a_reply_that_is_missing_or_garbled_after_sending_is_no_reply[],tests/test_tui.py,,todo,,P4
 tests/test_tui.py::test_a_reply_that_is_missing_or_garbled_after_sending_is_no_reply[not json\n],tests/test_tui.py,,todo,,P4
-tests/test_tui.py::test_the_popup_shows_the_same_form_and_closes_with_it,tests/test_tui.py,,todo,,P4
+tests/test_tui.py::test_the_popup_shows_the_same_form_and_closes_with_it,tests/test_tui.py,src/new_agent/tests/wire.rs::the_popup_shows_the_same_modal_on_its_own_background ; src/new_agent/tests/wire.rs::the_popup_says_it_started_and_takes_its_directory ; src/app/driver/tests/new_agent.rs::a_started_agent_is_said_and_a_popup_closes_over_its_tab,mapped,,P4
 tests/test_unseen.py::test_2a_pulses_the_same_cells_in_the_same_colours_as_the_design[0],tests/test_unseen.py,crates/panorama-core/tests/design_unseen.rs::design_6_the_2a_graph_pulses_like_the_design,mapped,,P4
 tests/test_unseen.py::test_2a_pulses_the_same_cells_in_the_same_colours_as_the_design[3],tests/test_unseen.py,crates/panorama-core/tests/design_unseen.rs::design_6_the_2a_graph_pulses_like_the_design,mapped,,P4
 tests/test_unseen.py::test_2a_pulses_the_same_cells_in_the_same_colours_as_the_design[6],tests/test_unseen.py,crates/panorama-core/tests/design_unseen.rs::design_6_the_2a_graph_pulses_like_the_design,mapped,,P4
