@@ -57,6 +57,15 @@ impl Driver {
         }
     }
 
+    /// A panel's operator looked at these agents (the core's `seen`): their marks clear here,
+    /// and the effect that clears them in the producer's tracker (and its file) follows, as
+    /// Python routes them through `_seen`; without it they come back on the next refresh.
+    pub fn seen_in_a_panel(&mut self, ids: Vec<String>) -> Vec<Effect> {
+        let mut out = vec![];
+        crate::ui::input::Host::seen(&mut self.app, ids, &mut out);
+        out
+    }
+
     /// The view as last drawn, without the notices (its click targets).
     pub fn shown(&self) -> Option<&Screen> {
         self.shown.as_ref()
