@@ -153,3 +153,21 @@ fn the_invoking_pane_is_herdrs_focused_pane() {
     assert_eq!(invocation_pane(Some("[]")), None);
     assert_eq!(invocation_pane(None), None);
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_core_that_refuses_the_key_is_no_core() {
+    // the core's `error` (a protocol it does not speak): the caller shows the home tab
+    use tokio::io::AsyncWriteExt;
+    let dir = tempfile::tempdir().unwrap();
+    let uid = std::fs::metadata(dir.path()).unwrap().uid();
+    let sock = dir.path().join("err.sock");
+    let l = tokio::net::UnixListener::bind(&sock).unwrap();
+    tokio::spawn(async move {
+        let (mut s, _) = l.accept().await.unwrap();
+        s.write_all(b"{\"error\": {\"message\": \"protocol\"}}\n")
+            .await
+            .unwrap();
+        tokio::time::sleep(Duration::from_secs(5)).await;
+    });
+    assert_eq!(request_open(&sock, uid, Duration::from_secs(3)).await, None);
+}
