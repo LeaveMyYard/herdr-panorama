@@ -18,16 +18,16 @@ pub fn in_task() -> bool {
 }
 
 /// A future whose panic comes out as `Err(what)`.
-pub struct Guarded<T> {
-    fut: Pin<Box<dyn Future<Output = T> + Send>>,
+pub struct Guarded<'a, T> {
+    fut: Pin<Box<dyn Future<Output = T> + Send + 'a>>,
 }
 
-/// Guards `fut`.
-pub fn guarded<T>(fut: impl Future<Output = T> + Send + 'static) -> Guarded<T> {
+/// Guards `fut` (it may borrow: a task's own step).
+pub fn guarded<'a, T>(fut: impl Future<Output = T> + Send + 'a) -> Guarded<'a, T> {
     Guarded { fut: Box::pin(fut) }
 }
 
-impl<T> Future for Guarded<T> {
+impl<T> Future for Guarded<'_, T> {
     type Output = Result<T, String>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {

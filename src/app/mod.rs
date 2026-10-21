@@ -12,6 +12,7 @@ pub mod actor;
 pub mod collect;
 pub mod driver;
 pub mod input;
+pub mod link;
 pub mod model;
 pub mod paint;
 pub mod panic;

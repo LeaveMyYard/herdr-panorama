@@ -149,3 +149,75 @@ fn a_wide_panel_folds_a_finished_card_on_click_and_reports_its_agents_seen() {
     assert!(p.click(fin.x0 + 1, fin.y, &s, t).is_empty());
     assert!(p.view.fin_open.is_empty());
 }
+
+#[test]
+fn a_click_on_a_question_mark_answers_and_does_not_switch() {
+    // test_panel_keys.py::test_one_click_on_an_entry_docks_and_question_marks_answer (the
+    // switch half: a_click_on_an_entry_in_the_docked_list_switches_to_it)
+    let (mut p, t) = panel("w1:t2", "w1:t2");
+    let s = p.paint(46, 45, &frame());
+    let ask = s
+        .targets
+        .iter()
+        .find(|h| matches!(h.target, Target::AnswerOrch(_)))
+        .expect("a ?N is drawn")
+        .clone();
+    let Target::AnswerOrch(pane) = &ask.target else {
+        unreachable!()
+    };
+    let out = p.click(ask.x0, ask.y, &s, t);
+    assert!(
+        matches!(&out[..], [Effect::OpenInbox { pane: Some(p2), .. }] if p2 == pane),
+        "{out:?}"
+    );
+}
+
+#[test]
+fn a_click_on_the_docked_entry_goes_into_its_agent_like_enter() {
+    // test_panel_keys.py::test_one_click_on_the_docked_entry_focuses_its_agent_like_enter
+    let (mut p, t) = panel("w1:t2", "w1:t2");
+    p.view.orch = Some("w1:p4".into()); // the cursor off the docked entry
+    let s = p.paint(46, 45, &frame());
+    let (x, y) = at(&s, &Target::Orch("w1:p2".into()));
+    let out = p.click(x, y, &s, t);
+    assert!(
+        matches!(&out[..], [Effect::Goto { pane, keep_focus: false, .. }] if pane == "w1:p2"),
+        "{out:?}"
+    );
+}
+
+#[test]
+fn the_wide_graph_selects_first_and_goes_on_the_second_click() {
+    // test_panel_keys.py::test_the_2a_graph_keeps_select_first
+    let (mut p, t) = panel("w1:t2", "w1:t2");
+    let s = p.paint(160, 45, &frame());
+    assert!(!p.input.dock);
+    let (x, y) = at(&s, &Target::Orch("w1:p4".into()));
+    assert!(p.click(x, y, &s, t).is_empty()); // the first click selects
+    assert_eq!(p.view.orch.as_deref(), Some("w1:p4"));
+    let s = p.paint(160, 45, &frame());
+    let (x, y) = at(&s, &Target::Orch("w1:p4".into()));
+    let out = p.click(x, y, &s, t);
+    assert!(
+        out.iter()
+            .any(|e| matches!(e, Effect::Goto { pane, .. } if pane == "w1:p4")),
+        "{out:?}"
+    );
+}
+
+#[test]
+fn an_unarmed_click_in_the_docked_list_may_select_but_never_switches() {
+    // test_panel_keys.py::test_one_click_still_obeys_arming_and_identity
+    let (mut p, t) = panel("w1:t2", "w1:t2");
+    let s = p.paint(46, 45, &frame());
+    let (x, y) = at(&s, &Target::Orch("w1:p4".into()));
+    p.input.armed_at = t + Duration::from_secs(30); // a refresh just changed the selected entry
+    let out = p.click(x, y, &s, t);
+    assert!(
+        !out.iter().any(|e| matches!(e, Effect::Goto { .. })),
+        "{out:?}"
+    );
+    p.input.armed_at = t;
+    p.graph.swarm.orchestrators.retain(|o| o.pane_id != "w1:p4"); // the model changed, not repainted
+    assert!(p.click(x, y, &s, t).is_empty());
+}

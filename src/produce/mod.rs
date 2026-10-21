@@ -99,6 +99,12 @@ impl Producer {
     /// The real producer: herdr and the transcripts (`self_pane`: the view's own pane), the
     /// saved machines, and the unseen state file of this herdr server (`highlight_unseen`).
     pub fn from_env(env: PluginEnv, self_pane: Option<String>) -> Self {
+        Self::from_env_shared(env, Arc::new(Mutex::new(self_pane)))
+    }
+
+    /// [`Producer::from_env`] with the view's own pane read again on each refresh (the home
+    /// view moves it, [`crate::snapshot::SelfPane`]).
+    pub fn from_env_shared(env: PluginEnv, self_pane: crate::snapshot::SelfPane) -> Self {
         let herdr = herdr_agent_kit::herdr_api::blocking::Herdr::from_env().with_client("panorama");
         let config =
             ConfigFile::resolve(&env, || herdr.plugin_config_dir(PANORAMA_ID).ok().flatten());
@@ -108,7 +114,7 @@ impl Producer {
         ));
         let remote_env = env.clone();
         Self::new(
-            Box::new(crate::snapshot::source(env, self_pane)),
+            Box::new(crate::snapshot::source_shared(env, self_pane)),
             Some(Box::new(move || remote::start(&remote_env, herdr.clone()))),
             tracker,
             Box::new(crate::snapshot::now),

@@ -104,7 +104,7 @@ impl App {
     /// Docked next to an agent and narrower than the wide layout: the docked panel, its list
     /// one column (the keyboard on it).
     pub fn update_dock(&mut self) {
-        self.dock = layout::docked(&self.graph.swarm, self.width);
+        self.dock = layout::docked(&self.graph.swarm, self.width, false); // the app never switches
         if self.dock {
             self.graph.view.focus = 0;
         }

@@ -22,6 +22,7 @@ impl Actor {
                 if let Some(end) = self.act(effects) {
                     return Ok(Some(end));
                 }
+                self.publish_filter(); // a filter chosen here: every panel shows it
             }
             Some(Ok(TermEvent::Mouse(m))) => return self.on_mouse(m, now),
             Some(Ok(TermEvent::Resize(..))) => {}
@@ -51,6 +52,7 @@ impl Actor {
         if let Some(end) = self.act(effects) {
             return Ok(Some(end));
         }
+        self.publish_filter();
         match repaint {
             Some(cause) => self.repaint(cause).map(|()| None),
             None => Ok(None),
