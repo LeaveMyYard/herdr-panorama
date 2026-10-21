@@ -17,6 +17,10 @@ fn main() {
             std::env::args().nth(2).as_deref().unwrap_or(""),
         )),
         Some("mcp") => std::process::exit(panorama::mcp::run()),
+        Some("emit") => {
+            let args: Vec<String> = std::env::args().skip(2).collect();
+            std::process::exit(panorama::emit::run(&args))
+        }
         Some("snapshot") => {
             let args: Vec<String> = std::env::args().skip(2).collect();
             std::process::exit(panorama::snapshot::run(&args))
