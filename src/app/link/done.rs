@@ -22,8 +22,10 @@ pub enum Done {
     },
     /// The home pane has a new id (moved back to its own tab).
     MyPane(String),
-    /// The + New agent form, `cwd` its directory (PR 9b).
+    /// The + New agent form, `cwd` its directory.
     NewAgentForm(String),
+    /// The form's start ended: the agent's name, or why not.
+    Started(Result<String, String>),
     /// The popup closes, then herdr-inbox opens (a popup is modal: Python's `after_exit`).
     ExitThenInbox {
         question: Option<i64>,

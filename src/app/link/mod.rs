@@ -71,6 +71,13 @@ pub struct Link {
     pub my_pane: Option<String>,
     /// The collector's copy of it, moved with it (Python `collector.self_pane`).
     pub collector_pane: Option<crate::snapshot::SelfPane>,
+    /// How long quit waits for each step ([`QUIT_STEP`]).
+    pub quit_step: Duration,
+    /// panorama's config, read again when an agent starts (per-tab mode builds its tab
+    /// with the panel); none in tests.
+    settings: Option<Arc<Mutex<Settings>>>,
+    /// The plugin's own variables that are set: a new panel's environment.
+    plugin_env: Vec<(String, String)>,
     place: Place,
     inbox: InboxLink,
     done_tx: mpsc::UnboundedSender<Done>,
@@ -116,15 +123,18 @@ impl Link {
             Places::from_env(env),
             log,
         );
+        let mut settings = Settings::from_env(env);
+        link.plugin_env = crate::new_agent::real::plugin_env(env);
         if !home_mode {
+            link.settings = Some(Arc::new(Mutex::new(settings)));
             return link;
         }
-        let mut settings = Settings::from_env(env);
         let focus_log = Arc::new(FocusLog::default());
         if per_tab(&settings.panorama_table()) {
             link.start_core(env, &state, &mut settings, focus_log.clone())
                 .await;
         }
+        link.settings = Some(Arc::new(Mutex::new(settings)));
         let panels = link.panels.clone();
         events::spawn(herdr, focus_log, link.done_tx.clone(), move || {
             if let Some(p) = &panels {
@@ -153,6 +163,9 @@ impl Link {
             done_tx,
             done_rx,
             collector_pane: None,
+            quit_step: QUIT_STEP,
+            settings: None,
+            plugin_env: vec![],
             core: None,
             core_events: None,
             panels: None,
@@ -230,7 +243,7 @@ impl Link {
             }
         };
         tokio::select! {
-            Some(d) = self.done_rx.recv() => LinkEvent::Done(d),
+            Some(d) = self.done_rx.recv() => self.reported(d),
             Some(e) = core => LinkEvent::Core(e),
         }
     }
@@ -249,10 +262,13 @@ impl Link {
 
     /// Quitting: the panels go with panorama (they come back with it), then a home tab the
     /// operator split loses its label (issue #9).
-    /// Each step is bounded (`QUIT_STEP`): a herdr call that hangs never holds the view open.
+    /// Each step is bounded (`quit_step`, [`QUIT_STEP`]): a herdr call that hangs never holds
+    /// the view open.
     pub async fn quit(&mut self) {
         if let Some(p) = &self.panels
-            && tokio::time::timeout(QUIT_STEP, p.quit()).await.is_err()
+            && tokio::time::timeout(self.quit_step, p.quit())
+                .await
+                .is_err()
         {
             crate::app::panic::log(&self.log, "panels: quit gave up waiting for herdr");
         }
@@ -264,13 +280,14 @@ impl Link {
                 plugin_id: self.place.plugin_id.clone(),
                 root: self.place.root.clone(),
             };
-            let why = match tokio::time::timeout(QUIT_STEP, home::leave(&home, &self.places, &me))
-                .await
-            {
-                Ok(Ok(())) => None,
-                Ok(Err(e)) => Some(e),
-                Err(_) => Some("herdr did not answer".into()),
-            };
+            let why =
+                match tokio::time::timeout(self.quit_step, home::leave(&home, &self.places, &me))
+                    .await
+                {
+                    Ok(Ok(())) => None,
+                    Ok(Err(e)) => Some(e),
+                    Err(_) => Some("herdr did not answer".into()),
+                };
             if let Some(e) = why {
                 crate::app::panic::log(&self.log, &format!("could not release the home tab: {e}"));
             }

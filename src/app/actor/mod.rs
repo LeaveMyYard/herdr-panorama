@@ -14,6 +14,7 @@
 
 mod draw;
 mod effects;
+mod form;
 mod link;
 mod terminal;
 
