@@ -15,6 +15,11 @@ impl Actor {
         ev: Option<io::Result<TermEvent>>,
     ) -> io::Result<Option<End>> {
         let now = Instant::now();
+        if let Some(Ok(e)) = &ev
+            && let Some(step) = self.driver.modal_input(e, now)
+        {
+            return self.on_form(step); // the modal is open: it takes every key and click
+        }
         match ev {
             Some(Ok(TermEvent::Key(k))) => {
                 let Some(k) = key(k) else { return Ok(None) };

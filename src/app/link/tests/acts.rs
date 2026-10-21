@@ -1,8 +1,8 @@
 //! The input's herdr side for the app: going to a pane, the inbox, + New agent, zoom.
 
 use super::{done, link, quiet};
-use crate::app::link::Done;
 use crate::app::link::acts::NEW_AGENT_MIN_WIDTH;
+use crate::app::link::{Done, Link};
 use herdr_agent_kit::herdr_api::fake::{FakeHerdr, Reply};
 use serde_json::json;
 
@@ -92,9 +92,14 @@ async fn zoom_is_the_home_panes_own() {
         Reply::Result(json!({"type": "ok", "zoom": {}})),
     );
     let mut home = link(&fake, true, dir.path());
+    home.published.focused_pane = Some("w1:p3".into()); // herdr's focus is elsewhere
     home.zoom();
     assert!(quiet(&mut home).await);
-    assert_eq!(fake.params_of("pane.zoom")[0]["pane_id"], "w1:p1");
+    assert_eq!(
+        fake.params_of("pane.zoom")[0]["pane_id"],
+        "w1:p1",
+        "its own pane, never herdr's focused one"
+    );
     let mut popup = link(&fake, false, dir.path());
     popup.zoom();
     assert!(quiet(&mut popup).await);
@@ -137,4 +142,77 @@ async fn quit_releases_a_shared_home_tab_after_the_panels() {
     let mut alone = link(&fake, true, dir.path());
     alone.quit().await;
     assert_eq!(fake.params_of("tab.rename").len(), 1);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn an_unanswered_popup_request_never_also_opens_the_form() {
+    // tests/test_tui.py: herdr may have opened it all the same; one that never started is said
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    fake.on("plugin.pane.open", Reply::Close);
+    let mut home = link(&fake, true, dir.path());
+    let mark = dir.path().join("new-agent.mark");
+    std::fs::write(&mark, "99999999999").unwrap(); // the popup's process marked its start
+    home.new_agent(Some("/work".into()), 46);
+    assert!(quiet(&mut home).await, "it started: no form, no notice");
+    std::fs::remove_file(&mark).unwrap();
+    home.new_agent(Some("/work".into()), 46);
+    match done(&mut home).await {
+        Done::Toast(t) => assert_eq!(t.text, crate::panel::act::new_agent::DID_NOT_OPEN),
+        other => panic!("{other:?}"),
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_forms_start_reports_its_end() {
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    let mut home = link(&fake, true, dir.path());
+    let missing = dir.path().join("gone").to_string_lossy().into_owned();
+    home.start_agent("docs".into(), Some(missing), "claude");
+    match done(&mut home).await {
+        Done::Started(Err(why)) => assert!(why.contains("gone"), "{why}"),
+        other => panic!("{other:?}"),
+    }
+    assert!(
+        fake.requests().is_empty(),
+        "refused before herdr is asked anything"
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_forms_start_reads_per_tab_mode_from_the_config() {
+    // per-tab (cockpit = true): the tab is built with its panel (layout.apply); else a plain
+    // tab (tab.create). The config is read at each start.
+    let (fake, dir) = (FakeHerdr::start(), tempfile::tempdir().unwrap());
+    fake.on(
+        "agent.get",
+        Reply::error("agent_not_found", "agent not found"),
+    );
+    fake.on("layout.apply", Reply::error("boom", "no layout"));
+    fake.on("tab.create", Reply::error("boom", "no tab"));
+    let cfg = dir.path().join("cfg");
+    std::fs::create_dir_all(&cfg).unwrap();
+    let mut home = link(&fake, true, dir.path());
+    home.settings = Some(std::sync::Arc::new(std::sync::Mutex::new(
+        crate::settings::Settings::new(Some(cfg.clone()), dir.path().join("herdr"), "p"),
+    )));
+    let start = |l: &mut Link| l.start_agent("docs".into(), None, "claude");
+    start(&mut home);
+    assert!(matches!(done(&mut home).await, Done::Started(Err(_))));
+    assert_eq!(
+        (
+            fake.params_of("layout.apply").len(),
+            fake.params_of("tab.create").len()
+        ),
+        (0, 1)
+    );
+    std::fs::write(cfg.join("config.toml"), "cockpit = true\n").unwrap();
+    start(&mut home);
+    assert!(matches!(done(&mut home).await, Done::Started(Err(_))));
+    assert_eq!(
+        (
+            fake.params_of("layout.apply").len(),
+            fake.params_of("tab.create").len()
+        ),
+        (1, 1)
+    );
 }
