@@ -85,7 +85,7 @@ fn the_scan_flags_what_it_is_for() {
     // planted lines: each way to make a client outside trace.rs, and the ones that are fine
     let bad = [
         "use herdr_agent_kit::herdr_api::Herdr as H;",
-        "let h = herdr_agent_kit::herdr_api::blocking::Herdr::from_env();",
+        "let h = herdr_agent_kit::herdr_api::blocking::Herdr::resolve(var);",
         "let h = crate::trace::HerdrClient::from_env();",
         "let h = BlockingHerdrClient::new(server);",
         "let h = HerdrClient :: resolve(var);",
