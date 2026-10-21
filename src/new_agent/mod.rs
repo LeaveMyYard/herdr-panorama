@@ -1,7 +1,7 @@
-//! + New agent (Python `home.slugify`, `home.new_agent`, `tui.NewAgentForm`; design 1C,
-//! approved deviation 2026-10-17: no first prompt, nothing is ever typed into the pane).
-//! SAFETY: it creates a tab, starts an agent in it, and closes that tab again on a failed
-//! start.
+//! The + New agent modal and the start behind it (Python `home.slugify`, `home.new_agent`,
+//! `tui.NewAgentForm`; design 1C, approved deviation 2026-10-17: no first prompt, nothing is
+//! ever typed into the pane). SAFETY: it creates a tab, starts an agent in it, and closes that
+//! tab again on a failed start.
 //!
 //! - [`form`]: the modal's state: the harness carousel, the two fields, the status row, the
 //!   arming; keys and clicks in, a start or a cancel out (no IO);
@@ -32,7 +32,7 @@ pub fn slugify(name: &str) -> String {
             gap = true;
         }
     }
-    let mut s = s.trim_matches(|c| c == '-' || c == '_').to_owned();
+    let mut s = s.trim_matches(['-', '_']).to_owned();
     while s.contains("--") {
         s = s.replace("--", "-");
     }
@@ -40,7 +40,7 @@ pub fn slugify(name: &str) -> String {
         s = format!("a-{s}");
     }
     let cut: String = s.chars().take(32).collect();
-    cut.trim_end_matches(|c| c == '-' || c == '_').to_owned()
+    cut.trim_end_matches(['-', '_']).to_owned()
 }
 
 /// herdr's agent-name rule.

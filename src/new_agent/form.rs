@@ -18,8 +18,14 @@ pub const ARM: Duration = Duration::from_millis(400);
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FormKey {
     Char(char),
+    /// ←: the previous harness on the carousel, else the text cursor.
     Left,
+    /// →: the next harness on the carousel, else the text cursor.
     Right,
+    /// ↑: the stop above.
+    Up,
+    /// ↓: the stop below.
+    Down,
     Home,
     End,
     Backspace,
@@ -49,6 +55,21 @@ pub enum Outcome {
     },
 }
 
+/// Where the keyboard is: the carousel is a focus stop above the two fields (the operator's
+/// choice, Q212/Q213: ↑/↓ and tab/shift-tab move between the stops; on the carousel ←/→
+/// switch the harness, in a field they move the text cursor).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Stop {
+    Carousel,
+    Field(Field),
+}
+
+const STOPS: [Stop; 3] = [
+    Stop::Carousel,
+    Stop::Field(Field::Name),
+    Stop::Field(Field::Cwd),
+];
+
 /// The modal's state.
 #[derive(Clone, Debug)]
 pub struct NewAgentForm {
@@ -56,7 +77,7 @@ pub struct NewAgentForm {
     pub harness: usize,
     pub name: Text,
     pub cwd: Text,
-    pub focus: Field,
+    pub focus: Stop,
     pub status: Option<String>,
     /// The agent is starting: everything waits.
     pub busy: bool,
@@ -70,18 +91,35 @@ impl NewAgentForm {
             harness: 0,
             name: Text::default(),
             cwd: Text::new(cwd),
-            focus: Field::Name,
+            focus: Stop::Field(Field::Name),
             status: None,
             busy: false,
             armed_at: now + ARM,
         }
     }
 
-    fn field(&mut self) -> &mut Text {
+    /// The focused text field, if a field has the focus.
+    fn field(&mut self) -> Option<&mut Text> {
         match self.focus {
-            Field::Name => &mut self.name,
-            Field::Cwd => &mut self.cwd,
+            Stop::Field(Field::Name) => Some(&mut self.name),
+            Stop::Field(Field::Cwd) => Some(&mut self.cwd),
+            Stop::Carousel => None,
         }
+    }
+
+    /// The stop `d` from the focused one: tab goes round the three, the arrows stop at the
+    /// ends.
+    fn move_focus(&mut self, d: i32, round: bool) {
+        let (i, n) = (
+            STOPS.iter().position(|s| *s == self.focus).unwrap_or(1) as i32,
+            STOPS.len() as i32,
+        );
+        let to = if round {
+            (i + d).rem_euclid(n)
+        } else {
+            (i + d).clamp(0, n - 1)
+        };
+        self.focus = STOPS[to as usize];
     }
 
     /// A key at `now`.
@@ -92,21 +130,30 @@ impl NewAgentForm {
         match k {
             FormKey::Esc => return Outcome::Cancel,
             FormKey::Submit => return self.submit(now),
-            FormKey::Enter if self.focus == Field::Cwd => return self.submit(now),
-            FormKey::Enter | FormKey::Tab | FormKey::BackTab => {
-                self.focus = match self.focus {
-                    Field::Name => Field::Cwd,
-                    Field::Cwd => Field::Name,
-                };
+            FormKey::Enter if self.focus == Stop::Field(Field::Cwd) => return self.submit(now),
+            FormKey::Enter | FormKey::Tab => self.move_focus(1, true),
+            FormKey::BackTab => self.move_focus(-1, true),
+            FormKey::Down => self.move_focus(1, false),
+            FormKey::Up => self.move_focus(-1, false),
+            FormKey::Left | FormKey::Right if self.focus == Stop::Carousel => {
+                self.harness = step(self.harness, if k == FormKey::Left { -1 } else { 1 });
             }
-            FormKey::Char(c) if !c.is_control() => self.field().insert(c),
-            FormKey::Char(_) => return Outcome::Nothing,
-            FormKey::Left => self.field().left(),
-            FormKey::Right => self.field().right(),
-            FormKey::Home => self.field().home(),
-            FormKey::End => self.field().end(),
-            FormKey::Backspace => self.field().back(),
-            FormKey::Delete => self.field().delete(),
+            FormKey::Char(c) if c.is_control() => return Outcome::Nothing,
+            _ => {
+                let Some(t) = self.field() else {
+                    return Outcome::Nothing;
+                }; // typing on the carousel
+                match k {
+                    FormKey::Char(c) => t.insert(c),
+                    FormKey::Left => t.left(),
+                    FormKey::Right => t.right(),
+                    FormKey::Home => t.home(),
+                    FormKey::End => t.end(),
+                    FormKey::Backspace => t.back(),
+                    FormKey::Delete => t.delete(),
+                    _ => return Outcome::Nothing,
+                }
+            }
         }
         Outcome::Changed
     }
@@ -171,17 +218,19 @@ impl NewAgentForm {
 
     /// The modal's picture of this state (`view` holds the agent name it shows).
     pub fn form<'a>(&'a self, view: &'a FormView) -> Form<'a> {
-        let cursor = match self.focus {
-            Field::Name => self.name.cursor,
-            Field::Cwd => self.cwd.cursor,
+        let focus = match self.focus {
+            Stop::Field(Field::Name) => Some((Field::Name, self.name.cursor)),
+            Stop::Field(Field::Cwd) => Some((Field::Cwd, self.cwd.cursor)),
+            Stop::Carousel => None,
         };
         Form {
             harness: self.harness,
             name: &self.name.value,
             slug: &view.slug,
             cwd: &self.cwd.value,
-            focus: (!self.busy).then_some((self.focus, cursor)),
+            focus: focus.filter(|_| !self.busy),
             status: self.status.as_deref(),
+            carousel: self.focus == Stop::Carousel && !self.busy,
         }
     }
 }

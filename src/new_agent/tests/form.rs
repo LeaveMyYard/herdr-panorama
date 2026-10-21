@@ -1,6 +1,6 @@
 //! The + New agent modal's keys and clicks (Python `NewAgentForm`; design 1C).
 
-use crate::new_agent::form::{ARM, FormKey, NewAgentForm, Outcome};
+use crate::new_agent::form::{ARM, FormKey, NewAgentForm, Outcome, Stop};
 use panorama_core::view::new_agent::{Field, HARNESSES, render};
 use std::time::Instant;
 
@@ -14,7 +14,7 @@ fn typed(f: &mut NewAgentForm, text: &str, now: Instant) {
 fn typing_edits_the_focused_field_and_shows_the_agent_name() {
     let t0 = Instant::now();
     let mut f = NewAgentForm::new("/work", t0);
-    assert_eq!(f.focus, Field::Name);
+    assert_eq!(f.focus, Stop::Field(Field::Name));
     typed(&mut f, "Billing API", t0);
     assert_eq!(f.view().slug, "billing-api");
     f.key(FormKey::Left, t0);
@@ -32,12 +32,12 @@ fn typing_edits_the_focused_field_and_shows_the_agent_name() {
     );
     // Enter on the name, tab and shift-tab move between the two fields; the directory is filled
     assert_eq!(f.key(FormKey::Enter, t0), Outcome::Changed);
-    assert_eq!(f.focus, Field::Cwd);
+    assert_eq!(f.focus, Stop::Field(Field::Cwd));
     assert_eq!((f.cwd.value.as_str(), f.cwd.cursor), ("/work", 5));
     f.key(FormKey::BackTab, t0);
-    assert_eq!(f.focus, Field::Name);
+    assert_eq!(f.focus, Stop::Field(Field::Name));
     f.key(FormKey::Tab, t0);
-    assert_eq!(f.focus, Field::Cwd);
+    assert_eq!(f.focus, Stop::Field(Field::Cwd));
 }
 
 #[test]
@@ -154,4 +154,70 @@ fn the_carousel_holds_still_while_the_agent_starts() {
     let next = modal.steps.iter().find(|s| s.d == 1).unwrap();
     assert_eq!(f.click(next.x, next.y, &modal), Outcome::Nothing);
     assert_eq!(f.harness, 0, "the harness being started stays");
+}
+
+#[test]
+fn the_carousel_is_a_focus_stop_where_left_right_switch_the_harness() {
+    // the operator's choice (Q212, Q213)
+    let (t0, dir) = (Instant::now(), tempfile::tempdir().unwrap());
+    let mut f = NewAgentForm::new(dir.path().to_str().unwrap(), t0);
+    typed(&mut f, "docs", t0);
+    let cursor = f.name.cursor;
+    f.key(FormKey::Left, t0);
+    assert_eq!(
+        (f.harness, f.name.cursor),
+        (0, cursor - 1),
+        "in a field ←/→ move the text cursor"
+    );
+    f.key(FormKey::Right, t0);
+    assert_eq!(f.key(FormKey::Up, t0), Outcome::Changed);
+    assert_eq!(f.focus, Stop::Carousel);
+    let view = f.view();
+    let shown = f.form(&view);
+    assert!(
+        shown.carousel && shown.focus.is_none(),
+        "the carousel highlighted, no text cursor"
+    );
+    assert_eq!(f.key(FormKey::Up, t0), Outcome::Changed);
+    assert_eq!(f.focus, Stop::Carousel, "↑ stops at the top");
+    f.key(FormKey::Right, t0);
+    assert_eq!(f.harness, 1, "→: the next harness");
+    f.key(FormKey::Left, t0);
+    f.key(FormKey::Left, t0);
+    assert_eq!(f.harness, HARNESSES.len() - 1, "←: the previous one, round");
+    f.key(FormKey::Right, t0);
+    assert_eq!(
+        f.key(FormKey::Char('x'), t0),
+        Outcome::Nothing,
+        "nothing to type into"
+    );
+    assert_eq!(f.name.value, "docs");
+    f.key(FormKey::Down, t0);
+    assert_eq!(f.focus, Stop::Field(Field::Name), "↓: the next field");
+    f.key(FormKey::Down, t0);
+    f.key(FormKey::Down, t0);
+    assert_eq!(f.focus, Stop::Field(Field::Cwd), "↓ stops at the bottom");
+    f.key(FormKey::Tab, t0);
+    assert_eq!(f.focus, Stop::Carousel, "tab goes round");
+    f.key(FormKey::BackTab, t0);
+    assert_eq!(f.focus, Stop::Field(Field::Cwd));
+    f.key(FormKey::Up, t0);
+    f.key(FormKey::Up, t0);
+    assert_eq!(
+        f.key(FormKey::Enter, t0),
+        Outcome::Changed,
+        "Enter on the carousel: the next stop"
+    );
+    assert_eq!(f.focus, Stop::Field(Field::Name));
+    // while it starts the harness holds still
+    let later = t0 + ARM;
+    f.key(FormKey::Up, later);
+    assert!(matches!(
+        f.key(FormKey::Submit, later),
+        Outcome::Start { .. }
+    ));
+    assert_eq!(f.key(FormKey::Right, later), Outcome::Nothing);
+    assert_eq!(f.harness, 0);
+    let view = f.view();
+    assert!(!f.form(&view).carousel, "nothing focused while it starts");
 }
