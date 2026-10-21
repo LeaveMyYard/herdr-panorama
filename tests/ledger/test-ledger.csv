@@ -1075,7 +1075,7 @@ tests/test_unseen.py::test_a_broken_state_file_starts_over,tests/test_unseen.py,
 tests/test_unseen.py::test_old_agents_are_forgotten,tests/test_unseen.py,src/unseen/tests.rs::old_agents_are_forgotten,mapped,,P4
 tests/test_unseen.py::test_click_enter_and_go_to_pane_mark_seen,tests/test_unseen.py,,todo,,P4
 tests/test_unseen.py::test_a_finished_card_clears_its_folded_agents,tests/test_unseen.py,,todo,,P4
-tests/test_unseen.py::test_review_l2_the_state_file_is_read_and_written_off_the_ui_thread,tests/test_unseen.py,,todo,,P4
+tests/test_unseen.py::test_review_l2_the_state_file_is_read_and_written_off_the_ui_thread,tests/test_unseen.py,src/app/collect/tests.rs::the_state_file_is_read_and_written_off_the_ui_thread ; src/app/seen/tests.rs::seen_agents_clear_here_and_in_the_state_file,mapped,,P4
 tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[W160-160-thread-89-4],tests/test_wide.py,crates/panorama-core/tests/design_wide.rs::design_7_wide_cards_cell_for_cell,mapped,,P4
 tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[W160-160-thread-89-9],tests/test_wide.py,crates/panorama-core/tests/design_wide.rs::design_7_wide_cards_cell_for_cell,mapped,,P4
 tests/test_wide.py::test_wide_cards_match_the_design_cell_for_cell[W240-240-thread-99-4],tests/test_wide.py,crates/panorama-core/tests/design_wide.rs::design_7_wide_cards_cell_for_cell,mapped,,P4
