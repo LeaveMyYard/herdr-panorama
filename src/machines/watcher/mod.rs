@@ -49,6 +49,12 @@ impl StopFlag {
     pub fn is_set(&self) -> bool {
         self.0.is_set()
     }
+
+    /// Stop the watcher from any thread, as [`Watcher::stop`] (the producer's
+    /// [`crate::produce::Halt`]: quitting reaches a sync under way without the producer).
+    pub fn stop(&self) {
+        self.0.set();
+    }
 }
 
 /// One machine's watcher: its latest outcome, and its thread when started.
