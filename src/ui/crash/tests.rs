@@ -27,7 +27,7 @@ fn without_a_pane_nothing_is_written() {
 
 #[test]
 fn the_hook_marks_a_crash_but_leaves_a_tasks_panic_to_the_task() {
-    use crate::panel::actor::guard::{block_on, guarded, hook_lock};
+    use crate::ui::guard::{block_on, guarded, hook_lock};
     let _hook = hook_lock();
     // #77 L3: a herdr-side task's panic is its own failure, not the panel's crash
     let dir = tempfile::tempdir().unwrap();

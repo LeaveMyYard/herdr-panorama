@@ -39,6 +39,8 @@ impl SnapshotApi for Panics {
 
 #[test]
 fn a_panicking_refresh_is_that_machines_error() {
+    // a panic while another test holds a panic hook would reach that hook
+    let _hook = crate::ui::guard::hook_lock();
     let mut r = refresher(
         Arc::new(Api(Mutex::new(Err("x".into())))),
         Arc::<Syncs>::default(),

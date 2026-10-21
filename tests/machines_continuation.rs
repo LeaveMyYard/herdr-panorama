@@ -33,13 +33,24 @@ struct LocalSync {
 }
 
 impl Syncer for LocalSync {
-    fn sync(&self, m: &Machine, sessions: &[String]) -> Option<String> {
+    fn sync(
+        &self,
+        m: &Machine,
+        sessions: &[String],
+        cancelled: &dyn Fn() -> bool,
+    ) -> Option<String> {
         let mut sorted = sessions.to_vec();
         sorted.sort();
         self.synced.lock().unwrap().push(sorted);
         let dest = mirror_root(&self.state, m);
         std::fs::create_dir_all(&dest).unwrap();
-        Rsync::new(None).mirror(&format!("{}/", self.remote.display()), &dest, sessions, run)
+        Rsync::new(None).mirror(
+            &format!("{}/", self.remote.display()),
+            &dest,
+            sessions,
+            run,
+            cancelled,
+        )
     }
 }
 
@@ -96,7 +107,7 @@ fn a_remote_continuation_is_mirrored_and_followed_in_one_refresh() {
             clock: Box::new(|| 1_792_176_200.0),
         }),
     };
-    let out = r.refresh(&Outcome::default());
+    let out = r.refresh(&Outcome::default(), &|| false);
     let o = &out.swarm.unwrap().orchestrators[0];
     assert_eq!(o.session_id.as_deref(), Some(NEW));
     assert_eq!(o.tab_label, "work, continued");
@@ -106,7 +117,7 @@ fn a_remote_continuation_is_mirrored_and_followed_in_one_refresh() {
         *sync.synced.lock().unwrap(),
         [vec![OLD.to_owned()], both.clone()]
     );
-    r.refresh(&Outcome::default()); // known now: one sync with both
+    r.refresh(&Outcome::default(), &|| false); // known now: one sync with both
     let synced = sync.synced.lock().unwrap();
     assert_eq!((synced.len(), &synced[2]), (3, &both));
 }

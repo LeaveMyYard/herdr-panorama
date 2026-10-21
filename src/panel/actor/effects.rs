@@ -5,12 +5,12 @@
 //! report back as [`Done`].
 
 use super::announce::Announcer;
-use super::guard::guarded;
 use super::{Actor, End};
 use crate::panel::act::inbox::UvRunner;
 use crate::panel::act::switch::{Switched, switch};
 use crate::panel::act::{goto, new_agent, remote};
 use crate::panel::input::{Effect, Painted, Toast};
+use crate::ui::guard::guarded;
 use std::future::Future;
 use std::io;
 use std::time::{Duration, Instant};

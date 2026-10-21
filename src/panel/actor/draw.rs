@@ -2,10 +2,10 @@
 //! over the view, and each paint feeds the click arming.
 
 use super::Actor;
-use crate::panel::clock;
 use crate::panel::input::Painted;
 use crate::panel::paint::Frame;
-use crate::panel::term;
+use crate::ui::clock;
+use crate::ui::term;
 use std::io;
 use std::time::Instant;
 

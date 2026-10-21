@@ -243,5 +243,10 @@ pub fn dumps(j: &J, indent: usize) -> String {
     out
 }
 
+mod compact;
+mod parse;
+
+pub use compact::{Style, dumps_styled};
+
 #[cfg(test)]
 mod tests;

@@ -205,7 +205,7 @@ impl<O: Ops> Manager<O> {
         let Some(dir) = &self.marker_dir else {
             return false;
         };
-        match std::fs::remove_file(crate::panel::crash::marker(dir, pane)) {
+        match std::fs::remove_file(crate::ui::crash::marker(dir, pane)) {
             Ok(()) => true,
             Err(e) => e.kind() != std::io::ErrorKind::NotFound,
         }
