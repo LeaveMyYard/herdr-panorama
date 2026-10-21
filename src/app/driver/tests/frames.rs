@@ -24,7 +24,7 @@ fn spinner_frames_advance_without_changing_width() {
     assert_ne!(first, second);
     let widths = |t: &str| t.lines().map(|l| l.chars().count()).collect::<Vec<_>>();
     assert_eq!(r.d.shown().unwrap().w(), WIDE.0);
-    assert_eq!(widths(&first).len(), widths(&second).len());
+    assert_eq!(widths(&first), widths(&second)); // each row as wide as before (Python's)
     let o = &r.d.app.swarm.orchestrators[1];
     assert!(
         o.agents()
