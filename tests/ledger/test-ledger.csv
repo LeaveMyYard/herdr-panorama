@@ -1135,3 +1135,13 @@ tests/test_panel_keys.py::test_the_2a_graph_keeps_select_first,tests/test_panel_
 tests/test_panel_keys.py::test_no_graph_flash_while_a_switch_runs,tests/test_panel_keys.py,src/panel/model/tests.rs::the_docked_panel_stays_while_a_switch_runs_even_at_the_wide_layouts_width ; src/ui/layout/tests.rs::docked_and_narrower_than_the_wide_layout_once_painted,mapped,,P4
 tests/test_panel_keys.py::test_a_switch_that_ends_judges_the_focus_again,tests/test_panel_keys.py,src/panel/model/tests.rs::a_switch_that_ends_judges_the_focus_again,mapped,,P4
 tests/test_cockpit.py::test_the_cores_open_key_follows_the_home_panes_new_id,tests/test_cockpit.py,,todo,,P4
+tests/test_view_launcher.py::test_the_view_runs_the_rust_app_when_built_else_the_venv_else_uv[panorama-tui],tests/test_view_launcher.py,,todo,,P8
+tests/test_view_launcher.py::test_the_view_runs_the_rust_app_when_built_else_the_venv_else_uv[new-agent-new-agent],tests/test_view_launcher.py,,todo,,P8
+tests/test_view_launcher.py::test_a_binary_that_does_not_speak_the_view_contract_falls_back[panel-only],tests/test_view_launcher.py,,todo,,P8
+tests/test_view_launcher.py::test_a_binary_that_does_not_speak_the_view_contract_falls_back[no-contract-tui],tests/test_view_launcher.py,,todo,,P8
+tests/test_view_launcher.py::test_a_binary_that_does_not_speak_the_view_contract_falls_back[another-contract],tests/test_view_launcher.py,,todo,,P8
+tests/test_view_launcher.py::test_a_binary_that_does_not_speak_the_view_contract_falls_back[contract-11],tests/test_view_launcher.py,,todo,,P8
+tests/test_view_launcher.py::test_a_binary_that_does_not_speak_the_view_contract_falls_back[stale],tests/test_view_launcher.py,,todo,,P8
+tests/test_view_launcher.py::test_a_binary_that_does_not_speak_the_view_contract_falls_back[panics],tests/test_view_launcher.py,,todo,,P8
+tests/test_view_launcher.py::test_a_shared_cargo_target_dir_is_not_looked_at,tests/test_view_launcher.py,,todo,,P8
+tests/test_view_launcher.py::test_it_runs_only_the_views_two_commands,tests/test_view_launcher.py,,todo,,P8

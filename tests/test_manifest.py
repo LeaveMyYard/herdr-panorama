@@ -8,12 +8,16 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 
 
+def VIEW_COMMAND(cmd):  # noqa: N802 - the manifest's command for the view's `cmd`
+    return ["sh", "-c", f'exec sh "${{HERDR_PLUGIN_ROOT:-.}}/scripts/tui" {cmd}']
+
+
 def test_plugin_manifest():
     m = tomllib.loads((ROOT / "herdr-plugin.toml").read_text())
     assert m["id"] == "leavemyyard.herdr-panorama"
     pane = m["panes"][0]
     assert pane["id"] == "panorama" and pane["placement"] == "popup"
-    assert "panorama tui" in " ".join(pane["command"])
+    assert pane["command"] == VIEW_COMMAND("tui")  # scripts/tui: the Rust app or the Python one
     actions = {a["id"]: a for a in m["actions"]}
     assert set(actions) == {"open", "open-popup", "open-split"}
     assert actions["open-popup"]["command"][-2:] == ["open", "--popup"]
@@ -21,7 +25,7 @@ def test_plugin_manifest():
     assert actions["open-split"]["command"][-2:] == ["open", "--split"]
     assert m["build"][0]["command"] == ["uv", "sync", "--frozen", "--no-dev"]
     form = next(p for p in m["panes"] if p["id"] == "new-agent")  # + New agent as its own popup
-    assert form["placement"] == "popup" and "panorama new-agent" in " ".join(form["command"])
+    assert form["placement"] == "popup" and form["command"] == VIEW_COMMAND("new-agent")
     assert isinstance(form["width"], int) and form["width"] >= 80 and form["height"] >= 24
     panel = next(p for p in m["panes"] if p["id"] == "panel")  # a per-tab panel
     from herdr_panorama import herdr

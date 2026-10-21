@@ -42,3 +42,31 @@ fn the_claude_answer_is_one_no_older_binary_prints() {
         assert!(script.contains(r#"[ "$got" = "claude $CLAUDE_CONTRACT" ]"#));
     }
 }
+
+#[test]
+fn the_view_launcher_asks_for_this_contract_and_no_older_binary_passes() {
+    let script = include_str!("../../scripts/tui");
+    let line = script
+        .lines()
+        .find(|l| l.starts_with("TUI_CONTRACT="))
+        .expect("scripts/tui names its contract");
+    assert_eq!(line, format!("TUI_CONTRACT={TUI}"));
+    assert_eq!(answer(Some("tui")), Some(format!("tui {TUI}")));
+    assert!(script.contains(r#"[ "$got" = "tui $TUI_CONTRACT" ]"#));
+    assert!(script.contains(r#""$B" contract tui"#));
+}
+
+#[test]
+fn the_manifest_runs_the_view_through_its_launcher() {
+    let m = include_str!("../../herdr-plugin.toml");
+    for (pane, cmd) in [("panorama", "tui"), ("new-agent", "new-agent")] {
+        let block = m
+            .split("[[panes]]")
+            .find(|b| b.contains(&format!("id = \"{pane}\"")))
+            .expect("the pane");
+        let want = format!(
+            r#"command = ["sh", "-c", "exec sh \"${{HERDR_PLUGIN_ROOT:-.}}/scripts/tui\" {cmd}"]"#
+        );
+        assert!(block.contains(&want), "{pane}: {block}");
+    }
+}
