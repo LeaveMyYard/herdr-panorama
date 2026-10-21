@@ -69,4 +69,15 @@ fn the_manifest_runs_the_view_through_its_launcher() {
         );
         assert!(block.contains(&want), "{pane}: {block}");
     }
+    // the actions and the startup hook (PR 10b)
+    for cmd in ["open", "open --popup", "open --split", "home --startup"] {
+        let want = format!(
+            r#"command = ["sh", "-c", "exec sh \"${{HERDR_PLUGIN_ROOT:-.}}/scripts/tui\" {cmd}"]"#
+        );
+        assert_eq!(m.matches(&want).count(), 1, "{cmd}");
+    }
+    assert!(
+        !m.contains("\"panorama\", \"open\""),
+        "no action runs uv directly"
+    );
 }

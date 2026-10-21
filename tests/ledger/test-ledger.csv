@@ -408,13 +408,13 @@ tests/test_goldens.py::test_the_goldens_are_what_the_code_does[screens],tests/te
 tests/test_herdr.py::test_clean_strips_controls_and_caps,tests/test_herdr.py,herdr-agent-kit@v0.1.0:src/herdr_api/sanitize/tests.rs::clean_strips_controls_and_caps,mapped,,P1
 tests/test_herdr.py::test_missing_binary_is_an_error_not_an_exception,tests/test_herdr.py,herdr-agent-kit@v0.1.0:tests/herdr_api/cli.rs::a_missing_binary_is_unreachable,mapped,,P1
 tests/test_herdr.py::test_snapshot_and_focus_through_the_fake,tests/test_herdr.py,,todo,,P4
-tests/test_herdr.py::test_open_view_split_targets_the_invoking_pane,tests/test_herdr.py,,todo,,P4
+tests/test_herdr.py::test_open_view_split_targets_the_invoking_pane,tests/test_herdr.py,src/open/tests/herdr_side.rs::open_view_split_targets_the_invoking_pane ; src/open/tests/herdr_side.rs::the_invoking_pane_is_herdrs_focused_pane,mapped,,P4
 tests/test_home.py::test_home_opens_once_renamed_first_and_focused_on_demand,tests/test_home.py,src/home/tests/ensure.rs::home_opens_once_renamed_first_and_focused_on_demand,mapped,,P4
 tests/test_home.py::test_concurrent_openers_make_one_home,tests/test_home.py,src/home/tests/ensure.rs::concurrent_openers_make_one_home,mapped,,P4
 tests/test_home.py::test_lost_record_adopts_the_labelled_tab_and_a_gone_home_is_reopened,tests/test_home.py,src/home/tests/ensure.rs::lost_record_adopts_the_labelled_tab_and_a_gone_home_is_reopened,mapped,,P4
-tests/test_home.py::test_open_action_focuses_home_and_popup_stays_available,tests/test_home.py,src/home/tests/ensure.rs::open_action_focuses_home_and_the_popup_stays_available,mapped,,P4
-tests/test_home.py::test_home_tab_off_means_popup_and_no_startup_tab,tests/test_home.py,src/home/tests/ensure.rs::home_tab_off_means_popup_and_no_startup_tab,mapped,,P4
-tests/test_home.py::test_startup_does_not_take_focus,tests/test_home.py,src/home/tests/ensure.rs::startup_does_not_take_focus,mapped,,P4
+tests/test_home.py::test_open_action_focuses_home_and_popup_stays_available,tests/test_home.py,src/home/tests/ensure.rs::open_action_focuses_home_and_the_popup_stays_available ; src/open/tests/commands.rs::without_per_tab_panels_the_key_focuses_the_home_tab,mapped,,P4
+tests/test_home.py::test_home_tab_off_means_popup_and_no_startup_tab,tests/test_home.py,src/home/tests/ensure.rs::home_tab_off_means_popup_and_no_startup_tab ; src/open/tests/commands.rs::the_home_tab_off_or_failing_means_the_popup ; src/open/tests/commands.rs::home_startup_opens_once_without_the_focus_and_nothing_when_off,mapped,,P4
+tests/test_home.py::test_startup_does_not_take_focus,tests/test_home.py,src/home/tests/ensure.rs::startup_does_not_take_focus ; src/open/tests/commands.rs::home_startup_opens_once_without_the_focus_and_nothing_when_off,mapped,,P4
 tests/test_home.py::test_slugify[Billing API!-billing-api],tests/test_home.py,src/new_agent/tests/slug.rs::slugs_from_free_text,mapped,,P4
 tests/test_home.py::test_slugify[  9 lives -a-9-lives],tests/test_home.py,src/new_agent/tests/slug.rs::slugs_from_free_text,mapped,,P4
 tests/test_home.py::test_slugify[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx],tests/test_home.py,src/new_agent/tests/slug.rs::slugs_from_free_text,mapped,,P4
@@ -618,7 +618,7 @@ tests/test_panels.py::test_only_provable_panels_are_closed,tests/test_panels.py,
 tests/test_panels.py::test_a_tab_herdr_could_not_check_gets_no_panel,tests/test_panels.py,src/panels/tests/batch.rs::a_tab_herdr_could_not_check_gets_no_panel,mapped,,P4
 tests/test_panels.py::test_a_second_panel_is_closed_keeping_the_connected_one,tests/test_panels.py,src/panels/tests/closing.rs::a_second_panel_is_closed_keeping_the_connected_one,mapped,,P4
 tests/test_panels.py::test_a_tab_without_its_orchestrator_loses_the_panel_only_after_a_while,tests/test_panels.py,src/panels/tests/closing.rs::a_tab_without_its_orchestrator_loses_the_panel_only_after_a_while,mapped,,P4
-tests/test_panels.py::test_the_open_key_asks_the_core,tests/test_panels.py,,todo,,P4
+tests/test_panels.py::test_the_open_key_asks_the_core,tests/test_panels.py,src/open/tests/herdr_side.rs::the_open_key_asks_the_core ; src/open/tests/herdr_side.rs::a_core_that_never_answers_is_no_core ; src/open/tests/commands.rs::the_key_asks_the_core_first_in_per_tab_mode,mapped,,P4
 tests/test_panels.py::test_a_panel_switches_by_tab_and_panel_focus,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_new_agent_builds_its_tab_with_the_panel_on_the_left,tests/test_panels.py,src/new_agent/tests/start.rs::per_tab_builds_the_tab_with_its_panel_on_the_left ; src/new_agent/tests/real.rs::the_panel_layout_puts_our_panel_left_of_the_new_pane,mapped,,P4
 tests/test_panels.py::test_a_viewer_exits_on_the_cores_shutdown,tests/test_panels.py,,todo,,P4
@@ -1144,4 +1144,9 @@ tests/test_view_launcher.py::test_a_binary_that_does_not_speak_the_view_contract
 tests/test_view_launcher.py::test_a_binary_that_does_not_speak_the_view_contract_falls_back[stale],tests/test_view_launcher.py,,todo,,P8
 tests/test_view_launcher.py::test_a_binary_that_does_not_speak_the_view_contract_falls_back[panics],tests/test_view_launcher.py,,todo,,P8
 tests/test_view_launcher.py::test_a_shared_cargo_target_dir_is_not_looked_at,tests/test_view_launcher.py,,todo,,P8
-tests/test_view_launcher.py::test_it_runs_only_the_views_two_commands,tests/test_view_launcher.py,,todo,,P8
+tests/test_view_launcher.py::test_it_runs_only_the_views_commands,tests/test_view_launcher.py,,todo,,P8
+tests/test_view_launcher.py::test_the_view_runs_the_rust_app_when_built_else_the_venv_else_uv[action:open-open],tests/test_view_launcher.py,,todo,,P8
+tests/test_view_launcher.py::test_the_view_runs_the_rust_app_when_built_else_the_venv_else_uv[action:open-popup-open --popup],tests/test_view_launcher.py,,todo,,P8
+tests/test_view_launcher.py::test_the_view_runs_the_rust_app_when_built_else_the_venv_else_uv[action:open-split-open --split],tests/test_view_launcher.py,,todo,,P8
+tests/test_view_launcher.py::test_the_view_runs_the_rust_app_when_built_else_the_venv_else_uv[startup-home --startup],tests/test_view_launcher.py,,todo,,P8
+tests/test_view_launcher.py::test_a_binary_that_does_not_speak_the_view_contract_falls_back[view-contract-1],tests/test_view_launcher.py,,todo,,P8
