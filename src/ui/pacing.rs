@@ -1,14 +1,14 @@
-//! When the panel draws an animation frame (Python `SwarmApp.animate`): only while its tab is
-//! shown and something on it moves, and then only when the frame would differ from the one
-//! on screen: a new whole frame (spinners step), or any time while a colour glides (pulses,
-//! blinks).
+//! When a view (the panel, the app) draws an animation frame (Python `SwarmApp.animate`):
+//! only while its tab is shown and something on it moves, and then only when the frame would
+//! differ from the one on screen: a new whole frame (spinners step), or any time while a
+//! colour glides (pulses, blinks).
 
 use panorama_core::model::Swarm;
 use panorama_core::view::moving::animated;
 use panorama_core::view::{Marks, Screen};
 
 /// Whether the colour tick has anything to do: the tab is shown and something on it moves.
-/// When not, the panel does not even wake for the tick.
+/// When not, the view does not even wake for the tick.
 pub fn ticking(tab_shown: bool, swarm: &Swarm, unseen: &Marks) -> bool {
     tab_shown && animated(swarm, unseen)
 }

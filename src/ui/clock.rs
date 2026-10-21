@@ -1,4 +1,4 @@
-//! The panel's clocks: the wall clock (ages, the clock on the empty page) and the animation
+//! A view's clocks: the wall clock (ages, the clock on the empty page) and the animation
 //! time, `now / 0.25 s` (Python `SwarmApp.anim_frame`): a pure function of the time of day, so
 //! every panorama window shows an animation in the same phase, however long it was hidden.
 

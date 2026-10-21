@@ -77,7 +77,7 @@ fn the_focus_look_follows_herdrs_focus_and_the_terminals() {
 }
 
 #[test]
-fn a_tab_without_an_orchestrator_shows_the_narrow_layout_with_the_shown_one_opened() {
+fn a_tab_without_an_orchestrator_shows_the_graph_with_the_shown_one_opened() {
     use crate::panel::paint::Frame;
     let mut p = Panel::new(Some("w1:p99".into()), Some("w1:t9".into()));
     p.on_connected(true);
@@ -96,6 +96,16 @@ fn a_tab_without_an_orchestrator_shows_the_narrow_layout_with_the_shown_one_open
     };
     let text = p.paint(46, 45, &f).text();
     assert!(text.starts_with(" herdr panorama"), "{text}");
+    // from 120 columns the wide graph, as Python's render draws it there: the legend's tiles
+    // and the wide keys
+    let text = p.paint(160, 45, &f).text();
+    let rows: Vec<&str> = text.lines().collect();
+    assert!(rows[42].starts_with("  ✓  done   ✓? done?"), "{}", rows[42]);
+    assert!(
+        rows[44].starts_with(" ↑↓ move   → open   ← back   enter details"),
+        "{}",
+        rows[44]
+    );
     // docked when its tab has one
     let mut p = panel();
     p.on_connected(true);
