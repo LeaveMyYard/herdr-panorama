@@ -6,9 +6,12 @@
 mod arming;
 mod clicks;
 mod deep;
+mod dock;
 mod frames;
 mod keys;
 mod narrow;
+mod phase;
+mod refresh;
 mod wheel;
 
 use super::*;

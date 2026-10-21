@@ -50,6 +50,9 @@ pub struct Form<'a> {
     pub focus: Option<(Field, usize)>,
     /// The status row's text (`None`: empty).
     pub status: Option<&'a str>,
+    /// The carousel has the focus (←/→ switch the harness): its name is highlighted in the
+    /// focused field's accent. Not in the design: the operator's addition (Q213).
+    pub carousel: bool,
 }
 
 /// A click target that steps the harness by `d`.
@@ -90,7 +93,13 @@ pub fn render(form: &Form<'_>, w: i32, h: i32) -> Modal {
         None,
     );
     s.put(mx + 2, my, TITLE, TEXT, Some(PANEL), true);
-    let steps = carousel(&mut s, form.harness % HARNESSES.len(), mx, my);
+    let steps = carousel(
+        &mut s,
+        form.harness % HARNESSES.len(),
+        form.carousel,
+        mx,
+        my,
+    );
     let off = !HARNESSES[form.harness % HARNESSES.len()].supported();
     let focus = |f: Field| form.focus.filter(|(g, _)| *g == f).map(|(_, c)| c);
     let y = my + 2 + 8 + 4;
@@ -138,7 +147,7 @@ pub fn render(form: &Form<'_>, w: i32, h: i32) -> Modal {
 }
 
 /// The carousel under the title, down to its rule; its click targets.
-fn carousel(s: &mut Screen, sel: usize, mx: i32, my: i32) -> Vec<Step> {
+fn carousel(s: &mut Screen, sel: usize, focused: bool, mx: i32, my: i32) -> Vec<Step> {
     let (h, prev, next) = (
         &HARNESSES[sel],
         &HARNESSES[step(sel, -1)],
@@ -176,9 +185,13 @@ fn carousel(s: &mut Screen, sel: usize, mx: i32, my: i32) -> Vec<Step> {
         cx - len(h.name) / 2,
         ry,
         h.name,
-        if off { MUTED } else { TEXT },
+        match (focused, off) {
+            (true, _) => ACCENT,
+            (false, true) => MUTED,
+            (false, false) => TEXT,
+        },
         Some(PANEL),
-        !off,
+        focused || !off,
     );
     let dots: Vec<&str> = (0..HARNESSES.len())
         .map(|i| if i == sel { "●" } else { "·" })

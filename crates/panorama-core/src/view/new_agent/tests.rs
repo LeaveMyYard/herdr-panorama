@@ -9,6 +9,7 @@ fn form() -> Form<'static> {
         cwd: "~/x",
         focus: None,
         status: None,
+        carousel: false,
     }
 }
 
@@ -114,4 +115,39 @@ fn the_harness_steps_wrap_round() {
     assert_eq!(step(0, -1), HARNESSES.len() - 1);
     assert_eq!(step(HARNESSES.len() - 1, 1), 0);
     assert!(HARNESSES[0].supported() && HARNESSES[1..].iter().all(|h| !h.supported()));
+}
+
+#[test]
+fn a_focused_carousel_shows_its_name_in_the_accent() {
+    // the operator's addition (Q213): the carousel is a focus stop; focused, its harness name is
+    // drawn in the focused field's accent
+    use super::look::{ACCENT, MUTED, TEXT};
+    let name_at = |f: &Form<'_>| {
+        let m = render(f, W, H);
+        let h = &HARNESSES[f.harness];
+        let x = W / 2 - super::look::len(h.name) / 2;
+        let c = m.screen.cell(x, 2 + 8);
+        (c.ch, c.fg, c.bold)
+    };
+    let plain = form();
+    assert_eq!(name_at(&plain), ('C', TEXT, true));
+    assert_eq!(
+        name_at(&Form {
+            carousel: true,
+            ..form()
+        }),
+        ('C', ACCENT, true)
+    );
+    let soon = Form {
+        harness: 1,
+        ..form()
+    };
+    assert_eq!(name_at(&soon).1, MUTED);
+    assert_eq!(
+        name_at(&Form {
+            carousel: true,
+            ..soon
+        }),
+        (name_at(&soon).0, ACCENT, true)
+    );
 }

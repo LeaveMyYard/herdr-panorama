@@ -39,8 +39,7 @@ impl Actor {
         let Some(look) = self.look.as_mut() else {
             return Ok(());
         };
-        look.now = now;
-        look.frame = clock::frame_at(now);
+        look.at(now);
         let size = self.term.size()?;
         let (w, h) = (i32::from(size.width), i32::from(size.height));
         let Some(screen) = self.driver.paint(w, h, look, cause, Instant::now()) else {

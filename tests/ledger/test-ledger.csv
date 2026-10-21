@@ -1,6 +1,6 @@
 python_test_id,python_file,rust_test,status,retired_reason,phase
-tests/test_anim_sync.py::test_two_windows_started_apart_show_the_same_phase,tests/test_anim_sync.py,,todo,,P4
-tests/test_anim_sync.py::test_a_panel_and_the_home_view_share_the_frame,tests/test_anim_sync.py,,todo,,P4
+tests/test_anim_sync.py::test_two_windows_started_apart_show_the_same_phase,tests/test_anim_sync.py,src/app/driver/tests/phase.rs::two_windows_started_apart_show_the_same_phase ; src/ui/clock/tests.rs::the_animation_time_is_the_wall_clock_in_quarter_seconds,mapped,,P4
+tests/test_anim_sync.py::test_a_panel_and_the_home_view_share_the_frame,tests/test_anim_sync.py,src/app/driver/tests/phase.rs::a_panel_and_the_home_view_share_the_frame,mapped,,P4
 tests/test_anim_sync.py::test_colour_glides_stay_smooth_at_wall_clock_frames,tests/test_anim_sync.py,crates/panorama-core/src/view/anim/tests.rs::colour_glides_stay_smooth_at_wall_clock_frames,mapped,,P3
 tests/test_background.py::test_a_background_bash_is_open_until_its_notice,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules ; herdr-agent-kit@v0.1.0:tests/panorama_model_goldens.rs::the_background_model_matches_its_golden,mapped,,P1
 tests/test_background.py::test_a_timed_out_bash_moved_to_the_background_counts_too,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/panorama_model_goldens.rs::the_background_model_matches_its_golden,mapped,,P1
@@ -8,9 +8,9 @@ tests/test_background.py::test_every_task_id_of_an_orphan_notice_ends_its_task,t
 tests/test_background.py::test_a_taskstop_ends_it_and_a_failed_one_does_not,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_background.py::test_a_monitor_ends_with_its_expiry_event_or_its_timeout,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules ; herdr-agent-kit@v0.1.0:src/agent_session/claude/wire/notice/tests.rs::notices_parse_as_panorama_reads_them ; herdr-agent-kit@v0.1.0:tests/panorama_model_goldens.rs::the_background_model_matches_its_golden,mapped,,P1
 tests/test_background.py::test_an_unchecked_task_counts_for_at_most_bg_cap,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
-tests/test_background.py::test_the_process_check_decides_when_it_can,tests/test_background.py,,todo,,P1
+tests/test_background.py::test_the_process_check_decides_when_it_can,tests/test_background.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::the_process_check_decides_when_it_can,mapped,,P1
 tests/test_background.py::test_an_agent_whose_turn_ended_on_background_work_is_waiting,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
-tests/test_background.py::test_an_agent_notified_complete_is_done_whatever_it_left_behind,tests/test_background.py,,todo,,P1
+tests/test_background.py::test_an_agent_notified_complete_is_done_whatever_it_left_behind,tests/test_background.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::an_agent_notified_complete_is_done_whatever_it_left_behind,mapped,,P1
 tests/test_background.py::test_a_fork_does_not_inherit_its_parents_background_tasks,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/copies.rs::main_s_copy_of_a_background_launch_wins_even_when_it_is_later,mapped,,P1
 tests/test_background.py::test_task_of_reads_the_output_path,tests/test_background.py,herdr-agent-kit@v0.1.0:src/agent_procs/claude/tasks/tests.rs::task_ids_from_output_paths,mapped,,P1
 tests/test_background.py::test_live_tasks_finds_the_output_files_its_descendants_hold,tests/test_background.py,herdr-agent-kit@v0.1.0:tests/system_liveness.rs::a_background_shell_holding_its_output_file_is_a_live_task,mapped,,P1
@@ -51,8 +51,8 @@ tests/test_bridge_rules.py::test_anything_else_is_not_a_session_id[123],tests/te
 tests/test_bridge_rules.py::test_machines_has_no_validator_of_its_own,tests/test_bridge_rules.py,,retired,"Pins a Python module attribute; in Rust the one validator is the kit's SessionId type, which machines code must take.",P4
 tests/test_bridge_rules.py::test_an_uppercase_id_finds_its_lowercase_transcript[55555555-5555-4555-8555-555555555555],tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_bridge_rules.rs::an_uppercase_id_finds_its_lowercase_transcript,mapped,,P1
 tests/test_bridge_rules.py::test_an_uppercase_id_finds_its_lowercase_transcript[abcdef01-2345-4abc-8def-0123456789ab],tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_bridge_rules.rs::an_uppercase_id_finds_its_lowercase_transcript,mapped,,P1
-tests/test_bridge_rules.py::test_the_remote_mirror_names_sessions_in_lowercase_once,tests/test_bridge_rules.py,,todo,,P4
-tests/test_bridge_rules.py::test_an_events_file_is_named_by_the_canonical_id,tests/test_bridge_rules.py,,todo,,P4
+tests/test_bridge_rules.py::test_the_remote_mirror_names_sessions_in_lowercase_once,tests/test_bridge_rules.py,src/machines/sync/tests.rs::the_remote_mirror_names_sessions_in_lowercase_once ; src/machines/sync/tests.rs::sessions_are_canonical_each_once_and_only_session_ids,mapped,,P4
+tests/test_bridge_rules.py::test_an_events_file_is_named_by_the_canonical_id,tests/test_bridge_rules.py,src/collect/paths/tests.rs::an_events_file_is_named_by_the_canonical_id,mapped,,P4
 tests/test_bridge_rules.py::test_a_continuation_named_in_uppercase_is_found_and_followed,tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_bridge_rules.rs::a_continuation_named_in_uppercase_is_found_and_followed,mapped,,P1
 tests/test_bridge_rules.py::test_bookkeeping_after_continued_in_does_not_clear_it[kinds0],tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_bridge_rules.rs::bookkeeping_after_continued_in_does_not_clear_it,mapped,,P1
 tests/test_bridge_rules.py::test_bookkeeping_after_continued_in_does_not_clear_it[kinds1],tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_bridge_rules.rs::bookkeeping_after_continued_in_does_not_clear_it,mapped,,P1
@@ -130,19 +130,19 @@ tests/test_bridge_rules.py::test_is_not_claude[node-argv17],tests/test_bridge_ru
 tests/test_bridge_rules.py::test_is_not_claude[npm exec @anthr-argv18],tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/bridge_rules_is_claude.rs::test_is_not_claude,mapped,,P1
 tests/test_bridge_rules.py::test_a_launcher_above_claude_gives_exactly_one_claude,tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/bridge_rules_is_claude.rs::test_a_launcher_above_claude_gives_exactly_one_claude,mapped,,P1
 tests/test_bridge_rules.py::test_herdr_claude_pid_skips_the_launcher,tests/test_bridge_rules.py,herdr-agent-kit@v0.1.0:tests/bridge_rules_is_claude.rs::test_herdr_claude_pid_skips_the_launcher,mapped,,P1
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-120],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-140],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-160],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-200],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-320],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-120],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-140],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-160],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-200],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-320],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_an_unselected_title_is_cut_too[120],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_an_unselected_title_is_cut_too[160],tests/test_card_title.py,,todo,,P4
-tests/test_card_title.py::test_fit_segs_keeps_short_titles_and_cuts_long_ones,tests/test_card_title.py,,todo,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-120],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-140],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-160],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-200],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[run-320],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-120],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-140],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-160],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-200],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_the_selected_title_stops_before_the_state[done-320],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::the_selected_title_stops_before_the_state,mapped,,P4
+tests/test_card_title.py::test_an_unselected_title_is_cut_too[120],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::an_unselected_title_is_cut_too,mapped,,P4
+tests/test_card_title.py::test_an_unselected_title_is_cut_too[160],tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::an_unselected_title_is_cut_too,mapped,,P4
+tests/test_card_title.py::test_fit_segs_keeps_short_titles_and_cuts_long_ones,tests/test_card_title.py,crates/panorama-core/tests/card_title.rs::fit_segs_keeps_short_titles_and_cuts_long_ones,mapped,,P4
 tests/test_cockpit.py::test_config_defaults_off_and_width_is_clamped,tests/test_cockpit.py,src/home/tests/lookalikes.rs::config_defaults_and_python_truthiness,mapped,,P4
 tests/test_cockpit.py::test_the_home_pane_is_labelled_and_found_by_content,tests/test_cockpit.py,src/home/tests/ensure.rs::the_home_pane_is_labelled_and_found_by_content,mapped,,P4
 tests/test_cockpit.py::test_the_fake_tab_focus_moves_focus,tests/test_cockpit.py,src/home/tests/ensure.rs::the_fake_tab_focus_moves_focus,mapped,,P4
@@ -254,11 +254,11 @@ tests/test_deep.py::test_a_click_right_after_a_sideways_scroll_does_not_hit_what
 tests/test_dock_panel.py::test_every_card_is_a_click_target_and_question_marks_answer,tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::every_card_is_a_click_target_and_question_marks_answer,mapped,,P3
 tests/test_dock_panel.py::test_the_cursor_wears_the_hover_look_and_the_docked_entry_keeps_its_bar,tests/test_dock_panel.py,crates/panorama-core/tests/dock_screens.rs::docked_unfocused,mapped,,P3
 tests/test_dock_panel.py::test_docked_panel_scrolls_to_the_cursor,tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::the_docked_panel_scrolls_to_the_cursor,mapped,,P3
-tests/test_dock_panel.py::test_docked_view_uses_the_panel_and_keeps_one_column,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_wide_or_undocked_keeps_the_2a_layout,tests/test_dock_panel.py,,todo,,P4
-tests/test_dock_panel.py::test_a_card_that_moved_ignores_clicks,tests/test_dock_panel.py,,todo,,P4
+tests/test_dock_panel.py::test_docked_view_uses_the_panel_and_keeps_one_column,tests/test_dock_panel.py,src/app/driver/tests/dock.rs::the_docked_view_uses_the_panel_and_keeps_one_column ; src/app/model/tests.rs::docked_and_narrow_is_the_docked_panel_with_one_column,mapped,,P4
+tests/test_dock_panel.py::test_wide_or_undocked_keeps_the_2a_layout,tests/test_dock_panel.py,src/app/model/tests.rs::docked_and_narrow_is_the_docked_panel_with_one_column,mapped,,P4
+tests/test_dock_panel.py::test_a_card_that_moved_ignores_clicks,tests/test_dock_panel.py,src/app/driver/tests/dock.rs::a_card_that_moved_ignores_clicks,mapped,,P4
 tests/test_dock_panel.py::test_collector_finds_the_docked_agent_and_tab_numbers,tests/test_dock_panel.py,tests/collect_snapshot.rs::collector_finds_the_docked_agent_and_tab_numbers,mapped,,P4
-tests/test_dock_panel.py::test_r11_a_refresh_that_docks_the_view_rearms_the_keys,tests/test_dock_panel.py,,todo,,P4
+tests/test_dock_panel.py::test_r11_a_refresh_that_docks_the_view_rearms_the_keys,tests/test_dock_panel.py,src/app/model/tests.rs::a_refresh_that_docks_the_view_arms_the_keys_again,mapped,,P4
 tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[36],tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::the_panel_lays_out_to_the_width_it_gets,mapped,,P3
 tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[40],tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::the_panel_lays_out_to_the_width_it_gets,mapped,,P3
 tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[44],tests/test_dock_panel.py,crates/panorama-core/tests/dock_layout.rs::the_panel_lays_out_to_the_width_it_gets,mapped,,P3
@@ -268,8 +268,8 @@ tests/test_dock_panel.py::test_3a_lays_out_to_the_width_it_gets[60],tests/test_d
 tests/test_dock_panel.py::test_3a_at_its_design_width_keeps_every_footer_hint,tests/test_dock_panel.py,crates/panorama-core/tests/design_goldens.rs::design_9e_cell_for_cell,mapped,,P3
 tests/test_dock_panel.py::test_trace_records_each_herdr_call,tests/test_dock_panel.py,,todo,,P4
 tests/test_dock_panel.py::test_r16b_the_lock_gives_up_instead_of_hanging,tests/test_dock_panel.py,,todo,,P4
-tests/test_fixture_privacy.py::test_fixtures_hold_no_real_ids,tests/test_fixture_privacy.py,,todo,,P4
-tests/test_fixture_privacy.py::test_docs_hold_no_real_agent_ids,tests/test_fixture_privacy.py,,todo,,P4
+tests/test_fixture_privacy.py::test_fixtures_hold_no_real_ids,tests/test_fixture_privacy.py,tests/fixture_privacy.rs::fixtures_hold_no_real_ids ; tests/fixture_privacy.rs::the_rule_finds_what_it_is_for,mapped,,P4
+tests/test_fixture_privacy.py::test_docs_hold_no_real_agent_ids,tests/test_fixture_privacy.py,tests/fixture_privacy.rs::docs_hold_no_real_agent_ids,mapped,,P4
 tests/test_focus_theme.py::test_turn_10_matches_the_design_cell_for_cell[0-yours-A],tests/test_focus_theme.py,crates/panorama-core/tests/design_goldens.rs::design_10_focused_and_not_in_two_themes_cell_for_cell,mapped,,P3
 tests/test_focus_theme.py::test_turn_10_matches_the_design_cell_for_cell[0-yours-I],tests/test_focus_theme.py,crates/panorama-core/tests/design_goldens.rs::design_10_focused_and_not_in_two_themes_cell_for_cell,mapped,,P3
 tests/test_focus_theme.py::test_turn_10_matches_the_design_cell_for_cell[0-tokyo-A],tests/test_focus_theme.py,crates/panorama-core/tests/design_goldens.rs::design_10_focused_and_not_in_two_themes_cell_for_cell,mapped,,P3
@@ -313,45 +313,45 @@ tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 60 f0-],tests/test_gl
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep dock f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 70 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 70 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 120 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 120 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 160 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 160 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 240 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 240 f0-],tests/test_glyph_spacing.py,,todo,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 120 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 120 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 160 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 160 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 240 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 240 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 46 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 60 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep dock f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 70 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 70 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 120 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 120 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 160 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 160 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 240 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 240 f1-],tests/test_glyph_spacing.py,,todo,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 120 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 120 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 160 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 160 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 240 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 240 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 46 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 60 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep dock f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 70 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 70 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 120 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 120 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 160 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 160 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 240 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 240 f2-],tests/test_glyph_spacing.py,,todo,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 120 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 120 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 160 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 160 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 240 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 240 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 46 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[dock 60 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep dock f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 70 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 70 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P3
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 120 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 120 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 160 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 160 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 240 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 240 f3-],tests/test_glyph_spacing.py,,todo,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 120 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 120 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 160 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 160 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 240 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
+tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 240 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
 tests/test_glyph_spacing.py::test_the_docked_rows_space_their_glyphs,tests/test_glyph_spacing.py,crates/panorama-core/tests/design_goldens.rs::design_9e_cell_for_cell,mapped,,P3
 tests/test_glyph_spacing.py::test_review_m_many_threads_keep_the_counts_whole[36-15],tests/test_glyph_spacing.py,crates/panorama-core/tests/dock_layout.rs::many_threads_keep_the_counts_whole,mapped,,P3
 tests/test_glyph_spacing.py::test_review_m_many_threads_keep_the_counts_whole[36-30],tests/test_glyph_spacing.py,crates/panorama-core/tests/dock_layout.rs::many_threads_keep_the_counts_whole,mapped,,P3
@@ -363,45 +363,45 @@ tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[dock 60 f0-],te
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep dock f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 70 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 70 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 120 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 120 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 160 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 160 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 240 f0-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 240 f0-],tests/test_glyph_spacing.py,,todo,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 120 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 120 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 160 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 160 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 240 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 240 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[dock 46 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[dock 60 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep dock f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 70 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 70 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 120 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 120 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 160 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 160 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 240 f1-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 240 f1-],tests/test_glyph_spacing.py,,todo,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 120 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 120 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 160 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 160 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 240 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 240 f1-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[dock 46 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[dock 60 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep dock f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 70 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 70 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 120 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 120 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 160 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 160 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 240 f2-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 240 f2-],tests/test_glyph_spacing.py,,todo,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 120 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 120 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 160 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 160 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 240 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 240 f2-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[dock 46 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[dock 60 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep dock f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 70 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 70 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 120 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 120 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 160 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 160 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 240 f3-],tests/test_glyph_spacing.py,,todo,,P4
-tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 240 f3-],tests/test_glyph_spacing.py,,todo,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 120 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 120 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 160 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 160 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[demo 240 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
+tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep 240 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P4
 tests/test_glyph_spacing.py::test_the_spinner_is_the_ten_frame_braille_cycle,tests/test_glyph_spacing.py,crates/panorama-core/src/view/anim/tests.rs::the_spinner_and_the_clock_are_braille_cycles,mapped,,P3
 tests/test_goldens.py::test_the_goldens_are_what_the_code_does[model],tests/test_goldens.py,,retired,"checks that the Python code still reproduces its own captures; the Rust tests read the same goldens (model, screens) directly",P0a
 tests/test_goldens.py::test_the_goldens_are_what_the_code_does[screens],tests/test_goldens.py,,retired,"checks that the Python code still reproduces its own captures; the Rust tests read the same goldens (model, screens) directly",P0a
@@ -415,21 +415,21 @@ tests/test_home.py::test_lost_record_adopts_the_labelled_tab_and_a_gone_home_is_
 tests/test_home.py::test_open_action_focuses_home_and_popup_stays_available,tests/test_home.py,src/home/tests/ensure.rs::open_action_focuses_home_and_the_popup_stays_available,mapped,,P4
 tests/test_home.py::test_home_tab_off_means_popup_and_no_startup_tab,tests/test_home.py,src/home/tests/ensure.rs::home_tab_off_means_popup_and_no_startup_tab,mapped,,P4
 tests/test_home.py::test_startup_does_not_take_focus,tests/test_home.py,src/home/tests/ensure.rs::startup_does_not_take_focus,mapped,,P4
-tests/test_home.py::test_slugify[Billing API!-billing-api],tests/test_home.py,,todo,,P4
-tests/test_home.py::test_slugify[  9 lives -a-9-lives],tests/test_home.py,,todo,,P4
-tests/test_home.py::test_slugify[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx],tests/test_home.py,,todo,,P4
-tests/test_home.py::test_slugify[\xdcn\xefc\xf6d\xe9-n-c-d],tests/test_home.py,,todo,,P4
-tests/test_home.py::test_slugify[!!!-],tests/test_home.py,,todo,,P4
-tests/test_home.py::test_slugify[fix_auth--flow-fix_auth-flow],tests/test_home.py,,todo,,P4
-tests/test_home.py::test_new_agent_flow_sanitises_and_prompts_once,tests/test_home.py,,todo,,P4
-tests/test_home.py::test_new_agent_without_prompt_and_failures,tests/test_home.py,,todo,,P4
+tests/test_home.py::test_slugify[Billing API!-billing-api],tests/test_home.py,src/new_agent/tests/slug.rs::slugs_from_free_text,mapped,,P4
+tests/test_home.py::test_slugify[  9 lives -a-9-lives],tests/test_home.py,src/new_agent/tests/slug.rs::slugs_from_free_text,mapped,,P4
+tests/test_home.py::test_slugify[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx],tests/test_home.py,src/new_agent/tests/slug.rs::slugs_from_free_text,mapped,,P4
+tests/test_home.py::test_slugify[\xdcn\xefc\xf6d\xe9-n-c-d],tests/test_home.py,src/new_agent/tests/slug.rs::slugs_from_free_text,mapped,,P4
+tests/test_home.py::test_slugify[!!!-],tests/test_home.py,src/new_agent/tests/slug.rs::slugs_from_free_text,mapped,,P4
+tests/test_home.py::test_slugify[fix_auth--flow-fix_auth-flow],tests/test_home.py,src/new_agent/tests/slug.rs::slugs_from_free_text,mapped,,P4
+tests/test_home.py::test_new_agent_flow_sanitises_and_prompts_once,tests/test_home.py,,retired,"approved deviation 2026-10-17 (design 1C): no first prompt, nothing is typed into the new pane; start.rs::the_agent_starts_in_its_own_tab_which_then_takes_the_focus checks no prompt is sent",P4
+tests/test_home.py::test_new_agent_without_prompt_and_failures,tests/test_home.py,src/new_agent/tests/start.rs::a_failed_start_closes_its_tab_and_never_takes_the_focus ; src/new_agent/tests/start.rs::names_directories_and_existing_agents_are_refused_before_anything_is_made,mapped,,P4
 tests/test_home.py::test_r5_h1_a_failed_snapshot_never_opens_a_second_home,tests/test_home.py,src/home/tests/ensure.rs::a_failed_snapshot_never_opens_a_second_home,mapped,,P4
 tests/test_home.py::test_r5_m5_a_record_is_trusted_only_if_it_still_looks_like_home,tests/test_home.py,src/home/tests/ensure.rs::a_record_is_trusted_only_if_it_still_looks_like_home,mapped,,P4
-tests/test_home.py::test_r5_m1_prompt_goes_to_the_new_pane_and_cannot_be_a_flag,tests/test_home.py,,todo,,P4
-tests/test_home.py::test_r5_m1_an_existing_agent_name_is_refused,tests/test_home.py,,todo,,P4
-tests/test_home.py::test_r5_m2_a_failed_start_closes_its_tab,tests/test_home.py,,todo,,P4
-tests/test_home.py::test_r5_l3_a_missing_directory_is_refused,tests/test_home.py,,todo,,P4
-tests/test_home.py::test_r5b_h1_the_prompt_is_the_word_after_the_target_as_herdr_parses_it,tests/test_home.py,,todo,,P4
+tests/test_home.py::test_r5_m1_prompt_goes_to_the_new_pane_and_cannot_be_a_flag,tests/test_home.py,,retired,"approved deviation 2026-10-17 (design 1C): no first prompt, nothing is typed into the new pane; start.rs::the_agent_starts_in_its_own_tab_which_then_takes_the_focus checks no prompt is sent",P4
+tests/test_home.py::test_r5_m1_an_existing_agent_name_is_refused,tests/test_home.py,src/new_agent/tests/start.rs::names_directories_and_existing_agents_are_refused_before_anything_is_made ; src/new_agent/tests/real.rs::the_whole_start_through_herdr,mapped,,P4
+tests/test_home.py::test_r5_m2_a_failed_start_closes_its_tab,tests/test_home.py,src/new_agent/tests/start.rs::a_failed_start_closes_its_tab_and_never_takes_the_focus ; src/new_agent/tests/real.rs::the_whole_start_through_herdr,mapped,,P4
+tests/test_home.py::test_r5_l3_a_missing_directory_is_refused,tests/test_home.py,src/new_agent/tests/start.rs::names_directories_and_existing_agents_are_refused_before_anything_is_made,mapped,,P4
+tests/test_home.py::test_r5b_h1_the_prompt_is_the_word_after_the_target_as_herdr_parses_it,tests/test_home.py,,retired,"approved deviation 2026-10-17 (design 1C): no first prompt, nothing is typed into the new pane; start.rs::the_agent_starts_in_its_own_tab_which_then_takes_the_focus checks no prompt is sent",P4
 tests/test_home_label.py::test_crash_sweep_renames_a_home_tab_left_with_an_agent,tests/test_home_label.py,src/home/tests/label.rs::crash_sweep_renames_a_home_tab_left_with_an_agent,mapped,,P4
 tests/test_home_label.py::test_sweep_falls_back_to_the_kind_then_tab,tests/test_home_label.py,src/home/tests/label.rs::sweep_falls_back_to_the_kind_then_tab,mapped,,P4
 tests/test_home_label.py::test_sweep_keeps_a_live_or_unverifiable_panorama_tab,tests/test_home_label.py,src/home/tests/label.rs::sweep_keeps_a_live_or_unverifiable_panorama_tab,mapped,,P4
@@ -620,7 +620,7 @@ tests/test_panels.py::test_a_second_panel_is_closed_keeping_the_connected_one,te
 tests/test_panels.py::test_a_tab_without_its_orchestrator_loses_the_panel_only_after_a_while,tests/test_panels.py,src/panels/tests/closing.rs::a_tab_without_its_orchestrator_loses_the_panel_only_after_a_while,mapped,,P4
 tests/test_panels.py::test_the_open_key_asks_the_core,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_a_panel_switches_by_tab_and_panel_focus,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_new_agent_builds_its_tab_with_the_panel_on_the_left,tests/test_panels.py,,todo,,P4
+tests/test_panels.py::test_new_agent_builds_its_tab_with_the_panel_on_the_left,tests/test_panels.py,src/new_agent/tests/start.rs::per_tab_builds_the_tab_with_its_panel_on_the_left ; src/new_agent/tests/real.rs::the_panel_layout_puts_our_panel_left_of_the_new_pane,mapped,,P4
 tests/test_panels.py::test_a_viewer_exits_on_the_cores_shutdown,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_a_viewer_without_a_core_for_long_exits,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_a_connected_viewer_does_not_time_out,tests/test_panels.py,,todo,,P4
@@ -707,43 +707,43 @@ tests/test_scan_session.py::test_a_resume_reopens_a_finished_agent,tests/test_sc
 tests/test_scan_session.py::test_activity_after_a_notice_reopens_the_agent,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_scan_session.py::test_an_abandoned_tool_call_expires,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_scan_session.py::test_background_agent_without_notice_keeps_running_through_a_long_turn,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
-tests/test_scan_session.py::test_foreground_agent_completes_with_its_result,tests/test_scan_session.py,,todo,,P1
+tests/test_scan_session.py::test_foreground_agent_completes_with_its_result,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::a_foreground_agent_completes_with_its_result,mapped,,P1
 tests/test_scan_session.py::test_nested_agents_are_parented_through_the_spawning_call,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/parentage.rs::parentage_follows_the_spawning_call ; herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_scan_session.py::test_a_fork_does_not_take_over_its_own_spawning_call,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/parentage.rs::a_fork_does_not_take_over_its_own_spawning_call,mapped,,P1
 tests/test_scan_session.py::test_workflow_agents_journal_phases_and_a_killed_run,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
-tests/test_scan_session.py::test_the_fold_does_not_depend_on_record_order,tests/test_scan_session.py,,todo,,P1
-tests/test_scan_session.py::test_titles_and_prompts,tests/test_scan_session.py,,todo,,P1
+tests/test_scan_session.py::test_the_fold_does_not_depend_on_record_order,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_facts.rs::the_fold_does_not_depend_on_record_order,mapped,,P1
+tests/test_scan_session.py::test_titles_and_prompts,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_facts.rs::titles_and_prompts,mapped,,P1
 tests/test_scan_session.py::test_incremental_reads_partial_lines_and_rewrites,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/updates.rs::an_update_reads_partial_lines_and_a_rewrite_rebuilds,mapped,,P1
 tests/test_scan_session.py::test_old_agent_files_are_skipped_until_they_change,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/updates.rs::an_old_agent_file_is_skipped_until_it_changes,mapped,,P1
 tests/test_scan_session.py::test_ask_operator_receipts_belong_to_the_asking_agent,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/questions.rs::ask_operator_results_record_the_askers_question_ids,mapped,,P1
 tests/test_scan_session.py::test_meta_read_mid_write_is_retried,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/updates.rs::a_meta_read_mid_write_is_retried,mapped,,P1
-tests/test_scan_session.py::test_h1_foreground_agent_runs_while_its_spawning_call_is_open,tests/test_scan_session.py,,todo,,P1
-tests/test_scan_session.py::test_m1_a_huge_last_line_keeps_the_timestamp_and_the_call_in_flight,tests/test_scan_session.py,,todo,,P1
+tests/test_scan_session.py::test_h1_foreground_agent_runs_while_its_spawning_call_is_open,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::a_foreground_agent_runs_while_its_spawning_call_is_open,mapped,,P1
+tests/test_scan_session.py::test_m1_a_huge_last_line_keeps_the_timestamp_and_the_call_in_flight,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::a_huge_last_line_keeps_the_timestamp_and_the_call_in_flight,mapped,,P1
 tests/test_scan_session.py::test_m2_every_notice_block_in_a_carrier_counts,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:src/agent_session/claude/wire/notice/tests.rs::notices_parse_as_panorama_reads_them,mapped,,P1
 tests/test_scan_session.py::test_m3_journal_failed_is_a_failure,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
-tests/test_scan_session.py::test_l3_a_failed_resume_does_not_reopen,tests/test_scan_session.py,,todo,,P1
-tests/test_scan_session.py::test_l1_a_bad_record_does_not_break_the_session,tests/test_scan_session.py,,todo,,P1
-tests/test_scan_session.py::test_l4_tool_calls_count_only_the_agents_own_calls,tests/test_scan_session.py,,todo,,P1
+tests/test_scan_session.py::test_l3_a_failed_resume_does_not_reopen,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::a_failed_resume_does_not_reopen,mapped,,P1
+tests/test_scan_session.py::test_l1_a_bad_record_does_not_break_the_session,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::a_bad_record_does_not_break_the_session,mapped,,P1
+tests/test_scan_session.py::test_l4_tool_calls_count_only_the_agents_own_calls,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_facts.rs::tool_calls_count_only_the_agents_own_calls,mapped,,P1
 tests/test_scan_session.py::test_h1_a_workflow_agent_runs_while_its_run_is_live,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_scan_session.py::test_a_relaunched_run_abandons_the_old_instances_unfinished_agents,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_scan_session.py::test_n1_a_fork_of_a_subagent_nests_under_it_even_when_only_its_own_copy_is_read,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/parentage.rs::a_fork_of_a_subagent_nests_under_it_when_only_its_own_copy_is_read,mapped,,P1
 tests/test_scan_session.py::test_n2_an_agent_waiting_on_a_live_child_is_running,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules ; herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/parentage.rs::a_kept_scanner_keeps_a_silent_parent_running_while_its_new_child_runs,mapped,,P1
 tests/test_scan_session.py::test_a_recorded_stop_is_a_confirmed_ending,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules ; herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/updates.rs::hook_records_survive_a_rebuild,mapped,,P1
-tests/test_scan_session.py::test_a_notice_about_the_same_stop_says_how_it_ended,tests/test_scan_session.py,,todo,,P1
+tests/test_scan_session.py::test_a_notice_about_the_same_stop_says_how_it_ended,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::a_notice_about_the_same_stop_says_how_it_ended,mapped,,P1
 tests/test_scan_session.py::test_a_recorded_start_reopens,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
-tests/test_scan_session.py::test_started_never_stopped_and_process_gone_is_lost,tests/test_scan_session.py,,todo,,P1
+tests/test_scan_session.py::test_started_never_stopped_and_process_gone_is_lost,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::a_start_without_its_process_is_never_lost ; herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_scan_session.py::test_m2_no_lost_across_a_session_resume,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
 tests/test_scan_session.py::test_m2_no_lost_from_another_pid_namespace,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules ; herdr-agent-kit@v0.1.0:src/agent_procs/system/alive/tests.rs::a_gone_process_is_dead_and_another_namespace_is_unknown,mapped,,P1
 tests/test_scan_session.py::test_l2_hook_data_survives_a_rebuild,tests/test_scan_session.py,herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/updates.rs::hook_records_survive_a_rebuild,mapped,,P1
-tests/test_scan_session.py::test_l3_a_late_failed_notice_still_wins,tests/test_scan_session.py,,todo,,P1
+tests/test_scan_session.py::test_l3_a_late_failed_notice_still_wins,tests/test_scan_session.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_rules.rs::a_late_failed_notice_still_wins,mapped,,P1
 tests/test_scan_tail.py::test_partial_line_is_buffered_until_its_newline,tests/test_scan_tail.py,herdr-agent-kit@v0.1.0:src/agent_session/tail/tests.rs::partial_line_is_buffered_until_its_newline,mapped,,P1
 tests/test_scan_tail.py::test_runaway_line_is_dropped_and_reading_resyncs,tests/test_scan_tail.py,herdr-agent-kit@v0.1.0:src/agent_session/tail/tests.rs::runaway_line_is_dropped_and_reading_resyncs,mapped,,P1
 tests/test_scan_tail.py::test_read_appended_offsets_shrink_and_replacement,tests/test_scan_tail.py,herdr-agent-kit@v0.1.0:tests/agent_session_tail.rs::read_appended_offsets_shrink_and_replacement,mapped,,P1
 tests/test_scan_tail.py::test_missing_file,tests/test_scan_tail.py,herdr-agent-kit@v0.1.0:tests/agent_session_tail.rs::missing_file,mapped,,P1
 tests/test_scan_wire.py::test_bad_and_odd_lines_never_raise,tests/test_scan_wire.py,herdr-agent-kit@v0.1.0:src/agent_session/claude/wire/line/tests.rs::bad_and_odd_lines_never_parse ; herdr-agent-kit@v0.1.0:src/agent_session/claude/wire/line/tests.rs::records_are_lenient,mapped,,P1
 tests/test_scan_wire.py::test_notice_from_every_carrier,tests/test_scan_wire.py,herdr-agent-kit@v0.1.0:src/agent_session/claude/wire/notice/tests.rs::notices_parse_as_panorama_reads_them ; herdr-agent-kit@v0.1.0:src/agent_session/claude/wire/line/tests.rs::records_are_lenient ; herdr-agent-kit@v0.1.0:tests/agent_session_claude_fold/rows.rs::the_status_rules,mapped,,P1
-tests/test_scan_wire.py::test_notice_statuses,tests/test_scan_wire.py,,todo,,P1
-tests/test_scan_wire.py::test_human_prompt_rule,tests/test_scan_wire.py,,todo,,P1
+tests/test_scan_wire.py::test_notice_statuses,tests/test_scan_wire.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_facts.rs::notice_statuses,mapped,,P1
+tests/test_scan_wire.py::test_human_prompt_rule,tests/test_scan_wire.py,herdr-agent-kit@v0.1.1:tests/agent_session_claude_fold/ledger_facts.rs::human_prompt_rule,mapped,,P1
 tests/test_scan_wire.py::test_summaries_and_short_paths,tests/test_scan_wire.py,herdr-agent-kit@v0.1.0:src/agent_session/claude/wire/tool_summary/tests.rs::summaries_and_short_paths,mapped,,P1
 tests/test_scan_wire.py::test_wanted_lines_matches_wanted,tests/test_scan_wire.py,herdr-agent-kit@v0.1.0:src/agent_session/claude/wire/markers/tests.rs::wanted_lines_matches_wanted,mapped,,P1
 tests/test_smooth.py::test_restyling_equals_a_full_render[same frame-0.3-2a unseen],tests/test_smooth.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision), so 'restyle equals a full render' holds by construction; the fractional frames themselves are pinned by the design goldens",P3
@@ -1032,16 +1032,16 @@ tests/test_tui.py::test_no_inbox_means_no_inbox_actions,tests/test_tui.py,src/ap
 tests/test_tui.py::test_filter_cycles_and_reselects,tests/test_tui.py,src/app/driver/tests/keys.rs::the_filter_cycles_and_reselects,mapped,,P4
 tests/test_tui.py::test_enter_unfolds_the_complete_card,tests/test_tui.py,src/app/driver/tests/keys.rs::enter_unfolds_the_complete_card,mapped,,P4
 tests/test_tui.py::test_narrow_layout_in_a_side_split,tests/test_tui.py,src/app/driver/tests/narrow.rs::the_narrow_layout_in_a_side_split,mapped,,P4
-tests/test_tui.py::test_refresh_errors_never_kill_the_view,tests/test_tui.py,src/app/model/tests.rs::a_failed_refresh_keeps_the_last_model_and_says_why ; src/app/collect/tests.rs::a_panicking_collect_is_a_failed_refresh_and_the_next_one_still_runs,mapped,,P4
+tests/test_tui.py::test_refresh_errors_never_kill_the_view,tests/test_tui.py,src/app/model/tests.rs::a_failed_refresh_keeps_the_last_model_and_says_why ; src/app/collect/tests.rs::a_failed_or_panicking_refresh_is_a_failed_refresh_and_the_next_one_still_runs,mapped,,P4
 tests/test_tui.py::test_spinner_frames_advance_without_changing_width,tests/test_tui.py,src/app/driver/tests/frames.rs::spinner_frames_advance_without_changing_width,mapped,,P4
 tests/test_tui.py::test_m5_a_new_inbox_question_arms_the_answer_key,tests/test_tui.py,src/app/model/tests.rs::a_background_change_under_the_cursor_arms_the_keys_again,mapped,,P4
 tests/test_tui.py::test_parked_cursor_keys_act_on_nothing,tests/test_tui.py,src/app/driver/tests/keys.rs::parked_cursor_keys_act_on_nothing,mapped,,P4
-tests/test_tui.py::test_h2_collects_never_overlap,tests/test_tui.py,src/app/collect/tests.rs::one_collect_at_a_time_and_its_swarm_is_cleaned,mapped,,P4
+tests/test_tui.py::test_h2_collects_never_overlap,tests/test_tui.py,src/app/collect/tests.rs::one_refresh_at_a_time_its_swarm_cleaned_and_its_marks_kept,mapped,,P4
 tests/test_tui.py::test_l1_a_failing_collect_keeps_the_last_model_and_says_so,tests/test_tui.py,src/app/model/tests.rs::a_failed_refresh_keeps_the_last_model_and_says_why ; src/app/paint/tests.rs::a_failed_refresh_says_so_in_the_header_and_no_size_paints_nothing,mapped,,P4
 tests/test_tui.py::test_frames_never_recollect_rearm_or_move_the_cursor,tests/test_tui.py,src/app/driver/tests/frames.rs::frames_never_rearm_or_move_the_cursor,mapped,,P4
 tests/test_tui.py::test_frames_keep_running_unfocused_and_pause_when_nothing_moves,tests/test_tui.py,src/app/driver/tests/frames.rs::frames_keep_running_unfocused_and_pause_when_nothing_moves ; src/ui/pacing/tests.rs::a_hidden_tab_or_a_still_screen_never_ticks,mapped,,P4
 tests/test_tui.py::test_new_row_is_last_stable_and_opens_the_form,tests/test_tui.py,,todo,,P4
-tests/test_tui.py::test_form_submit_is_armed_validated_and_runs_the_flow,tests/test_tui.py,,todo,,P4
+tests/test_tui.py::test_form_submit_is_armed_validated_and_runs_the_flow,tests/test_tui.py,src/new_agent/tests/form.rs::enter_on_the_last_field_or_ctrl_s_starts_once_armed ; src/new_agent/tests/form.rs::a_bad_name_or_directory_is_said_on_the_status_row,mapped,,P4
 tests/test_tui.py::test_home_mode_keeps_the_view_open,tests/test_tui.py,,todo,,P4
 tests/test_tui.py::test_new_row_in_narrow_layout,tests/test_tui.py,,todo,,P4
 tests/test_tui.py::test_refreshes_and_frames_keep_running_under_the_form,tests/test_tui.py,,todo,,P4
@@ -1097,14 +1097,14 @@ tests/test_wide.py::test_tiers[299-expect4],tests/test_wide.py,crates/panorama-c
 tests/test_wide.py::test_tiers[300-expect5],tests/test_wide.py,crates/panorama-core/src/view/graph/layout/tests.rs::tiers,mapped,,P4
 tests/test_wide.py::test_tiers[500-expect6],tests/test_wide.py,crates/panorama-core/src/view/graph/layout/tests.rs::tiers,mapped,,P4
 tests/test_wide.py::test_the_full_title_fits_from_240_columns,tests/test_wide.py,crates/panorama-core/tests/wide_layout.rs::the_full_title_fits_from_240_columns,mapped,,P4
-tests/test_wide.py::test_the_model_keeps_its_version[claude-opus-4-5-20251101-opus 4.5],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_model_keeps_its_version[claude-sonnet-4-5-sonnet 4.5],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_model_keeps_its_version[claude-3-5-sonnet-20241022-sonnet 3.5],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_model_keeps_its_version[claude-sonnet-4-20250514-sonnet 4],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_model_keeps_its_version[claude-haiku-4-5-20251001-haiku 4.5],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_model_keeps_its_version[opus-opus],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_model_keeps_its_version[None-None],tests/test_wide.py,,todo,,P4
-tests/test_wide.py::test_the_model_keeps_its_version[some-other-model-some-other-model],tests/test_wide.py,,todo,,P4
+tests/test_wide.py::test_the_model_keeps_its_version[claude-opus-4-5-20251101-opus 4.5],tests/test_wide.py,src/collect/text/tests.rs::the_model_keeps_its_version,mapped,,P4
+tests/test_wide.py::test_the_model_keeps_its_version[claude-sonnet-4-5-sonnet 4.5],tests/test_wide.py,src/collect/text/tests.rs::the_model_keeps_its_version,mapped,,P4
+tests/test_wide.py::test_the_model_keeps_its_version[claude-3-5-sonnet-20241022-sonnet 3.5],tests/test_wide.py,src/collect/text/tests.rs::the_model_keeps_its_version,mapped,,P4
+tests/test_wide.py::test_the_model_keeps_its_version[claude-sonnet-4-20250514-sonnet 4],tests/test_wide.py,src/collect/text/tests.rs::the_model_keeps_its_version,mapped,,P4
+tests/test_wide.py::test_the_model_keeps_its_version[claude-haiku-4-5-20251001-haiku 4.5],tests/test_wide.py,src/collect/text/tests.rs::the_model_keeps_its_version,mapped,,P4
+tests/test_wide.py::test_the_model_keeps_its_version[opus-opus],tests/test_wide.py,src/collect/text/tests.rs::the_model_keeps_its_version,mapped,,P4
+tests/test_wide.py::test_the_model_keeps_its_version[None-None],tests/test_wide.py,src/collect/text/tests.rs::the_model_keeps_its_version,mapped,,P4
+tests/test_wide.py::test_the_model_keeps_its_version[some-other-model-some-other-model],tests/test_wide.py,src/collect/text/tests.rs::the_model_keeps_its_version,mapped,,P4
 tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[44],tests/test_wide.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision, kept by the wide graph in P4), so 'restyle equals a full render' holds by construction; the sweep's lap is pinned by cards/tests.rs::a_sweep_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged",P4
 tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[60],tests/test_wide.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision, kept by the wide graph in P4), so 'restyle equals a full render' holds by construction; the sweep's lap is pinned by cards/tests.rs::a_sweep_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged",P4
 tests/test_wide.py::test_the_animation_tick_moves_a_wide_cards_sweep_like_a_full_render[64],tests/test_wide.py,,retired,"no restyle path in Rust: every colour tick renders the view in full at its fractional frame (P3 decision, kept by the wide graph in P4), so 'restyle equals a full render' holds by construction; the sweep's lap is pinned by cards/tests.rs::a_sweep_lap_is_at_most_12_seconds_and_narrow_cards_are_unchanged",P4
@@ -1116,22 +1116,22 @@ tests/test_cockpit.py::test_the_cores_open_key_brings_a_docked_home_back_to_its_
 tests/test_follow.py::test_a_burst_of_focus_events_makes_one_panel_pass,tests/test_follow.py,src/app/link/tests/events.rs::focus_events_feed_the_log_the_view_and_one_pass_per_burst,mapped,,P4
 tests/test_panels.py::test_follow_tabs_single_gives_panels_only_to_tabs_of_one_orchestrator,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_the_cockpit_is_per_tab_panels_and_an_old_moving_setting_reads_as_per_tab,tests/test_panels.py,,todo,,P4
-tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[enter-False-True],tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[g-False-True],tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[enter-True-False],tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_docked_enter_with_keep_focus_off_focuses_the_agent,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_the_2a_graph_enter_still_focuses_the_agent,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_arrows_switch_the_chats_once_they_settle,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_arrows_do_not_dock_the_docked_one_new_agent_or_a_remote,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_arrows_off_or_the_2a_graph_never_dock_on_arrows,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left[blurred],tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left[herdr says another pane],tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_an_arrow_settling_during_a_dock_runs_after_it_even_if_focus_looks_elsewhere,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_an_arrow_dock_due_during_a_dock_runs_after_it,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_one_click_on_an_entry_docks_and_question_marks_answer,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_one_click_on_the_docked_entry_focuses_its_agent_like_enter,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_one_click_still_obeys_arming_and_identity,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_the_2a_graph_keeps_select_first,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_no_graph_flash_while_a_switch_runs,tests/test_panel_keys.py,,todo,,P4
-tests/test_panel_keys.py::test_a_switch_that_ends_judges_the_focus_again,tests/test_panel_keys.py,,todo,,P4
+tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[enter-False-True],tests/test_panel_keys.py,src/panel/input/actions/tests.rs::enter_on_another_orchestrator_in_the_docked_list_goes_into_it,mapped,,P4
+tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[g-False-True],tests/test_panel_keys.py,src/panel/input/actions/tests.rs::g_in_the_docked_list_goes_into_the_agent,mapped,,P4
+tests/test_panel_keys.py::test_docked_enter_browses_and_g_goes_into_the_agent[enter-True-False],tests/test_panel_keys.py,src/panel/input/actions/tests.rs::enter_on_another_orchestrator_in_the_docked_list_goes_into_it,mapped,,P4
+tests/test_panel_keys.py::test_docked_enter_with_keep_focus_off_focuses_the_agent,tests/test_panel_keys.py,src/panel/input/actions/tests.rs::enter_with_neither_the_arrows_nor_keep_focus_goes_into_the_agent,mapped,,P4
+tests/test_panel_keys.py::test_the_2a_graph_enter_still_focuses_the_agent,tests/test_panel_keys.py,src/panel/input/actions/tests.rs::the_wide_graphs_enter_still_goes_into_the_agent,mapped,,P4
+tests/test_panel_keys.py::test_arrows_switch_the_chats_once_they_settle,tests/test_panel_keys.py,src/panel/input/arrows/tests.rs::the_arrows_switch_once_they_rest ; src/panel/input/arrows/tests.rs::the_rest_comes_due_at_200_ms_not_a_tick_before,mapped,,P4
+tests/test_panel_keys.py::test_arrows_do_not_dock_the_docked_one_new_agent_or_a_remote,tests/test_panel_keys.py,src/panel/input/arrows/tests.rs::no_switch_onto_the_docked_one_or_while_the_keyboard_is_elsewhere ; src/panel/input/arrows/tests.rs::the_arrows_do_not_switch_onto_new_agent_or_another_machine,mapped,,P4
+tests/test_panel_keys.py::test_arrows_off_or_the_2a_graph_never_dock_on_arrows,tests/test_panel_keys.py,src/panel/input/arrows/tests.rs::with_the_arrows_off_or_in_the_wide_graph_the_arrows_only_move,mapped,,P4
+tests/test_panel_keys.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left[blurred],tests/test_panel_keys.py,src/panel/input/arrows/tests.rs::no_switch_onto_the_docked_one_or_while_the_keyboard_is_elsewhere,mapped,,P4
+tests/test_panel_keys.py::test_an_arrow_dock_is_skipped_when_the_keyboard_left[herdr says another pane],tests/test_panel_keys.py,src/panel/input/arrows/tests.rs::no_switch_while_herdr_says_the_keyboard_is_in_another_pane,mapped,,P4
+tests/test_panel_keys.py::test_an_arrow_settling_during_a_dock_runs_after_it_even_if_focus_looks_elsewhere,tests/test_panel_keys.py,src/panel/input/arrows/tests.rs::an_arrow_resting_during_a_switch_runs_after_it_even_while_the_focus_looks_elsewhere,mapped,,P4
+tests/test_panel_keys.py::test_an_arrow_dock_due_during_a_dock_runs_after_it,tests/test_panel_keys.py,src/panel/input/arrows/tests.rs::arrows_that_rest_during_a_switch_are_looked_at_again_when_it_ends,mapped,,P4
+tests/test_panel_keys.py::test_one_click_on_an_entry_docks_and_question_marks_answer,tests/test_panel_keys.py,src/panel/input/mouse/tests.rs::a_click_on_an_entry_in_the_docked_list_switches_to_it ; src/panel/input/mouse/tests.rs::a_click_on_a_question_mark_answers_and_does_not_switch,mapped,,P4
+tests/test_panel_keys.py::test_one_click_on_the_docked_entry_focuses_its_agent_like_enter,tests/test_panel_keys.py,src/panel/input/mouse/tests.rs::a_click_on_the_docked_entry_goes_into_its_agent_like_enter,mapped,,P4
+tests/test_panel_keys.py::test_one_click_still_obeys_arming_and_identity,tests/test_panel_keys.py,src/panel/input/mouse/tests.rs::an_unarmed_click_in_the_docked_list_may_select_but_never_switches ; src/panel/input/selection/tests.rs::armed_clicks_wait_like_their_keys,mapped,,P4
+tests/test_panel_keys.py::test_the_2a_graph_keeps_select_first,tests/test_panel_keys.py,src/panel/input/mouse/tests.rs::the_wide_graph_selects_first_and_goes_on_the_second_click,mapped,,P4
+tests/test_panel_keys.py::test_no_graph_flash_while_a_switch_runs,tests/test_panel_keys.py,src/panel/model/tests.rs::the_docked_panel_stays_while_a_switch_runs_even_at_the_wide_layouts_width ; src/ui/layout/tests.rs::docked_and_narrower_than_the_wide_layout_once_painted,mapped,,P4
+tests/test_panel_keys.py::test_a_switch_that_ends_judges_the_focus_again,tests/test_panel_keys.py,src/panel/model/tests.rs::a_switch_that_ends_judges_the_focus_again,mapped,,P4
 tests/test_cockpit.py::test_the_cores_open_key_follows_the_home_panes_new_id,tests/test_cockpit.py,,todo,,P4
