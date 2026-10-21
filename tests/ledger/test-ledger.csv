@@ -415,21 +415,21 @@ tests/test_home.py::test_lost_record_adopts_the_labelled_tab_and_a_gone_home_is_
 tests/test_home.py::test_open_action_focuses_home_and_popup_stays_available,tests/test_home.py,src/home/tests/ensure.rs::open_action_focuses_home_and_the_popup_stays_available,mapped,,P4
 tests/test_home.py::test_home_tab_off_means_popup_and_no_startup_tab,tests/test_home.py,src/home/tests/ensure.rs::home_tab_off_means_popup_and_no_startup_tab,mapped,,P4
 tests/test_home.py::test_startup_does_not_take_focus,tests/test_home.py,src/home/tests/ensure.rs::startup_does_not_take_focus,mapped,,P4
-tests/test_home.py::test_slugify[Billing API!-billing-api],tests/test_home.py,,todo,,P4
-tests/test_home.py::test_slugify[  9 lives -a-9-lives],tests/test_home.py,,todo,,P4
-tests/test_home.py::test_slugify[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx],tests/test_home.py,,todo,,P4
-tests/test_home.py::test_slugify[\xdcn\xefc\xf6d\xe9-n-c-d],tests/test_home.py,,todo,,P4
-tests/test_home.py::test_slugify[!!!-],tests/test_home.py,,todo,,P4
-tests/test_home.py::test_slugify[fix_auth--flow-fix_auth-flow],tests/test_home.py,,todo,,P4
-tests/test_home.py::test_new_agent_flow_sanitises_and_prompts_once,tests/test_home.py,,todo,,P4
-tests/test_home.py::test_new_agent_without_prompt_and_failures,tests/test_home.py,,todo,,P4
+tests/test_home.py::test_slugify[Billing API!-billing-api],tests/test_home.py,src/new_agent/tests/slug.rs::slugs_from_free_text,mapped,,P4
+tests/test_home.py::test_slugify[  9 lives -a-9-lives],tests/test_home.py,src/new_agent/tests/slug.rs::slugs_from_free_text,mapped,,P4
+tests/test_home.py::test_slugify[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx],tests/test_home.py,src/new_agent/tests/slug.rs::slugs_from_free_text,mapped,,P4
+tests/test_home.py::test_slugify[\xdcn\xefc\xf6d\xe9-n-c-d],tests/test_home.py,src/new_agent/tests/slug.rs::slugs_from_free_text,mapped,,P4
+tests/test_home.py::test_slugify[!!!-],tests/test_home.py,src/new_agent/tests/slug.rs::slugs_from_free_text,mapped,,P4
+tests/test_home.py::test_slugify[fix_auth--flow-fix_auth-flow],tests/test_home.py,src/new_agent/tests/slug.rs::slugs_from_free_text,mapped,,P4
+tests/test_home.py::test_new_agent_flow_sanitises_and_prompts_once,tests/test_home.py,,retired,"approved deviation 2026-10-17 (design 1C): no first prompt, nothing is typed into the new pane; start.rs::the_agent_starts_in_its_own_tab_which_then_takes_the_focus checks no prompt is sent",P4
+tests/test_home.py::test_new_agent_without_prompt_and_failures,tests/test_home.py,src/new_agent/tests/start.rs::a_failed_start_closes_its_tab_and_never_takes_the_focus ; src/new_agent/tests/start.rs::names_directories_and_existing_agents_are_refused_before_anything_is_made,mapped,,P4
 tests/test_home.py::test_r5_h1_a_failed_snapshot_never_opens_a_second_home,tests/test_home.py,src/home/tests/ensure.rs::a_failed_snapshot_never_opens_a_second_home,mapped,,P4
 tests/test_home.py::test_r5_m5_a_record_is_trusted_only_if_it_still_looks_like_home,tests/test_home.py,src/home/tests/ensure.rs::a_record_is_trusted_only_if_it_still_looks_like_home,mapped,,P4
-tests/test_home.py::test_r5_m1_prompt_goes_to_the_new_pane_and_cannot_be_a_flag,tests/test_home.py,,todo,,P4
-tests/test_home.py::test_r5_m1_an_existing_agent_name_is_refused,tests/test_home.py,,todo,,P4
-tests/test_home.py::test_r5_m2_a_failed_start_closes_its_tab,tests/test_home.py,,todo,,P4
-tests/test_home.py::test_r5_l3_a_missing_directory_is_refused,tests/test_home.py,,todo,,P4
-tests/test_home.py::test_r5b_h1_the_prompt_is_the_word_after_the_target_as_herdr_parses_it,tests/test_home.py,,todo,,P4
+tests/test_home.py::test_r5_m1_prompt_goes_to_the_new_pane_and_cannot_be_a_flag,tests/test_home.py,,retired,"approved deviation 2026-10-17 (design 1C): no first prompt, nothing is typed into the new pane; start.rs::the_agent_starts_in_its_own_tab_which_then_takes_the_focus checks no prompt is sent",P4
+tests/test_home.py::test_r5_m1_an_existing_agent_name_is_refused,tests/test_home.py,src/new_agent/tests/start.rs::names_directories_and_existing_agents_are_refused_before_anything_is_made ; src/new_agent/tests/real.rs::the_whole_start_through_herdr,mapped,,P4
+tests/test_home.py::test_r5_m2_a_failed_start_closes_its_tab,tests/test_home.py,src/new_agent/tests/start.rs::a_failed_start_closes_its_tab_and_never_takes_the_focus ; src/new_agent/tests/real.rs::the_whole_start_through_herdr,mapped,,P4
+tests/test_home.py::test_r5_l3_a_missing_directory_is_refused,tests/test_home.py,src/new_agent/tests/start.rs::names_directories_and_existing_agents_are_refused_before_anything_is_made,mapped,,P4
+tests/test_home.py::test_r5b_h1_the_prompt_is_the_word_after_the_target_as_herdr_parses_it,tests/test_home.py,,retired,"approved deviation 2026-10-17 (design 1C): no first prompt, nothing is typed into the new pane; start.rs::the_agent_starts_in_its_own_tab_which_then_takes_the_focus checks no prompt is sent",P4
 tests/test_home_label.py::test_crash_sweep_renames_a_home_tab_left_with_an_agent,tests/test_home_label.py,src/home/tests/label.rs::crash_sweep_renames_a_home_tab_left_with_an_agent,mapped,,P4
 tests/test_home_label.py::test_sweep_falls_back_to_the_kind_then_tab,tests/test_home_label.py,src/home/tests/label.rs::sweep_falls_back_to_the_kind_then_tab,mapped,,P4
 tests/test_home_label.py::test_sweep_keeps_a_live_or_unverifiable_panorama_tab,tests/test_home_label.py,src/home/tests/label.rs::sweep_keeps_a_live_or_unverifiable_panorama_tab,mapped,,P4
@@ -620,7 +620,7 @@ tests/test_panels.py::test_a_second_panel_is_closed_keeping_the_connected_one,te
 tests/test_panels.py::test_a_tab_without_its_orchestrator_loses_the_panel_only_after_a_while,tests/test_panels.py,src/panels/tests/closing.rs::a_tab_without_its_orchestrator_loses_the_panel_only_after_a_while,mapped,,P4
 tests/test_panels.py::test_the_open_key_asks_the_core,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_a_panel_switches_by_tab_and_panel_focus,tests/test_panels.py,,todo,,P4
-tests/test_panels.py::test_new_agent_builds_its_tab_with_the_panel_on_the_left,tests/test_panels.py,,todo,,P4
+tests/test_panels.py::test_new_agent_builds_its_tab_with_the_panel_on_the_left,tests/test_panels.py,src/new_agent/tests/start.rs::per_tab_builds_the_tab_with_its_panel_on_the_left ; src/new_agent/tests/real.rs::the_panel_layout_puts_our_panel_left_of_the_new_pane,mapped,,P4
 tests/test_panels.py::test_a_viewer_exits_on_the_cores_shutdown,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_a_viewer_without_a_core_for_long_exits,tests/test_panels.py,,todo,,P4
 tests/test_panels.py::test_a_connected_viewer_does_not_time_out,tests/test_panels.py,,todo,,P4
@@ -1041,7 +1041,7 @@ tests/test_tui.py::test_l1_a_failing_collect_keeps_the_last_model_and_says_so,te
 tests/test_tui.py::test_frames_never_recollect_rearm_or_move_the_cursor,tests/test_tui.py,src/app/driver/tests/frames.rs::frames_never_rearm_or_move_the_cursor,mapped,,P4
 tests/test_tui.py::test_frames_keep_running_unfocused_and_pause_when_nothing_moves,tests/test_tui.py,src/app/driver/tests/frames.rs::frames_keep_running_unfocused_and_pause_when_nothing_moves ; src/ui/pacing/tests.rs::a_hidden_tab_or_a_still_screen_never_ticks,mapped,,P4
 tests/test_tui.py::test_new_row_is_last_stable_and_opens_the_form,tests/test_tui.py,,todo,,P4
-tests/test_tui.py::test_form_submit_is_armed_validated_and_runs_the_flow,tests/test_tui.py,,todo,,P4
+tests/test_tui.py::test_form_submit_is_armed_validated_and_runs_the_flow,tests/test_tui.py,src/new_agent/tests/form.rs::enter_on_the_last_field_or_ctrl_s_starts_once_armed ; src/new_agent/tests/form.rs::a_bad_name_or_directory_is_said_on_the_status_row,mapped,,P4
 tests/test_tui.py::test_home_mode_keeps_the_view_open,tests/test_tui.py,,todo,,P4
 tests/test_tui.py::test_new_row_in_narrow_layout,tests/test_tui.py,,todo,,P4
 tests/test_tui.py::test_refreshes_and_frames_keep_running_under_the_form,tests/test_tui.py,,todo,,P4
