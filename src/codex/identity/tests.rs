@@ -4,7 +4,10 @@ use herdr_agent_kit::{
     herdr_api::fake::{FakeHerdr, Reply},
 };
 use serde_json::{Value, json};
-use std::{os::unix::fs::PermissionsExt, time::Duration};
+use std::{
+    os::unix::fs::{MetadataExt, PermissionsExt},
+    time::Duration,
+};
 
 const ROOT: &str = "11111111-1111-4111-8111-111111111111";
 const CHILD: &str = "22222222-2222-4222-8222-222222222222";
@@ -271,7 +274,7 @@ fn state_env(dir: &std::path::Path) -> herdr_agent_kit::plugin_env::PluginEnv {
     herdr_agent_kit::plugin_env::PluginEnv::from_vars(
         [("XDG_STATE_HOME", dir.to_str().unwrap())],
         None,
-        1000,
+        std::fs::metadata(dir).unwrap().uid(),
     )
 }
 fn processes() -> Box<dyn herdr_agent_kit::agent_procs::ProcessTable> {
