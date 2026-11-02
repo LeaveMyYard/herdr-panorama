@@ -97,7 +97,6 @@ fn orch_rows(last: usize) -> Vec<usize> {
 }
 
 fn check(name: &str, d: Vec<String>) {
-    if std::env::var_os("PANORAMA_CAPTURE_ROWS").is_some() { return; }
     assert!(
         d.is_empty(),
         "{name}: {} cells differ, first:\n{}",

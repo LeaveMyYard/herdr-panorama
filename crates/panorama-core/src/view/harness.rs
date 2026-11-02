@@ -5,7 +5,6 @@ use super::new_agent::HARNESSES;
 use crate::model::Orchestrator;
 
 pub fn title(o: &Orchestrator) -> String {
-    if super::capture::legacy() { return o.tab_label.clone(); }
     let name = HARNESSES
         .iter()
         .find(|h| h.id == o.harness)

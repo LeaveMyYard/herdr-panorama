@@ -60,7 +60,9 @@ fn every_captured_swarm_reads_and_writes_back_unchanged() {
         let swarm: Swarm =
             serde_json::from_value(wire.clone()).unwrap_or_else(|e| panic!("{name}: {e}"));
         assert!(!swarm.orchestrators.is_empty(), "{name}");
-        for o in wire["orchestrators"].as_array_mut().unwrap() { o["harness"] = Value::String("claude".into()); }
+        for o in wire["orchestrators"].as_array_mut().unwrap() {
+            o["harness"] = Value::String("claude".into());
+        }
         assert_eq!(serde_json::to_value(&swarm).unwrap(), wire, "{name}");
     }
     for (name, mut snap, _) in snapshots() {
@@ -72,7 +74,9 @@ fn every_captured_swarm_reads_and_writes_back_unchanged() {
             back.as_object_mut().unwrap().remove("stale_after"),
             Some(STALE_AFTER.into())
         );
-        for o in snap["orchestrators"].as_array_mut().unwrap() { o["harness"] = Value::String("claude".into()); }
+        for o in snap["orchestrators"].as_array_mut().unwrap() {
+            o["harness"] = Value::String("claude".into());
+        }
         assert_eq!(back, snap, "{name}");
     }
 }

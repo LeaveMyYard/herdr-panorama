@@ -143,7 +143,6 @@ pub fn render(form: &Form<'_>, w: i32, h: i32) -> Modal {
         Some(PANEL),
         false,
     );
-    crate::view::capture::record(&s, || render(form, w, h).screen);
     Modal { screen: s, steps }
 }
 

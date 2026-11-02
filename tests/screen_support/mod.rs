@@ -13,7 +13,10 @@ use serde_json::Value;
 
 pub fn fixture(rel: &str) -> Value {
     let path = format!("{}/tests/fixtures/{rel}", env!("CARGO_MANIFEST_DIR"));
-    harness_goldens::adapt(rel, serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap())
+    harness_goldens::adapt(
+        rel,
+        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap(),
+    )
 }
 
 /// A golden screen's cells, blanks showing only their background (tests/fixtures/README.md).

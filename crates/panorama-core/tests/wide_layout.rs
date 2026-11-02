@@ -503,7 +503,11 @@ fn the_background_card_is_selectable_in_the_thread_column() {
 /// test_current_card.py: the top border colour of the card titled `label`.
 fn top_border(s: &Screen, pane: &str) -> Rgb {
     // Identity, rather than a title substring: a prefixed title may be truncated.
-    let hit = s.targets.iter().find(|hit| hit.target == Target::Orch(pane.into())).unwrap();
+    let hit = s
+        .targets
+        .iter()
+        .find(|hit| hit.target == panorama_core::view::Target::Orch(pane.into()))
+        .unwrap();
     s.cell(hit.x0 + 5, hit.y).fg
 }
 

@@ -16,7 +16,9 @@ fn the_swarm_goes_out_as_python_sent_it() {
     let mut wire = fixture()["swarm"].clone();
     let swarm: Swarm = serde_json::from_value(wire.clone()).unwrap();
     let msg = state_message(&swarm, &Marks::new(), &Published::default(), None);
-    for o in wire["orchestrators"].as_array_mut().unwrap() { o["harness"] = json!("claude"); }
+    for o in wire["orchestrators"].as_array_mut().unwrap() {
+        o["harness"] = json!("claude");
+    }
     assert_eq!(msg["state"]["swarm"], wire);
 }
 

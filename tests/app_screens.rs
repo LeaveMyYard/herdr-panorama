@@ -56,7 +56,6 @@ fn check(file: &str, skip: &[&str]) {
         let player = Player::new(run, &golden_file["unseen"], swarm_of(run));
         for (name, screen) in player.play(skip) {
             let (want, got) = (golden(&golden_file["screens"][&name]), cells(&screen));
-            if std::env::var_os("PANORAMA_CAPTURE_ROWS").is_some() { snapped += 1; continue; }
             assert_eq!(want.len(), got.len(), "{file} {name}: rows");
             for (y, (w, g)) in want.iter().zip(&got).enumerate() {
                 assert_eq!(

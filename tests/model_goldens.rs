@@ -55,15 +55,24 @@ fn check(name: &str, minutes: &[i64]) {
     let mut golden = read_json(&golden_path);
     // Additive Rust identity: old Python snapshots omit the Claude-only harness.
     for snap in golden["snapshots"].as_object_mut().unwrap().values_mut() {
-        for o in snap["orchestrators"].as_array_mut().unwrap() { o["harness"] = Value::String("claude".into()); }
+        for o in snap["orchestrators"].as_array_mut().unwrap() {
+            o["harness"] = Value::String("claude".into());
+        }
     }
     // Keep the original Python key order and formatting, inserting only the new field.
-    let golden_text = golden_text.lines().map(|line| {
-        if line.trim_start().starts_with("\"pane_id\":") {
-            let indent = line.len() - line.trim_start().len();
-            format!("{line}\n{}\"harness\": \"claude\",", " ".repeat(indent))
-        } else { line.to_owned() }
-    }).collect::<Vec<_>>().join("\n") + "\n";
+    let golden_text = golden_text
+        .lines()
+        .map(|line| {
+            if line.trim_start().starts_with("\"pane_id\":") {
+                let indent = line.len() - line.trim_start().len();
+                format!("{line}\n{}\"harness\": \"claude\",", " ".repeat(indent))
+            } else {
+                line.to_owned()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+        + "\n";
     let sc = Scenario::new(name);
     let now = sc.now();
     assert_eq!(golden["now"].as_f64(), Some(now));

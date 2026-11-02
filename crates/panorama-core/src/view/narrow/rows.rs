@@ -30,7 +30,6 @@ fn state_colour(st: &OrchState) -> Rgb {
 
 /// An unselected orchestrator at row `y`: pod, name and state, marks on the right.
 pub fn orch_row(cv: &mut Screen, y: i32, o: &Orchestrator, view: &View, ages: Ages) {
-    let before = cv.clone();
     let w = cv.w();
     let st = orch_state(o, view.frame, Some(ages));
     let target = Target::Orch(o.pane_id.clone());
@@ -55,7 +54,6 @@ pub fn orch_row(cv: &mut Screen, y: i32, o: &Orchestrator, view: &View, ages: Ag
             Seg::new(words, state_colour(&st)),
         ],
     );
-    crate::view::capture::record(cv, || { let mut old = before; orch_row(&mut old, y, o, view, ages); old });
 }
 
 /// Where an opened orchestrator ended, and the rows of the selection in it.
@@ -74,7 +72,6 @@ pub fn open_orch(
     view: &View,
     ages: Ages,
 ) -> Opened {
-    let before = cv.clone();
     let w = cv.w();
     let st = orch_state(o, view.frame, Some(ages));
     cv.area(0, w, y, y + 1, Target::Orch(o.pane_id.clone()));
@@ -114,6 +111,5 @@ pub fn open_orch(
         y += placed.height;
     }
     join(cv, top_y, &anchors);
-    crate::view::capture::record(cv, || { let mut old = before; open_orch(&mut old, top_y, o, swarm, view, ages); old });
     Opened { end: y, sel }
 }

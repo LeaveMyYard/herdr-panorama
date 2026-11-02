@@ -16,7 +16,7 @@ pub struct Harness {
 impl Harness {
     /// Whether panorama starts this harness yet; the others say "Coming soon".
     pub fn supported(&self) -> bool {
-        self.id == "claude" || (self.id == "codex" && !crate::view::capture::legacy())
+        matches!(self.id, "claude" | "codex")
     }
 }
 

@@ -48,7 +48,6 @@ pub fn orch_column(swarm: &Swarm, view: &View, w: i32) -> Column {
     if is_new {
         col.sel = Some((y, y + 3));
     }
-    crate::view::capture::record(&col.canvas, || orch_column(swarm, view, w).canvas);
     col.height = y + 4;
     col
 }

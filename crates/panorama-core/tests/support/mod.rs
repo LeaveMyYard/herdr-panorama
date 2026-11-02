@@ -131,7 +131,6 @@ pub fn diff(want: &[Vec<Shown>], got: &[Vec<Shown>]) -> Vec<String> {
 /// Fails with the first differences.
 pub fn assert_same(name: &str, want: &[Vec<Shown>], got: &[Vec<Shown>]) {
     let d = diff(want, got);
-    if std::env::var_os("PANORAMA_CAPTURE_ROWS").is_some() { return; }
     assert!(
         d.is_empty(),
         "{name}: {} cells differ, first:\n{}",
