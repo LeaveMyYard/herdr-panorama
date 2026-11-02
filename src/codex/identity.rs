@@ -21,5 +21,6 @@ pub use cli::{hook, manual};
 #[cfg(test)]
 mod tests;
 
+mod files;
 mod store;
 pub use store::resolve;

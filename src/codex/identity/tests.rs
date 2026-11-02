@@ -26,6 +26,9 @@ for line in sys.stdin:
     if 'id' not in request: continue
     if request['method']=='initialize': result={{}}
     elif request['method']=='thread/read':
+        if (home/'pause').exists():
+            (home/'reading').write_text('ready')
+            while not (home/'release').exists(): time.sleep(0.002)
         if {delay}: time.sleep(30)
         result={{'thread':json.loads((home/'thread.json').read_text())}}
     else: raise RuntimeError('forbidden operation')
@@ -573,5 +576,111 @@ async fn explicit_shared_daemon_mapping_tracks_tui_lifetime_not_daemon_identity(
             tui().as_ref()
         ),
         Some(CHILD.into())
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn metadata_read_races_revalidate_foreground_start_and_native_identity() {
+    use std::{cell::Cell, rc::Rc};
+    for transition in ["foreground", "start", "native"] {
+        let (dir, mut options) = fixture(thread(), false);
+        options.timeout = Duration::from_secs(2);
+        std::fs::write(dir.path().join("pause"), "").unwrap();
+        let env = state_env(dir.path());
+        let store = store::Store::lock(&env, "w1:p1").unwrap();
+        let fake = FakeHerdr::start();
+        fake_pane(&fake, "w1:p1", "codex");
+        let changed = Rc::new(Cell::new(false));
+        let table = || -> Box<dyn herdr_agent_kit::agent_procs::ProcessTable> {
+            let mut p = FakeProcesses::default();
+            p.insert(
+                20,
+                10,
+                "codex",
+                if transition == "start" && changed.get() {
+                    "reused"
+                } else {
+                    "start"
+                },
+                &["codex", "--no-daemon"],
+            );
+            Box::new(p)
+        };
+        let client = fake.client();
+        let binding = bind::bind(&client, &options, request(ROOT, true), &store, &table);
+        let mutate = async {
+            tokio::time::timeout(Duration::from_secs(1), async {
+                while !dir.path().join("reading").exists() {
+                    tokio::time::sleep(Duration::from_millis(2)).await;
+                }
+            })
+            .await
+            .expect("metadata read reached deterministic barrier");
+            assert_eq!(fake.params_of("pane.get").len(), 1);
+            assert_eq!(fake.params_of("pane.process_info").len(), 1);
+            match transition {
+                "foreground" => {
+                    fake.on(
+                        "pane.process_info",
+                        Reply::Result(process_info("w1:p1", 99)),
+                    );
+                }
+                "native" => {
+                    fake.on("pane.get",Reply::Result(json!({"pane":{"pane_id":"w1:p1","agent":"codex","agent_session":{"kind":"id","value":CHILD}}})));
+                }
+                _ => changed.set(true),
+            }
+            std::fs::write(dir.path().join("release"), "").unwrap();
+        };
+        let (result, ()) = tokio::join!(binding, mutate);
+        assert!(result.is_err(), "{transition} must fail final guard");
+        assert!(store.existing("w1:p1").unwrap().unwrap().conflicted);
+        assert_eq!(
+            store::resolve_with(
+                &env,
+                "w1:p1",
+                None,
+                || panic!("pending state must not resolve"),
+                processes().as_ref()
+            ),
+            None
+        );
+        assert!(fake.params_of("pane.report_agent_session").is_empty());
+    }
+}
+
+#[test]
+fn held_store_directory_cannot_be_redirected_by_a_path_swap() {
+    use std::os::unix::fs::symlink;
+    let dir = tempfile::tempdir().unwrap();
+    let env = state_env(dir.path());
+    let store = store::Store::lock(&env, "w1:p1").unwrap();
+    let original = dir.path().join("herdr-panorama/codex-bindings");
+    let moved = dir.path().join("moved");
+    let outside = dir.path().join("outside");
+    std::fs::create_dir(&outside).unwrap();
+    std::fs::rename(&original, &moved).unwrap();
+    symlink(&outside, &original).unwrap();
+    let a = store::Association {
+        version: 1,
+        pane_id: "w1:p1".into(),
+        thread_id: ROOT.into(),
+        owner_pid: 20,
+        owner_start: "start".into(),
+        embedded: true,
+        conflicted: false,
+    };
+    store.write(&a).unwrap();
+    assert!(moved.join("77313a7031").exists());
+    assert!(!outside.join("77313a7031").exists());
+    assert_eq!(
+        store::resolve_with(
+            &env,
+            "w1:p1",
+            None,
+            || panic!("swapped directory must fail"),
+            processes().as_ref()
+        ),
+        None
     );
 }
