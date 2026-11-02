@@ -1,7 +1,7 @@
 # Codex in the Rust Panorama view
 
 The Rust UI and core show local Claude Code and Codex panes together. Each pane
-keeps its harness label, tab, focus target, and herdr status. Arrow navigation,
+keeps its harness identity, tab, focus target, and herdr status. Arrow navigation,
 clicks, and Enter use the existing pane IDs. Missing Codex history or registration
 does not remove the pane.
 
@@ -10,6 +10,32 @@ Python implementation and remains Claude-only. Build the Rust binary according
 to [CONTRIBUTING.md](../CONTRIBUTING.md), and use its path for the commands below,
 for example `target/release/panorama snapshot --json`. Building in an isolated
 checkout does not install, restart, or activate a running plugin.
+
+## Harness icons
+
+Orchestrator titles can use the real Claude and Codex marks from **Herdr Agent
+Icons Max** (U+E1A0 and U+E1A1), followed by the tab label. Launcher choices and
+help keep their full harness names. The font is distributed by
+[herdr-radar](https://github.com/hhdebb/herdr-radar) and
+[herdr-icon-agent-ui](https://github.com/qintmb/herdr-icon-agent-ui); Panorama
+does not bundle fonts or change terminal configuration.
+
+In Panorama's plugin `config.toml`, `harness_icons = "auto"` is the default.
+Auto conservatively recognizes local Ghostty or its herdr wrapper
+(`TERM_PROGRAM=ghostty` or `herdr`, without
+`SSH_CONNECTION`) with the standard `font-codepoint-map =
+U+E1A0-U+E1BA=Herdr Agent Icons Max` in its XDG `ghostty/config` or
+`ghostty/config.ghostty` and a nonempty `HerdrAgentIconsMax*.ttf` in
+`~/.local/share/fonts`, `~/.fonts`, or `~/Library/Fonts`. It samples bounded
+local files once at startup; restart the view after changing font setup. Config
+includes, custom font locations and other terminals fall back to text.
+
+Installed fonts and config files are hints, not proof of the active terminal's
+mapping. After installing the font and configuring your terminal to map these
+codepoints, use `harness_icons = "font"` to opt in explicitly. If glyphs appear
+as boxes or the mapping is unavailable, `harness_icons = "text"` restores
+`Claude Code ·` / `Codex ·`. These explicit settings are re-read with the other
+view settings. Unknown harnesses always retain their textual identifier.
 
 ## Launching and associating a session
 
@@ -83,7 +109,15 @@ never overridden by the local store.
 One Codex session card contains its recorded turns as chronological phases and
 its exact parent/child agent tree. It shows bounded prompt/summary text, model,
 the latest recorded tool, and the tool count in the loaded turn window. Counts
-are not all-time totals. Explicit `report_thread` declarations can organize the
+are not all-time totals. An exactly associated session shows its default
+descendant hierarchy without MCP reports. The compact dock keeps its existing presentation: session/thread
+tiles, indented rows for agents that spawned children, and child status glyphs
+on the right (leaf agents are glyphs). Open the expanded graph to navigate full
+agent cards by depth; the narrow graph offers selectable agent pods and the
+selected agent's details.
+History-only children stay unknown, including in the compact dock.
+
+Explicit `report_thread` declarations can organize the
 same children without duplicating them or replacing the root card.
 
 Herdr supplies the root pane's runtime state. Persisted completed, failed, or

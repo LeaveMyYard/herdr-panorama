@@ -28,6 +28,7 @@ impl Panel {
         v.frame = f.frame;
         v.utc_offset = f.utc_offset;
         v.open_key = f.open_key.clone();
+        v.harness_icons = f.harness_icons;
         let stale = self.graph.swarm.errors.first().map(String::as_str);
         let mut s = if docked {
             v.panel = Some(panel_look(

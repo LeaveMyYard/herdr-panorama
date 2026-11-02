@@ -23,6 +23,7 @@ impl App {
         v.frame = f.frame;
         v.utc_offset = f.utc_offset;
         v.open_key = f.open_key.clone();
+        v.harness_icons = f.harness_icons;
         let s = if self.dock {
             let look = panel_look(f.theme.as_ref(), self.pane_focused, OWN, &f.settings);
             v.panel = Some(look);

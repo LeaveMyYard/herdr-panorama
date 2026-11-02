@@ -289,6 +289,7 @@ panel_colors = "fixed" # docked panel background: "fixed" (#14161b focused, #101
 focus_tint = 0.15      # "herdr" mode: how far focus moves panel_bg toward the theme's active_row_bg
 machines = "all"     # herdr's saved SSH machines to show: "all", "none" or ["label", ...]
 highlight_unseen = true # pulse what failed, asked or finished since you last looked
+harness_icons = "auto" # Rust: real harness marks when mapped; "font" forces, "text" uses names
 animation_fps = 20   # how smoothly pulses and blinks fade (2..30): lower it on a slow terminal or remote link
 stale_after = "12h"  # an orchestrator idle this long (nothing in flight) reads "stale"
 ```

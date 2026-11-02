@@ -10,6 +10,7 @@
 
 pub mod colour;
 pub mod durations;
+pub mod icons;
 pub mod open_key;
 pub mod panel;
 pub mod theme;
@@ -27,6 +28,8 @@ pub struct Snapshot {
     pub panel: PanelSettings,
     /// How often colours move, per second.
     pub animation_fps: f64,
+    /// Resolved once at the IO boundary, never by the renderer.
+    pub harness_icons: panorama_core::view::harness::HarnessIcons,
     /// herdr's theme tokens; `None` for its "terminal" theme.
     pub theme: Option<Tokens>,
     /// The open key, `(full, short)`.
@@ -39,6 +42,7 @@ pub struct Settings {
     panorama: ConfigFile,
     herdr: ConfigFile,
     plugin_id: String,
+    auto_icons: bool,
 }
 
 fn table(file: &mut ConfigFile) -> Map<String, Value> {
@@ -53,6 +57,7 @@ impl Settings {
             panorama: panorama_dir.map(ConfigFile::in_dir).unwrap_or_default(),
             herdr: ConfigFile::in_dir(herdr_dir),
             plugin_id: plugin_id.to_owned(),
+            auto_icons: false,
         }
     }
 
@@ -60,11 +65,13 @@ impl Settings {
     /// not read (herdr sets it for every plugin pane).
     pub fn from_env(env: &PluginEnv) -> Self {
         let own = env.plugin_config_dir().map(|p| p.to_path_buf());
-        Self::new(
+        let mut settings = Self::new(
             own,
             env.xdg_config_home().join("herdr"),
             env.plugin_id(PANORAMA_ID),
-        )
+        );
+        settings.auto_icons = icons::detect(env);
+        settings
     }
 
     /// Everything the panel reads, each file's table converted once. Call it when a full
@@ -76,6 +83,7 @@ impl Settings {
         Snapshot {
             panel: panel::panel_settings(&own),
             animation_fps: panel::animation_fps(&own),
+            harness_icons: icons::resolve(&own, self.auto_icons),
             theme: theme::tokens(&herdr),
             open_key: open_key::current(&herdr, &self.plugin_id),
         }
