@@ -20,9 +20,10 @@ def test_plugin_manifest():
     assert pane["command"] == VIEW_COMMAND("tui")  # scripts/tui: the Rust app or the Python one
     actions = {a["id"]: a for a in m["actions"]}
     assert set(actions) == {"open", "open-popup", "open-split"}
-    assert actions["open-popup"]["command"][-2:] == ["open", "--popup"]
-    assert m["startup"][0]["command"][-2:] == ["home", "--startup"]
-    assert actions["open-split"]["command"][-2:] == ["open", "--split"]
+    assert actions["open"]["command"] == VIEW_COMMAND("open")
+    assert actions["open-popup"]["command"] == VIEW_COMMAND("open --popup")
+    assert m["startup"][0]["command"] == VIEW_COMMAND("home --startup")
+    assert actions["open-split"]["command"] == VIEW_COMMAND("open --split")
     assert m["build"][0]["command"] == ["uv", "sync", "--frozen", "--no-dev"]
     form = next(p for p in m["panes"] if p["id"] == "new-agent")  # + New agent as its own popup
     assert form["placement"] == "popup" and form["command"] == VIEW_COMMAND("new-agent")
@@ -61,7 +62,7 @@ def test_claude_plugin_manifests():
 
 # The two launchers that probe the binary the same way: scripts/panel (the panel contract, a bare
 # number) and scripts/tui (the view contract, `tui <n>`), each with the command it runs.
-LAUNCHERS = {"panel": ("panel", "1"), "tui": ("tui", "tui 1")}
+LAUNCHERS = {"panel": ("panel", "1"), "tui": ("tui", "tui 2")}
 
 
 def _launch(root, env_extra=None, timeout=10, stdin=None, launcher="panel", path=None):

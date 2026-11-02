@@ -1837,13 +1837,14 @@ per-tab had proven itself).
   `scripts/tui tui` and `scripts/tui new-agent`, which pick the app the way `scripts/panel`
   picks the viewer: the plugin root's own `target/release/panorama` when it answers
   `panorama contract tui` with `tui <n>`, the number the script carries (the view contract: the
-  `tui` and `new-agent` subcommands, the home view's record and lock, the core protocol it
+  `tui`, `new-agent`, `open` and `home` subcommands, the home view's record and lock, the core protocol it
   serves, the + New agent popup's started marker and `PANORAMA_NEW_AGENT_CWD`); else the
   venv's app, else `uv run`. A binary from before the contract answers nothing (or the panel's
-  bare number) and is passed over, said on stderr and in `<state dir>/tui-launch.log`. The
-  `open`/`open-popup`/`open-split` actions and the `home --startup` hook stay Python for now;
-  they open the `panorama` pane and talk to the core over protocol 1.3, which the Rust app's
-  core serves, so a Python `open` drives a Rust home view. Removing the binary rolls back.
+  bare number) and is passed over, said on stderr and in `<state dir>/tui-launch.log`. Since
+  PR 10b the `open`/`open-popup`/`open-split` actions and the `home --startup` hook run through
+  it too (`scripts/tui open …`, `scripts/tui home --startup`; view contract 2): the Rust
+  `open` asks the core over protocol 1.3 like Python's, so either side's `open` drives either
+  side's home view and core. Removing the binary rolls back.
 - **Open key.** In per-tab mode the open key asks the core over its socket (`role: "key"`,
   `{"open": {}}`, answered with `{"opened": {"result": …}}`):
   - a panel in the operator's tab: it is focused;

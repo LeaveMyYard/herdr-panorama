@@ -54,14 +54,6 @@ impl HomeOps for RealHome {
         at(self.herdr.open_plugin_pane(&open).await.map_err(err)?)
     }
 
-    async fn open_popup(&self) -> Result<(), String> {
-        self.herdr
-            .open_plugin_pane(&self.pane())
-            .await
-            .map(drop)
-            .map_err(err)
-    }
-
     async fn rename_pane(&self, pane: &str, label: &str) -> Result<(), String> {
         self.herdr
             .rename_pane(&PaneId::new(pane), &Sanitized::new(label))

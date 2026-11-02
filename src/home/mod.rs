@@ -21,14 +21,12 @@ pub mod config;
 mod ensure;
 mod find;
 pub mod label;
-mod open;
 pub mod ops;
 pub mod real;
 mod record;
 
 pub use ensure::{ensure, find_home, leave};
 pub use find::{lookalikes, release_tab, sweep};
-pub use open::{Opened, open_key, startup};
 pub use ops::{At, HomeOps};
 
 use herdr_agent_kit::internal::plugin_paths::panorama as paths;
