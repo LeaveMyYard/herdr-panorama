@@ -58,6 +58,7 @@ pub struct Turn {
 pub struct Thread {
     pub thread_id: String,
     pub session_tree_id: String,
+    /// None means an explicit null parent; missing/malformed ancestry is refused.
     pub parent_thread_id: Option<String>,
     pub forked_from_id: Option<String>,
     pub name: Option<String>,

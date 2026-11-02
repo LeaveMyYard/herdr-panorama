@@ -28,10 +28,16 @@ pub(super) fn thread(v: &Value, expected: &str) -> Option<Thread> {
     if thread_id != expected {
         return None;
     }
+    let parent_thread_id = match v.get("parentThreadId") {
+        Some(Value::Null) => None,
+        Some(Value::String(parent)) if valid_id(parent) => Some(parent.clone()),
+        // Missing or malformed ancestry cannot assert that this is a root.
+        _ => return None,
+    };
     Some(Thread {
         thread_id,
         session_tree_id: id(v, "sessionId").unwrap_or_default(),
-        parent_thread_id: id(v, "parentThreadId"),
+        parent_thread_id,
         forked_from_id: id(v, "forkedFromId"),
         name: text(v, "name"),
         nickname: text(v, "agentNickname"),

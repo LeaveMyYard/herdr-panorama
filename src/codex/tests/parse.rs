@@ -13,7 +13,7 @@ fn unknown_idle_notloaded_never_mean_completed() {
     }
     for status in ["idle", "notLoaded", "active"] {
         let thread = parse::thread(
-            &json!({"id":"r","status":{"type":status},"sessionId":"tree"}),
+            &json!({"id":"r","status":{"type":status},"sessionId":"tree","parentThreadId":null}),
             "r",
         )
         .unwrap();
@@ -39,5 +39,24 @@ fn codex_home_is_explicit_or_under_home_never_cwd() {
     assert_eq!(
         Options::from_env(&env).unwrap().codex_home,
         std::path::Path::new("/private/codex")
+    );
+}
+
+#[test]
+fn parentlessness_requires_explicit_null_not_invalid_or_missing_evidence() {
+    for parent in [
+        json!({"unexpected":"parent"}),
+        json!(12),
+        json!("../bad"),
+        json!(""),
+    ] {
+        assert!(parse::thread(&json!({"id":"root","parentThreadId":parent}), "root").is_none());
+    }
+    assert!(parse::thread(&json!({"id":"root"}), "root").is_none());
+    assert!(
+        parse::thread(&json!({"id":"root","parentThreadId":null}), "root")
+            .unwrap()
+            .parent_thread_id
+            .is_none()
     );
 }

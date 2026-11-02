@@ -33,11 +33,15 @@ for line in sys.stdin:
     if method == 'initialize':
         result = {'userAgent': 'fake/0.166.0'}
     elif method == 'thread/read':
+        if (mode == 'hang-child' and tid == 'child-a') or (mode == 'hang-grand' and tid == 'grand-a'):
+            time.sleep(30)
         parent = {'child-a': 'root-a', 'grand-a': 'child-a', 'foreign': 'other'}.get(tid)
         result = {'thread': {'id': 'wrong-id' if mode == 'mismatch' else tid,
             'sessionId': 'shared-tree', 'parentThreadId': parent, 'historyMode': 'legacy' if (mode in ('legacy', 'no-items-legacy') or (mode == 'mixed' and tid == 'root-a')) else 'paginated',
             'cwd': '/same/cwd', 'status': {'type': 'active'}, 'model': 'synthetic-model',
             'createdAt': 100, 'updatedAt': 200, 'name': 'Synthetic', 'turns': []}}
+        if mode == 'bad-parent':
+            result['thread']['parentThreadId'] = {'unexpected':'parent'}
         if params.get('includeTurns'):
             result['thread']['turns'] = [{'id': 't1', 'status': 'completed', 'items': [
                 {'id':'u1','type':'userMessage','content':[{'type':'text','text':'Legacy prompt'}]},

@@ -103,9 +103,14 @@ async fn query(
     client: &mut Client,
     id: &str,
     unsupported: &mut HashSet<String>,
+    deadline: tokio::time::Instant,
 ) -> Result<Observation> {
-    client.initialize().await?;
-    let (root, child_ids, mut partial) = read(client, id, unsupported).await?;
+    let (root, child_ids, mut partial) = tokio::time::timeout_at(deadline, async {
+        client.initialize().await?;
+        read(client, id, unsupported).await
+    })
+    .await
+    .unwrap_or(Err(Error::Unavailable))?;
     let mut queue: VecDeque<_> = child_ids
         .into_iter()
         .map(|child| (id.to_owned(), child))
@@ -122,7 +127,15 @@ async fn query(
             break;
         }
         reads += 1;
-        match read(client, &child, unsupported).await {
+        let child_result =
+            match tokio::time::timeout_at(deadline, read(client, &child, unsupported)).await {
+                Ok(result) => result,
+                Err(_) => {
+                    partial = true;
+                    break;
+                }
+            };
+        match child_result {
             Ok((thread, ids, truncated)) if thread.parent_thread_id.as_deref() == Some(&parent) => {
                 seen.insert(child.clone());
                 partial |= truncated;
@@ -147,9 +160,10 @@ pub(super) async fn fetch_cancellable(
     stop: &std::sync::atomic::AtomicBool,
 ) -> Result<Observation> {
     let mut client = Client::spawn(options)?;
-    let deadline = options.timeout.min(std::time::Duration::from_secs(10));
+    let deadline =
+        tokio::time::Instant::now() + options.timeout.min(std::time::Duration::from_secs(10));
     let result = tokio::select! {
-        result = tokio::time::timeout(deadline, query(&mut client, id, unsupported)) => result.unwrap_or(Err(Error::Unavailable)),
+        result = query(&mut client, id, unsupported, deadline) => result,
         _ = async {
             while !stop.load(std::sync::atomic::Ordering::Relaxed) {
                 tokio::time::sleep(std::time::Duration::from_millis(5)).await;

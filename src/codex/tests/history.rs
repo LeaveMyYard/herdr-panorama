@@ -187,3 +187,29 @@ async fn protocol_rejects_mutating_methods_before_writing_them() {
     client.child.wait().await.unwrap();
     assert!(calls(dir.path()).is_empty());
 }
+
+#[tokio::test]
+async fn descendant_timeout_retains_verified_root_and_completed_descendants() {
+    for (mode, children) in [("hang-child", 0), ("hang-grand", 1)] {
+        let (dir, mut options) = fixture(mode);
+        options.timeout = Duration::from_secs(1);
+        let start = Instant::now();
+        let data = fetch(&options, "root-a").await.unwrap();
+        assert!(start.elapsed() < Duration::from_secs(2));
+        assert_eq!(data.root.thread_id, "root-a");
+        assert_eq!(data.root.turns[0].prompt, "Synthetic prompt");
+        assert_eq!(data.children.len(), children);
+        assert!(data.partial);
+        #[cfg(target_os = "linux")]
+        {
+            let pid = std::fs::read_to_string(dir.path().join("pid")).unwrap();
+            assert!(!std::path::Path::new(&format!("/proc/{pid}")).exists());
+        }
+    }
+}
+
+#[tokio::test]
+async fn malformed_parent_fails_closed_through_the_protocol() {
+    let (_dir, options) = fixture("bad-parent");
+    assert_eq!(fetch(&options, "root-a").await, Err(Error::Invalid));
+}
