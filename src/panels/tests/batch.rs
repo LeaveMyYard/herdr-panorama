@@ -243,10 +243,10 @@ async fn single_follows_only_tabs_where_the_orchestrator_is_alone() {
 }
 
 #[tokio::test]
-async fn only_local_claude_orchestrators_outside_home_in_its_workspace_are_targets() {
+async fn only_local_supported_orchestrators_outside_home_in_its_workspace_are_targets() {
     let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
     w.s().tab("w1:t1").push(agent("w1:p9")); // in the home tab
-    w.s().tab("w1:t3")[0].agent = Some("codex".into());
+    w.s().tab("w1:t3")[0].agent = Some("opencode".into());
     let mut m = manager(&w, dir.path());
     let mut sw = orch(&["w1:p2", "w1:p3", "w1:p4", "w1:p9", "w1:p77"]);
     sw.orchestrators[2].machine = Some("box".into());
@@ -318,4 +318,38 @@ fn the_settle_wait_keeps_its_margin() {
     // test_follow.py::test_r16_the_settle_wait_keeps_its_margin: herdr delivers focus events
     // up to ~100 ms late (measured)
     assert!(crate::panels::SYNC >= std::time::Duration::from_millis(300));
+}
+
+#[tokio::test]
+async fn codex_tabs_get_panels_and_mixed_tabs_keep_the_same_single_tab_rule() {
+    let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
+    w.s()
+        .tabs
+        .iter_mut()
+        .flat_map(|(_, ps)| ps)
+        .find(|p| p.id == "w1:p3")
+        .unwrap()
+        .agent = Some("codex".into());
+    let mut m = manager(&w, dir.path());
+    let mut sw = orch(&["w1:p2", "w1:p3"]);
+    sw.orchestrators[1].harness = "codex".into();
+    let sv = m
+        .reconcile(w.snap(), &sw, Some(&home()), &set(&[]), true, false)
+        .await
+        .unwrap();
+    assert_eq!(sv.targets.get("w1:t3").map(String::as_str), Some("w1:p3"));
+    assert_eq!(w.order("w1:t3").len(), 2);
+    assert_eq!(w.order("w1:t3")[1], "w1:p3");
+    assert_eq!(w.s().focus, ("w1:t1".into(), "w1:p1".into()));
+    w.s()
+        .tabs
+        .iter_mut()
+        .find(|(t, _)| t == "w1:t3")
+        .unwrap()
+        .1
+        .push(agent("w1:p33"));
+    let sv = m.survey(&w.snap(), &sw, Some(&home()), true).await;
+    assert!(!sv.targets.contains_key("w1:t3"));
+    let sv = m.survey(&w.snap(), &sw, Some(&home()), false).await;
+    assert_eq!(sv.targets.get("w1:t3").map(String::as_str), Some("w1:p3"));
 }

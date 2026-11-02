@@ -93,6 +93,9 @@ impl Thread {
 pub struct Orchestrator {
     /// The herdr pane it runs in: its identity.
     pub pane_id: String,
+    /// The harness reported by herdr. Older states contain only Claude sessions.
+    #[serde(default = "claude_harness")]
+    pub harness: String,
     pub tab_id: Option<String>,
     pub tab_label: String,
     pub session_id: Option<String>,
@@ -137,6 +140,10 @@ pub struct Orchestrator {
     /// The newest transcript timestamp of the session or its agents.
     #[serde(default)]
     pub last_activity: Option<f64>,
+}
+
+fn claude_harness() -> String {
+    "claude".into()
 }
 
 fn agents_flavour() -> String {
