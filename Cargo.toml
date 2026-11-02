@@ -73,7 +73,7 @@ crossterm = { version = "0.29", features = ["event-stream"] }
 futures-util = { version = "0.3", default-features = false }
 # Whether the terminal hung up (a poll; crossterm spins instead of reporting it); a timed-out
 # rsync's process group killed (machines).
-rustix = { version = "1", features = ["event", "process"] }
+rustix = { version = "1", features = ["event", "process", "fs"] }
 # The collector's ordered maps (Python dicts keep insertion order) and its two patterns.
 indexmap = "2"
 regex = "1"

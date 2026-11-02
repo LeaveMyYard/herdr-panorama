@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|fork",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "panorama codex-hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
