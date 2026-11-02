@@ -99,7 +99,10 @@ fn orch_card(col: &mut Column, y: i32, o: &Orchestrator, view: &View, ages: Ages
     } else {
         FG
     };
-    let name = trunc(&crate::view::harness::title(o), w - 9 - mw);
+    let name = trunc(
+        &crate::view::harness::title(o, view.harness_icons),
+        w - 9 - mw,
+    );
     cv.segs(6, y + 1, &[Seg::new(name, name_fg).bold()]);
     cv.segs(6, y + 2, &state_line(o, &st, w));
     tags(cv, 0, y + 3, w, &[Some(o.flavour.clone())]);

@@ -48,6 +48,8 @@ pub struct View {
     pub cursor_look: bool,
     /// The docked panel in herdr's theme, focused or not; `None`: panorama's own colours.
     pub panel: Option<PanelLook>,
+    /// Harness title presentation, resolved by the IO boundary.
+    pub harness_icons: super::harness::HarnessIcons,
     /// The time now (POSIX seconds), for ages.
     pub now: f64,
     /// Seconds east of UTC for clock times (the caller looks it up).
@@ -81,6 +83,7 @@ impl Default for View {
             open_key: ("pfx+spc".into(), "pfx+spc".into()),
             cursor_look: true,
             panel: None,
+            harness_icons: Default::default(),
             now: 0.0,
             utc_offset: 0,
             frame: 0.0,

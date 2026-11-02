@@ -24,6 +24,7 @@ pub struct Frame {
     /// herdr's theme, panorama's colour settings, and the open key as herdr binds it.
     pub theme: Option<Tokens>,
     pub settings: PanelSettings,
+    pub harness_icons: panorama_core::view::harness::HarnessIcons,
     pub open_key: (String, String),
 }
 
@@ -35,3 +36,6 @@ impl Frame {
         self.frame = super::clock::frame_at(now);
     }
 }
+
+#[cfg(test)]
+mod tests;

@@ -92,6 +92,7 @@ fn a_tab_without_an_orchestrator_shows_the_graph_with_the_shown_one_opened() {
         utc_offset: 0,
         theme: None,
         settings: Default::default(),
+        harness_icons: Default::default(),
         open_key: ("pfx+spc".into(), "pfx+spc".into()),
     };
     let text = p.paint(46, 45, &f).text();
@@ -134,6 +135,7 @@ fn the_docked_view_needs_a_pane_narrower_than_the_wide_layout() {
         utc_offset: 0,
         theme: None,
         settings: Default::default(),
+        harness_icons: Default::default(),
         open_key: ("pfx+spc".into(), "pfx+spc".into()),
     };
     let mut p = panel();
@@ -151,6 +153,7 @@ fn frame() -> crate::panel::paint::Frame {
         utc_offset: 0,
         theme: None,
         settings: Default::default(),
+        harness_icons: Default::default(),
         open_key: ("pfx+spc".into(), "pfx+spc".into()),
     }
 }

@@ -57,6 +57,7 @@ fn look(now: f64) -> Frame {
         utc_offset: 0,
         theme: None,
         settings: Default::default(),
+        harness_icons: Default::default(),
         open_key: ("pfx+spc".into(), "pfx+spc".into()),
     }
 }

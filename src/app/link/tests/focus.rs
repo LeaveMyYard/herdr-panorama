@@ -134,6 +134,7 @@ async fn herdrs_focus_switches_the_docked_panels_look_too() {
         utc_offset: 0,
         theme: None,
         settings: Default::default(),
+        harness_icons: Default::default(),
         open_key: ("pfx+spc".into(), "pfx+spc".into()),
     };
     let bg = |d: &mut Driver| {

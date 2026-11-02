@@ -42,11 +42,12 @@ fn label(st: &Status) -> &'static str {
     }
 }
 
-/// The threads an entry lists: not the session's own.
+/// Codex keeps its default child hierarchy in the session thread. Claude session
+/// placeholders stay suppressed, as before.
 fn threads(o: &Orchestrator) -> impl Iterator<Item = &Thread> {
     o.threads
         .iter()
-        .filter(|t| t.source != ThreadSource::Session)
+        .filter(|t| o.harness == "codex" || t.source != ThreadSource::Session)
 }
 
 /// The entry's state. herdr reporting the session working counts as working, blocked as

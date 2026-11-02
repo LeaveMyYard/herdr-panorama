@@ -21,6 +21,7 @@ impl Actor {
             utc_offset: clock::utc_offset(),
             theme: read.theme,
             settings: read.panel,
+            harness_icons: read.harness_icons,
             open_key: read.open_key,
         });
         self.draw(now, cause)
