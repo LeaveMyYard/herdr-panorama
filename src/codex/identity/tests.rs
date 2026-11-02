@@ -19,7 +19,7 @@ fn fixture(thread: Value, delay: bool) -> (tempfile::TempDir, crate::codex::Opti
     std::fs::write(
         &path,
         format!(
-            r#"#!/usr/bin/python3
+            r#"#!/usr/bin/env python3
 import json,sys,pathlib,os,time
 home=pathlib.Path(__file__).parent
 (home/'pid').write_text(str(os.getpid()))
@@ -45,7 +45,7 @@ for line in sys.stdin:
     let opts = crate::codex::Options {
         executable: path,
         codex_home: dir.path().into(),
-        timeout: Duration::from_millis(350),
+        timeout: Duration::from_secs(5),
         refresh_interval: Duration::from_secs(5),
     };
     (dir, opts)
@@ -178,21 +178,70 @@ async fn wrong_pane_agent_child_or_unavailable_metadata_never_registers() {
 }
 #[tokio::test(flavor = "current_thread")]
 async fn metadata_timeout_reaps_only_its_owned_child() {
-    let (dir, options) = fixture(thread(), true);
-    let mut unrelated = std::process::Command::new("/bin/sleep")
-        .arg("30")
-        .spawn()
-        .unwrap();
-    assert!(root::verify(&options, ROOT).await.is_err());
-    let pid = std::fs::read_to_string(dir.path().join("pid")).unwrap();
-    #[cfg(target_os = "linux")]
-    assert!(!std::path::Path::new(&format!("/proc/{pid}")).exists());
-    #[cfg(not(target_os = "linux"))]
-    let _ = pid;
-    assert!(unrelated.try_wait().unwrap().is_none());
-    unrelated.kill().unwrap();
-    unrelated.wait().unwrap();
+    let (dir, mut options) = fixture(thread(), false);
+    // A native shell peer makes readiness independent of cold Python startup.
+    // Its exact PID is published before the bounded RPC deliberately stalls.
+    std::fs::write(
+        &options.executable,
+        r#"#!/bin/sh
+fixture_dir=${0%/*}
+printf '%s' "$$" > "$fixture_dir/pid"
+while IFS= read -r line; do
+    case "$line" in
+        *'"method":"initialize"'*) printf '%s\n' '{"id":1,"result":{}}' ;;
+        *'"method":"thread/read"'*)
+            printf '%s' ready > "$fixture_dir/ready"
+            IFS= read -r blocked
+            exit 1 ;;
+    esac
+done
+"#,
+    )
+    .unwrap();
+    options.timeout = Duration::from_secs(1);
+    let mut unrelated = TestChild(
+        std::process::Command::new("/bin/sleep")
+            .arg("30")
+            .spawn()
+            .unwrap(),
+    );
+    let ready = async {
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while !dir.path().join("ready").exists() {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+            let raw = std::fs::read_to_string(dir.path().join("pid"))
+                .unwrap()
+                .parse::<i32>()
+                .unwrap();
+            let pid = rustix::process::Pid::from_raw(raw).unwrap();
+            assert!(
+                rustix::process::test_kill_process(pid).is_ok(),
+                "owned peer must be alive and ready before timeout"
+            );
+            pid
+        })
+        .await
+        .expect("owned metadata peer reached readiness")
+    };
+    let before = std::time::Instant::now();
+    let verify = tokio::time::timeout(Duration::from_secs(5), root::verify(&options, ROOT));
+    let (result, pid) = tokio::join!(verify, ready);
+    assert_eq!(
+        result.expect("identity deadline must fire before outer test bound"),
+        Err("Codex metadata read timed out")
+    );
+    assert!(before.elapsed() < Duration::from_secs(3));
+    assert_eq!(
+        rustix::process::test_kill_process(pid),
+        Err(rustix::io::Errno::SRCH),
+        "owned child must be killed and reaped on every platform"
+    );
+    assert!(unrelated.0.try_wait().unwrap().is_none());
+    unrelated.0.kill().unwrap();
+    unrelated.0.wait().unwrap();
 }
+
 #[test]
 fn embedded_ancestry_requires_unambiguous_flag_and_start_identity() {
     let mut procs = FakeProcesses::default();
@@ -587,7 +636,7 @@ async fn metadata_read_races_revalidate_foreground_start_and_native_identity() {
     use std::{cell::Cell, rc::Rc};
     for transition in ["foreground", "start", "native"] {
         let (dir, mut options) = fixture(thread(), false);
-        options.timeout = Duration::from_secs(2);
+        options.timeout = Duration::from_secs(10);
         std::fs::write(dir.path().join("pause"), "").unwrap();
         let env = state_env(dir.path());
         let store = store::Store::lock(&env, "w1:p1").unwrap();
@@ -612,7 +661,7 @@ async fn metadata_read_races_revalidate_foreground_start_and_native_identity() {
         let client = fake.client();
         let binding = bind::bind(&client, &options, request(ROOT, true), &store, &table);
         let mutate = async {
-            tokio::time::timeout(Duration::from_secs(1), async {
+            tokio::time::timeout(Duration::from_secs(8), async {
                 while !dir.path().join("reading").exists() {
                     tokio::time::sleep(Duration::from_millis(2)).await;
                 }
@@ -686,4 +735,12 @@ fn held_store_directory_cannot_be_redirected_by_a_path_swap() {
         ),
         None
     );
+}
+
+struct TestChild(std::process::Child);
+impl Drop for TestChild {
+    fn drop(&mut self) {
+        let _ = self.0.kill();
+        let _ = self.0.wait();
+    }
 }
