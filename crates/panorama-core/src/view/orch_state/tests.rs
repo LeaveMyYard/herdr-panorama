@@ -157,3 +157,32 @@ fn bare_codex_preserves_authoritative_runtime_without_inventing_completion() {
     // The pre-existing Claude empty-session display remains compatible.
     assert_eq!(orch_state(&legacy, 0.0, None).st, Status::Done);
 }
+
+#[test]
+fn codex_history_age_and_synthetic_main_do_not_replace_root_runtime() {
+    let mut o: Orchestrator = serde_json::from_value(serde_json::json!({
+        "pane_id":"p", "tab_id":null, "tab_label":"Codex", "session_id":"root",
+        "harness":"codex", "herdr_status":"done", "last_activity":1,
+        "threads":[{"id":"codex:root", "name":"History", "source":"session", "status":"active",
+            "agents":[{"id":"main:codex:p", "status":"run"}, {"id":"child", "status":"unknown"}]}]
+    }))
+    .unwrap();
+    let ages = Some(Ages {
+        now: 1000.0,
+        stale_after: 10.0,
+    });
+    assert_eq!(orch_state(&o, 0.0, ages).st, Status::Done);
+    o.herdr_status = HerdrStatus::Unknown;
+    assert_eq!(
+        orch_state(&o, 0.0, ages).st,
+        Status::Unknown("unknown".into())
+    );
+    o.herdr_status = HerdrStatus::Idle;
+    assert_eq!(orch_state(&o, 0.0, ages).st, Status::Stale);
+    o.herdr_status = HerdrStatus::Done;
+    o.threads[0].id = "another-session".into();
+    assert_eq!(orch_state(&o, 0.0, ages).st, Status::Running);
+    o.threads[0].id = "codex:root".into();
+    o.threads[0].source = ThreadSource::Explicit;
+    assert_eq!(orch_state(&o, 0.0, ages).st, Status::Running);
+}

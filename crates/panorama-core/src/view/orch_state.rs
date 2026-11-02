@@ -5,7 +5,7 @@
 use super::anim::{clock, glyph, spin};
 use super::state::View;
 use super::text::ago;
-use crate::model::{Agent, BgTask, HerdrStatus, Orchestrator, Status, Swarm};
+use crate::model::{Agent, BgTask, HerdrStatus, Orchestrator, Status, Swarm, Thread, ThreadSource};
 
 /// The clock the ages are judged by: now, and how long idle reads "stale".
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -164,34 +164,63 @@ pub fn state_of(
 /// counts as working, blocked as blocked, and its open questions as needs you. With `ages`:
 /// waiting's age and stale (turn 8).
 pub fn orch_state(o: &Orchestrator, frame: f64, ages: Option<Ages>) -> OrchState {
+    let codex = o.harness == "codex";
     let stale_label = ages
+        .filter(|_| !codex || o.herdr_status == HerdrStatus::Idle)
         .filter(|a| a.is_stale(o))
         .and_then(|a| o.last_activity.map(|t| format!("stale {}", ago(a.now - t))));
-    let agents: Vec<&Agent> = o.agents().collect();
+    // Codex's synthetic main agent mirrors herdr. Child/report attention is
+    // meaningful, but neither its session card nor its history decides runtime.
+    let agents: Vec<&Agent> = o
+        .threads
+        .iter()
+        .flat_map(|thread| {
+            thread
+                .agents
+                .iter()
+                .filter(move |agent| !codex_root(o, thread, agent))
+        })
+        .collect();
     let extras = Extras {
         working: o.herdr_status == HerdrStatus::Working,
         blocked: o.herdr_status == HerdrStatus::Blocked,
-        waiting: !o.inbox.is_empty(),
+        waiting: !o.inbox.is_empty()
+            || (codex && agents.iter().any(|agent| !agent.question_ids.is_empty())),
         bg: &o.bg,
         stale_label,
     };
-    let bare_codex = o.harness == "codex" && o.threads.is_empty();
     let state = state_of(
         &agents,
         // Preserve the legacy Claude empty-session display. An unobserved harness
         // has no evidence of completed work merely because its thread list is empty.
-        (bare_codex && o.herdr_status == HerdrStatus::Done && o.inbox.is_empty())
-            || ((o.harness == "claude" || !o.threads.is_empty())
-                && o.threads.iter().all(|t| t.is_done())),
+        !codex
+            && (o.harness == "claude" || !o.threads.is_empty())
+            && o.threads.iter().all(|t| t.is_done()),
         frame,
         &extras,
         ages,
     );
-    if bare_codex && o.herdr_status == HerdrStatus::Unknown && state.st == Status::Queued {
-        OrchState::new(Status::Unknown("unknown".into()), "?", "unknown")
-    } else {
-        state
+    if codex && state.st == Status::Queued {
+        match o.herdr_status {
+            HerdrStatus::Done => return OrchState::new(Status::Done, "✓", "all done"),
+            HerdrStatus::Unknown => {
+                return OrchState::new(Status::Unknown("unknown".into()), "?", "unknown");
+            }
+            _ => {}
+        }
     }
+    state
+}
+
+/// Only the collector's exact associated session/root pair mirrors pane runtime.
+/// A child or report may share its role, name or even a main-prefixed ID.
+pub(super) fn codex_root(o: &Orchestrator, thread: &Thread, agent: &Agent) -> bool {
+    o.harness == "codex"
+        && thread.source == ThreadSource::Session
+        && o.session_id
+            .as_ref()
+            .is_some_and(|id| thread.id == format!("codex:{id}"))
+        && agent.id == format!("main:codex:{}", o.pane_id)
 }
 
 #[cfg(test)]
