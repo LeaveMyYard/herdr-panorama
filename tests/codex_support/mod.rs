@@ -26,6 +26,10 @@ impl Fixture {
         // One protocol fixture shared with adapter tests. It rejects every RPC
         // other than initialization and read-only thread history operations.
         let mut source = include_str!("../../src/codex/tests/fixture.py").to_owned();
+        source = source.replace("'cwd': '/same/cwd'", "'source':'cli', 'cwd': '/same/cwd'");
+        if mode == "complete" {
+            source = source.replace("['child-a', 'foreign']", "['child-a']");
+        }
         for (alias, id) in [
             ("root-a", ROOT_A),
             ("root-b", ROOT_B),
@@ -81,6 +85,25 @@ impl Fixture {
             .lines()
             .map(|line| serde_json::from_str(line).unwrap())
             .collect()
+    }
+
+    pub fn binary(&self, socket: &Path) -> std::process::Command {
+        let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_panorama"));
+        command
+            .env_clear()
+            .env("PATH", format!("{}:/usr/bin:/bin", self.root().display()))
+            .env("HOME", self.root())
+            .env("CODEX_HOME", self.root())
+            .env("XDG_STATE_HOME", self.root().join("state"))
+            .env("XDG_CONFIG_HOME", self.root().join("config"))
+            .env("CLAUDE_CONFIG_DIR", self.root().join("claude"))
+            .env("HERDR_SOCKET_PATH", socket)
+            .env("HERDR_BIN_PATH", "/nonexistent/herdr")
+            .env("HERDR_PLUGIN_CONFIG_DIR", self.root().join("config"))
+            .env("HERDR_INBOX_DB", self.root().join("missing.db"))
+            .env("PANORAMA_EVENTS_DIR", self.root().join("events"))
+            .env("PANORAMA_HOOKS_DIR", self.root().join("hooks"));
+        command
     }
 }
 

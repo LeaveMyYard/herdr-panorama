@@ -4,6 +4,7 @@
 mod channels;
 mod declared;
 mod history;
+pub(super) mod identity;
 mod tree;
 
 use crate::codex::{Observation, Observer, Options};
@@ -19,9 +20,11 @@ use std::path::PathBuf;
 pub(super) fn native_id(info: &serde_json::Map<String, serde_json::Value>) -> Option<&str> {
     (info.get("source")?.as_str()? == "herdr:codex"
         && info.get("agent")?.as_str()? == "codex"
-        && info.get("kind")?.as_str()? == "id")
-        .then(|| info.get("value")?.as_str())
-        .flatten()
+        && info
+            .get("kind")
+            .is_none_or(|kind| kind.as_str() == Some("id")))
+    .then(|| info.get("value")?.as_str())
+    .flatten()
 }
 
 pub(super) struct Details {

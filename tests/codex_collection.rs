@@ -148,6 +148,30 @@ fn foreign_or_missing_session_source_cannot_enrich_a_codex_pane() {
 }
 
 #[test]
+fn missing_native_kind_defaults_to_id_but_explicit_other_kind_is_rejected() {
+    let fixture = Fixture::new("paginated");
+    let mut collector = fixture.collector(true);
+    let mut snapshot = snapshot();
+    snapshot["agents"]
+        .as_array_mut()
+        .unwrap()
+        .retain(|a| a["pane_id"] == "codex-a");
+    snapshot["agents"][0]["agent_session"]
+        .as_object_mut()
+        .unwrap()
+        .remove("kind");
+    let swarm = ready(&mut collector, &snapshot);
+    assert_eq!(swarm.orchestrators[0].session_id.as_deref(), Some(ROOT_A));
+    assert!(!swarm.orchestrators[0].threads.is_empty());
+    let before = fixture.calls().len();
+    snapshot["agents"][0]["agent_session"]["kind"] = json!("path");
+    let swarm = ready(&mut collector, &snapshot);
+    assert!(swarm.orchestrators[0].session_id.is_none());
+    assert!(swarm.orchestrators[0].threads.is_empty());
+    assert_eq!(fixture.calls().len(), before);
+}
+
+#[test]
 fn collected_history_renders_through_existing_navigation_and_graph() {
     use panorama_core::view::{View, nav::nav, render_graph};
     let fixture = Fixture::new("paginated");
@@ -167,6 +191,9 @@ fn collected_history_renders_through_existing_navigation_and_graph() {
     assert!(text.contains("Claude Code"), "{text}");
     assert!(text.contains("Codex"), "{text}");
     assert!(text.contains("Synthetic prompt"), "{text}");
-    assert_eq!(swarm.orchestrators[1].threads[0].agents[0].activity, "command");
+    assert_eq!(
+        swarm.orchestrators[1].threads[0].agents[0].activity,
+        "command"
+    );
     assert!(text.contains("command"), "{text}");
 }

@@ -102,6 +102,7 @@ fn source_mode(env: PluginEnv, self_pane: SelfPane, wait: bool) -> impl FnMut() 
     if let Some(options) = crate::codex::Options::from_env(&env) {
         collector = collector.with_codex(options);
     }
+    collector = collector.with_codex_identity(env.clone(), herdr.clone());
     move || {
         collector.self_pane = self_pane
             .lock()

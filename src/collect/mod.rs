@@ -60,6 +60,7 @@ pub struct Options {
 /// The collector: its sessions, channels and pane processes, kept across collects.
 pub struct Collector {
     codex: Option<codex::Details>,
+    codex_identity: Option<codex::identity::LocalIdentity>,
     sessions: Sessions,
     channels: HashMap<String, Channel>,
     events_dir: PathBuf,
@@ -112,6 +113,7 @@ impl Collector {
     pub fn new(options: Options) -> Self {
         Self {
             codex: None,
+            codex_identity: None,
             sessions: Sessions::new(options.projects, options.hooks_dir),
             channels: HashMap::new(),
             events_dir: options.events_dir,
@@ -126,6 +128,17 @@ impl Collector {
     /// collectors never discover or read this machine's Codex home implicitly.
     pub fn with_codex(mut self, options: crate::codex::Options) -> Self {
         self.codex = Some(codex::Details::new(options, self.events_dir.clone()));
+        self
+    }
+
+    /// Resolve local plugin associations against the current pane process.
+    /// Mirrors do not install this resolver and cannot read local bindings.
+    pub fn with_codex_identity(
+        mut self,
+        env: herdr_agent_kit::plugin_env::PluginEnv,
+        herdr: herdr_agent_kit::herdr_api::blocking::Herdr,
+    ) -> Self {
+        self.codex_identity = Some(codex::identity::LocalIdentity::new(env, herdr));
         self
     }
 
@@ -157,6 +170,9 @@ impl Collector {
         stale_after: f64,
     ) -> Swarm {
         self.window = window;
+        if let Some(identity) = self.codex_identity.as_mut() {
+            identity.begin_collect();
+        }
         if let Some(details) = self.codex.as_mut() {
             details.begin_collect();
         }
