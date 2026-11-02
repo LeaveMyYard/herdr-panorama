@@ -18,6 +18,7 @@
 //! [`Scanner`]: herdr_agent_kit::agent_session::claude::Scanner
 
 pub mod agents;
+mod codex;
 pub mod events;
 pub mod liveness;
 pub mod mirror;
@@ -58,6 +59,8 @@ pub struct Options {
 
 /// The collector: its sessions, channels and pane processes, kept across collects.
 pub struct Collector {
+    codex: Option<codex::Details>,
+    codex_identity: Option<codex::identity::LocalIdentity>,
     sessions: Sessions,
     channels: HashMap<String, Channel>,
     events_dir: PathBuf,
@@ -109,6 +112,8 @@ impl Collector {
     /// A collector reading as `options` say.
     pub fn new(options: Options) -> Self {
         Self {
+            codex: None,
+            codex_identity: None,
             sessions: Sessions::new(options.projects, options.hooks_dir),
             channels: HashMap::new(),
             events_dir: options.events_dir,
@@ -117,6 +122,35 @@ impl Collector {
             window: 0.0,
             self_pane: None,
         }
+    }
+
+    /// Enable local Codex observations explicitly. Remote mirrors and bare test
+    /// collectors never discover or read this machine's Codex home implicitly.
+    pub fn with_codex(mut self, options: crate::codex::Options) -> Self {
+        self.codex = Some(codex::Details::new(options, self.events_dir.clone()));
+        self
+    }
+
+    /// Resolve local plugin associations against the current pane process.
+    /// Mirrors do not install this resolver and cannot read local bindings.
+    pub fn with_codex_identity(
+        mut self,
+        env: herdr_agent_kit::plugin_env::PluginEnv,
+        herdr: herdr_agent_kit::herdr_api::blocking::Herdr,
+    ) -> Self {
+        self.codex_identity = Some(codex::identity::LocalIdentity::new(env, herdr));
+        self
+    }
+
+    /// Whether the current snapshot has queued local history reads. Only the
+    /// one-shot CLI uses this to warm up; interactive collection never waits.
+    pub fn codex_pending(&self, swarm: &Swarm) -> bool {
+        self.codex.as_ref().is_some_and(|details| {
+            swarm
+                .orchestrators
+                .iter()
+                .any(|orchestrator| details.pending(orchestrator))
+        })
     }
 
     /// The sessions these ones continued in, as far as the transcripts read so far tell.
@@ -136,6 +170,12 @@ impl Collector {
         stale_after: f64,
     ) -> Swarm {
         self.window = window;
+        if let Some(identity) = self.codex_identity.as_mut() {
+            identity.begin_collect();
+        }
+        if let Some(details) = self.codex.as_mut() {
+            details.begin_collect();
+        }
         let mut swarm = Swarm {
             generated_at: now,
             herdr_ok: snapshot.is_some(),
@@ -157,7 +197,7 @@ impl Collector {
             .into_iter()
             .flatten()
             .filter_map(Value::as_object)
-            .filter(|a| str_of(a, "agent") == Some("claude"))
+            .filter(|a| matches!(str_of(a, "agent"), Some("claude" | "codex")))
             .collect();
         let per_tab =
             |a: &Map<String, Value>| agents.iter().filter(|b| tab_of(b) == tab_of(a)).count();

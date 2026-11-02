@@ -58,7 +58,7 @@ impl<O: Ops> Manager<O> {
     }
 
     /// Which tabs should have a panel (the model's local orchestrators, checked against the
-    /// snapshot: a claude pane, not in the home tab, in the home pane's workspace) and which
+    /// snapshot: a supported agent pane, not in the home tab, in the home pane's workspace) and which
     /// panels exist. `single`: `cockpit_follow_tabs = "single"`, only tabs whose one pane is
     /// the orchestrator.
     pub async fn survey(
@@ -85,7 +85,7 @@ impl<O: Ops> Manager<O> {
             let Some(tab) = p
                 .tab_id
                 .clone()
-                .filter(|_| p.agent.as_deref() == Some("claude"))
+                .filter(|_| matches!(p.agent.as_deref(), Some("claude" | "codex")))
             else {
                 continue;
             };

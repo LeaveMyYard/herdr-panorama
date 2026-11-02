@@ -125,12 +125,13 @@ fn esc_cancels_and_a_harness_that_is_coming_soon_starts_nothing() {
     let modal = render(&f.form(&f.view()), 96, 32);
     let next = modal.steps.iter().find(|s| s.d == 1).unwrap();
     assert_eq!(f.click(next.x, next.y, &modal), Outcome::Changed);
-    assert_ne!(f.harness, 0);
+    f.click(next.x, next.y, &modal);
     assert!(!HARNESSES[f.harness].supported());
     assert_eq!(f.key(FormKey::Submit, later), Outcome::Nothing);
     assert!(f.status.is_none() && !f.busy);
     let modal = render(&f.form(&f.view()), 96, 32);
     let back = modal.steps.iter().find(|s| s.d == -1).unwrap();
+    f.click(back.x, back.y, &modal);
     f.click(back.x, back.y, &modal);
     assert_eq!(f.harness, 0);
     assert_eq!(
@@ -220,4 +221,23 @@ fn the_carousel_is_a_focus_stop_where_left_right_switch_the_harness() {
     assert_eq!(f.harness, 0);
     let view = f.view();
     assert!(!f.form(&view).carousel, "nothing focused while it starts");
+}
+
+#[test]
+fn codex_can_be_selected_and_submitted_from_the_carousel() {
+    let now = Instant::now();
+    let later = now + ARM;
+    let mut f = NewAgentForm::new("", now);
+    typed(&mut f, "Codex task", later);
+    f.key(FormKey::Up, later);
+    f.key(FormKey::Right, later);
+    assert_eq!(
+        f.key(FormKey::Submit, later),
+        Outcome::Start {
+            name: "Codex task".into(),
+            cwd: None,
+            kind: "codex",
+        }
+    );
+    assert_eq!(f.status.as_deref(), Some("starting Codex…"));
 }

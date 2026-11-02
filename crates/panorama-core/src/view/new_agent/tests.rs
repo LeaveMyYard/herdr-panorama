@@ -114,7 +114,11 @@ fn the_modal_is_centred_and_a_small_screen_only_clips_it() {
 fn the_harness_steps_wrap_round() {
     assert_eq!(step(0, -1), HARNESSES.len() - 1);
     assert_eq!(step(HARNESSES.len() - 1, 1), 0);
-    assert!(HARNESSES[0].supported() && HARNESSES[1..].iter().all(|h| !h.supported()));
+    assert!(
+        HARNESSES[0].supported()
+            && HARNESSES[1].supported()
+            && HARNESSES[2..].iter().all(|h| !h.supported())
+    );
 }
 
 #[test]
@@ -139,7 +143,7 @@ fn a_focused_carousel_shows_its_name_in_the_accent() {
         ('C', ACCENT, true)
     );
     let soon = Form {
-        harness: 1,
+        harness: 2,
         ..form()
     };
     assert_eq!(name_at(&soon).1, MUTED);

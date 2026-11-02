@@ -147,7 +147,7 @@ fn first_line(cv: &mut Screen, e: &Entry, view: &View) -> i32 {
     } else {
         FG
     };
-    let name = Seg::new(trunc(&e.o.tab_label, room), name_fg).bold_if(e.docked);
+    let name = Seg::new(trunc(&crate::view::harness::title(e.o), room), name_fg).bold_if(e.docked);
     cv.segs(
         2,
         e.y,

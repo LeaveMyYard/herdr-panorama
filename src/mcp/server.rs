@@ -111,8 +111,13 @@ impl ServerHandler for Server {
     async fn call_tool(
         &self,
         request: CallToolRequestParams,
-        _context: RequestContext<RoleServer>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResponse, ErrorData> {
+        // rmcp moves wire params._meta into RequestContext on deserialization.
+        let sid = match self.sessions.for_call(&context.meta).await {
+            Ok(sid) => sid,
+            Err(why) => return Ok(CallToolResult::error(vec![ContentBlock::text(why)]).into()),
+        };
         if request.name != NAME {
             let msg = format!("Unknown tool: {}", request.name);
             return Ok(CallToolResult::error(vec![ContentBlock::text(msg)]).into());
@@ -125,7 +130,6 @@ impl ServerHandler for Server {
                 return Ok(CallToolResult::error(vec![ContentBlock::text(msg)]).into());
             }
         };
-        let sid = self.sessions.current().await;
         Ok(result(&report_thread(
             r,
             sid.as_deref(),

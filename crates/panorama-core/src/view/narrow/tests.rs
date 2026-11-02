@@ -52,7 +52,7 @@ fn the_done_card_selected_and_unfolded_and_a_machine_group() {
         r[18],
         "─ box ────────────────────────────────────────────────────────────────"
     );
-    assert_eq!(r[19], "  ✓  p2  all done");
+    assert_eq!(r[19], "  ✓  Claude Code · p2  all done");
     assert_eq!(r[21], "  +   New agent  n");
 }
 
@@ -68,8 +68,8 @@ fn a_long_list_scrolls_to_the_selection() {
         },
     );
     assert_eq!(s.columns[0].offset, 19);
-    assert_eq!(r[39], "  ✓  q28  all done");
-    assert_eq!(r[41], "▌ ✓  q29  all done  agents");
+    assert_eq!(r[39], "  ✓  Claude Code · q28  all done");
+    assert_eq!(r[41], "▌ ✓  Claude Code · q29  all done  agents");
     // the narrow legend at the bottom
     assert_eq!(
         r[42],

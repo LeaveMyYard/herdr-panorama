@@ -131,3 +131,49 @@ fn empty_values_are_left_out_as_python_leaves_out_falsy_ones() {
         BARE
     );
 }
+
+#[test]
+fn codex_emit_uses_exact_thread_and_explicit_override_without_shared_session() {
+    let dir = tempfile::tempdir().unwrap();
+    let id = "11111111-1111-4111-8111-111111111111";
+    let make_env = |id: Option<&str>| {
+        let mut vars = vec![
+            ("PANORAMA_EVENTS_DIR", dir.path().to_str().unwrap()),
+            ("CLAUDE_CODE_SESSION_ID", "claude"),
+            ("CODEX_SESSION_ID", "shared-root"),
+        ];
+        if let Some(id) = id {
+            vars.push(("CODEX_THREAD_ID", id));
+        }
+        PluginEnv::from_vars(vars, None, 1000)
+    };
+    let path = |result| match result {
+        Ok(Done::Wrote(path)) => path,
+        other => panic!("{other:?}"),
+    };
+    assert_eq!(
+        path(emit(&args(&["--thread", "work"]), &make_env(Some(id)), 0.0)),
+        dir.path().join(format!("{id}.jsonl"))
+    );
+    assert_eq!(
+        path(emit(
+            &args(&["--thread", "work", "--session", "explicit"]),
+            &make_env(Some("invalid")),
+            0.0
+        )),
+        dir.path().join("explicit.jsonl")
+    );
+    assert!(
+        emit(
+            &args(&["--thread", "work"]),
+            &make_env(Some("invalid")),
+            0.0
+        )
+        .is_err()
+    );
+    assert_eq!(
+        path(emit(&args(&["--thread", "work"]), &make_env(None), 0.0)),
+        dir.path().join("claude.jsonl")
+    );
+    assert!(!dir.path().join("shared-root.jsonl").exists());
+}

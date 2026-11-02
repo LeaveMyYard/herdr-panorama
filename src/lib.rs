@@ -7,6 +7,7 @@
 //! `panels`, the per-tab panels' manager; `home`, the home tab; `new_agent`, + New agent.
 
 pub mod app;
+pub mod codex;
 pub mod collect;
 pub mod contract;
 pub mod core;

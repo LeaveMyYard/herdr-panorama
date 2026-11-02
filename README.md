@@ -37,6 +37,12 @@ description = "swarm view"
 (reference copy and render in [docs/design/](docs/design/)). The design, the data sources and the
 open questions are in [docs/DESIGN.md](docs/DESIGN.md).
 
+**Local Codex support is available in the Rust view.** Claude Code and Codex panes share
+the list, navigation and launcher. Exact session associations add Codex turns, tools and
+child-agent history; unbound panes remain visible. See [Codex setup and limits](docs/codex.md)
+for optional hooks, existing-session binding and MCP reporting. The Python entrypoint remains
+Claude-only during the Rust port.
+
 | Full screen (160 columns) | Side split (70 columns) |
 |---|---|
 | ![](docs/screenshots/wide-160x45.png) | ![](docs/screenshots/narrow-70x45.png) |

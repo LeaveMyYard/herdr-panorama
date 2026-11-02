@@ -85,8 +85,64 @@ fn two_agents_in_one_tab_carry_their_pane_and_others_are_skipped() {
         [
             ("w1:p1", "work · w1:p1", "blocked"),
             ("w1:p2", "work · w1:p2", "unknown"),
+            ("w1:p3", "work · w1:p3", "unknown"),
             ("w1:p4", "zsh", "unknown")
         ]
     );
-    assert_eq!(sw.orchestrators[2].tab_no, None); // a tab herdr did not list
+    assert_eq!(sw.orchestrators[3].tab_no, None); // a tab herdr did not list
+}
+
+#[test]
+fn codex_without_history_keeps_exact_identity_and_never_reads_claude_history() {
+    let dir = tempfile::tempdir().unwrap();
+    // A Claude transcript with the same id must not enrich the Codex pane.
+    let project = dir.path().join("-synthetic");
+    std::fs::create_dir_all(&project).unwrap();
+    std::fs::write(
+        project.join("same.jsonl"),
+        "{\"type\":\"summary\",\"summary\":\"wrong harness\"}\n",
+    )
+    .unwrap();
+    let snap = json!({
+        "tabs": [{"tab_id": "t", "label": "shared", "workspace_id": "w"}],
+        "panes": [{"pane_id": "panel", "tab_id": "t"}],
+        "agents": [
+            {"pane_id": "c1", "tab_id": "t", "agent": "claude"},
+            {"pane_id": "x1", "tab_id": "t", "agent": "codex", "agent_status": "busy",
+             "workspace_id": "w", "focused": true, "cwd": "/synthetic",
+             "agent_session": {"kind": "id", "value": "same", "source":"herdr:codex", "agent":"codex"}},
+            {"pane_id": "x2", "tab_id": "t", "agent": "codex", "cwd": "/synthetic"},
+            {"pane_id": "x3", "tab_id": "t", "agent": "codex",
+             "agent_session": {"kind": "path", "value": "same"}},
+            {"pane_id": "other", "tab_id": "t", "agent": "opencode"}
+        ]
+    });
+    let mut c = collector(dir.path());
+    c.self_pane = Some("panel".into());
+    let sw = c.collect(Some(&snap), None, 1.0, 3600.0, 60.0);
+    assert_eq!(sw.orchestrators.len(), 4);
+    let x = &sw.orchestrators[1];
+    assert_eq!(
+        (&*x.harness, x.session_id.as_deref()),
+        ("codex", Some("same"))
+    );
+    assert_eq!((&*x.tab_label, x.tab_no), ("shared · x1", Some(1)));
+    assert_eq!(x.herdr_status.code(), "busy");
+    assert!(x.focused);
+    assert_eq!(x.cwd.as_deref(), Some("/synthetic"));
+    assert_eq!(x.workspace_id.as_deref(), Some("w"));
+    for x in &sw.orchestrators[1..] {
+        assert!(x.transcript.is_none() && x.threads.is_empty() && x.last_activity.is_none());
+    }
+    assert!(sw.orchestrators[2].session_id.is_none());
+    assert!(sw.orchestrators[3].session_id.is_none());
+    // A Codex-only tab is dockable too.
+    let mut only = snap;
+    only["agents"].as_array_mut().unwrap().remove(0);
+    assert_eq!(
+        c.collect(Some(&only), None, 1.0, 3600.0, 60.0)
+            .docked
+            .as_deref(),
+        Some("x1")
+    );
 }

@@ -182,7 +182,7 @@ async fn a_tab_that_could_not_be_made_or_has_no_pane() {
 async fn a_harness_that_is_coming_soon_is_refused_by_the_start_itself() {
     // the form is not the only guard
     let w = World::default();
-    for kind in ["codex", "opencode", "gemini", "droid", "nonsense"] {
+    for kind in ["opencode", "gemini", "droid", "nonsense"] {
         assert!(
             new_agent(&w, "docs", None, kind, false).await.is_err(),
             "{kind}"
@@ -224,4 +224,38 @@ async fn a_tab_herdr_cannot_describe_after_a_failed_start_is_kept() {
             .iter()
             .any(|c| c.starts_with("close") || c.starts_with("focus"))
     );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn codex_uses_the_same_panel_focus_and_safe_failure_cleanup() {
+    let w = World::default();
+    assert_eq!(
+        new_agent(&w, "Codex task", None, "codex", true).await,
+        Ok("codex-task".into())
+    );
+    assert_eq!(
+        w.calls(),
+        [
+            "layout codex-task -",
+            "fit w1:p90",
+            "start codex-task codex w1:p91",
+            "focus_tab w1:t9",
+            "focus_pane w1:p91"
+        ]
+    );
+    for (late, unknown, closed) in [
+        (false, false, true),
+        (true, false, false),
+        (false, true, false),
+    ] {
+        let w = World {
+            fail: vec!["start"],
+            late,
+            unknown,
+            ..World::default()
+        };
+        let result = new_agent(&w, "Codex task", None, "codex", false).await;
+        assert_eq!(result.is_ok(), late);
+        assert_eq!(w.calls().iter().any(|c| c == "close w1:t1"), closed);
+    }
 }
