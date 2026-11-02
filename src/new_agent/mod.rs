@@ -7,6 +7,7 @@
 //!   arming; keys and clicks in, a start or a cancel out (no IO);
 //! - [`start`]: starting the agent through [`ops::StartOps`] ([`real`] is herdr itself).
 
+mod codex;
 pub mod form;
 pub mod keys;
 pub mod ops;

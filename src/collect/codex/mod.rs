@@ -1,19 +1,65 @@
 //! Neutral Codex observations enrich an already visible herdr pane. Identity and
 //! pane runtime status remain herdr's; history supplies phases and child details.
 
-pub(super) mod channels;
+mod channels;
 mod declared;
 mod history;
 mod tree;
 
-use crate::codex::Observation;
+use crate::codex::{Observation, Observer, Options};
 use crate::collect::agents::Arena;
 use crate::collect::py::chars;
 use crate::collect::threads::{Draft, finish};
 use channels::Reports;
 use panorama_core::model::{Orchestrator, ThreadSource};
+use std::path::PathBuf;
 
-pub(super) fn enrich(
+/// Only herdr's native Codex identity is authoritative; another harness's
+/// session or a custom source cannot become a Codex history lookup key.
+pub(super) fn native_id(info: &serde_json::Map<String, serde_json::Value>) -> Option<&str> {
+    (info.get("source")?.as_str()? == "herdr:codex"
+        && info.get("agent")?.as_str()? == "codex"
+        && info.get("kind")?.as_str()? == "id")
+        .then(|| info.get("value")?.as_str())
+        .flatten()
+}
+
+pub(super) struct Details {
+    observer: Observer,
+    channels: channels::Channels,
+}
+
+impl Details {
+    pub(super) fn new(options: Options, events_dir: PathBuf) -> Self {
+        Self {
+            observer: Observer::new(options),
+            channels: channels::Channels::new(events_dir),
+        }
+    }
+
+    pub(super) fn begin_collect(&mut self) {
+        self.channels.begin_collect();
+    }
+
+    pub(super) fn pending(&self, orchestrator: &Orchestrator) -> bool {
+        orchestrator.harness == "codex"
+            && orchestrator
+                .session_id
+                .as_deref()
+                .is_some_and(|id| self.observer.is_pending(id))
+    }
+
+    pub(super) fn enrich(&mut self, orchestrator: &mut Orchestrator, now: f64, window: f64) {
+        let Some(id) = orchestrator.session_id.clone() else {
+            return;
+        };
+        let observation = self.observer.observe(&id);
+        let reports = self.channels.read(&id, observation.as_ref(), now);
+        enrich(orchestrator, observation.as_ref(), &reports, now, window);
+    }
+}
+
+fn enrich(
     orchestrator: &mut Orchestrator,
     observation: Option<&Observation>,
     reports: &[Reports],

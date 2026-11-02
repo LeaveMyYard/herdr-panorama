@@ -110,7 +110,7 @@ fn codex_without_history_keeps_exact_identity_and_never_reads_claude_history() {
             {"pane_id": "c1", "tab_id": "t", "agent": "claude"},
             {"pane_id": "x1", "tab_id": "t", "agent": "codex", "agent_status": "busy",
              "workspace_id": "w", "focused": true, "cwd": "/synthetic",
-             "agent_session": {"kind": "id", "value": "same"}},
+             "agent_session": {"kind": "id", "value": "same", "source":"herdr:codex", "agent":"codex"}},
             {"pane_id": "x2", "tab_id": "t", "agent": "codex", "cwd": "/synthetic"},
             {"pane_id": "x3", "tab_id": "t", "agent": "codex",
              "agent_session": {"kind": "path", "value": "same"}},

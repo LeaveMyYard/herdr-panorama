@@ -7,6 +7,13 @@ use serde_json::{Value, json};
 use std::path::Path;
 use std::time::{Duration, Instant};
 
+pub const ROOT_A: &str = "10000000-0000-4000-8000-000000000001";
+pub const ROOT_B: &str = "10000000-0000-4000-8000-000000000002";
+pub const CHILD: &str = "10000000-0000-4000-8000-000000000003";
+pub const GRANDCHILD: &str = "10000000-0000-4000-8000-000000000004";
+pub const REPLACEMENT: &str = "10000000-0000-4000-8000-000000000005";
+pub const FOREIGN: &str = "10000000-0000-4000-8000-000000000006";
+
 pub struct Fixture {
     pub dir: tempfile::TempDir,
 }
@@ -18,11 +25,18 @@ impl Fixture {
         let executable = dir.path().join("codex");
         // One protocol fixture shared with adapter tests. It rejects every RPC
         // other than initialization and read-only thread history operations.
-        std::fs::write(
-            &executable,
-            include_str!("../../src/codex/tests/fixture.py"),
-        )
-        .unwrap();
+        let mut source = include_str!("../../src/codex/tests/fixture.py").to_owned();
+        for (alias, id) in [
+            ("root-a", ROOT_A),
+            ("root-b", ROOT_B),
+            ("child-a", CHILD),
+            ("grand-a", GRANDCHILD),
+            ("replacement", REPLACEMENT),
+            ("foreign", FOREIGN),
+        ] {
+            source = source.replace(alias, id);
+        }
+        std::fs::write(&executable, source).unwrap();
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
@@ -78,9 +92,9 @@ pub fn snapshot() -> Value {
         "agents": [
             {"pane_id":"claude","tab_id":"t1","agent":"claude","agent_status":"idle","cwd":"/same/cwd"},
             {"pane_id":"codex-a","tab_id":"t2","agent":"codex","agent_status":"working","cwd":"/same/cwd",
-             "agent_session":{"kind":"id","value":"root-a"}},
+             "agent_session":{"kind":"id","value":ROOT_A,"source":"herdr:codex","agent":"codex"}},
             {"pane_id":"codex-b","tab_id":"t2","agent":"codex","agent_status":"blocked","cwd":"/same/cwd",
-             "agent_session":{"kind":"id","value":"root-b"}},
+             "agent_session":{"kind":"id","value":ROOT_B,"source":"herdr:codex","agent":"codex"}},
             {"pane_id":"unbound","tab_id":"t2","agent":"codex","agent_status":"idle","cwd":"/same/cwd"}
         ]
     })

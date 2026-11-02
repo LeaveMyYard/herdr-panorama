@@ -133,6 +133,10 @@ impl Collector {
         // Codex id (or cwd) in Claude's continuation or transcript index.
         if o.harness == "codex" {
             o.tab_label = label(a, tab, None, &o.pane_id, per_tab);
+            o.session_id = super::codex::native_id(info).map(str::to_owned);
+            if let Some(details) = self.codex.as_mut() {
+                details.enrich(&mut o, now, self.window);
+            }
             return o;
         }
         let since = since(now, self.window);

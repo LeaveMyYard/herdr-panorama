@@ -5,6 +5,7 @@
 pub mod json;
 pub mod print;
 pub mod pyjson;
+mod warmup;
 
 use crate::collect::liveness::claude_pid;
 use crate::collect::paths::{events_dir, hooks_dir};
@@ -77,6 +78,10 @@ pub type SelfPane = Arc<Mutex<Option<String>>>;
 
 /// [`source`] with the view's own pane read again on each collect.
 pub fn source_shared(env: PluginEnv, self_pane: SelfPane) -> impl FnMut() -> Swarm {
+    source_mode(env, self_pane, false)
+}
+
+fn source_mode(env: PluginEnv, self_pane: SelfPane, wait: bool) -> impl FnMut() -> Swarm {
     let herdr = blocking::Herdr::from_env().with_client("panorama");
     let mut config =
         ConfigFile::resolve(&env, || herdr.plugin_config_dir(PANORAMA_ID).ok().flatten());
@@ -94,6 +99,9 @@ pub fn source_shared(env: PluginEnv, self_pane: SelfPane) -> impl FnMut() -> Swa
         procs: true,
         pane_pid: Box::new(move |pane| claude_pid(&lookup, pane)),
     });
+    if let Some(options) = crate::codex::Options::from_env(&env) {
+        collector = collector.with_codex(options);
+    }
     move || {
         collector.self_pane = self_pane
             .lock()
@@ -104,19 +112,28 @@ pub fn source_shared(env: PluginEnv, self_pane: SelfPane) -> impl FnMut() -> Swa
         let questions = open_questions(&inbox::db_path(&env));
         let window = done_window(env.var("PANORAMA_DONE_WINDOW"), &cfg);
         let stale = stale_after(env.var("PANORAMA_STALE_AFTER"), &cfg);
-        collector.collect(
-            snapshot.as_ref(),
-            questions.as_deref(),
-            now(),
-            window,
-            stale,
-        )
+        let mut refresh = || {
+            let swarm = collector.collect(
+                snapshot.as_ref(),
+                questions.as_deref(),
+                now(),
+                window,
+                stale,
+            );
+            let pending = collector.codex_pending(&swarm);
+            (swarm, pending)
+        };
+        if wait {
+            warmup::collect(refresh)
+        } else {
+            refresh().0
+        }
     }
 }
 
 /// One collect of this machine's swarm, as the CLI builds it.
 pub fn build(env: &PluginEnv) -> Swarm {
-    source(env.clone(), None)()
+    source_mode(env.clone(), Arc::new(Mutex::new(None)), true)()
 }
 
 /// The text `panorama snapshot` prints in `format`, after `seconds` of collecting.
