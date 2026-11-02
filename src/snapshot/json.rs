@@ -87,6 +87,7 @@ fn thread(t: &Thread) -> J {
 fn orchestrator(o: &Orchestrator) -> J {
     J::obj([
         ("pane_id", J::str(&o.pane_id)),
+        ("harness", J::str(&o.harness)),
         ("tab_id", J::opt_str(o.tab_id.clone())),
         ("tab_label", J::str(&o.tab_label)),
         ("session_id", J::opt_str(o.session_id.clone())),

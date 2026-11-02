@@ -157,7 +157,7 @@ impl Collector {
             .into_iter()
             .flatten()
             .filter_map(Value::as_object)
-            .filter(|a| str_of(a, "agent") == Some("claude"))
+            .filter(|a| matches!(str_of(a, "agent"), Some("claude" | "codex")))
             .collect();
         let per_tab =
             |a: &Map<String, Value>| agents.iter().filter(|b| tab_of(b) == tab_of(a)).count();

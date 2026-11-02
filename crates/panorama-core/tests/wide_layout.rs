@@ -72,10 +72,10 @@ fn the_wide_layout_has_the_three_columns_and_links() {
     assert_eq!(seg(&r, 3, 2..30), format!("╭{}╮", "─".repeat(26)));
     assert_eq!(seg(&r, 4, 2..5), "┃  ");
     let row = |y: usize| r[y].iter().collect::<String>();
-    assert!(row(4).contains("✗  Billing API") && seg(&r, 4, 0..31).contains("?1"));
+    assert!(row(4).contains("✗  Claude Code · Bi") && seg(&r, 4, 0..31).contains("?1"));
     assert!(row(5).contains("failed · working"));
     assert!(seg(&r, 6, 2..30).ends_with("─ pr-review ─╯"));
-    assert!(row(14).contains("!  Docs site") && row(15).contains("blocked"));
+    assert!(row(14).contains("!  Claude Code · Do") && row(15).contains("blocked"));
     // the selected thread unfolds into its steps with times
     assert!(row(4).contains("» PR #42 invoice export"));
     assert!(row(5).contains("review r2 · 21m"));
@@ -501,16 +501,14 @@ fn the_background_card_is_selectable_in_the_thread_column() {
 }
 
 /// test_current_card.py: the top border colour of the card titled `label`.
-fn top_border(s: &Screen, label: &str) -> Rgb {
-    let text = s.text();
-    let y = text
-        .lines()
-        .position(|r| r.chars().take(60).collect::<String>().contains(label))
-        .unwrap()
-        - 1;
-    let row: Vec<char> = text.lines().nth(y).unwrap().chars().collect();
-    let x = row.iter().position(|c| *c == '╭').unwrap();
-    s.cell(x as i32 + 5, y as i32).fg
+fn top_border(s: &Screen, pane: &str) -> Rgb {
+    // Identity, rather than a title substring: a prefixed title may be truncated.
+    let hit = s
+        .targets
+        .iter()
+        .find(|hit| hit.target == panorama_core::view::Target::Orch(pane.into()))
+        .unwrap();
+    s.cell(hit.x0 + 5, hit.y).fg
 }
 
 fn lum(c: Rgb) -> f64 {
@@ -546,7 +544,7 @@ fn the_selected_card_stays_apart_through_a_whole_pulse() {
                     ..View::default()
                 };
                 let s = render(&sw, &v, 160, 45);
-                let (sel, other) = (top_border(&s, &a.tab_label), top_border(&s, &b.tab_label));
+                let (sel, other) = (top_border(&s, &a.pane_id), top_border(&s, &b.pane_id));
                 worst_lum = worst_lum.min(lum(sel) - lum(other));
                 worst_dist = worst_dist.min(dist(sel, other));
             }
@@ -572,7 +570,7 @@ fn without_a_pulse_the_selection_is_unchanged() {
         now: demo_now(),
         ..View::default()
     };
-    assert_eq!(top_border(&render(&sw, &v, 160, 45), &a.tab_label), HI);
+    assert_eq!(top_border(&render(&sw, &v, 160, 45), &a.pane_id), HI);
 }
 
 #[test]

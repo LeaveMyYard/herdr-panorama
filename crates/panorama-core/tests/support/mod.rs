@@ -11,6 +11,9 @@ pub mod tree_design;
 /// The no-sessions words the Claude Code panel passes (Python's).
 pub const NO_SESSIONS: &str = "No Claude Code sessions in herdr";
 
+#[path = "../../../../tests/harness_goldens/mod.rs"]
+mod harness_goldens;
+
 use panorama_core::model::Swarm;
 use panorama_core::view::Screen;
 use panorama_core::view::palette::{BG, FG};
@@ -23,7 +26,7 @@ pub fn fixture(rel: &str) -> Value {
         .join("../../tests/fixtures")
         .join(rel);
     let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
-    serde_json::from_str(&text).unwrap()
+    harness_goldens::adapt(rel, serde_json::from_str(&text).unwrap())
 }
 
 /// A captured swarm in wire form (`inputs/swarm-*.json`), docked next to `docked`.

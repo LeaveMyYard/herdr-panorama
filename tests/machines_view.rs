@@ -60,7 +60,8 @@ fn remote_groups_get_a_divider_and_it_is_not_clickable() {
             "{w}: one divider, nothing on cards"
         );
         assert!(
-            rows[y + 1..].iter().any(|r| r.contains("Remote work")),
+            s.targets.iter().any(|hit| hit.y > y as i32
+                && hit.target == panorama_core::view::Target::Orch("abc123:w1:p1".into())),
             "{w}: the group follows its divider"
         );
     }
