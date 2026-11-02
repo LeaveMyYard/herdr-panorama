@@ -27,11 +27,13 @@ fn normalized(row: &Value) -> Option<String> {
             };
             let bg = r[2].as_str().unwrap_or("#101215").to_lowercase();
             let bold = ch != ' ' && r[3].as_bool().unwrap();
-            if let Some(last) = runs.last_mut() {
-                if last[1] == json!(fg) && last[2] == json!(bg) && last[3] == json!(bold) {
-                    last[0] = json!(last[0].as_str().unwrap().to_owned() + &ch.to_string());
-                    continue;
-                }
+            if let Some(last) = runs.last_mut()
+                && last[1] == json!(fg)
+                && last[2] == json!(bg)
+                && last[3] == json!(bold)
+            {
+                last[0] = json!(last[0].as_str().unwrap().to_owned() + &ch.to_string());
+                continue;
             }
             runs.push(json!([ch.to_string(), fg, bg, bold]));
         }
