@@ -3,6 +3,7 @@
 //! it follows /clear), else `CLAUDE_CODE_SESSION_ID`.
 
 use herdr_agent_kit::herdr_api::{Herdr, PaneId};
+use serde_json::{Map, Value};
 
 /// Where the session id comes from.
 pub struct Sessions {
@@ -13,6 +14,21 @@ pub struct Sessions {
 }
 
 impl Sessions {
+    /// Codex sends exact caller identity on every request, including child calls on
+    /// a shared MCP process. Invalid present metadata must never fall back to a pane.
+    pub async fn for_call(
+        &self,
+        meta: &Map<String, Value>,
+    ) -> Result<Option<String>, &'static str> {
+        match meta.get("threadId") {
+            Some(Value::String(id)) if crate::codex::identity::valid_thread_id(id) => {
+                Ok(Some(id.clone()))
+            }
+            Some(_) => Err("Invalid Codex threadId; nothing recorded."),
+            None => Ok(self.current().await),
+        }
+    }
+
     /// The session id now, if any.
     pub async fn current(&self) -> Option<String> {
         if let Some((herdr, pane)) = &self.pane

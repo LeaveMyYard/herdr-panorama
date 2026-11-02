@@ -1,0 +1,14 @@
+# Optional Codex 0.166.0 report_thread MCP server. Use the Rust panorama binary.
+# Merge this block into an appropriate config layer only when opting in.
+# Per-call _meta.threadId identifies each caller, including child threads.
+[mcp_servers.herdr_panorama]
+command = "panorama"
+args = ["mcp"]
+
+# hooks.json is a separate opt-in artifact; review/trust it with /hooks.
+# Automatic pane binding requires `codex --no-daemon` and verified foreground
+# process ownership. Shared-daemon sessions require explicit binding:
+# panorama codex-bind THREAD_ID --pane PANE_ID
+# The binding is Panorama-local; herdr's native resume/lifecycle state is untouched.
+# After switching roots within the same TUI process, run the explicit bind again.
+# Automatic conflicting-root hooks suppress old details until explicit rebinding.

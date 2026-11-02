@@ -90,11 +90,19 @@ pub fn emit(argv: &[String], env: &PluginEnv, now: f64) -> Result<Done, (i32, St
         args::Parsed::Help => return Ok(Done::Help),
         args::Parsed::Emit(a) => a,
     };
-    let session = a
-        .session
-        .clone()
-        .filter(|s| !s.is_empty())
-        .or_else(|| env.var("CLAUDE_CODE_SESSION_ID").map(str::to_owned));
+    let session = if let Some(session) = a.session.clone().filter(|s| !s.is_empty()) {
+        Some(session)
+    } else if let Some(id) = env.var("CODEX_THREAD_ID") {
+        if !crate::codex::identity::valid_thread_id(id) {
+            return Err((
+                2,
+                "panorama emit: invalid CODEX_THREAD_ID; pass --session explicitly".into(),
+            ));
+        }
+        Some(id.to_owned())
+    } else {
+        env.var("CLAUDE_CODE_SESSION_ID").map(str::to_owned)
+    };
     let Some(session) = session else {
         return Err((
             2,

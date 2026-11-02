@@ -4,6 +4,7 @@
 mod cache;
 mod history;
 mod hydrate;
+pub mod identity;
 mod parse;
 mod protocol;
 mod types;
