@@ -16,6 +16,7 @@ pub mod dock;
 pub mod empty;
 pub mod filter;
 pub mod graph;
+pub mod harness;
 pub mod machines;
 pub mod moving;
 pub mod narrow;

@@ -177,7 +177,9 @@ pub fn orch_state(o: &Orchestrator, frame: f64, ages: Option<Ages>) -> OrchState
     };
     state_of(
         &agents,
-        o.threads.iter().all(|t| t.is_done()),
+        // Preserve the legacy Claude empty-session display. An unobserved harness
+        // has no evidence of completed work merely because its thread list is empty.
+        (o.harness == "claude" || !o.threads.is_empty()) && o.threads.iter().all(|t| t.is_done()),
         frame,
         &extras,
         ages,

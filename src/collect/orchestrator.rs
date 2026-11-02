@@ -50,6 +50,7 @@ fn opt_id(v: Option<&Value>) -> Option<String> {
 /// The orchestrator with no session read yet.
 fn bare(a: &Map<String, Value>, sid: Option<&Value>) -> Orchestrator {
     Orchestrator {
+        harness: str_of(a, "agent").unwrap_or("claude").to_owned(),
         pane_id: truthy_str(a, "pane_id").unwrap_or_default(),
         tab_id: opt_id(a.get("tab_id")),
         tab_label: String::new(),
@@ -128,6 +129,12 @@ impl Collector {
             None
         };
         let mut o = bare(a, sid);
+        // Codex has its own history and identity rules. In particular, never look up a
+        // Codex id (or cwd) in Claude's continuation or transcript index.
+        if o.harness == "codex" {
+            o.tab_label = label(a, tab, None, &o.pane_id, per_tab);
+            return o;
+        }
         let since = since(now, self.window);
         let cwd = str_of(a, "cwd");
         let (ids, key) = match sid.filter(|v| truthy(v)) {

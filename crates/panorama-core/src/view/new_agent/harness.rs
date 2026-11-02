@@ -1,5 +1,5 @@
 //! The harnesses the new-agent carousel shows (the design's `HARNESS`, original character
-//! art) and which of them panorama can start yet (the design's `SUPPORTED`: Claude Code).
+//! art) and which of them panorama can start yet (Claude Code and Codex).
 
 use crate::view::colour::Rgb;
 
@@ -16,7 +16,7 @@ pub struct Harness {
 impl Harness {
     /// Whether panorama starts this harness yet; the others say "Coming soon".
     pub fn supported(&self) -> bool {
-        self.id == "claude"
+        matches!(self.id, "claude" | "codex")
     }
 }
 

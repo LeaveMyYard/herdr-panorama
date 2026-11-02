@@ -3,6 +3,9 @@
 //! shows the narrow layout, and its keys walk it as Python's do. Each snap after a key
 //! press is drawn from the panel's own state, cell for cell.
 
+#[path = "harness_goldens/mod.rs"]
+mod harness_goldens;
+
 use panorama::panel::input::Key;
 use panorama::panel::model::Panel;
 use panorama::panel::paint::Frame;
@@ -13,7 +16,10 @@ use std::time::{Duration, Instant};
 
 fn fixture(rel: &str) -> Value {
     let path = format!("{}/tests/fixtures/{rel}", env!("CARGO_MANIFEST_DIR"));
-    serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+    harness_goldens::adapt(
+        rel,
+        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap(),
+    )
 }
 
 fn cell(ch: char, fg: &str, bg: &str, bold: bool) -> String {

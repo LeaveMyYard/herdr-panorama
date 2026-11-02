@@ -42,10 +42,10 @@ fn the_narrow_layout_is_an_indented_list_with_only_the_selected_orchestrator_ope
     let rows: Vec<&str> = text.lines().collect();
     assert!(rows.iter().all(|r| r.chars().count() <= 70));
     for want in [
-        "✗  Billing API  failed · working",
+        "✗  Claude Code · Billing API  failed · working",
         "Search refactor  working  workflow",
-        "!  Docs site  blocked",
-        "✓  Release notes  all done",
+        "!  Claude Code · Docs site  blocked",
+        "✓  Claude Code · Release notes  all done",
         "search-index-rebuild",
         "Build · 22m",
         "✓ Plan         09:20–09:41",
