@@ -113,3 +113,47 @@ fn an_orchestrator_counts_herdrs_word_and_its_questions() {
     assert_eq!(o.threads[0].source, ThreadSource::Turn);
     assert_eq!(orch_state(&o, 0.0, None).label, "all done");
 }
+
+#[test]
+fn bare_codex_preserves_authoritative_runtime_without_inventing_completion() {
+    let legacy: Orchestrator = serde_json::from_value(serde_json::json!({
+        "pane_id": "p", "tab_id": null, "tab_label": "x", "session_id": null,
+        "herdr_status": "unknown", "last_activity": null
+    }))
+    .unwrap();
+    for session_id in [None, Some("bound-but-history-unavailable".to_owned())] {
+        let mut o = Orchestrator {
+            harness: "codex".into(),
+            session_id,
+            ..legacy.clone()
+        };
+        for (runtime, expected, label) in [
+            (HerdrStatus::Done, Status::Done, "all done"),
+            (HerdrStatus::Idle, Status::Queued, "idle"),
+            (
+                HerdrStatus::Unknown,
+                Status::Unknown("unknown".into()),
+                "unknown",
+            ),
+            (HerdrStatus::Working, Status::Running, "working"),
+            (HerdrStatus::Blocked, Status::Blocked, "blocked"),
+        ] {
+            o.herdr_status = runtime;
+            let state = orch_state(&o, 0.0, None);
+            assert_eq!((state.st, state.label.as_str()), (expected, label));
+        }
+        o.herdr_status = HerdrStatus::Done;
+        o.inbox.push(1);
+        assert_eq!(orch_state(&o, 0.0, None).st, Status::Waiting);
+        o.inbox.clear();
+        o.bg.push(BgTask {
+            id: "background".into(),
+            kind: "task".into(),
+            description: String::new(),
+            started: None,
+        });
+        assert_eq!(orch_state(&o, 0.0, None).st, Status::Background);
+    }
+    // The pre-existing Claude empty-session display remains compatible.
+    assert_eq!(orch_state(&legacy, 0.0, None).st, Status::Done);
+}

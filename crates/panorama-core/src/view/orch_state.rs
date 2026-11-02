@@ -175,15 +175,23 @@ pub fn orch_state(o: &Orchestrator, frame: f64, ages: Option<Ages>) -> OrchState
         bg: &o.bg,
         stale_label,
     };
-    state_of(
+    let bare_codex = o.harness == "codex" && o.threads.is_empty();
+    let state = state_of(
         &agents,
         // Preserve the legacy Claude empty-session display. An unobserved harness
         // has no evidence of completed work merely because its thread list is empty.
-        (o.harness == "claude" || !o.threads.is_empty()) && o.threads.iter().all(|t| t.is_done()),
+        (bare_codex && o.herdr_status == HerdrStatus::Done && o.inbox.is_empty())
+            || ((o.harness == "claude" || !o.threads.is_empty())
+                && o.threads.iter().all(|t| t.is_done())),
         frame,
         &extras,
         ages,
-    )
+    );
+    if bare_codex && o.herdr_status == HerdrStatus::Unknown && state.st == Status::Queued {
+        OrchState::new(Status::Unknown("unknown".into()), "?", "unknown")
+    } else {
+        state
+    }
 }
 
 #[cfg(test)]

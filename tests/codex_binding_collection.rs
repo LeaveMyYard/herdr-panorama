@@ -237,7 +237,10 @@ fn per_caller_mcp_reports_reach_only_the_verified_child_subtree() {
         replies.iter().any(|reply| reply["id"] == 1
             && reply["result"]["structuredContent"]["status"] == "recorded")
     );
-    let resolved = model(&fixture, &fake);
+    // Attribution needs a complete verified graph, which may legitimately arrive
+    // after a one-shot CLI's short warmup. Its separate tests cover that budget.
+    let mut collector = fixture.collector(true);
+    let resolved = serde_json::to_value(codex_support::ready(&mut collector, &snapshot())).unwrap();
     let root = &resolved["orchestrators"][1];
     let report = root["threads"]
         .as_array()

@@ -12,10 +12,7 @@ fn run(fixture: &Fixture, fake: &FakeHerdr) -> Value {
     let output = Command::new(env!("CARGO_BIN_EXE_panorama"))
         .env_clear()
         .args(["snapshot", "--json"])
-        .env(
-            "PATH",
-            format!("{}:/usr/bin:/bin", fixture.root().display()),
-        )
+        .env("PATH", fixture.executable_path())
         .env("HOME", fixture.root())
         .env("CODEX_HOME", fixture.root())
         .env("CLAUDE_CONFIG_DIR", fixture.root().join("claude"))

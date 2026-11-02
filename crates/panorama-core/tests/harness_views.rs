@@ -63,8 +63,12 @@ fn mixed_navigation_and_filters_use_pane_ids() {
 }
 
 #[test]
-fn bare_codex_idle_or_unknown_never_claims_completion_in_any_layout() {
-    for status in ["idle", "unknown"] {
+fn bare_codex_runtime_is_preserved_in_every_layout() {
+    for (status, label) in [
+        ("idle", "idle"),
+        ("unknown", "unknown"),
+        ("done", "all done"),
+    ] {
         let mut sw = swarm();
         sw.orchestrators.remove(0);
         sw.orchestrators[0].herdr_status = panorama_core::model::HerdrStatus::from_code(status);
@@ -86,8 +90,17 @@ fn bare_codex_idle_or_unknown_never_claims_completion_in_any_layout() {
                 .take(if !dock && width >= 120 { 2 } else { 1 })
                 .collect::<Vec<_>>()
                 .join(" ");
-            assert!(status_rows.contains("idle"), "{status}: {status_rows}");
-            assert!(!status_rows.contains("done"), "{status}: {status_rows}");
+            let label = if dock && status == "done" {
+                "done"
+            } else {
+                label
+            };
+            assert!(status_rows.contains(label), "{status}: {status_rows}");
+            assert_eq!(
+                status_rows.contains("done"),
+                status == "done",
+                "{status}: {status_rows}"
+            );
         }
     }
 }

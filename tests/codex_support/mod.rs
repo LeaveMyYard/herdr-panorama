@@ -91,7 +91,7 @@ impl Fixture {
         let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_panorama"));
         command
             .env_clear()
-            .env("PATH", format!("{}:/usr/bin:/bin", self.root().display()))
+            .env("PATH", self.executable_path())
             .env("HOME", self.root())
             .env("CODEX_HOME", self.root())
             .env("XDG_STATE_HOME", self.root().join("state"))
@@ -104,6 +104,16 @@ impl Fixture {
             .env("PANORAMA_EVENTS_DIR", self.root().join("events"))
             .env("PANORAMA_HOOKS_DIR", self.root().join("hooks"));
         command
+    }
+
+    pub fn executable_path(&self) -> std::ffi::OsString {
+        // Keep the runner's Python selection (including macOS's installed Python)
+        // while ensuring every Codex invocation resolves to this synthetic peer.
+        let inherited = std::env::var_os("PATH").unwrap_or_default();
+        std::env::join_paths(
+            std::iter::once(self.root().to_owned()).chain(std::env::split_paths(&inherited)),
+        )
+        .unwrap()
     }
 }
 

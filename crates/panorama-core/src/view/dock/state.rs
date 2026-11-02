@@ -37,6 +37,7 @@ fn label(st: &Status) -> &'static str {
         Status::Waiting => "needs you",
         Status::Background => "waiting",
         Status::Stale => "stale",
+        Status::Unknown(_) => "unknown",
         _ => "idle",
     }
 }
@@ -72,7 +73,9 @@ pub fn dock_state<'a>(o: &'a Orchestrator, frame: f64, ages: Ages) -> DockState<
     let (active, done): (Vec<&Thread>, Vec<&Thread>) = threads(o).partition(|t| !t.is_done());
     let stale = ages.is_stale(o);
     let blocked = has(Status::Blocked) || o.herdr_status == HerdrStatus::Blocked;
-    let all_done = active.is_empty() && !done.is_empty();
+    let bare_codex = o.harness == "codex" && o.threads.is_empty();
+    let all_done = (active.is_empty() && !done.is_empty())
+        || (bare_codex && o.herdr_status == HerdrStatus::Done);
     let mut words = None;
     let st = if all_done
         && !working
@@ -104,6 +107,8 @@ pub fn dock_state<'a>(o: &'a Orchestrator, frame: f64, ages: Ages) -> DockState<
         let since = o.last_activity.unwrap_or(ages.now);
         words = Some(format!("stale {}", ago(ages.now - since)));
         Status::Stale
+    } else if bare_codex && o.herdr_status == HerdrStatus::Unknown {
+        Status::Unknown("unknown".into())
     } else {
         Status::Queued
     };
