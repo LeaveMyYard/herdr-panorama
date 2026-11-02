@@ -243,10 +243,10 @@ async fn single_follows_only_tabs_where_the_orchestrator_is_alone() {
 }
 
 #[tokio::test]
-async fn only_local_claude_orchestrators_outside_home_in_its_workspace_are_targets() {
+async fn only_local_supported_orchestrators_outside_home_in_its_workspace_are_targets() {
     let (w, dir) = (World::new(), tempfile::tempdir().unwrap());
     w.s().tab("w1:t1").push(agent("w1:p9")); // in the home tab
-    w.s().tab("w1:t3")[0].agent = Some("codex".into());
+    w.s().tab("w1:t3")[0].agent = Some("opencode".into());
     let mut m = manager(&w, dir.path());
     let mut sw = orch(&["w1:p2", "w1:p3", "w1:p4", "w1:p9", "w1:p77"]);
     sw.orchestrators[2].machine = Some("box".into());
