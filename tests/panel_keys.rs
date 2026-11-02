@@ -97,6 +97,7 @@ fn the_demos_keys_walk_the_narrow_layout_as_pythons() {
         utc_offset: 0,
         theme: None,
         settings: PanelSettings::default(),
+        harness_icons: Default::default(),
         open_key: ("pfx+spc".into(), "pfx+spc".into()),
     };
     let t = t0 + Duration::from_secs(1);

@@ -85,6 +85,7 @@ impl<'a> Player<'a> {
             utc_offset: 0,
             theme: Tokens::builtin("catppuccin"),
             settings: PanelSettings::default(),
+            harness_icons: Default::default(),
             open_key: ("pfx+spc".into(), "pfx+spc".into()),
         }
     }
