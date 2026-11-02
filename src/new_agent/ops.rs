@@ -32,7 +32,7 @@ pub trait StartOps: Send + Sync {
     fn fit(&self, panel: &str, tab: &str) -> impl Future<Output = ()> + Send;
     /// Whether herdr reports an agent in `pane`; `None` when herdr could not say.
     fn agent_in(&self, pane: &str) -> impl Future<Output = Option<bool>> + Send;
-    /// Claude Code named `name` in `pane`, waited for until it is ready.
+    /// An agent of `kind` named `name` in `pane`, waited for until it is ready.
     fn start_agent(
         &self,
         name: &str,

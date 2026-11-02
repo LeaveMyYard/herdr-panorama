@@ -5,7 +5,7 @@
 use crate::model::{Agent, HerdrStatus, Orchestrator, Status, Thread, ThreadSource};
 use crate::view::anim::{clock, glyph, spin};
 use crate::view::colour::Rgb;
-use crate::view::orch_state::Ages;
+use crate::view::orch_state::{Ages, codex_root, orch_state};
 use crate::view::palette::{DIM, status};
 use crate::view::text::ago;
 
@@ -37,6 +37,7 @@ fn label(st: &Status) -> &'static str {
         Status::Waiting => "needs you",
         Status::Background => "waiting",
         Status::Stale => "stale",
+        Status::Unknown(_) => "unknown",
         _ => "idle",
     }
 }
@@ -51,9 +52,20 @@ fn threads(o: &Orchestrator) -> impl Iterator<Item = &Thread> {
 /// The entry's state. herdr reporting the session working counts as working, blocked as
 /// blocked, and the session's open questions are its `?N`.
 pub fn dock_state<'a>(o: &'a Orchestrator, frame: f64, ages: Ages) -> DockState<'a> {
-    let agents: Vec<&Agent> = threads(o)
-        .flat_map(|t| &t.agents)
-        .filter(|a| !a.id.starts_with("main:"))
+    let codex = o.harness == "codex";
+    let agents: Vec<&Agent> = o
+        .threads
+        .iter()
+        .filter(|t| codex || t.source != ThreadSource::Session)
+        .flat_map(|thread| {
+            thread.agents.iter().filter(move |agent| {
+                if codex {
+                    !codex_root(o, thread, agent)
+                } else {
+                    !agent.id.starts_with("main:")
+                }
+            })
+        })
         .collect();
     let has = |st: Status| agents.iter().any(|a| a.status == st);
     let runner = agents.iter().copied().find(|a| a.status == Status::Running);
@@ -74,7 +86,15 @@ pub fn dock_state<'a>(o: &'a Orchestrator, frame: f64, ages: Ages) -> DockState<
     let blocked = has(Status::Blocked) || o.herdr_status == HerdrStatus::Blocked;
     let all_done = active.is_empty() && !done.is_empty();
     let mut words = None;
-    let st = if all_done
+    let st = if codex {
+        let state = orch_state(o, frame, Some(ages));
+        words = Some(if state.st == Status::Done {
+            "done".into()
+        } else {
+            state.label
+        });
+        state.st
+    } else if all_done
         && !working
         && o.herdr_status != HerdrStatus::Blocked
         && q == 0

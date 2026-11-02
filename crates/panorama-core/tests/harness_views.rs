@@ -62,32 +62,121 @@ fn mixed_navigation_and_filters_use_pane_ids() {
     );
 }
 
-#[test]
-fn bare_codex_idle_or_unknown_never_claims_completion_in_any_layout() {
-    for status in ["idle", "unknown"] {
-        let mut sw = swarm();
-        sw.orchestrators.remove(0);
-        sw.orchestrators[0].herdr_status = panorama_core::model::HerdrStatus::from_code(status);
-        let view = View {
-            orch: Some("codex-pane".into()),
-            ..View::default()
+fn codex(runtime: &str, history: Option<&str>) -> Swarm {
+    let mut sw = swarm();
+    sw.orchestrators.remove(0);
+    let o = &mut sw.orchestrators[0];
+    o.herdr_status = panorama_core::model::HerdrStatus::from_code(runtime);
+    if let Some(status) = history {
+        o.session_id = Some("exact-root".into());
+        o.threads.push(serde_json::from_value(json!({
+            "id":"codex:exact-root", "name":"History", "source":"session", "status":status,
+            "agents":[
+                {"id":"main:codex:codex-pane", "description":"Root", "role":"orchestrator",
+                 "status":match runtime { "working"=>"run", "blocked"=>"blk", "idle"=>"q", other=>other }},
+                {"id":"verified-child", "description":"main", "role":"main", "status":"unknown"}
+            ]
+        })).unwrap());
+    }
+    sw
+}
+
+fn assert_layout_state(sw: &Swarm, label: &str, done: bool) {
+    let view = View {
+        orch: Some("codex-pane".into()),
+        ..View::default()
+    };
+    for (dock, width) in [(true, 46), (false, 70), (false, 160)] {
+        let screen = if dock {
+            render_dock(sw, &view, width, 32, None, "empty")
+        } else {
+            render_graph(sw, &view, width, 32, None, "empty")
         };
-        for (dock, width) in [(true, 46), (false, 70), (false, 160)] {
-            let screen = if dock {
-                render_dock(&sw, &view, width, 32, None, "empty")
-            } else {
-                render_graph(&sw, &view, width, 32, None, "empty")
-            };
-            let text = screen.text();
-            let row = text.lines().position(|r| r.contains("Codex")).unwrap();
-            let status_rows = text
-                .lines()
-                .skip(row)
-                .take(if !dock && width >= 120 { 2 } else { 1 })
-                .collect::<Vec<_>>()
-                .join(" ");
-            assert!(status_rows.contains("idle"), "{status}: {status_rows}");
-            assert!(!status_rows.contains("done"), "{status}: {status_rows}");
+        let text = screen.text();
+        let row = text.lines().position(|r| r.contains("Codex")).unwrap();
+        let right = if !dock && width >= 120 {
+            screen
+                .columns
+                .iter()
+                .find(|column| column.column == 0)
+                .unwrap()
+                .x1 as usize
+        } else {
+            width as usize
+        };
+        let status_rows = text
+            .lines()
+            .skip(row)
+            .take(if !dock && width >= 120 { 2 } else { 1 })
+            .map(|line| line.chars().take(right).collect::<String>())
+            .collect::<Vec<_>>()
+            .join(" ");
+        let expected = if dock && done { "done" } else { label };
+        assert!(
+            status_rows.contains(expected),
+            "{dock}/{width}: {status_rows}"
+        );
+        assert_eq!(
+            status_rows.contains("done"),
+            done,
+            "{dock}/{width}: {status_rows}"
+        );
+    }
+}
+
+#[test]
+fn codex_runtime_survives_history_arrival_in_every_layout() {
+    for (runtime, label) in [
+        ("idle", "idle"),
+        ("unknown", "unknown"),
+        ("done", "all done"),
+        ("working", "working"),
+        ("blocked", "blocked"),
+    ] {
+        for history in [None, Some("active"), Some("done"), Some("unknown")] {
+            assert_layout_state(&codex(runtime, history), label, runtime == "done");
         }
+    }
+}
+
+#[test]
+fn codex_child_and_report_attention_survives_root_state_and_main_names() {
+    for runtime in ["done", "unknown", "idle"] {
+        for source in ["session", "explicit"] {
+            for (status, label) in [
+                ("run", "working"),
+                ("blk", "blocked"),
+                ("wait", "needs you"),
+                ("fail", "failed"),
+                ("bg", "waiting"),
+            ] {
+                let mut sw = codex(runtime, Some("done"));
+                let thread = &mut sw.orchestrators[0].threads[0];
+                thread.source = panorama_core::model::ThreadSource::from_code(source);
+                // A distinct child can have the root's name/role and even a main prefix.
+                let child = &mut thread.agents[1];
+                child.id = "main:distinct-child".into();
+                child.status = panorama_core::model::Status::from_code(status);
+                assert_layout_state(&sw, label, false);
+            }
+        }
+        let mut sw = codex(runtime, Some("active"));
+        sw.orchestrators[0].inbox.push(1);
+        assert_layout_state(&sw, "needs you", false);
+        sw.orchestrators[0].inbox.clear();
+        sw.orchestrators[0].threads[0].agents[1]
+            .question_ids
+            .push(2);
+        assert_layout_state(&sw, "needs you", false);
+        sw.orchestrators[0].threads[0].agents[1]
+            .question_ids
+            .clear();
+        sw.orchestrators[0].bg.push(
+            serde_json::from_value(json!({
+                "id":"task", "kind":"task", "description":"Synthetic", "started":null
+            }))
+            .unwrap(),
+        );
+        assert_layout_state(&sw, "waiting", false);
     }
 }

@@ -35,7 +35,11 @@ write the operator's Codex configuration or authentication state.
 
 ## Identity and lifecycle
 
-Use herdr pane IDs and `pane.report_agent_session` for lifecycle registration.
+Use herdr pane IDs and trustworthy native Codex session IDs when supplied.
+Installed herdr 0.9.3 ignores custom `pane.report_agent_session` sources, so this
+implementation does not write that API or impersonate a reserved native source.
+Its fallback is a bounded, atomic Panorama-local association store with exact
+root identity, foreground PID/start provenance, and conflict invalidation.
 Codex registration must not depend on Claude hooks. Inspect supported Codex hook
 payloads and lifecycle behavior before implementing the bridge; preserve hook
 stdin/output semantics and do not inject model instructions for telemetry.
@@ -43,11 +47,16 @@ stdin/output semantics and do not inject model instructions for telemetry.
 Associate a pane only with an exact thread identity. Never choose a session by
 the newest file, directory similarity, or shared working directory: concurrent
 sessions in one directory are normal. An unbound pane remains useful and visible.
-Resume and fork must refresh the correct association without confusing the old
-and new threads. Codex session-tree group `sessionId` and individual thread `id`
+Resume and fork must not confuse the old and new threads. Automatic hooks accept
+unset/repeated roots only; a differing root invalidates local details until an
+explicit bind. Shared-daemon sessions require an explicit pane selection, and
+an in-process root switch requires rebinding. New Codex launches use
+`--no-daemon`; automatic hooks additionally verify actual process ownership.
+Codex session-tree group `sessionId` and individual thread `id`
 can differ; root and child handling must validate the relevant identity.
 
-A child hook must not overwrite the pane's root identity. Child sessions belong
+A child hook must not overwrite the pane's root identity. A daemon's inherited
+pane environment is not ownership proof. Child sessions belong
 under their actual parent and may not become unrelated root sessions merely
 because they share a pane or directory. Lifecycle registration and read-only
 display observations are separate responsibilities.

@@ -126,6 +126,11 @@ impl StartOps for RealStart {
     }
 
     async fn start_agent(&self, name: &str, kind: &str, pane: &str) -> Result<(), String> {
+        if kind == "codex" {
+            return super::codex::start(&self.herdr, name, pane, self.start_timeout_ms)
+                .await
+                .map_err(err);
+        }
         self.herdr
             .start_agent(
                 &Sanitized::new(name),
