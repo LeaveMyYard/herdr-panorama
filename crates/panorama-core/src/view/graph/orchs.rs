@@ -48,6 +48,7 @@ pub fn orch_column(swarm: &Swarm, view: &View, w: i32) -> Column {
     if is_new {
         col.sel = Some((y, y + 3));
     }
+    crate::view::capture::record(&col.canvas, || orch_column(swarm, view, w).canvas);
     col.height = y + 4;
     col
 }
@@ -99,7 +100,7 @@ fn orch_card(col: &mut Column, y: i32, o: &Orchestrator, view: &View, ages: Ages
     } else {
         FG
     };
-    let name = trunc(&o.tab_label, w - 9 - mw);
+    let name = trunc(&crate::view::harness::title(o), w - 9 - mw);
     cv.segs(6, y + 1, &[Seg::new(name, name_fg).bold()]);
     cv.segs(6, y + 2, &state_line(o, &st, w));
     tags(cv, 0, y + 3, w, &[Some(o.flavour.clone())]);

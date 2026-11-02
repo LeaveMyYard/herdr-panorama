@@ -199,7 +199,7 @@ fn a_name_never_takes_more_than_22_cells() {
     };
     row::dock_row(&mut cv, 0, &o, &View::default(), AGES, look, 80);
     let line = cv.text().lines().next().unwrap().to_owned();
-    assert!(line.contains(" a-very-long-orchestra… "), "{line:?}");
+    assert!(line.contains(" Claude Code · a-very-… "), "{line:?}");
 }
 
 #[test]

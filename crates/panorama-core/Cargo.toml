@@ -11,6 +11,7 @@ publish.workspace = true
 [dependencies]
 # The model reads from (and writes) the core's `state.swarm` JSON (protocol 1.x).
 serde = { workspace = true }
+serde_json = { workspace = true }
 
 [dev-dependencies]
 # Reads the captured fixtures in tests/fixtures/.

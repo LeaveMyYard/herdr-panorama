@@ -13,9 +13,10 @@ fn fixture() -> Value {
 fn the_swarm_goes_out_as_python_sent_it() {
     // the fixture's swarm is Python's own wire form (swarm_to_wire): read and written back,
     // every field is the same
-    let wire = fixture()["swarm"].clone();
+    let mut wire = fixture()["swarm"].clone();
     let swarm: Swarm = serde_json::from_value(wire.clone()).unwrap();
     let msg = state_message(&swarm, &Marks::new(), &Published::default(), None);
+    for o in wire["orchestrators"].as_array_mut().unwrap() { o["harness"] = json!("claude"); }
     assert_eq!(msg["state"]["swarm"], wire);
 }
 

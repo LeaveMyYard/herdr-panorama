@@ -3,6 +3,9 @@
 
 use super::*;
 use crate::ui::frame::Frame;
+#[path = "../../../tests/harness_goldens/mod.rs"]
+mod harness_goldens;
+
 use panorama_core::model::Swarm;
 use panorama_core::view::{Marks, Screen};
 use serde_json::Value;
@@ -10,7 +13,7 @@ use std::time::Instant;
 
 fn fixture(rel: &str) -> Value {
     let path = format!("{}/tests/fixtures/{rel}", env!("CARGO_MANIFEST_DIR"));
-    serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+    harness_goldens::adapt(rel, serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap())
 }
 
 /// A run's frame: its clock, frame 0, UTC, panorama's own colours.

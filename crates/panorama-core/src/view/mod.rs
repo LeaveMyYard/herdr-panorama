@@ -16,6 +16,8 @@ pub mod dock;
 pub mod empty;
 pub mod filter;
 pub mod graph;
+pub mod harness;
+pub mod capture;
 pub mod machines;
 pub mod moving;
 pub mod narrow;
@@ -63,7 +65,9 @@ pub fn render_dock(
     if !swarm.herdr_ok || swarm.orchestrators.is_empty() {
         return empty::page(swarm, view, w, h, stale, no_sessions);
     }
-    dock::dock_panel(swarm, view, w, h, stale.is_some())
+    let out = dock::dock_panel(swarm, view, w, h, stale.is_some());
+    capture::record(&out, || render_dock(swarm, view, w, h, stale, no_sessions));
+    out
 }
 
 /// The graph as Python's `render(…)` draws it with `view.dock` off: the same empty pages,
@@ -90,7 +94,9 @@ pub fn render_graph(
     if !swarm.herdr_ok || swarm.orchestrators.is_empty() {
         return empty::page(swarm, view, w, h, stale, no_sessions);
     }
-    graph::page(swarm, view, w, h, stale)
+    let out = graph::page(swarm, view, w, h, stale);
+    capture::record(&out, || render_graph(swarm, view, w, h, stale, no_sessions));
+    out
 }
 
 /// The narrow layout as Python's `render(…)` draws it below 120 columns with `view.dock` off:
@@ -107,5 +113,7 @@ pub fn render_narrow(
     if !swarm.herdr_ok || swarm.orchestrators.is_empty() {
         return empty::page(swarm, view, w, h, stale, no_sessions);
     }
-    narrow::page(swarm, view, w, h, stale)
+    let out = narrow::page(swarm, view, w, h, stale);
+    capture::record(&out, || render_narrow(swarm, view, w, h, stale, no_sessions));
+    out
 }
