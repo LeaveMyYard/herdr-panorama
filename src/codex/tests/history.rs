@@ -82,7 +82,7 @@ async fn malformed_oversized_wrong_identity_and_timeout_fail_closed() {
         ("mismatch", Error::Invalid),
         ("hang", Error::Unavailable),
     ] {
-        let (dir, mut options) = fixture(mode);
+        let (_dir, mut options) = fixture(mode);
         options.timeout = if mode == "hang" {
             Duration::from_millis(500)
         } else {
@@ -93,7 +93,7 @@ async fn malformed_oversized_wrong_identity_and_timeout_fail_closed() {
         assert!(start.elapsed() < Duration::from_secs(3));
         #[cfg(target_os = "linux")]
         {
-            let pid = std::fs::read_to_string(dir.path().join("pid")).unwrap();
+            let pid = std::fs::read_to_string(_dir.path().join("pid")).unwrap();
             assert!(
                 !std::path::Path::new(&format!("/proc/{pid}")).exists(),
                 "observer not reaped: {mode}"
@@ -191,7 +191,7 @@ async fn protocol_rejects_mutating_methods_before_writing_them() {
 #[tokio::test]
 async fn descendant_timeout_retains_verified_root_and_completed_descendants() {
     for (mode, children) in [("hang-child", 0), ("hang-grand", 1)] {
-        let (dir, mut options) = fixture(mode);
+        let (_dir, mut options) = fixture(mode);
         options.timeout = Duration::from_secs(1);
         let start = Instant::now();
         let data = fetch(&options, "root-a").await.unwrap();
@@ -202,7 +202,7 @@ async fn descendant_timeout_retains_verified_root_and_completed_descendants() {
         assert!(data.partial);
         #[cfg(target_os = "linux")]
         {
-            let pid = std::fs::read_to_string(dir.path().join("pid")).unwrap();
+            let pid = std::fs::read_to_string(_dir.path().join("pid")).unwrap();
             assert!(!std::path::Path::new(&format!("/proc/{pid}")).exists());
         }
     }
