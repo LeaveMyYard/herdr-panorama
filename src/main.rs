@@ -16,6 +16,11 @@ fn main() {
         Some("hook") => std::process::exit(panorama::hook::main(
             std::env::args().nth(2).as_deref().unwrap_or(""),
         )),
+        Some("codex-hook") => std::process::exit(panorama::codex::identity::hook()),
+        Some("codex-bind") => {
+            let args: Vec<String> = std::env::args().skip(2).collect();
+            std::process::exit(panorama::codex::identity::manual(&args))
+        }
         Some("mcp") => std::process::exit(panorama::mcp::run()),
         Some("emit") => {
             let args: Vec<String> = std::env::args().skip(2).collect();

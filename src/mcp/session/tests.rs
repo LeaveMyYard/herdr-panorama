@@ -44,3 +44,48 @@ async fn tool_uses_the_session_from_the_environment() {
     };
     assert_eq!(env.current().await.as_deref(), Some("s2"));
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn codex_metadata_is_per_call_and_never_reads_or_registers_the_pane() {
+    let fake = FakeHerdr::start();
+    let sessions = Sessions {
+        pane: Some((fake.client(), "w1:p2".into())),
+        env: Some("claude".into()),
+    };
+    for id in [
+        "11111111-1111-4111-8111-111111111111",
+        "22222222-2222-4222-8222-222222222222",
+        "11111111-1111-4111-8111-111111111111",
+    ] {
+        let meta = json!({"threadId":id,"sessionId":"shared-root"});
+        assert_eq!(
+            sessions
+                .for_call(meta.as_object().unwrap())
+                .await
+                .unwrap()
+                .as_deref(),
+            Some(id)
+        );
+    }
+    for id in [
+        json!(null),
+        json!(17),
+        json!(""),
+        json!("../root"),
+        json!("AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA"),
+    ] {
+        let meta = json!({"threadId":id});
+        assert!(sessions.for_call(meta.as_object().unwrap()).await.is_err());
+    }
+    assert!(fake.params_of("pane.get").is_empty());
+    assert!(fake.params_of("pane.report_agent_session").is_empty());
+    let meta = json!({"sessionId":"not-an-exact-thread"});
+    assert_eq!(
+        sessions
+            .for_call(meta.as_object().unwrap())
+            .await
+            .unwrap()
+            .as_deref(),
+        Some("claude")
+    );
+}
