@@ -52,16 +52,27 @@ impl Observer {
                     .enable_all()
                     .build();
                 let mut unsupported = std::collections::HashSet::new();
+                let mut graphs = HashMap::new();
                 while let Ok(id) = receive.recv() {
                     if stop.load(Ordering::Relaxed) {
                         break;
                     }
+                    if graphs.len() >= CACHE_SIZE
+                        && !graphs.contains_key(&id)
+                        && let Some(old) = graphs.keys().next().cloned()
+                    {
+                        graphs.remove(&old);
+                    }
+                    let graph = graphs
+                        .entry(id.clone())
+                        .or_insert_with(|| super::discovery::Graph::new(&id));
                     let value = runtime.as_ref().ok().and_then(|rt| {
                         rt.block_on(history::fetch_cancellable(
                             &options,
                             &id,
                             &mut unsupported,
                             &stop,
+                            graph,
                         ))
                         .ok()
                     });

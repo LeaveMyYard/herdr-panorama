@@ -78,6 +78,11 @@ Codex daemon can carry another pane's environment. Child hooks cannot replace
 the root association. Hook output remains a benign `{}` and supplies no model
 instructions or transcript content.
 
+The hook entry must actually be configured and trusted to register new sessions;
+`--no-daemon` alone does not install it. Existing shared-daemon panes remain bare
+until explicitly associated with their exact root and pane. Other panes never
+inherit a neighboring pane's association.
+
 The hook accepts an unset association or the same root again. A different root
 invalidates the old local association and requires explicit rebinding; an old or
 delayed hook cannot silently select a different thread. Startup metadata may not
@@ -136,10 +141,27 @@ Interactive collection never waits for the history worker. Details can appear
 on a subsequent refresh. The standalone Rust `snapshot` command gives all panes
 one shared 750ms history warmup budget, then returns what is available and stops
 its owned app-server. Its ownership lookups have a separate shared 100ms budget
-per collection, with at most 50ms per request and no foreground cache reused
+per collection spent only inside ownership lookups, with at most 50ms per
+request and no foreground cache reused
 across collections. Slow or unavailable sources produce a visible bare pane.
 
-Reads are bounded and partial history can omit older turns or children. Only a
+Display reads keep the newest 128 items and at most 16 turns. Child ancestry has
+a separate progressive scan: each refresh can continue up to two additional
+64-item pages beyond that display window. Supported full-turn fallback reads
+one oldest-first turn page, up to 256 ancestry items per refresh; legacy full
+reads scan the same bounded oldest-first slice. Large sessions can therefore
+need several refreshes before older children appear. Progress and candidate IDs
+are cached by exact root, and every displayed child is freshly read and checked
+against its exact parent on each refresh. Aging out of the recent item window
+does not by itself remove a known child or mark it done.
+
+The observer still reads at most eight threads per refresh (root included), with
+bounded per-root scan caches, 64 candidate IDs per scanned thread, continuation
+limits, the existing whole-refresh deadline and wire byte limits. Known valid
+candidates get lookup priority while unverified siblings rotate, so a prefix of
+foreign references cannot permanently starve a valid sibling. Oversized graphs,
+truncated display history, unsupported/failed reads and exhausted limits remain
+partial. Cached ancestry never refreshes metadata proof merely by reuse. Only a
 fresh, complete, verified descendant graph permits reading child report files.
 Each child's reports can claim only its own verified subtree, root reports take
 precedence, and declaration IDs include their source thread to prevent sibling

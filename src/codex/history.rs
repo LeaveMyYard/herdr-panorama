@@ -1,12 +1,13 @@
 //! Bounded newest-first history, with verified parent links. Never scans by cwd or recency.
+use super::hydrate::MAX_TURNS;
 use super::{
-    Observation, Options, Thread, hydrate, parse,
+    Observation, Options, Thread,
+    discovery::{self, Graph, MAX_THREADS, Scan},
+    hydrate, parse,
     protocol::{Client, Error, Result},
 };
 use serde_json::{Value, json};
 use std::collections::{HashSet, VecDeque};
-const MAX_THREADS: usize = 8;
-use super::hydrate::MAX_TURNS;
 const ITEM_PAGE: usize = 64;
 const ITEM_PAGES: usize = 2;
 
@@ -14,6 +15,7 @@ async fn read(
     client: &mut Client,
     id: &str,
     unsupported: &mut HashSet<String>,
+    scan: &mut Scan,
 ) -> Result<(Thread, Vec<String>, bool)> {
     let meta = client
         .call("thread/read", json!({"threadId":id,"includeTurns":false}))
@@ -26,7 +28,7 @@ async fn read(
         Some(_) => "other",
     };
     if unsupported.contains(mode) {
-        return hydrate::full_turns(client, thread).await;
+        return hydrate::full_turns(client, thread, scan).await;
     }
     let turns = client
         .call(
@@ -35,7 +37,7 @@ async fn read(
         )
         .await;
     if turns == Err(Error::Unsupported) && mode == "legacy" {
-        return hydrate::legacy(client, thread).await;
+        return hydrate::legacy(client, thread, scan).await;
     }
     let turns = turns?;
     let data = turns
@@ -61,7 +63,7 @@ async fn read(
             .await;
         if page == Err(Error::Unsupported) {
             unsupported.insert(mode.to_owned());
-            return hydrate::full_turns(client, thread).await;
+            return hydrate::full_turns(client, thread, scan).await;
         }
         let Ok(page) = page else {
             partial = true;
@@ -89,9 +91,9 @@ async fn read(
         }
     }
     partial |= next.is_some();
-    children.sort();
-    children.dedup();
-    Ok((thread, children, partial))
+    scan.remember(children);
+    partial |= discovery::items(client, id, scan, next).await;
+    Ok((thread, scan.candidates(), partial))
 }
 fn cursor(v: &Value) -> Option<String> {
     v.get("nextCursor")
@@ -104,14 +106,17 @@ async fn query(
     id: &str,
     unsupported: &mut HashSet<String>,
     deadline: tokio::time::Instant,
+    graph: &mut Graph,
 ) -> Result<Observation> {
+    graph.root(id);
     let (root, child_ids, mut partial) = tokio::time::timeout_at(deadline, async {
         client.initialize().await?;
-        read(client, id, unsupported).await
+        read(client, id, unsupported, graph.scan(id)).await
     })
     .await
     .unwrap_or(Err(Error::Unavailable))?;
-    let mut queue: VecDeque<_> = child_ids
+    let mut queue: VecDeque<_> = graph
+        .order(id, child_ids)
         .into_iter()
         .map(|child| (id.to_owned(), child))
         .collect();
@@ -127,22 +132,35 @@ async fn query(
             break;
         }
         reads += 1;
-        let child_result =
-            match tokio::time::timeout_at(deadline, read(client, &child, unsupported)).await {
-                Ok(result) => result,
-                Err(_) => {
-                    partial = true;
-                    break;
-                }
-            };
+        let child_result = match tokio::time::timeout_at(
+            deadline,
+            read(client, &child, unsupported, graph.scan(&child)),
+        )
+        .await
+        {
+            Ok(result) => result,
+            Err(_) => {
+                partial = true;
+                break;
+            }
+        };
         match child_result {
             Ok((thread, ids, truncated)) if thread.parent_thread_id.as_deref() == Some(&parent) => {
                 seen.insert(child.clone());
                 partial |= truncated;
-                queue.extend(ids.into_iter().map(|id| (child.clone(), id)));
+                graph.proof(&parent, &child, true);
+                queue.extend(
+                    graph
+                        .order(&child, ids)
+                        .into_iter()
+                        .map(|id| (child.clone(), id)),
+                );
                 children.push(thread);
             }
-            _ => partial = true,
+            _ => {
+                graph.proof(&parent, &child, false);
+                partial = true;
+            }
         }
     }
     Ok(Observation {
@@ -158,12 +176,13 @@ pub(super) async fn fetch_cancellable(
     id: &str,
     unsupported: &mut HashSet<String>,
     stop: &std::sync::atomic::AtomicBool,
+    graph: &mut Graph,
 ) -> Result<Observation> {
     let mut client = Client::spawn(options)?;
     let deadline =
         tokio::time::Instant::now() + options.timeout.min(std::time::Duration::from_secs(10));
     let result = tokio::select! {
-        result = query(&mut client, id, unsupported, deadline) => result,
+        result = query(&mut client, id, unsupported, deadline, graph) => result,
         _ = async {
             while !stop.load(std::sync::atomic::Ordering::Relaxed) {
                 tokio::time::sleep(std::time::Duration::from_millis(5)).await;
@@ -190,6 +209,7 @@ pub(super) async fn fetch_with(
         id,
         unsupported,
         &std::sync::atomic::AtomicBool::new(false),
+        &mut Graph::new(id),
     )
     .await
 }

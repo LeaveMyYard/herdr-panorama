@@ -1,6 +1,8 @@
 //! Compatibility hydration when item pagination is not implemented (Codex 0.166).
 use super::{
-    Thread, parse,
+    Thread,
+    discovery::{self, Scan},
+    parse,
     protocol::{Client, Error, Result},
 };
 use serde_json::{Value, json};
@@ -10,6 +12,7 @@ const MAX_ITEMS: usize = 128;
 pub(super) async fn full_turns(
     client: &mut Client,
     thread: Thread,
+    scan: &mut Scan,
 ) -> Result<(Thread, Vec<String>, bool)> {
     let response = client
         .call(
@@ -23,17 +26,17 @@ pub(super) async fn full_turns(
         .and_then(Value::as_array)
         .ok_or(Error::Invalid)?;
     let partial = response.get("nextCursor").is_some_and(|v| !v.is_null());
-    Ok(fold(
-        thread,
-        turns.iter(),
-        turns.len() > MAX_TURNS || partial,
-    ))
+    let (thread, ids, partial) = fold(thread, turns.iter(), turns.len() > MAX_TURNS || partial);
+    scan.remember(ids);
+    let incomplete = discovery::turns(client, &thread.thread_id, scan).await;
+    Ok((thread, scan.candidates(), partial || incomplete))
 }
 /// Only legacy threads on older servers may use full-history thread/read. Wire
 /// size and whole-refresh deadline limits still apply; no private SQLite parsing.
 pub(super) async fn legacy(
     client: &mut Client,
     thread: Thread,
+    scan: &mut Scan,
 ) -> Result<(Thread, Vec<String>, bool)> {
     let response = client
         .call(
@@ -47,7 +50,10 @@ pub(super) async fn legacy(
         .get("turns")
         .and_then(Value::as_array)
         .ok_or(Error::Invalid)?;
-    Ok(fold(thread, turns.iter().rev(), turns.len() > MAX_TURNS))
+    let (thread, ids, partial) = fold(thread, turns.iter().rev(), turns.len() > MAX_TURNS);
+    scan.remember(ids);
+    scan.legacy(turns);
+    Ok((thread, scan.candidates(), partial || scan.limited()))
 }
 fn fold<'a>(
     mut thread: Thread,
