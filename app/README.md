@@ -1,8 +1,15 @@
 # herdr-app flavour
 
 The panorama sidebar reads the v1 app feed, preserves every native stock agent,
-and adds transcript trees, status marks, folding and harness icons. The spaces,
-graph and Peek mods remain native scaffolds for their dedicated UI slices.
+and adds transcript trees, status marks, folding and harness icons. Spaces adds
+per-space activity and needs counts while keeping stock machine/worktree/git
+behavior. Selecting an expanded Space creates Swarm once at the first tab
+position or selects its existing graph. The owned tabs and pane-header clones
+add the Swarm glyph/count and graph header while retaining stock terminal behavior.
+The graph uses fixed depth columns, independent vertical scrolling, folding,
+keyboard navigation and selected-card details. A selected transcript thread
+shows its recorded spawn tree; a root without a transcript thread can show its
+proven same-space native-terminal tree. Peek/transcript content is a separate slice.
 Installing does not select the panorama layout.
 The TUI plugin is independent and is not changed by this installer.
 
@@ -34,8 +41,11 @@ zero children, then calls only that exact isolated session's documented core
 stop. Captured process exit is checked without a post-stop status call (status
 would autostart a new core). Uncertain cleanup preserves private diagnostic state.
 After installation it prints the command to switch when the person chooses.
-The sidebar reads app-home data/panorama/feed.json and invokes only the reviewed
-app-private panorama executable. The remaining empty scaffolds do no I/O.
+The sidebar and owned consumers read app-home data/panorama/feed.json through
+the same generation-pinned client and invoke only the reviewed app-private
+panorama executable. Graph question/Inbox actions navigate through its installed
+TUI bridge when available; permission actions focus a verified owning terminal.
+They never answer, type or change permissions/configuration.
 
 An optional explicit reviewed executable is copied privately:
 
@@ -115,13 +125,29 @@ matching-generation stale cache. Final close or missing/changed receipt clears
 shared feed/owner to null only with matching generation and current owner token;
 a losing old owner cannot clear another client. Native probes show null keys
 remain persisted: the operator explicitly approved ONLY these two inert null slots after uninstall.
-No cached feed, changed-age map, or other Panorama payload residue is approved.
-Uninstall never edits global shared.json or arbitrary local stores.
+No cached feed, transcript or changed-age map is retained. Uninstall never edits
+global shared.json or arbitrary local stores.
 
-The exact v2 empty data directories for panorama-spaces, panorama-graph and
-panorama-peek are reserved exclusively and journaled before module load. Existing
-directories cause refusal; uninstall removes only empty owned directories.
-Personal added files are preserved and reported.
+The five finite mod-data directories are panorama-spaces, panorama-graph,
+panorama-peek, panorama-tabs and panorama-pane under data/. New directories are
+journaled before module load and removed only when empty. The operator also
+approved retaining exactly data/panorama-spaces/store.json and
+data/panorama-tabs/store.json plus their necessary parents: these preserve stock
+machine folding/reconnection recovery and panel selection across restart and
+reinstall. Those exact parents may preexist without entering the new receipt's
+created-directory list or granting deletion authority. A known store must be a
+no-follow regular single-link mode-0600 file, at most 1 MiB, containing a strict
+UTF-8 JSON string-map with supported consumed preference shapes. Unsafe known
+stores refuse before mutation. Unknown keys/files remain untouched; preferences
+are never rewritten, chmodded or deleted by the installer. Personal added files
+are preserved and reported.
+
+An older four-mod B2 v2 receipt is refused before mutation. Uninstall it using
+the reviewed package that created it, then install this six-mod package. There
+is no in-place receipt upgrade. The frozen original four-mod v1 inventory,
+optional private binary/modes and original key authority remain supported.
+Retained-preference/reinstall automation is deferred to [#145](https://github.com/LeaveMyYard/herdr-panorama/issues/145);
+extended native input/visual coverage is tracked in [#146](https://github.com/LeaveMyYard/herdr-panorama/issues/146).
 
 ```sh
 scripts/app-build --check
@@ -143,6 +169,6 @@ During conductor work, native checks run under the shared `runtime.lock`.
 A native check covers initial/eager rendering only; it does not validate layout,
 later async states, interactions, screenshots or visual design acceptance.
 
-The layout derives from Herdr app 0.1.12's main layout with agents/spaces mod
-references replaced, a 320px sidebar and a 143px Spaces block. Its Apache-2.0
+The layout derives from Herdr app 0.1.12's main layout with agents/Spaces/tabs/pane
+references replaced, a 320px sidebar and a content-sized Spaces block. Its Apache-2.0
 license and provenance travel inside mods/panorama/. No artwork is copied; shipped mod/asset references stay intact.

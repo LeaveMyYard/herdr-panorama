@@ -1,0 +1,307 @@
+{
+  "source_base": "92babb4ccadc28397674d8738cb6611252cd1fda",
+  "artifact_sha256": "da6d69e802a479d47aa154d3e6464c7286d0c06ef25304c9ca5a22e0aec328f2",
+  "artifact_bytes": 9964424,
+  "isolation": {
+    "HOME": "/home/leavemyyard/.cache/b3-interop-11iq710l/home",
+    "XDG_CONFIG_HOME": "/home/leavemyyard/.cache/b3-interop-11iq710l/config",
+    "XDG_STATE_HOME": "/home/leavemyyard/.cache/b3-interop-11iq710l/state",
+    "XDG_RUNTIME_DIR": "/home/leavemyyard/.cache/b3-interop-11iq710l/runtime",
+    "CLAUDE_CONFIG_DIR": "/home/leavemyyard/.cache/b3-interop-11iq710l/claude",
+    "CODEX_HOME": "/home/leavemyyard/.cache/b3-interop-11iq710l/codex",
+    "PANORAMA_EVENTS_DIR": "/home/leavemyyard/.cache/b3-interop-11iq710l/events",
+    "PANORAMA_HOOKS_DIR": "/home/leavemyyard/.cache/b3-interop-11iq710l/hooks",
+    "HC_SESSION": "b3i-9425df10",
+    "HERDR_APP_HOME": "/home/leavemyyard/.cache/b3-interop-11iq710l/home/.config/herdr-app",
+    "HERDR_TELEMETRY": "0",
+    "DO_NOT_TRACK": "1",
+    "LANG": "C.UTF-8",
+    "TERM": "xterm-256color"
+  },
+  "core_before_structural": {
+    "pid": 2989140,
+    "id": "cba222ec023dba19fce09229cd970a57",
+    "live": 0,
+    "selected_environment": {
+      "HC_SESSION": "b3i-9425df10",
+      "HOME": "/home/leavemyyard/.cache/b3-interop-11iq710l/home",
+      "XDG_CONFIG_HOME": "/home/leavemyyard/.cache/b3-interop-11iq710l/config",
+      "XDG_RUNTIME_DIR": "/home/leavemyyard/.cache/b3-interop-11iq710l/runtime",
+      "XDG_STATE_HOME": "/home/leavemyyard/.cache/b3-interop-11iq710l/state"
+    },
+    "private_sockets": [
+      "/home/leavemyyard/.cache/b3-interop-11iq710l/runtime/herdr-core/b3i-9425df10.sock"
+    ]
+  },
+  "native_packet_before_uninstall": {
+    "feed": {
+      "counts": {
+        "active_threads": 0,
+        "agents": 0,
+        "blocked": 0,
+        "failed": 0,
+        "orchestrators": 1,
+        "questions": 0,
+        "running": 0,
+        "threads": 0,
+        "waiting": 0
+      },
+      "errors": [
+        "core:t1: session ownership unavailable",
+        "inbox source unavailable"
+      ],
+      "generated_at": 1793721396.4543896,
+      "herdr_ok": true,
+      "inbox_ok": false,
+      "orchestrators": [
+        {
+          "bg": [],
+          "cwd": "/home/leavemyyard/Code/herdr-panorama-worktrees/app-b3",
+          "flavour": "agents",
+          "focused": false,
+          "harness": "claude",
+          "herdr_status": "working",
+          "hidden_done": 0,
+          "host": "herdr-core",
+          "inbox": [],
+          "inbox_texts": [],
+          "last_activity": null,
+          "machine": null,
+          "machine_id": null,
+          "pane_id": "core:t1",
+          "pending": [],
+          "session_id": null,
+          "tab_id": null,
+          "tab_label": "core:t1",
+          "tab_no": null,
+          "terminal": "t1",
+          "threads": [],
+          "transcript": null,
+          "workspace_id": null
+        }
+      ],
+      "v": 1
+    },
+    "generated_at": 1793721396.4543896,
+    "install_id": "83758e7b0a0f0c32048cdc9400f3c1d8",
+    "writerError": null,
+    "stale": false,
+    "errors": [
+      "core:t1: session ownership unavailable",
+      "inbox source unavailable"
+    ]
+  },
+  "native_status_before_uninstall": {
+    "zoom": 1.2,
+    "font_size": 16.8,
+    "ui_font_size": 15.6,
+    "space": "sp3aa2ce655a356ec2b173ef06d6549d53",
+    "tab": "tb276ca42d874e6663dc38edcb80222d64",
+    "focused_pane": "p28ab7279b1f94d1c72b7b557a7525760",
+    "layout": "panorama",
+    "agent": "t1",
+    "floats": {},
+    "overlays": [],
+    "errors": []
+  },
+  "writer": {
+    "generation": "83758e7b0a0f0c32048cdc9400f3c1d8",
+    "pid": 2989904,
+    "start": "3017873",
+    "initial_feed": {
+      "counts": {
+        "active_threads": 0,
+        "agents": 0,
+        "blocked": 0,
+        "failed": 0,
+        "orchestrators": 1,
+        "questions": 0,
+        "running": 0,
+        "threads": 0,
+        "waiting": 0
+      },
+      "errors": [
+        "core:t1: session ownership unavailable",
+        "inbox source unavailable"
+      ],
+      "generated_at": 1793721396.4543896,
+      "herdr_ok": true,
+      "inbox_ok": false,
+      "orchestrators": [
+        {
+          "bg": [],
+          "cwd": "/home/leavemyyard/Code/herdr-panorama-worktrees/app-b3",
+          "flavour": "agents",
+          "focused": false,
+          "harness": "claude",
+          "herdr_status": "working",
+          "hidden_done": 0,
+          "host": "herdr-core",
+          "inbox": [],
+          "inbox_texts": [],
+          "last_activity": null,
+          "machine": null,
+          "machine_id": null,
+          "pane_id": "core:t1",
+          "pending": [],
+          "session_id": null,
+          "tab_id": null,
+          "tab_label": "core:t1",
+          "tab_no": null,
+          "terminal": "t1",
+          "threads": [],
+          "transcript": null,
+          "workspace_id": null
+        }
+      ],
+      "v": 1
+    },
+    "updated_feed": {
+      "counts": {
+        "active_threads": 0,
+        "agents": 0,
+        "blocked": 1,
+        "failed": 0,
+        "orchestrators": 1,
+        "questions": 0,
+        "running": 0,
+        "threads": 0,
+        "waiting": 0
+      },
+      "errors": [
+        "core:t1: session ownership unavailable",
+        "inbox source unavailable"
+      ],
+      "generated_at": 1793721397.014838,
+      "herdr_ok": true,
+      "inbox_ok": false,
+      "orchestrators": [
+        {
+          "bg": [],
+          "cwd": "/home/leavemyyard/Code/herdr-panorama-worktrees/app-b3",
+          "flavour": "agents",
+          "focused": false,
+          "harness": "claude",
+          "herdr_status": "blocked",
+          "hidden_done": 0,
+          "host": "herdr-core",
+          "inbox": [],
+          "inbox_texts": [],
+          "last_activity": null,
+          "machine": null,
+          "machine_id": null,
+          "pane_id": "core:t1",
+          "pending": [],
+          "session_id": null,
+          "tab_id": null,
+          "tab_label": "core:t1",
+          "tab_no": null,
+          "terminal": "t1",
+          "threads": [],
+          "transcript": null,
+          "workspace_id": null
+        }
+      ],
+      "v": 1
+    },
+    "ensure_idempotent_same_pid": true,
+    "merged_fixture_sha256": "284cbc3ca96d24813bb18905e5ad4992749314ad5fcbcce9809c6cb919d43e60"
+  },
+  "retained_stores_before_uninstall": {
+    "data/panorama-spaces/store.json": {
+      "bytes": "{\"machines.folded\": \"[null,\\\"owned-machine\\\"]\", \"machines.reconnecting\": \"{\\\"owned-machine\\\": {\\\"machine\\\": {\\\"name\\\": \\\"owned-machine\\\", \\\"target\\\": \\\"test.invalid\\\", \\\"id\\\": \\\"fixture-core\\\", \\\"host\\\": \\\"fixture-host\\\", \\\"version\\\": \\\"fixture-version\\\", \\\"state\\\": \\\"unreachable\\\", \\\"session\\\": null, \\\"since_ms\\\": 0, \\\"temporary\\\": false, \\\"via\\\": false, \\\"why\\\": \\\"fixture-unreachable\\\"}, \\\"removed\\\": false, \\\"busy\\\": false, \\\"error\\\": null}}\"}",
+      "mode": 384
+    },
+    "data/panorama-tabs/store.json": {
+      "bytes": "{\n  \"panels\": \"{\\\"sp3aa2ce655a356ec2b173ef06d6549d53\\\":\\\"files\\\"}\"\n}",
+      "mode": 384
+    }
+  },
+  "replacement_native_packet": {
+    "feed": {
+      "counts": {
+        "active_threads": 0,
+        "agents": 0,
+        "blocked": 1,
+        "failed": 0,
+        "orchestrators": 1,
+        "questions": 0,
+        "running": 0,
+        "threads": 0,
+        "waiting": 0
+      },
+      "errors": [
+        "core:t1: session ownership unavailable",
+        "inbox source unavailable"
+      ],
+      "generated_at": 1793721401.1240995,
+      "herdr_ok": true,
+      "inbox_ok": false,
+      "orchestrators": [
+        {
+          "bg": [],
+          "cwd": "/home/leavemyyard/Code/herdr-panorama-worktrees/app-b3",
+          "flavour": "agents",
+          "focused": false,
+          "harness": "claude",
+          "herdr_status": "blocked",
+          "hidden_done": 0,
+          "host": "herdr-core",
+          "inbox": [],
+          "inbox_texts": [],
+          "last_activity": null,
+          "machine": null,
+          "machine_id": null,
+          "pane_id": "core:t1",
+          "pending": [],
+          "session_id": null,
+          "tab_id": null,
+          "tab_label": "core:t1",
+          "tab_no": null,
+          "terminal": "t1",
+          "threads": [],
+          "transcript": null,
+          "workspace_id": null
+        }
+      ],
+      "v": 1
+    },
+    "generated_at": 1793721401.1240995,
+    "install_id": "a8bebc34dd957b2df15cb0d9bc26464e",
+    "writerError": null,
+    "stale": false,
+    "errors": [
+      "core:t1: session ownership unavailable",
+      "inbox source unavailable"
+    ]
+  },
+  "replacement_native_status": {
+    "zoom": 1.2,
+    "font_size": 16.8,
+    "ui_font_size": 15.6,
+    "space": "sp3aa2ce655a356ec2b173ef06d6549d53",
+    "tab": "tb276ca42d874e6663dc38edcb80222d64",
+    "focused_pane": "p28ab7279b1f94d1c72b7b557a7525760",
+    "layout": "panorama",
+    "agent": "t1",
+    "floats": {},
+    "overlays": [],
+    "errors": []
+  },
+  "retained_after_reopen": {
+    "data/panorama-spaces/store.json": "{\"machines.folded\": \"[null,\\\"owned-machine\\\"]\", \"machines.reconnecting\": \"{\\\"owned-machine\\\": {\\\"machine\\\": {\\\"name\\\": \\\"owned-machine\\\", \\\"target\\\": \\\"test.invalid\\\", \\\"id\\\": \\\"fixture-core\\\", \\\"host\\\": \\\"fixture-host\\\", \\\"version\\\": \\\"fixture-version\\\", \\\"state\\\": \\\"unreachable\\\", \\\"session\\\": null, \\\"since_ms\\\": 0, \\\"temporary\\\": false, \\\"via\\\": false, \\\"why\\\": \\\"fixture-unreachable\\\"}, \\\"removed\\\": false, \\\"busy\\\": false, \\\"error\\\": null}}\"}",
+    "data/panorama-tabs/store.json": "{\n  \"panels\": \"{\\\"sp3aa2ce655a356ec2b173ef06d6549d53\\\":\\\"files\\\"}\"\n}"
+  },
+  "result": {
+    "retained_preferences_exact": true,
+    "preexisting_pref_dirs_not_receipted": true,
+    "graph_store_absent": true,
+    "real_writer_cooperative_exit": true,
+    "exact_personal_file_mode_roundtrip": true,
+    "replacement_generation": "a8bebc34dd957b2df15cb0d9bc26464e",
+    "stale_generation_call_refused_before_writer": true,
+    "stale_stderr": "panorama app-feed: installer generation changed; refusing stale client\n",
+    "native_window_launched": true,
+    "active_window_frontend_ack_two_nulls": true
+  }
+}

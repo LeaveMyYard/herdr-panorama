@@ -3,14 +3,28 @@ import math
 import re
 from keys import decoded, loads, merge
 
-MODS = ('panorama', 'panorama-spaces', 'panorama-graph', 'panorama-peek')
-MOD_DATA_DIRS = frozenset(('data/panorama-spaces', 'data/panorama-graph', 'data/panorama-peek'))
+# Frozen B1 v1 authority. Never derive this from the evolving runtime MODS set.
+LEGACY_FILES = frozenset((
+    'mods/panorama/main.js', 'mods/panorama/mod.json',
+    'mods/panorama-spaces/main.js', 'mods/panorama-spaces/mod.json',
+    'mods/panorama-graph/main.js', 'mods/panorama-graph/mod.json',
+    'mods/panorama-peek/main.js', 'mods/panorama-peek/mod.json',
+    'layouts/panorama.json', 'mods/panorama/LICENSE.herdr-app', 'mods/panorama/NOTICE',
+))
+MODS = ('panorama', 'panorama-spaces', 'panorama-graph', 'panorama-peek', 'panorama-tabs', 'panorama-pane')
+MOD_DATA_DIRS = frozenset(f'data/{name}' for name in MODS if name != 'panorama')
 MANIFEST = 'data/panorama/install.json'
 BINARY = 'data/panorama/bin/panorama'
 BASE_FILES = {f'mods/{name}/{file}' for name in MODS for file in ('main.js', 'mod.json')}
 BASE_FILES.update(('layouts/panorama.json', 'mods/panorama/LICENSE.herdr-app', 'mods/panorama/NOTICE'))
-LEGACY_FILES = frozenset(BASE_FILES)
-BASE_FILES.update(f'mods/panorama/{name}.js' for name in ('contract', 'tree', 'model', 'feed-client', 'marks', 'routing', 'binary', 'viewport', 'viewport-math'))
+RUNTIME_FILES = {
+    'panorama': ('contract.js', 'tree.js', 'model.js', 'feed-client.js', 'marks.js', 'routing.js', 'binary.js', 'viewport.js', 'viewport-math.js'),
+    'panorama-spaces': ('LICENSE.herdr-app', 'contract.js', 'tree.js', 'model.js', 'binary.js', 'feed-client.js', 'tabs.js'),
+    'panorama-graph': ('contract.js', 'tree.js', 'model.js', 'binary.js', 'feed-client.js', 'marks.js', 'routing.js', 'actions.js', 'cards.js', 'graph.js', 'inbox.js'),
+    'panorama-tabs': ('LICENSE.herdr-app', 'contract.js', 'tree.js', 'model.js', 'binary.js', 'feed-client.js', 'swarm.js'),
+    'panorama-pane': ('LICENSE.herdr-app', 'contract.js', 'tree.js', 'model.js', 'binary.js', 'feed-client.js', 'marks.js', 'space.js', 'swarm.js'),
+}
+BASE_FILES.update(f'mods/{mod}/{name}' for mod, names in RUNTIME_FILES.items() for name in names)
 METADATA_FILES = {f'mods/{mod}/{name}' for mod in MODS for name in ('gpui-kit.d.ts', 'jsconfig.json')}
 
 

@@ -1,0 +1,8 @@
+{
+  "source_commit": "ace6693714f4dd7fc6dbef312c81f80c92aa940d",
+  "cards_sha256": "c786967f358efb97db7d923050e9bfebe7e07ebf717a407cc284346d1fb8e406",
+  "runtime_diff_since_583fac": "Only selected agent metadata includes available last_at/started age; unavailable timestamp remains absent.",
+  "evidence": "Affected D2 only, same approved synthetic/stale fixture method, unchanged generation/launch authority.",
+  "owned_processes_after": [],
+  "runtime_lock_busy_after": false
+}

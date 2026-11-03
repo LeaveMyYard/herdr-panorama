@@ -1,0 +1,3604 @@
+{
+  "source_head": "c009ee27f0fb08de512719a326eb41e97cabca2d",
+  "zoom": 1.2,
+  "method": "Native isolated graphical app; seeded synthetic feed, actual Graph.scroll callback with paint intervals, render count and process CPU sampled for3.2s; screenshot verified",
+  "cases": {
+    "below-viewport": {
+      "redraws": 0,
+      "seconds": 3.2,
+      "cpu_percent": 2.5,
+      "before": {
+        "probeId": "1793710714980:0.3200511816346774",
+        "active": false,
+        "props": {
+          "space": "sp0f2104b7944b08e8d7c0b65a9907e48f"
+        },
+        "mode": "below",
+        "renderCount": 15,
+        "timer": false,
+        "size": {
+          "width": 1229.1666178239736,
+          "height": 678.3333063787895
+        },
+        "rawSize": {
+          "width": 1475,
+          "height": 814
+        },
+        "zoom": 1.2000000476837158,
+        "window": {
+          "lo": 2,
+          "hi": 2,
+          "columns": [
+            {
+              "column": 2,
+              "x": 24,
+              "width": 272
+            }
+          ],
+          "total": 880,
+          "left": 608,
+          "shown": 272
+        },
+        "offsets": {
+          "0": 0,
+          "1": 0,
+          "2": 0
+        },
+        "nodes": [
+          {
+            "key": "[\"root\",\"herdr-core\",\"t1\"]",
+            "column": 0,
+            "y": 0,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"root\",\"herdr-core\",\"t3\"]",
+            "column": 0,
+            "y": 64,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"thread\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-fixture\"]",
+            "column": 1,
+            "y": 0,
+            "height": 64,
+            "kind": "thread"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-0\"]",
+            "column": 2,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-1\"]",
+            "column": 2,
+            "y": 64,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-2\"]",
+            "column": 2,
+            "y": 128,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-3\"]",
+            "column": 2,
+            "y": 192,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-4\"]",
+            "column": 2,
+            "y": 256,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-5\"]",
+            "column": 2,
+            "y": 320,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-6\"]",
+            "column": 2,
+            "y": 384,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-7\"]",
+            "column": 2,
+            "y": 448,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-8\"]",
+            "column": 2,
+            "y": 512,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-9\"]",
+            "column": 2,
+            "y": 576,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-10\"]",
+            "column": 2,
+            "y": 640,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-11\"]",
+            "column": 2,
+            "y": 704,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-12\"]",
+            "column": 2,
+            "y": 768,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-13\"]",
+            "column": 2,
+            "y": 832,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-14\"]",
+            "column": 2,
+            "y": 896,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-15\"]",
+            "column": 2,
+            "y": 960,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-16\"]",
+            "column": 2,
+            "y": 1024,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-17\"]",
+            "column": 2,
+            "y": 1088,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-18\"]",
+            "column": 2,
+            "y": 1152,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-19\"]",
+            "column": 2,
+            "y": 1216,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-20\"]",
+            "column": 2,
+            "y": 1280,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-21\"]",
+            "column": 2,
+            "y": 1344,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-22\"]",
+            "column": 2,
+            "y": 1408,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-23\"]",
+            "column": 2,
+            "y": 1472,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-24\"]",
+            "column": 2,
+            "y": 1536,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-25\"]",
+            "column": 2,
+            "y": 1600,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-26\"]",
+            "column": 2,
+            "y": 1664,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-27\"]",
+            "column": 2,
+            "y": 1728,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-28\"]",
+            "column": 2,
+            "y": 1792,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-29\"]",
+            "column": 2,
+            "y": 1856,
+            "height": 54,
+            "status": "run",
+            "kind": "agent"
+          }
+        ]
+      },
+      "after": {
+        "probeId": "1793710714980:0.3200511816346774",
+        "active": false,
+        "props": {
+          "space": "sp0f2104b7944b08e8d7c0b65a9907e48f"
+        },
+        "mode": "below",
+        "renderCount": 15,
+        "timer": false,
+        "size": {
+          "width": 1229.1666178239736,
+          "height": 678.3333063787895
+        },
+        "rawSize": {
+          "width": 1475,
+          "height": 814
+        },
+        "zoom": 1.2000000476837158,
+        "window": {
+          "lo": 2,
+          "hi": 2,
+          "columns": [
+            {
+              "column": 2,
+              "x": 24,
+              "width": 272
+            }
+          ],
+          "total": 880,
+          "left": 608,
+          "shown": 272
+        },
+        "offsets": {
+          "0": 0,
+          "1": 0,
+          "2": 0
+        },
+        "nodes": [
+          {
+            "key": "[\"root\",\"herdr-core\",\"t1\"]",
+            "column": 0,
+            "y": 0,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"root\",\"herdr-core\",\"t3\"]",
+            "column": 0,
+            "y": 64,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"thread\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-fixture\"]",
+            "column": 1,
+            "y": 0,
+            "height": 64,
+            "kind": "thread"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-0\"]",
+            "column": 2,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-1\"]",
+            "column": 2,
+            "y": 64,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-2\"]",
+            "column": 2,
+            "y": 128,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-3\"]",
+            "column": 2,
+            "y": 192,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-4\"]",
+            "column": 2,
+            "y": 256,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-5\"]",
+            "column": 2,
+            "y": 320,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-6\"]",
+            "column": 2,
+            "y": 384,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-7\"]",
+            "column": 2,
+            "y": 448,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-8\"]",
+            "column": 2,
+            "y": 512,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-9\"]",
+            "column": 2,
+            "y": 576,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-10\"]",
+            "column": 2,
+            "y": 640,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-11\"]",
+            "column": 2,
+            "y": 704,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-12\"]",
+            "column": 2,
+            "y": 768,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-13\"]",
+            "column": 2,
+            "y": 832,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-14\"]",
+            "column": 2,
+            "y": 896,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-15\"]",
+            "column": 2,
+            "y": 960,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-16\"]",
+            "column": 2,
+            "y": 1024,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-17\"]",
+            "column": 2,
+            "y": 1088,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-18\"]",
+            "column": 2,
+            "y": 1152,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-19\"]",
+            "column": 2,
+            "y": 1216,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-20\"]",
+            "column": 2,
+            "y": 1280,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-21\"]",
+            "column": 2,
+            "y": 1344,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-22\"]",
+            "column": 2,
+            "y": 1408,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-23\"]",
+            "column": 2,
+            "y": 1472,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-24\"]",
+            "column": 2,
+            "y": 1536,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-25\"]",
+            "column": 2,
+            "y": 1600,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-26\"]",
+            "column": 2,
+            "y": 1664,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-27\"]",
+            "column": 2,
+            "y": 1728,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-28\"]",
+            "column": 2,
+            "y": 1792,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-29\"]",
+            "column": 2,
+            "y": 1856,
+            "height": 54,
+            "status": "run",
+            "kind": "agent"
+          }
+        ]
+      }
+    },
+    "below-scrolled-visible": {
+      "redraws": 70,
+      "seconds": 3.2,
+      "cpu_percent": 11.874,
+      "before": {
+        "probeId": "1793710714980:0.3200511816346774",
+        "active": false,
+        "props": {
+          "space": "sp0f2104b7944b08e8d7c0b65a9907e48f"
+        },
+        "mode": "scroll-down",
+        "renderCount": 49,
+        "timer": true,
+        "size": {
+          "width": 1229.1666178239736,
+          "height": 678.3333063787895
+        },
+        "rawSize": {
+          "width": 1475,
+          "height": 814
+        },
+        "zoom": 1.2000000476837158,
+        "window": {
+          "lo": 2,
+          "hi": 2,
+          "columns": [
+            {
+              "column": 2,
+              "x": 24,
+              "width": 272
+            }
+          ],
+          "total": 880,
+          "left": 608,
+          "shown": 272
+        },
+        "offsets": {
+          "0": 0,
+          "1": 0,
+          "2": 1231.6666936212105
+        },
+        "nodes": [
+          {
+            "key": "[\"root\",\"herdr-core\",\"t1\"]",
+            "column": 0,
+            "y": 0,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"root\",\"herdr-core\",\"t3\"]",
+            "column": 0,
+            "y": 64,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"thread\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-fixture\"]",
+            "column": 1,
+            "y": 0,
+            "height": 64,
+            "kind": "thread"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-0\"]",
+            "column": 2,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-1\"]",
+            "column": 2,
+            "y": 64,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-2\"]",
+            "column": 2,
+            "y": 128,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-3\"]",
+            "column": 2,
+            "y": 192,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-4\"]",
+            "column": 2,
+            "y": 256,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-5\"]",
+            "column": 2,
+            "y": 320,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-6\"]",
+            "column": 2,
+            "y": 384,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-7\"]",
+            "column": 2,
+            "y": 448,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-8\"]",
+            "column": 2,
+            "y": 512,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-9\"]",
+            "column": 2,
+            "y": 576,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-10\"]",
+            "column": 2,
+            "y": 640,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-11\"]",
+            "column": 2,
+            "y": 704,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-12\"]",
+            "column": 2,
+            "y": 768,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-13\"]",
+            "column": 2,
+            "y": 832,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-14\"]",
+            "column": 2,
+            "y": 896,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-15\"]",
+            "column": 2,
+            "y": 960,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-16\"]",
+            "column": 2,
+            "y": 1024,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-17\"]",
+            "column": 2,
+            "y": 1088,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-18\"]",
+            "column": 2,
+            "y": 1152,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-19\"]",
+            "column": 2,
+            "y": 1216,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-20\"]",
+            "column": 2,
+            "y": 1280,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-21\"]",
+            "column": 2,
+            "y": 1344,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-22\"]",
+            "column": 2,
+            "y": 1408,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-23\"]",
+            "column": 2,
+            "y": 1472,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-24\"]",
+            "column": 2,
+            "y": 1536,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-25\"]",
+            "column": 2,
+            "y": 1600,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-26\"]",
+            "column": 2,
+            "y": 1664,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-27\"]",
+            "column": 2,
+            "y": 1728,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-28\"]",
+            "column": 2,
+            "y": 1792,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-29\"]",
+            "column": 2,
+            "y": 1856,
+            "height": 54,
+            "status": "run",
+            "kind": "agent"
+          }
+        ]
+      },
+      "after": {
+        "probeId": "1793710714980:0.3200511816346774",
+        "active": false,
+        "props": {
+          "space": "sp0f2104b7944b08e8d7c0b65a9907e48f"
+        },
+        "mode": "scroll-down",
+        "renderCount": 119,
+        "timer": true,
+        "size": {
+          "width": 1229.1666178239736,
+          "height": 678.3333063787895
+        },
+        "rawSize": {
+          "width": 1475,
+          "height": 814
+        },
+        "zoom": 1.2000000476837158,
+        "window": {
+          "lo": 2,
+          "hi": 2,
+          "columns": [
+            {
+              "column": 2,
+              "x": 24,
+              "width": 272
+            }
+          ],
+          "total": 880,
+          "left": 608,
+          "shown": 272
+        },
+        "offsets": {
+          "0": 0,
+          "1": 0,
+          "2": 1231.6666936212105
+        },
+        "nodes": [
+          {
+            "key": "[\"root\",\"herdr-core\",\"t1\"]",
+            "column": 0,
+            "y": 0,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"root\",\"herdr-core\",\"t3\"]",
+            "column": 0,
+            "y": 64,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"thread\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-fixture\"]",
+            "column": 1,
+            "y": 0,
+            "height": 64,
+            "kind": "thread"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-0\"]",
+            "column": 2,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-1\"]",
+            "column": 2,
+            "y": 64,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-2\"]",
+            "column": 2,
+            "y": 128,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-3\"]",
+            "column": 2,
+            "y": 192,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-4\"]",
+            "column": 2,
+            "y": 256,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-5\"]",
+            "column": 2,
+            "y": 320,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-6\"]",
+            "column": 2,
+            "y": 384,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-7\"]",
+            "column": 2,
+            "y": 448,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-8\"]",
+            "column": 2,
+            "y": 512,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-9\"]",
+            "column": 2,
+            "y": 576,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-10\"]",
+            "column": 2,
+            "y": 640,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-11\"]",
+            "column": 2,
+            "y": 704,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-12\"]",
+            "column": 2,
+            "y": 768,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-13\"]",
+            "column": 2,
+            "y": 832,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-14\"]",
+            "column": 2,
+            "y": 896,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-15\"]",
+            "column": 2,
+            "y": 960,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-16\"]",
+            "column": 2,
+            "y": 1024,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-17\"]",
+            "column": 2,
+            "y": 1088,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-18\"]",
+            "column": 2,
+            "y": 1152,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-19\"]",
+            "column": 2,
+            "y": 1216,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-20\"]",
+            "column": 2,
+            "y": 1280,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-21\"]",
+            "column": 2,
+            "y": 1344,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-22\"]",
+            "column": 2,
+            "y": 1408,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-23\"]",
+            "column": 2,
+            "y": 1472,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-24\"]",
+            "column": 2,
+            "y": 1536,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-25\"]",
+            "column": 2,
+            "y": 1600,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-26\"]",
+            "column": 2,
+            "y": 1664,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-27\"]",
+            "column": 2,
+            "y": 1728,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-28\"]",
+            "column": 2,
+            "y": 1792,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-29\"]",
+            "column": 2,
+            "y": 1856,
+            "height": 54,
+            "status": "run",
+            "kind": "agent"
+          }
+        ]
+      }
+    },
+    "below-scrolled-hidden": {
+      "redraws": 0,
+      "seconds": 3.2,
+      "cpu_percent": 2.812,
+      "before": {
+        "probeId": "1793710714980:0.3200511816346774",
+        "active": false,
+        "props": {
+          "space": "sp0f2104b7944b08e8d7c0b65a9907e48f"
+        },
+        "mode": "scroll-up",
+        "renderCount": 140,
+        "timer": false,
+        "size": {
+          "width": 1229.1666178239736,
+          "height": 678.3333063787895
+        },
+        "rawSize": {
+          "width": 1475,
+          "height": 814
+        },
+        "zoom": 1.2000000476837158,
+        "window": {
+          "lo": 2,
+          "hi": 2,
+          "columns": [
+            {
+              "column": 2,
+              "x": 24,
+              "width": 272
+            }
+          ],
+          "total": 880,
+          "left": 608,
+          "shown": 272
+        },
+        "offsets": {
+          "0": 0,
+          "1": 0,
+          "2": 0
+        },
+        "nodes": [
+          {
+            "key": "[\"root\",\"herdr-core\",\"t1\"]",
+            "column": 0,
+            "y": 0,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"root\",\"herdr-core\",\"t3\"]",
+            "column": 0,
+            "y": 64,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"thread\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-fixture\"]",
+            "column": 1,
+            "y": 0,
+            "height": 64,
+            "kind": "thread"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-0\"]",
+            "column": 2,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-1\"]",
+            "column": 2,
+            "y": 64,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-2\"]",
+            "column": 2,
+            "y": 128,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-3\"]",
+            "column": 2,
+            "y": 192,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-4\"]",
+            "column": 2,
+            "y": 256,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-5\"]",
+            "column": 2,
+            "y": 320,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-6\"]",
+            "column": 2,
+            "y": 384,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-7\"]",
+            "column": 2,
+            "y": 448,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-8\"]",
+            "column": 2,
+            "y": 512,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-9\"]",
+            "column": 2,
+            "y": 576,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-10\"]",
+            "column": 2,
+            "y": 640,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-11\"]",
+            "column": 2,
+            "y": 704,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-12\"]",
+            "column": 2,
+            "y": 768,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-13\"]",
+            "column": 2,
+            "y": 832,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-14\"]",
+            "column": 2,
+            "y": 896,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-15\"]",
+            "column": 2,
+            "y": 960,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-16\"]",
+            "column": 2,
+            "y": 1024,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-17\"]",
+            "column": 2,
+            "y": 1088,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-18\"]",
+            "column": 2,
+            "y": 1152,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-19\"]",
+            "column": 2,
+            "y": 1216,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-20\"]",
+            "column": 2,
+            "y": 1280,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-21\"]",
+            "column": 2,
+            "y": 1344,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-22\"]",
+            "column": 2,
+            "y": 1408,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-23\"]",
+            "column": 2,
+            "y": 1472,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-24\"]",
+            "column": 2,
+            "y": 1536,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-25\"]",
+            "column": 2,
+            "y": 1600,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-26\"]",
+            "column": 2,
+            "y": 1664,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-27\"]",
+            "column": 2,
+            "y": 1728,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-28\"]",
+            "column": 2,
+            "y": 1792,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-29\"]",
+            "column": 2,
+            "y": 1856,
+            "height": 54,
+            "status": "run",
+            "kind": "agent"
+          }
+        ]
+      },
+      "after": {
+        "probeId": "1793710714980:0.3200511816346774",
+        "active": false,
+        "props": {
+          "space": "sp0f2104b7944b08e8d7c0b65a9907e48f"
+        },
+        "mode": "scroll-up",
+        "renderCount": 140,
+        "timer": false,
+        "size": {
+          "width": 1229.1666178239736,
+          "height": 678.3333063787895
+        },
+        "rawSize": {
+          "width": 1475,
+          "height": 814
+        },
+        "zoom": 1.2000000476837158,
+        "window": {
+          "lo": 2,
+          "hi": 2,
+          "columns": [
+            {
+              "column": 2,
+              "x": 24,
+              "width": 272
+            }
+          ],
+          "total": 880,
+          "left": 608,
+          "shown": 272
+        },
+        "offsets": {
+          "0": 0,
+          "1": 0,
+          "2": 0
+        },
+        "nodes": [
+          {
+            "key": "[\"root\",\"herdr-core\",\"t1\"]",
+            "column": 0,
+            "y": 0,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"root\",\"herdr-core\",\"t3\"]",
+            "column": 0,
+            "y": 64,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"thread\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-fixture\"]",
+            "column": 1,
+            "y": 0,
+            "height": 64,
+            "kind": "thread"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-0\"]",
+            "column": 2,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-1\"]",
+            "column": 2,
+            "y": 64,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-2\"]",
+            "column": 2,
+            "y": 128,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-3\"]",
+            "column": 2,
+            "y": 192,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-4\"]",
+            "column": 2,
+            "y": 256,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-5\"]",
+            "column": 2,
+            "y": 320,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-6\"]",
+            "column": 2,
+            "y": 384,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-7\"]",
+            "column": 2,
+            "y": 448,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-8\"]",
+            "column": 2,
+            "y": 512,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-9\"]",
+            "column": 2,
+            "y": 576,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-10\"]",
+            "column": 2,
+            "y": 640,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-11\"]",
+            "column": 2,
+            "y": 704,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-12\"]",
+            "column": 2,
+            "y": 768,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-13\"]",
+            "column": 2,
+            "y": 832,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-14\"]",
+            "column": 2,
+            "y": 896,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-15\"]",
+            "column": 2,
+            "y": 960,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-16\"]",
+            "column": 2,
+            "y": 1024,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-17\"]",
+            "column": 2,
+            "y": 1088,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-18\"]",
+            "column": 2,
+            "y": 1152,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-19\"]",
+            "column": 2,
+            "y": 1216,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-20\"]",
+            "column": 2,
+            "y": 1280,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-21\"]",
+            "column": 2,
+            "y": 1344,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-22\"]",
+            "column": 2,
+            "y": 1408,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-23\"]",
+            "column": 2,
+            "y": 1472,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-24\"]",
+            "column": 2,
+            "y": 1536,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-25\"]",
+            "column": 2,
+            "y": 1600,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-26\"]",
+            "column": 2,
+            "y": 1664,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-27\"]",
+            "column": 2,
+            "y": 1728,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-28\"]",
+            "column": 2,
+            "y": 1792,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-29\"]",
+            "column": 2,
+            "y": 1856,
+            "height": 54,
+            "status": "run",
+            "kind": "agent"
+          }
+        ]
+      }
+    },
+    "above-visible": {
+      "redraws": 69,
+      "seconds": 3.2,
+      "cpu_percent": 11.874,
+      "before": {
+        "probeId": "1793710714980:0.3200511816346774",
+        "active": false,
+        "props": {
+          "space": "sp0f2104b7944b08e8d7c0b65a9907e48f"
+        },
+        "mode": "above",
+        "renderCount": 175,
+        "timer": true,
+        "size": {
+          "width": 1229.1666178239736,
+          "height": 678.3333063787895
+        },
+        "rawSize": {
+          "width": 1475,
+          "height": 814
+        },
+        "zoom": 1.2000000476837158,
+        "window": {
+          "lo": 2,
+          "hi": 2,
+          "columns": [
+            {
+              "column": 2,
+              "x": 24,
+              "width": 272
+            }
+          ],
+          "total": 880,
+          "left": 608,
+          "shown": 272
+        },
+        "offsets": {
+          "0": 0,
+          "1": 0,
+          "2": 0
+        },
+        "nodes": [
+          {
+            "key": "[\"root\",\"herdr-core\",\"t1\"]",
+            "column": 0,
+            "y": 0,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"root\",\"herdr-core\",\"t3\"]",
+            "column": 0,
+            "y": 64,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"thread\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-fixture\"]",
+            "column": 1,
+            "y": 0,
+            "height": 64,
+            "kind": "thread"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-0\"]",
+            "column": 2,
+            "y": 0,
+            "height": 54,
+            "status": "run",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-1\"]",
+            "column": 2,
+            "y": 64,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-2\"]",
+            "column": 2,
+            "y": 128,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-3\"]",
+            "column": 2,
+            "y": 192,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-4\"]",
+            "column": 2,
+            "y": 256,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-5\"]",
+            "column": 2,
+            "y": 320,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-6\"]",
+            "column": 2,
+            "y": 384,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-7\"]",
+            "column": 2,
+            "y": 448,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-8\"]",
+            "column": 2,
+            "y": 512,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-9\"]",
+            "column": 2,
+            "y": 576,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-10\"]",
+            "column": 2,
+            "y": 640,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-11\"]",
+            "column": 2,
+            "y": 704,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-12\"]",
+            "column": 2,
+            "y": 768,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-13\"]",
+            "column": 2,
+            "y": 832,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-14\"]",
+            "column": 2,
+            "y": 896,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-15\"]",
+            "column": 2,
+            "y": 960,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-16\"]",
+            "column": 2,
+            "y": 1024,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-17\"]",
+            "column": 2,
+            "y": 1088,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-18\"]",
+            "column": 2,
+            "y": 1152,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-19\"]",
+            "column": 2,
+            "y": 1216,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-20\"]",
+            "column": 2,
+            "y": 1280,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-21\"]",
+            "column": 2,
+            "y": 1344,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-22\"]",
+            "column": 2,
+            "y": 1408,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-23\"]",
+            "column": 2,
+            "y": 1472,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-24\"]",
+            "column": 2,
+            "y": 1536,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-25\"]",
+            "column": 2,
+            "y": 1600,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-26\"]",
+            "column": 2,
+            "y": 1664,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-27\"]",
+            "column": 2,
+            "y": 1728,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-28\"]",
+            "column": 2,
+            "y": 1792,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-29\"]",
+            "column": 2,
+            "y": 1856,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          }
+        ]
+      },
+      "after": {
+        "probeId": "1793710714980:0.3200511816346774",
+        "active": false,
+        "props": {
+          "space": "sp0f2104b7944b08e8d7c0b65a9907e48f"
+        },
+        "mode": "above",
+        "renderCount": 244,
+        "timer": true,
+        "size": {
+          "width": 1229.1666178239736,
+          "height": 678.3333063787895
+        },
+        "rawSize": {
+          "width": 1475,
+          "height": 814
+        },
+        "zoom": 1.2000000476837158,
+        "window": {
+          "lo": 2,
+          "hi": 2,
+          "columns": [
+            {
+              "column": 2,
+              "x": 24,
+              "width": 272
+            }
+          ],
+          "total": 880,
+          "left": 608,
+          "shown": 272
+        },
+        "offsets": {
+          "0": 0,
+          "1": 0,
+          "2": 0
+        },
+        "nodes": [
+          {
+            "key": "[\"root\",\"herdr-core\",\"t1\"]",
+            "column": 0,
+            "y": 0,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"root\",\"herdr-core\",\"t3\"]",
+            "column": 0,
+            "y": 64,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"thread\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-fixture\"]",
+            "column": 1,
+            "y": 0,
+            "height": 64,
+            "kind": "thread"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-0\"]",
+            "column": 2,
+            "y": 0,
+            "height": 54,
+            "status": "run",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-1\"]",
+            "column": 2,
+            "y": 64,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-2\"]",
+            "column": 2,
+            "y": 128,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-3\"]",
+            "column": 2,
+            "y": 192,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-4\"]",
+            "column": 2,
+            "y": 256,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-5\"]",
+            "column": 2,
+            "y": 320,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-6\"]",
+            "column": 2,
+            "y": 384,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-7\"]",
+            "column": 2,
+            "y": 448,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-8\"]",
+            "column": 2,
+            "y": 512,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-9\"]",
+            "column": 2,
+            "y": 576,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-10\"]",
+            "column": 2,
+            "y": 640,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-11\"]",
+            "column": 2,
+            "y": 704,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-12\"]",
+            "column": 2,
+            "y": 768,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-13\"]",
+            "column": 2,
+            "y": 832,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-14\"]",
+            "column": 2,
+            "y": 896,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-15\"]",
+            "column": 2,
+            "y": 960,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-16\"]",
+            "column": 2,
+            "y": 1024,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-17\"]",
+            "column": 2,
+            "y": 1088,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-18\"]",
+            "column": 2,
+            "y": 1152,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-19\"]",
+            "column": 2,
+            "y": 1216,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-20\"]",
+            "column": 2,
+            "y": 1280,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-21\"]",
+            "column": 2,
+            "y": 1344,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-22\"]",
+            "column": 2,
+            "y": 1408,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-23\"]",
+            "column": 2,
+            "y": 1472,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-24\"]",
+            "column": 2,
+            "y": 1536,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-25\"]",
+            "column": 2,
+            "y": 1600,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-26\"]",
+            "column": 2,
+            "y": 1664,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-27\"]",
+            "column": 2,
+            "y": 1728,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-28\"]",
+            "column": 2,
+            "y": 1792,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-29\"]",
+            "column": 2,
+            "y": 1856,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          }
+        ]
+      }
+    },
+    "above-scrolled-hidden": {
+      "redraws": 0,
+      "seconds": 3.2,
+      "cpu_percent": 2.5,
+      "before": {
+        "probeId": "1793710714980:0.3200511816346774",
+        "active": false,
+        "props": {
+          "space": "sp0f2104b7944b08e8d7c0b65a9907e48f"
+        },
+        "mode": "scroll-down",
+        "renderCount": 264,
+        "timer": false,
+        "size": {
+          "width": 1229.1666178239736,
+          "height": 678.3333063787895
+        },
+        "rawSize": {
+          "width": 1475,
+          "height": 814
+        },
+        "zoom": 1.2000000476837158,
+        "window": {
+          "lo": 2,
+          "hi": 2,
+          "columns": [
+            {
+              "column": 2,
+              "x": 24,
+              "width": 272
+            }
+          ],
+          "total": 880,
+          "left": 608,
+          "shown": 272
+        },
+        "offsets": {
+          "0": 0,
+          "1": 0,
+          "2": 1231.6666936212105
+        },
+        "nodes": [
+          {
+            "key": "[\"root\",\"herdr-core\",\"t1\"]",
+            "column": 0,
+            "y": 0,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"root\",\"herdr-core\",\"t3\"]",
+            "column": 0,
+            "y": 64,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"thread\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-fixture\"]",
+            "column": 1,
+            "y": 0,
+            "height": 64,
+            "kind": "thread"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-0\"]",
+            "column": 2,
+            "y": 0,
+            "height": 54,
+            "status": "run",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-1\"]",
+            "column": 2,
+            "y": 64,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-2\"]",
+            "column": 2,
+            "y": 128,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-3\"]",
+            "column": 2,
+            "y": 192,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-4\"]",
+            "column": 2,
+            "y": 256,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-5\"]",
+            "column": 2,
+            "y": 320,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-6\"]",
+            "column": 2,
+            "y": 384,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-7\"]",
+            "column": 2,
+            "y": 448,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-8\"]",
+            "column": 2,
+            "y": 512,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-9\"]",
+            "column": 2,
+            "y": 576,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-10\"]",
+            "column": 2,
+            "y": 640,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-11\"]",
+            "column": 2,
+            "y": 704,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-12\"]",
+            "column": 2,
+            "y": 768,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-13\"]",
+            "column": 2,
+            "y": 832,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-14\"]",
+            "column": 2,
+            "y": 896,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-15\"]",
+            "column": 2,
+            "y": 960,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-16\"]",
+            "column": 2,
+            "y": 1024,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-17\"]",
+            "column": 2,
+            "y": 1088,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-18\"]",
+            "column": 2,
+            "y": 1152,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-19\"]",
+            "column": 2,
+            "y": 1216,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-20\"]",
+            "column": 2,
+            "y": 1280,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-21\"]",
+            "column": 2,
+            "y": 1344,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-22\"]",
+            "column": 2,
+            "y": 1408,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-23\"]",
+            "column": 2,
+            "y": 1472,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-24\"]",
+            "column": 2,
+            "y": 1536,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-25\"]",
+            "column": 2,
+            "y": 1600,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-26\"]",
+            "column": 2,
+            "y": 1664,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-27\"]",
+            "column": 2,
+            "y": 1728,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-28\"]",
+            "column": 2,
+            "y": 1792,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-29\"]",
+            "column": 2,
+            "y": 1856,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          }
+        ]
+      },
+      "after": {
+        "probeId": "1793710714980:0.3200511816346774",
+        "active": false,
+        "props": {
+          "space": "sp0f2104b7944b08e8d7c0b65a9907e48f"
+        },
+        "mode": "scroll-down",
+        "renderCount": 264,
+        "timer": false,
+        "size": {
+          "width": 1229.1666178239736,
+          "height": 678.3333063787895
+        },
+        "rawSize": {
+          "width": 1475,
+          "height": 814
+        },
+        "zoom": 1.2000000476837158,
+        "window": {
+          "lo": 2,
+          "hi": 2,
+          "columns": [
+            {
+              "column": 2,
+              "x": 24,
+              "width": 272
+            }
+          ],
+          "total": 880,
+          "left": 608,
+          "shown": 272
+        },
+        "offsets": {
+          "0": 0,
+          "1": 0,
+          "2": 1231.6666936212105
+        },
+        "nodes": [
+          {
+            "key": "[\"root\",\"herdr-core\",\"t1\"]",
+            "column": 0,
+            "y": 0,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"root\",\"herdr-core\",\"t3\"]",
+            "column": 0,
+            "y": 64,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"thread\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-fixture\"]",
+            "column": 1,
+            "y": 0,
+            "height": 64,
+            "kind": "thread"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-0\"]",
+            "column": 2,
+            "y": 0,
+            "height": 54,
+            "status": "run",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-1\"]",
+            "column": 2,
+            "y": 64,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-2\"]",
+            "column": 2,
+            "y": 128,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-3\"]",
+            "column": 2,
+            "y": 192,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-4\"]",
+            "column": 2,
+            "y": 256,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-5\"]",
+            "column": 2,
+            "y": 320,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-6\"]",
+            "column": 2,
+            "y": 384,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-7\"]",
+            "column": 2,
+            "y": 448,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-8\"]",
+            "column": 2,
+            "y": 512,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-9\"]",
+            "column": 2,
+            "y": 576,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-10\"]",
+            "column": 2,
+            "y": 640,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-11\"]",
+            "column": 2,
+            "y": 704,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-12\"]",
+            "column": 2,
+            "y": 768,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-13\"]",
+            "column": 2,
+            "y": 832,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-14\"]",
+            "column": 2,
+            "y": 896,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-15\"]",
+            "column": 2,
+            "y": 960,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-16\"]",
+            "column": 2,
+            "y": 1024,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-17\"]",
+            "column": 2,
+            "y": 1088,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-18\"]",
+            "column": 2,
+            "y": 1152,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-19\"]",
+            "column": 2,
+            "y": 1216,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-20\"]",
+            "column": 2,
+            "y": 1280,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-21\"]",
+            "column": 2,
+            "y": 1344,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-22\"]",
+            "column": 2,
+            "y": 1408,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-23\"]",
+            "column": 2,
+            "y": 1472,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-24\"]",
+            "column": 2,
+            "y": 1536,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-25\"]",
+            "column": 2,
+            "y": 1600,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-26\"]",
+            "column": 2,
+            "y": 1664,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-27\"]",
+            "column": 2,
+            "y": 1728,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-28\"]",
+            "column": 2,
+            "y": 1792,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-29\"]",
+            "column": 2,
+            "y": 1856,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          }
+        ]
+      }
+    },
+    "horizontal-hidden": {
+      "redraws": 1,
+      "seconds": 3.2,
+      "cpu_percent": 2.5,
+      "before": {
+        "probeId": "1793710714980:0.3200511816346774",
+        "active": false,
+        "props": {
+          "space": "sp0f2104b7944b08e8d7c0b65a9907e48f"
+        },
+        "mode": "horizontal",
+        "renderCount": 270,
+        "timer": false,
+        "size": {
+          "width": 1229.1666178239736,
+          "height": 678.3333063787895
+        },
+        "rawSize": {
+          "width": 1475,
+          "height": 814
+        },
+        "zoom": 1.2000000476837158,
+        "window": {
+          "lo": 2,
+          "hi": 5,
+          "columns": [
+            {
+              "column": 2,
+              "x": 24,
+              "width": 272
+            },
+            {
+              "column": 3,
+              "x": 332,
+              "width": 272
+            },
+            {
+              "column": 4,
+              "x": 640,
+              "width": 272
+            },
+            {
+              "column": 5,
+              "x": 948,
+              "width": 272
+            }
+          ],
+          "total": 2728,
+          "left": 608,
+          "shown": 1196
+        },
+        "offsets": {
+          "0": 0,
+          "1": 0,
+          "2": 0,
+          "3": 0,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "7": 0,
+          "8": 0
+        },
+        "nodes": [
+          {
+            "key": "[\"root\",\"herdr-core\",\"t1\"]",
+            "column": 0,
+            "y": 0,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"root\",\"herdr-core\",\"t3\"]",
+            "column": 0,
+            "y": 64,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"thread\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-fixture\"]",
+            "column": 1,
+            "y": 0,
+            "height": 64,
+            "kind": "thread"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-0\"]",
+            "column": 2,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-1\"]",
+            "column": 3,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-2\"]",
+            "column": 4,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-3\"]",
+            "column": 5,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-4\"]",
+            "column": 6,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-5\"]",
+            "column": 7,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-6\"]",
+            "column": 8,
+            "y": 0,
+            "height": 54,
+            "status": "run",
+            "kind": "agent"
+          }
+        ]
+      },
+      "after": {
+        "probeId": "1793710714980:0.3200511816346774",
+        "active": false,
+        "props": {
+          "space": "sp0f2104b7944b08e8d7c0b65a9907e48f"
+        },
+        "mode": "horizontal",
+        "renderCount": 271,
+        "timer": false,
+        "size": {
+          "width": 1229.1666178239736,
+          "height": 678.3333063787895
+        },
+        "rawSize": {
+          "width": 1475,
+          "height": 814
+        },
+        "zoom": 1.2000000476837158,
+        "window": {
+          "lo": 2,
+          "hi": 5,
+          "columns": [
+            {
+              "column": 2,
+              "x": 24,
+              "width": 272
+            },
+            {
+              "column": 3,
+              "x": 332,
+              "width": 272
+            },
+            {
+              "column": 4,
+              "x": 640,
+              "width": 272
+            },
+            {
+              "column": 5,
+              "x": 948,
+              "width": 272
+            }
+          ],
+          "total": 2728,
+          "left": 608,
+          "shown": 1196
+        },
+        "offsets": {
+          "0": 0,
+          "1": 0,
+          "2": 0,
+          "3": 0,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "7": 0,
+          "8": 0
+        },
+        "nodes": [
+          {
+            "key": "[\"root\",\"herdr-core\",\"t1\"]",
+            "column": 0,
+            "y": 0,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"root\",\"herdr-core\",\"t3\"]",
+            "column": 0,
+            "y": 64,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"thread\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-fixture\"]",
+            "column": 1,
+            "y": 0,
+            "height": 64,
+            "kind": "thread"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-0\"]",
+            "column": 2,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-1\"]",
+            "column": 3,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-2\"]",
+            "column": 4,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-3\"]",
+            "column": 5,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-4\"]",
+            "column": 6,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-5\"]",
+            "column": 7,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-6\"]",
+            "column": 8,
+            "y": 0,
+            "height": 54,
+            "status": "run",
+            "kind": "agent"
+          }
+        ]
+      }
+    },
+    "horizontal-visible": {
+      "redraws": 60,
+      "seconds": 3.2,
+      "cpu_percent": 8.749,
+      "before": {
+        "probeId": "1793710714980:0.3200511816346774",
+        "active": false,
+        "props": {
+          "space": "sp0f2104b7944b08e8d7c0b65a9907e48f"
+        },
+        "mode": "horizontal-visible",
+        "renderCount": 312,
+        "timer": true,
+        "size": {
+          "width": 1229.1666178239736,
+          "height": 678.3333063787895
+        },
+        "rawSize": {
+          "width": 1475,
+          "height": 814
+        },
+        "zoom": 1.2000000476837158,
+        "window": {
+          "lo": 5,
+          "hi": 8,
+          "columns": [
+            {
+              "column": 5,
+              "x": 24,
+              "width": 272
+            },
+            {
+              "column": 6,
+              "x": 332,
+              "width": 272
+            },
+            {
+              "column": 7,
+              "x": 640,
+              "width": 272
+            },
+            {
+              "column": 8,
+              "x": 948,
+              "width": 272
+            }
+          ],
+          "total": 2728,
+          "left": 1532,
+          "shown": 1196
+        },
+        "offsets": {
+          "0": 0,
+          "1": 0,
+          "2": 0,
+          "3": 0,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "7": 0,
+          "8": 0
+        },
+        "nodes": [
+          {
+            "key": "[\"root\",\"herdr-core\",\"t1\"]",
+            "column": 0,
+            "y": 0,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"root\",\"herdr-core\",\"t3\"]",
+            "column": 0,
+            "y": 64,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"thread\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-fixture\"]",
+            "column": 1,
+            "y": 0,
+            "height": 64,
+            "kind": "thread"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-0\"]",
+            "column": 2,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-1\"]",
+            "column": 3,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-2\"]",
+            "column": 4,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-3\"]",
+            "column": 5,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-4\"]",
+            "column": 6,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-5\"]",
+            "column": 7,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-6\"]",
+            "column": 8,
+            "y": 0,
+            "height": 54,
+            "status": "run",
+            "kind": "agent"
+          }
+        ]
+      },
+      "after": {
+        "probeId": "1793710714980:0.3200511816346774",
+        "active": false,
+        "props": {
+          "space": "sp0f2104b7944b08e8d7c0b65a9907e48f"
+        },
+        "mode": "horizontal-visible",
+        "renderCount": 372,
+        "timer": true,
+        "size": {
+          "width": 1229.1666178239736,
+          "height": 678.3333063787895
+        },
+        "rawSize": {
+          "width": 1475,
+          "height": 814
+        },
+        "zoom": 1.2000000476837158,
+        "window": {
+          "lo": 5,
+          "hi": 8,
+          "columns": [
+            {
+              "column": 5,
+              "x": 24,
+              "width": 272
+            },
+            {
+              "column": 6,
+              "x": 332,
+              "width": 272
+            },
+            {
+              "column": 7,
+              "x": 640,
+              "width": 272
+            },
+            {
+              "column": 8,
+              "x": 948,
+              "width": 272
+            }
+          ],
+          "total": 2728,
+          "left": 1532,
+          "shown": 1196
+        },
+        "offsets": {
+          "0": 0,
+          "1": 0,
+          "2": 0,
+          "3": 0,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "7": 0,
+          "8": 0
+        },
+        "nodes": [
+          {
+            "key": "[\"root\",\"herdr-core\",\"t1\"]",
+            "column": 0,
+            "y": 0,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"root\",\"herdr-core\",\"t3\"]",
+            "column": 0,
+            "y": 64,
+            "height": 54,
+            "kind": "orch"
+          },
+          {
+            "key": "[\"thread\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-fixture\"]",
+            "column": 1,
+            "y": 0,
+            "height": 64,
+            "kind": "thread"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-0\"]",
+            "column": 2,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-1\"]",
+            "column": 3,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-2\"]",
+            "column": 4,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-3\"]",
+            "column": 5,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-4\"]",
+            "column": 6,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-5\"]",
+            "column": 7,
+            "y": 0,
+            "height": 54,
+            "status": "q",
+            "kind": "agent"
+          },
+          {
+            "key": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"scroll-6\"]",
+            "column": 8,
+            "y": 0,
+            "height": 54,
+            "status": "run",
+            "kind": "agent"
+          }
+        ]
+      }
+    }
+  }
+}
