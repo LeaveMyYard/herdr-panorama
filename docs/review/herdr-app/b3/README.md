@@ -1,4 +1,6 @@
-# B3 visual evidence (work in progress)
+# B3 visual evidence
+
+See [FINAL.md](FINAL.md) for current-source author D/D2 comparisons, separate real current-generation/manual preference evidence, gates and limitations. Earlier evidence below is preserved with its original provenance.
 
 The `prototype-d.png` and `prototype-d2.png` files are actual native `herdr-app shot` captures of a task-owned temporary app home and isolated core. They show an earlier B3 graph/tab/pane/Spaces implementation against the approved D/D2 graph design. These are development captures, before the B2 merge and final shared-source regeneration; they are not review acceptance or installed-layout approval.
 
