@@ -136,23 +136,24 @@ export default class Graph extends View {
   }
   connectors(t, model, window) {
     const result = [], path = selectionPath(model, this.state), columns = new Map(window.columns.map(column => [column.column, column]));
-    const groupLine = (parent, column, ys, selected) => {
+    const groupLine = (parent, column, ys) => {
       const child = columns.get(column); if (!child || !ys.length) return;
       const source = columns.get(column - 1), parentY = (parent?.y ?? 0) + (parent?.mid ?? 27) - (this.offsets[column - 1] ?? 0);
       const targetYs = ys.map(y => y - (this.offsets[column] ?? 0));
       const from = source ? source.x + source.width : 0, spine = child.x - 18;
-      const color = selected ? alpha(t.foreground, '4d') : t.input;
-      const line = (x, y, width, height) => div().absolute().left(x).top(y).w(Math.max(1.5, width)).h(Math.max(1.5, height)).bg(color);
-      result.push(line(from, parentY, Math.max(0, spine - from), 1.5));
+      const targets = model.columns[column].filter(node => ys.includes(node.y + node.mid));
+      const bright = alpha(t.foreground, '4d');
+      const line = (x, y, width, height, color = t.input) => div().absolute().left(x).top(y).w(Math.max(1.5, width)).h(Math.max(1.5, height)).bg(color);
+      result.push(line(from, parentY, Math.max(0, spine - from), 1.5, targets.some(node => path.has(node.key)) ? bright : t.input));
       const all = [parentY, ...targetYs], top = Math.min(...all), bottom = Math.max(...all);
       result.push(line(spine, top, 1.5, bottom - top));
-      for (const y of targetYs) result.push(line(spine, y, child.x - spine, 1.5));
+      for (let index = 0; index < targetYs.length; index++) result.push(line(spine, targetYs[index], child.x - spine, 1.5, path.has(targets[index]?.key) ? bright : t.input));
     };
     const orch = model.orchs.find(node => node.key === model.item?.key);
-    if (orch) groupLine(orch, 1, model.threadNodes.map(node => node.y + node.mid), true);
+    if (orch) groupLine(orch, 1, model.threadNodes.map(node => node.y + node.mid));
     for (const group of model.tree.groups) {
       const parent = group.parent ?? model.threadNodes.find(node => node.thread === model.thread);
-      groupLine(parent ?? orch, group.depth + (model.nativeFallback ? 0 : 1), group.ys, !group.parent || path.has(group.parent.key));
+      groupLine(parent ?? orch, group.depth + (model.nativeFallback ? 0 : 1), group.ys);
     }
     return result;
   }
