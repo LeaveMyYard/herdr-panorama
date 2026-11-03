@@ -89,9 +89,10 @@ scripts/app-install uninstall --app-home "$HOME/.config/herdr-app"
 ```
 
 Choose another layout yourself before removing one you are using; uninstall never
-switches it. Personal edits survive. The exact two null shared slots and two
-retained preference stores are described below; the installer does not rewrite
-personal shared state or acquire deletion ownership over retained preferences.
+switches it. Personal edits survive. The exact two null shared slots, two retained
+preference stores and host layout-state snapshot are described below; the installer
+does not rewrite personal shared state or acquire deletion ownership over retained
+preference/layout files.
 
 - **No threads:** verify the private release artifact and current session proof;
   older unbound roots are expected to stay basic.
@@ -236,6 +237,14 @@ UTF-8 JSON string-map with supported consumed preference shapes. Unsafe known
 stores refuse before mutation. Unknown keys/files remain untouched; preferences
 are never rewritten, chmodded or deleted by the installer. Personal added files
 are preserved and reported.
+
+The operator also approved **“Keep host layout state (Recommended)”** for exactly
+`layouts/.state/panorama.json` and its necessary parent. Herdr may persist the full
+Panorama layout snapshot there, including the automatic content-sized Spaces
+`layout.resize` state. This is host-owned state preserved after uninstall; no
+installer deletion, rewrite, chmod or adoption authority is granted. This exception
+does not authorize another layout-state file, feed/transcript cache, changed-age
+map, graph store or arbitrary host-state cleanup.
 
 An older four-mod B2 v2 receipt is refused before mutation. Uninstall it using
 the reviewed package that created it, then install this six-mod package. There

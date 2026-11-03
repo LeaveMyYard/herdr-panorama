@@ -102,6 +102,10 @@ panorama.feed.owner. Retain exactly data/panorama-spaces/store.json and
 data/panorama-tabs/store.json plus necessary parents for stock preferences.
 Reinstall validates retained stores read-only without deletion ownership; no
 feed/transcript cache, changed-age map or graph store exception exists.
+The separately approved host-owned layouts/.state/panorama.json snapshot and its
+necessary parent may also remain; automatic Spaces layout.resize can create it.
+Preserve it without installer deletion, rewriting or adoption authority. No other
+layout-state file or generic host-state exception is granted.
 
 ## Done when
 

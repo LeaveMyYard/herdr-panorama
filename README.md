@@ -72,6 +72,12 @@ TUI installation. Rich threads require a verified current session association;
 older unbound sessions appear as basic native roots. See the [app guide](app/README.md)
 for requirements, controls, uninstall and recovery.
 
+Approved uninstall retention is limited to `panorama.feed:null` and
+`panorama.feed.owner:null`, the exact `data/panorama-spaces/store.json` and
+`data/panorama-tabs/store.json` preferences, and host-owned
+`layouts/.state/panorama.json`, with necessary parents. This grants no installer
+deletion or adoption authority over personal/host files.
+
 ![Native Swarm graph on synthetic design data](app/preview.png)
 
 *Native app rendering with synthetic design data; this preview does not demonstrate

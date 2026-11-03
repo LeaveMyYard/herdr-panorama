@@ -172,8 +172,9 @@ C joins them.
 
 ### Operator-approved uninstall retention — 2026-11-03
 
-The operator chose **“Allow two null keys (Recommended)”** and later **“Keep preference
-files (Recommended)”**. These are the only no-trace exceptions:
+The operator chose **“Allow two null keys (Recommended)”**, **“Keep preference
+files (Recommended)”**, and **“Keep host layout state (Recommended)”**. These are the
+only no-trace exceptions:
 
 - Host shared state may retain only the inert slots `panorama.feed:null` and
   `panorama.feed.owner:null`. No cached feed/transcript, changed-age map or active lease is
@@ -182,6 +183,11 @@ files (Recommended)”**. These are the only no-trace exceptions:
   necessary parent directories, may remain to preserve stock panel selection, machine
   folding and machine-reconnection recovery across ordinary restart and reinstall. No
   graph store or other owned payload cache is approved.
+- Exactly `layouts/.state/panorama.json` and its necessary parent may remain as
+  host-owned layout state. Herdr can persist the full Panorama snapshot there, including
+  the automatic Spaces `layout.resize` result. Preserve it without installer deletion,
+  rewriting, chmod or adoption authority. No other layout-state file or generic host
+  bookkeeping retention/cleanup exception is added.
 
 Reinstall may safely reuse those exact preference directories without recording
 preexisting parents as newly created, acquiring deletion ownership, or rewriting, chmodding
@@ -191,6 +197,10 @@ refused. Unknown keys/files remain personal and untouched. Newly created parents
 receipt-tracked and are removed only when empty. There is no generic store adoption or
 cleanup permission. The earlier proposed strict preference-store cleanup/cohort approach is
 superseded; retain normal stock preference behavior.
+
+The host-layout-state approval followed the original C1 inventory's omission of that
+existing snapshot; the corrected evidence records the actual file and later policy
+resolution without changing the original run or claiming its initial inventory was complete.
 
 Actual manual used-home uninstall/reinstall must show these exact permitted retentions,
 safe reuse and personal-file preservation. Runtime ownership, cooperative writer/frontend
