@@ -14,6 +14,12 @@ fn captured(name: &str) -> String {
 
 fn cx(dir: &Path, in_herdr: bool) -> Ctx {
     Ctx {
+        host: crate::host::Context {
+            host: crate::host::Host::Unknown,
+            terminal: None,
+            pane_id: None,
+        },
+        harness: "claude",
         hooks_dir: dir.join("hooks"),
         in_herdr,
         now: 1_791_960_000.5,
@@ -144,6 +150,12 @@ fn bad_input_never_fails_and_writes_nothing() {
     let blocker = dir.path().join("file");
     std::fs::write(&blocker, "x").unwrap();
     let blocked = Ctx {
+        host: crate::host::Context {
+            host: crate::host::Host::Unknown,
+            terminal: None,
+            pane_id: None,
+        },
+        harness: "claude",
         hooks_dir: blocker.join("sub"),
         ..cx(dir.path(), true)
     }; // cannot be created
@@ -268,6 +280,12 @@ fn concurrent_hooks_keep_every_line_whole() {
             let hooks_dir = hooks_dir.clone();
             std::thread::spawn(move || {
                 let c = Ctx {
+                    host: crate::host::Context {
+                        host: crate::host::Host::Unknown,
+                        terminal: None,
+                        pane_id: None,
+                    },
+                    harness: "claude",
                     hooks_dir,
                     in_herdr: false,
                     now: 1.0,
@@ -293,6 +311,38 @@ fn concurrent_hooks_keep_every_line_whole() {
         })
         .collect();
     assert_eq!(agents.len(), 16);
+}
+
+#[test]
+fn core_records_keep_terminal_and_pane_beside_existing_process_identity() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut c = cx(dir.path(), true);
+    c.host = crate::host::Context {
+        host: crate::host::Host::Core,
+        terminal: Some("t2".into()),
+        pane_id: Some("w1:p1".into()),
+    };
+    c.identity = Box::new(|| Some((4242, "start".into(), Some("pidns-fixture".into()))));
+    hook("session-start", &captured("SessionStart.startup"), &c);
+    let recs = records(&c, "00000001-0000-4000-8000-000000000001");
+    assert_eq!(recs.len(), 1);
+    let r = &recs[0];
+    assert_eq!(r["host"], "herdr-core");
+    assert_eq!(r["terminal"], "t2");
+    assert_eq!(r["pane_id"], "w1:p1");
+    assert_eq!(r["harness"], "claude");
+    assert_eq!(r["pid"], 4242);
+    assert_eq!(r["pstart"], "start");
+    assert_eq!(r["pidns"], "pidns-fixture");
+    for marker in ["agent_id", "parent_session_id"] {
+        let mut payload: Value = serde_json::from_str(&captured("SessionStart.startup")).unwrap();
+        payload[marker] = serde_json::json!("child");
+        assert_eq!(
+            hook("session-start", &payload.to_string(), &c),
+            (0, String::new())
+        );
+    }
+    assert_eq!(records(&c, "00000001-0000-4000-8000-000000000001").len(), 1);
 }
 
 #[test]

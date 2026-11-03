@@ -12,7 +12,7 @@ use std::{
 const ROOT: &str = "11111111-1111-4111-8111-111111111111";
 const CHILD: &str = "22222222-2222-4222-8222-222222222222";
 
-fn fixture(thread: Value, delay: bool) -> (tempfile::TempDir, crate::codex::Options) {
+pub(super) fn fixture(thread: Value, delay: bool) -> (tempfile::TempDir, crate::codex::Options) {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("codex");
     std::fs::write(dir.path().join("thread.json"), thread.to_string()).unwrap();
@@ -319,14 +319,14 @@ async fn stale_daemon_pane_and_reused_pid_cannot_pass_ownership() {
 fn process_info(pane: &str, pid: u32) -> Value {
     json!({"process_info":{"pane_id":pane,"foreground_processes":[{"pid":pid}]}})
 }
-fn state_env(dir: &std::path::Path) -> herdr_agent_kit::plugin_env::PluginEnv {
+pub(super) fn state_env(dir: &std::path::Path) -> herdr_agent_kit::plugin_env::PluginEnv {
     herdr_agent_kit::plugin_env::PluginEnv::from_vars(
         [("XDG_STATE_HOME", dir.to_str().unwrap())],
         None,
         std::fs::metadata(dir).unwrap().uid(),
     )
 }
-fn processes() -> Box<dyn herdr_agent_kit::agent_procs::ProcessTable> {
+pub(super) fn processes() -> Box<dyn herdr_agent_kit::agent_procs::ProcessTable> {
     let mut procs = FakeProcesses::default();
     procs.insert(20, 10, "codex", "start", &["codex", "--no-daemon"]);
     Box::new(procs)
@@ -467,6 +467,9 @@ fn stored_association_is_bounded_and_requires_fresh_exact_foreground_identity() 
     let env = state_env(dir.path());
     let store = store::Store::lock(&env, "w1:p1").unwrap();
     let a = store::Association {
+        host: None,
+        terminal: None,
+        pidns: None,
         version: 1,
         pane_id: "w1:p1".into(),
         thread_id: ROOT.into(),
@@ -714,6 +717,9 @@ fn held_store_directory_cannot_be_redirected_by_a_path_swap() {
     std::fs::rename(&original, &moved).unwrap();
     symlink(&outside, &original).unwrap();
     let a = store::Association {
+        host: None,
+        terminal: None,
+        pidns: None,
         version: 1,
         pane_id: "w1:p1".into(),
         thread_id: ROOT.into(),

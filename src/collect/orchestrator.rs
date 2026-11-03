@@ -134,9 +134,17 @@ impl Collector {
         if o.harness == "codex" {
             o.tab_label = label(a, tab, None, &o.pane_id, per_tab);
             let native = super::codex::native_id(info);
-            o.session_id = match self.codex_identity.as_mut() {
-                Some(identity) => identity.resolve(&o.pane_id, native),
-                None => native.map(str::to_owned),
+            o.session_id = if self.core_source {
+                (info.get("source").and_then(Value::as_str) == Some("panorama:core"))
+                    .then(|| info.get("value").and_then(Value::as_str))
+                    .flatten()
+                    .filter(|id| crate::codex::identity::valid_thread_id(id))
+                    .map(str::to_owned)
+            } else {
+                match self.codex_identity.as_mut() {
+                    Some(identity) => identity.resolve(&o.pane_id, native),
+                    None => native.map(str::to_owned),
+                }
             };
             if let Some(details) = self.codex.as_mut() {
                 details.enrich(&mut o, now, self.window);

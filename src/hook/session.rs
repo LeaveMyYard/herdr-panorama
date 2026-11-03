@@ -48,6 +48,15 @@ pub fn prune(dir: &Path, now: SystemTime) {
 
 /// Record the session; the output for Claude Code, if any.
 pub fn session_start(payload: &Map<String, Value>, cx: &Ctx) -> Option<String> {
+    if cx.host.host == crate::host::Host::Core
+        && (payload.get("hook_event_name").and_then(Value::as_str) != Some("SessionStart")
+            || payload.get("agent_id").is_some_and(|v| !v.is_null())
+            || payload
+                .get("parent_session_id")
+                .is_some_and(|v| !v.is_null()))
+    {
+        return None;
+    }
     let now = SystemTime::UNIX_EPOCH + Duration::from_secs_f64(cx.now.max(0.0));
     prune(&cx.hooks_dir, now);
     let session = payload

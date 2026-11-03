@@ -30,6 +30,8 @@ pub type Identity = Option<(u32, String, Option<String>)>;
 
 /// What a hook reads besides its payload.
 pub struct Ctx {
+    pub host: crate::host::Context,
+    pub harness: &'static str,
     /// Where hook files live.
     pub hooks_dir: PathBuf,
     /// Inside herdr (`HERDR_PANE_ID` or `HERDR_ENV`).
@@ -44,8 +46,10 @@ impl Ctx {
     /// From the environment and this process's ancestry.
     pub fn from_env(env: &PluginEnv) -> Self {
         Self {
+            host: crate::host::Context::from_env(env),
+            harness: "claude",
             hooks_dir: crate::collect::paths::hooks_dir(env),
-            in_herdr: env.in_herdr(),
+            in_herdr: env.in_herdr() || env.var("HC_TERMINAL_ID").is_some(),
             now: crate::snapshot::now(),
             identity: Box::new(|| {
                 claude_process_here().map(|(pid, start)| (pid, start, own_pidns()))

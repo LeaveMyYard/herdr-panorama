@@ -88,6 +88,9 @@ pub(super) async fn bind(
         owner_start: owner.start.clone(),
         embedded,
         conflicted: true,
+        host: None,
+        terminal: None,
+        pidns: None,
     };
     // Readers see unavailable until every fresh check succeeds. Failure leaves this
     // state intact instead of exposing an old root after an attempted switch.

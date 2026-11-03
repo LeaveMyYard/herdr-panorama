@@ -5,7 +5,7 @@
 pub mod json;
 pub mod print;
 pub mod pyjson;
-mod warmup;
+pub(crate) mod warmup;
 
 use crate::collect::liveness::claude_pid;
 use crate::collect::paths::{events_dir, hooks_dir};
@@ -81,8 +81,21 @@ pub fn source_shared(env: PluginEnv, self_pane: SelfPane) -> impl FnMut() -> Swa
     source_mode(env, self_pane, false)
 }
 
-fn source_mode(env: PluginEnv, self_pane: SelfPane, wait: bool) -> impl FnMut() -> Swarm {
+fn source_mode(
+    env: PluginEnv,
+    self_pane: SelfPane,
+    wait: bool,
+) -> Box<dyn FnMut() -> Swarm + Send> {
+    use crate::host::{Context, Core, Host, SnapshotSource};
+    let core = Core::default();
+    let host = Context::from_env(&env).host;
+    if host == Host::Core
+        || (host == Host::Unknown && crate::host::records::has_live_core(&hooks_dir(&env), &core))
+    {
+        return Box::new(crate::host::collect::source_mode(env, core, wait));
+    }
     let herdr = blocking::Herdr::from_env().with_client("panorama");
+    let mut host = crate::host::source::Tui(herdr.clone());
     let mut config =
         ConfigFile::resolve(&env, || herdr.plugin_config_dir(PANORAMA_ID).ok().flatten());
     // no home at all: a relative "~/.claude/projects", which holds nothing (as Python's
@@ -103,13 +116,13 @@ fn source_mode(env: PluginEnv, self_pane: SelfPane, wait: bool) -> impl FnMut() 
         collector = collector.with_codex(options);
     }
     collector = collector.with_codex_identity(env.clone(), herdr.clone());
-    move || {
+    Box::new(move || {
         collector.self_pane = self_pane
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .clone();
         let cfg: Map<String, Value> = config.load_as().unwrap_or_default();
-        let snapshot = herdr_snapshot(&herdr);
+        let snapshot = host.read().snapshot;
         let questions = open_questions(&inbox::db_path(&env));
         let window = done_window(env.var("PANORAMA_DONE_WINDOW"), &cfg);
         let stale = stale_after(env.var("PANORAMA_STALE_AFTER"), &cfg);
@@ -129,7 +142,7 @@ fn source_mode(env: PluginEnv, self_pane: SelfPane, wait: bool) -> impl FnMut() 
         } else {
             refresh().0
         }
-    }
+    })
 }
 
 /// One collect of this machine's swarm, as the CLI builds it.
