@@ -259,6 +259,8 @@ async fn malformed_result_shapes_are_errors_before_any_installed_help() {
         json!({}),
         json!({"plugins":{}}),
         json!({"plugins":[null]}),
+        json!({"plugins":[[INBOX_ID,"/fixture",true]]}),
+        json!({"plugins":[{"plugin_id":INBOX_ID,"plugin_root":"/fixture","enabled":true},["unrelated.plugin","/unrelated",false]]}),
         json!({"plugins":[{}]}),
         json!({"plugins":[{"plugin_id":INBOX_ID,"plugin_root":"/fixture","enabled":"false"}]}),
         json!({"plugins":[{"plugin_id":INBOX_ID,"plugin_root":false,"enabled":false}]}),

@@ -232,7 +232,13 @@ fn malformed_plugin_result_shapes_cannot_prove_absent_capability() {
         marker.to_str().unwrap()
     );
     let h = plugin(&i, &script);
-    for result in [json!({}), json!({"plugins":{}}), json!({"plugins":[null]})] {
+    for result in [
+        json!({}),
+        json!({"plugins":{}}),
+        json!({"plugins":[null]}),
+        json!({"plugins":[[INBOX_ID,i.dir.path().join("inbox"),true]]}),
+        json!({"plugins":[{"plugin_id":INBOX_ID,"plugin_root":i.dir.path().join("inbox"),"enabled":true},["unrelated.plugin","/unrelated",false]]}),
+    ] {
         h.on("plugin.list", Reply::Result(result.clone()));
         let before = h.calls().len();
         let out = call(&i, &h, &["--available"]);

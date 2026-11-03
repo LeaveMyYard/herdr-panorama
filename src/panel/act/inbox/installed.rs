@@ -16,6 +16,10 @@ fn registrations(value: serde_json::Value) -> Result<Vec<Registration>, String> 
         .and_then(|o| o.get("plugins"))
         .and_then(serde_json::Value::as_array)
         .ok_or("malformed plugin lookup result: expected plugins array")?;
+    // Serde can deserialize structs from positional arrays; the wire requires objects.
+    if entries.iter().any(|entry| !entry.is_object()) {
+        return Err("malformed plugin lookup result: expected registration object".into());
+    }
     let entries: Vec<Registration> =
         serde_json::from_value(serde_json::Value::Array(entries.clone()))
             .map_err(|e| format!("malformed plugin lookup result: {e}"))?;
