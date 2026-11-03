@@ -1,6 +1,7 @@
 use super::*;
 use herdr_agent_kit::agent_procs::fake::FakeProcesses;
 use std::os::unix::fs::PermissionsExt;
+use std::time::Instant;
 
 pub(crate) fn fake_core(body: &str) -> (tempfile::TempDir, Core) {
     let dir = tempfile::tempdir().unwrap();

@@ -83,6 +83,7 @@ rmcp = { version = "=3.5.1", default-features = false, features = ["server", "tr
 unicode-width = "0.2"
 # The local time zone's offset, for clock times.
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
+sha2 = "0.10.9"
 
 [dev-dependencies]
 # FakeHerdr, a scripted herdr socket, for the effects' tests.
@@ -98,3 +99,7 @@ workspace = true
 lto = true
 codegen-units = 1
 strip = true
+
+# Runtime artifact verification must remain bounded even for large debug binaries.
+[profile.dev.package.sha2]
+opt-level = 3

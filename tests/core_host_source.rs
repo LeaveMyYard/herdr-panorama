@@ -45,6 +45,50 @@ fn owned_agent(dir: &Path, harness: &str) -> Owned {
     Owned(Command::new(executable).spawn().unwrap())
 }
 
+/// This fixture must not depend on which Python `/usr/bin/env` finds after env_clear.
+fn native_host_commands(dir: &Path) {
+    let source = dir.join("host_fixture.rs");
+    std::fs::write(
+        &source,
+        r##"use std::{fs,io::Write,process};
+fn main() {
+    let exe=std::env::current_exe().unwrap();
+    let root=exe.parent().unwrap();
+    let args:Vec<_>=std::env::args().skip(1).collect();
+    if exe.file_name().unwrap()=="herdr" {
+        fs::write(root.join("tui-called"),args.join(" ")).unwrap();
+        process::exit(7);
+    }
+    writeln!(fs::OpenOptions::new().create(true).append(true).open(root.join("hc-called")).unwrap(),"{}",args.join(" ")).unwrap();
+    if root.join("hc-fail").exists() {
+        eprintln!("fixture hc intentional failure");
+        process::exit(7);
+    }
+    let args:Vec<_>=args.iter().map(String::as_str).collect();
+    match args.as_slice() {
+        ["ls","--json"]=>println!("{}",r#"{"hidden_finished":0,"terminals":[{"address":"t2","agent":"claude-code","cwd":"/fixture","state":"live","status":"blocked","turn":0,"where":"untrusted / space"}]}"#),
+        ["get","--json","t2"]=>println!("{}",r#"{"address":"t2","state":"live","foreground":null}"#),
+        _=>process::exit(9),
+    }
+}
+"##,
+    )
+    .unwrap();
+    let compiled = Command::new("rustc")
+        .args(["--edition=2024", "--crate-name=core_host_fixture"])
+        .arg(source)
+        .arg("-o")
+        .arg(dir.join("hc"))
+        .output()
+        .unwrap();
+    assert!(
+        compiled.status.success(),
+        "native host fixture compilation failed: {}",
+        String::from_utf8_lossy(&compiled.stderr)
+    );
+    std::fs::copy(dir.join("hc"), dir.join("herdr")).unwrap();
+}
+
 #[test]
 fn exact_terminal_hook_identity_enriches_and_pid_reuse_or_legacy_records_do_not() {
     let sc = Scenario::new("demo");
@@ -114,18 +158,34 @@ print(json.dumps(value))
 #[test]
 fn snapshot_cli_uses_core_before_tui_and_source_failures_are_data() {
     let dir = tempfile::tempdir().unwrap();
+    native_host_commands(dir.path());
     let hc = dir.path().join("hc");
     let herdr = dir.path().join("herdr");
-    std::fs::write(&herdr, "#!/usr/bin/env python3\nimport pathlib\npathlib.Path(__file__).with_name('tui-called').touch()\nraise SystemExit(7)\n").unwrap();
-    std::fs::set_permissions(&herdr, std::fs::Permissions::from_mode(0o700)).unwrap();
+    // Verify that executing the fake TUI really leaves the marker used by the no-TUI guard.
+    let probe = Command::new(&herdr).env_clear().output().unwrap();
+    assert_eq!(probe.status.code(), Some(7));
+    assert!(dir.path().join("tui-called").exists());
+    std::fs::remove_file(dir.path().join("tui-called")).unwrap();
     for success in [true, false] {
-        let script = if success {
-            "import sys,json\nif sys.argv[1:] == ['ls','--json']: print(json.dumps({'hidden_finished':0,'terminals':[{'address':'t2','agent':'claude-code','cwd':'/fixture','state':'live','status':'blocked','turn':0,'where':'untrusted / space'}]}))\nelif sys.argv[1:] == ['get','--json','t2']: print(json.dumps({'address':'t2','state':'live','foreground':None}))\nelse: raise SystemExit(9)\n"
+        if success {
+            assert!(!dir.path().join("hc-fail").exists());
         } else {
-            "raise SystemExit(7)\n"
-        };
-        std::fs::write(&hc, format!("#!/usr/bin/env python3\n{script}")).unwrap();
-        std::fs::set_permissions(&hc, std::fs::Permissions::from_mode(0o700)).unwrap();
+            std::fs::write(dir.path().join("hc-fail"), b"intentional failure").unwrap();
+        }
+        let probe = Command::new(&hc)
+            .env_clear()
+            .args(["ls", "--json"])
+            .output()
+            .unwrap();
+        assert_eq!(probe.status.success(), success);
+        if success {
+            let listed: serde_json::Value = serde_json::from_slice(&probe.stdout).unwrap();
+            assert_eq!(listed["terminals"][0]["address"], "t2");
+        } else {
+            assert_eq!(probe.status.code(), Some(7));
+            assert!(String::from_utf8_lossy(&probe.stderr).contains("intentional failure"));
+        }
+        std::fs::remove_file(dir.path().join("hc-called")).unwrap();
         let out = Command::new(env!("CARGO_BIN_EXE_panorama"))
             .env_clear()
             .args(["snapshot", "--json"])
@@ -146,16 +206,32 @@ fn snapshot_cli_uses_core_before_tui_and_source_failures_are_data() {
             String::from_utf8_lossy(&out.stderr)
         );
         let feed: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
-        assert_eq!(feed["herdr_ok"], success);
+        let calls = std::fs::read_to_string(dir.path().join("hc-called")).unwrap_or_default();
+        assert_eq!(
+            feed["herdr_ok"],
+            success,
+            "success={success}; model={feed}; stderr={}; hc calls={calls}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        assert_eq!(calls.lines().next(), Some("ls --json"));
         assert!(!feed["errors"].as_array().unwrap().is_empty());
         assert_eq!(
             feed["orchestrators"].as_array().unwrap().len(),
             usize::from(success)
         );
         if success {
+            assert!(calls.lines().any(|line| line == "get --json t2"));
             assert_eq!(feed["orchestrators"][0]["pane_id"], "core:t2");
             assert_eq!(feed["orchestrators"][0]["herdr_status"], "blocked");
             assert!(feed["orchestrators"][0]["session_id"].is_null());
+        } else {
+            assert!(
+                feed["errors"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|error| { error.as_str() == Some("herdr-core: hc read failed") })
+            );
         }
         assert!(!dir.path().join("tui-called").exists());
     }
