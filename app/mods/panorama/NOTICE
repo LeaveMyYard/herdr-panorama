@@ -1,7 +1,7 @@
 The layout app/layouts/panorama.json is derived from Herdr app's shipped
-layouts/main.json, installed on 2026-11-03. Changes replace the agents/spaces mod references with panorama and
-panorama-spaces, set the sidebar width to 320 and the Spaces block to 143
-logical pixels. B3 will make Spaces sizing follow its actual content.
+layouts/main.json, installed on 2026-11-03. Changes use panorama-owned agents, Spaces, tabs and pane-header mods, keep the
+sidebar at 320 logical pixels, and size Spaces from its rendered stock rows so
+the agent list receives the remaining column space.
 
 Herdr app is distributed under the Apache License, Version 2.0.
 See LICENSE.herdr-app in this directory. No artwork is copied; the layout
@@ -11,7 +11,13 @@ The sidebar adapts Herdr app's shipped agents/main.js patterns for priority
 sections, row/fold/pin interactions, status marks, icons, age and native tree
 lines; those derived portions retain the same Apache-2.0 attribution.
 Original panorama feed/tree logic and installer code use the repository MIT
-license. No shipped files are edited.
+license. The panorama-spaces/main.js, panorama-tabs/main.js and panorama-pane/main.js
+mods are clones of Herdr app 0.1.12's shipped spaces, tabs and pane mods. They
+retain the stock git/machine/worktree/recovery, tab/panel/window controls and
+terminal header behavior, adding only the Panorama data/count/navigation and
+Swarm-specific glyph/header branches. Their Apache-2.0 license text is included
+inside each cloned mod directory. Shipped icon/assets are referenced by path;
+no artwork is copied. No shipped files are edited.
 
 The custom viewport's thumb geometry adapts gpui-base 0.7.1's
 ThumbGeometry::new from Herdr app v0.1.12:

@@ -38,7 +38,9 @@ fn shared_lifecycle_fixture_parses_exact_fields_and_hashes() {
         value!([
             "data/panorama-spaces",
             "data/panorama-graph",
-            "data/panorama-peek"
+            "data/panorama-peek",
+            "data/panorama-tabs",
+            "data/panorama-pane"
         ])
     );
     let installed = Installed::new();

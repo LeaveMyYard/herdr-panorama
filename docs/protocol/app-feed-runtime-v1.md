@@ -14,22 +14,38 @@ never mutable runtime/control/ownership fingerprints. Explicit fingerprinted
 only inside the owned panorama mods; the installer stages native-checker bytes,
 verifies their equality and journals them before publication. Generated metadata
 is not committed to this repository or adopted from personal files. `dirs` may also record
-created `runtime` and generation directories. The finite additional empty host mod-data
-reservation allowlist is `data/panorama-spaces`, `data/panorama-graph` and
-`data/panorama-peek`. Reserve and journal these directories BEFORE loading any
-owned module; never adopt a preexisting directory. Cleanup uses rmdir only when
-the exact owned directory is empty. Added files remain personal: preserve/report,
-never recursively remove them. `data/panorama` is the explicit writer inventory
-above, not a generic empty mod-data reservation. No direct `shared.json` or `store.json`
-cleanup or personal shared-file editing is authorized. Operator decision
-(2026-11-03) explicitly allows ONLY the two inert host shared slots
-`panorama.feed:null` and `panorama.feed.owner:null` after used-home uninstall,
-using supported null clearing. Those exact two null slots are not an outstanding
-acceptance gap. This exception does not cover cached transcripts, changed key
-values, other residue or personal shared-file edits. All other cleanup and
-no-trace acceptance gaps remain unwaived. Any future owned-mod name
-requires an explicit finite-inventory handoff before reservation.
-Legacy v1 receives only its original static uninstall behavior; it never grants
+created `runtime` and generation directories. The finite host mod-data
+reservation allowlist is `data/panorama-spaces`, `data/panorama-graph`,
+`data/panorama-peek`, `data/panorama-tabs` and `data/panorama-pane`. New directories
+are reserved/journaled BEFORE module load, and may be removed only when empty.
+Existing graph/Peek/pane directories are not adopted.
+
+The operator explicitly approved retaining exactly
+`data/panorama-spaces/store.json` and `data/panorama-tabs/store.json` with their
+necessary parent directories. These hold stock panel selection, machine folding
+and machine-reconnection recovery state; ordinary restarts preserve them. Graph
+changed-age state is View-local and has no persistent store. The exact two
+preference parents may preexist on reinstall: safely open without following
+links and read only a present known store as a regular single-link mode-0600
+file, capped at 1 MiB, strict UTF-8 JSON string-map with consumed known preference
+shapes checked. Unknown preference keys/files remain untouched. Unsafe known
+stores refuse before mutation. Existing parents are NEVER added to a new
+receipt's created `dirs`; reuse grants no deletion ownership. The installer
+never rewrites/chmods/removes these stores. Newly created parents are tracked
+and rmdir is attempted only if empty; retained files/parents are reported.
+
+Added personal files remain preserved/reported, never recursively removed.
+`data/panorama` is the explicit writer inventory above, not a generic mod-data
+reservation. No direct global `shared.json` edits are authorized. The only
+approved shared residue is `panorama.feed:null` and `panorama.feed.owner:null`.
+Together with the exact two retained preference stores/necessary parents, these
+are the operator's complete no-trace exceptions. Cached feed/transcript payload,
+graph age maps and other owned residue are not approved.
+The six-mod installer refuses older four-mod B2 v2 receipts before mutation;
+uninstall with the reviewed package that created that receipt before installing
+the six-mod version. There is no in-place receipt/profile adoption. Legacy v1
+receives only its frozen original four-mod/eleven-required-path static uninstall
+behavior, optional private binary/modes and original key authority; it never grants
 writer/runtime authority. There is no in-place receipt upgrade or dev bypass.
 
 `--ensure` requires v2, its exact binary entry

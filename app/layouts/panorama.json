@@ -94,7 +94,7 @@
           },
           "window_drag": true,
           "content": {
-            "mod": "tabs"
+            "mod": "panorama-tabs"
           }
         },
         {
@@ -123,7 +123,7 @@
                   },
                   "header": {
                     "content": {
-                      "mod": "pane"
+                      "mod": "panorama-pane"
                     },
                     "height": 30,
                     "position": "top",

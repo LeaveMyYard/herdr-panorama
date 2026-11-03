@@ -1,4 +1,6 @@
-# B3 visual evidence (work in progress)
+# B3 visual evidence
+
+See [FINAL.md](FINAL.md) for current-source author D/D2 comparisons, separate real current-generation/manual preference evidence, gates and limitations. Earlier evidence below is preserved with its original provenance.
 
 The `prototype-d.png` and `prototype-d2.png` files are actual native `herdr-app shot` captures of a task-owned temporary app home and isolated core. They show an earlier B3 graph/tab/pane/Spaces implementation against the approved D/D2 graph design. These are development captures, before the B2 merge and final shared-source regeneration; they are not review acceptance or installed-layout approval.
 
@@ -8,6 +10,6 @@ Isolation was verified before structural commands: distinct core identity/PID, z
 
 Current checkpoint: the pinned shared-v3 consumer/totals/private-call interface is integrated. Threadless roots can use proven same-space native ancestry; selected transcript threads contain only their recorded spawn tree. The graph has a read-only Inbox navigation adapter. B4 owns the full Peek/transcript implementation and its later explicit caller handoff.
 
-The operator chose to retain exactly `data/panorama-spaces/store.json` and `data/panorama-tabs/store.json` with their necessary parent directories, preserving stock panel/folding/machine-reconnection preferences. The old empty-store cleanup proposal is superseded. Late installer validation/reinstall integration remains gated on root's post-B2 ownership handoff; [#145](https://github.com/LeaveMyYard/herdr-panorama/issues/145) tracks deferred automated preference/reinstall coverage. [#146](https://github.com/LeaveMyYard/herdr-panorama/issues/146) tracks extended native input/visual checks.
+The operator chose to retain exactly `data/panorama-spaces/store.json` and `data/panorama-tabs/store.json` with their necessary parent directories, preserving stock panel/folding/machine-reconnection preferences. The old empty-store cleanup proposal is superseded. Root released the bounded late installer/layout inventory handoff from signed B2 `12504ae`; its read-only preference validation/reuse implementation is in progress. Final freeze still waits actual B2 merge and latest sync. [#145](https://github.com/LeaveMyYard/herdr-panorama/issues/145) tracks deferred automated preference/reinstall coverage. [#146](https://github.com/LeaveMyYard/herdr-panorama/issues/146) tracks extended native input/visual checks.
 
 The existing 35 B3 tests remain. New coverage/harness expansion is deferred by operator policy. Final assembled author/independent captures, current-generation native initialization with the reviewed optimized artifact, the short manual basic check and existing required gates/review/CI still precede acceptance. The earlier missing-receipt synthetic captures do not prove current-generation initialization or final fidelity.
