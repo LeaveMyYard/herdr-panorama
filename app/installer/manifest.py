@@ -1,7 +1,6 @@
 """The uninstall authority is a bounded inventory, never arbitrary paths."""
-import json
 import re
-from keys import bindings, decoded, loads, merge
+from keys import decoded, loads, merge
 
 MODS = ('panorama', 'panorama-spaces', 'panorama-graph', 'panorama-peek')
 MANIFEST = 'data/panorama/install.json'
@@ -19,7 +18,7 @@ def valid_mode(value):
     return type(value) is int and 0 <= value <= 0o777
 
 
-def validate(data):
+def validate(data, definitions):
     manifest = loads(data)
     if not isinstance(manifest, dict) or set(manifest) != {'v', 'files', 'dirs', 'keys'} or type(manifest['v']) is not int or manifest['v'] != 1:
         raise ValueError('Invalid panorama install manifest')
@@ -36,6 +35,9 @@ def validate(data):
             or len(set(dirs)) != len(dirs) or not set(dirs) <= allowed_dirs):
         raise ValueError('Invalid manifest directory inventory')
     change = manifest['keys']
+    expected_additions = {section: keys for section, keys in definitions.items() if keys}
+    if bool(change) != bool(expected_additions):
+        raise ValueError('Manifest key authority differs from this package definitions')
     if change is not None:
         if not isinstance(change, dict) or set(change) != {'before', 'before_mode', 'after', 'mode', 'added', 'sections'}:
             raise ValueError('Invalid manifest key change')
@@ -48,8 +50,8 @@ def validate(data):
             raise ValueError('Invalid absent original keys')
         if not valid_mode(change['mode']):
             raise ValueError('Invalid installed key mode')
-        # Recompute the recorded merge, rather than trust arbitrary key-removal data.
-        added = bindings(json.dumps(change['added']).encode())
-        if not added or merge(original, added) != change:
+        # The explicit package, not the writable manifest, grants removal
+        # authority. Every defined binding was added, or install refused.
+        if change['added'] != expected_additions or merge(original, expected_additions) != change:
             raise ValueError('Manifest key change does not match its recorded merge')
     return manifest

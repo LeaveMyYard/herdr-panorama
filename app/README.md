@@ -40,12 +40,15 @@ original key-byte/mode restoration.
 Operations lock the app-home directory itself, leaving no lock-file residue.
 A mode-0600 `data/panorama/install.json` records file hashes/modes, created
 directories and key additions before payload writes. Failed native checks roll
-back unchanged installed files. After an interrupted install, run uninstall
-before trying to install again. Abrupt termination before the journal is created
+back unchanged installed files, including writes whose directory fsync failed
+after publication. Incomplete rollback retains its ownership journal for recovery.
+After an interrupted install, run uninstall before trying to install again. Abrupt termination before the journal is created
 can leave empty directories; no existing files are changed in that interval.
 Filesystem power-loss guarantees are outside this installer.
 
 Uninstall validates its bounded package inventory before deleting anything.
+Key-removal authority comes from this checkout's package key definitions, not
+from a self-consistent manifest delta; use the same reviewed package for uninstall.
 Modified files, permission changes, added files and changed bindings survive;
 concrete leftovers are printed. For later key edits, only unchanged bindings
 added by this install are removed. Malformed edited keys are preserved whole.

@@ -89,7 +89,7 @@ def install(home, args):
     manifest = {'v': 1, 'files': {p: {'sha256': digest(v[0]), 'mode': v[1]} for p, v in files.items()},
                 'dirs': [], 'keys': change}
     written = {}
-    keys_written = False
+    published = {'manifest': False, 'keys': False}
     manifest_written = None
     try:
         for directory in sorted({p for f in [*files, MANIFEST] for p in parents(f)}, key=lambda p: (p.count('/'), p)):
@@ -97,27 +97,31 @@ def install(home, args):
                 manifest['dirs'].append(directory)
         # Journal before payload changes, so interrupted installs can be uninstalled.
         manifest_written = (render(manifest), 0o600)
-        home.write(MANIFEST, *manifest_written)
+        home.write(MANIFEST, *manifest_written, on_publish=lambda: published.update(manifest=True))
         for path, value in files.items():
-            home.write(path, *value)
-            written[path] = manifest['files'][path]
+            home.write(path, *value, on_publish=lambda p=path: written.update({p: manifest['files'][p]}))
         checker = args.checker or shutil.which('herdr-app')
         if not checker:
             raise ValueError('herdr-app is required for native mod checks')
         check_mods([Path(args.app_home) / 'mods' / name for name in MODS], checker)
         if change:
-            home.write('keys.json', decoded(change['after']), change['mode'], expected=original_keys)
-            keys_written = True
+            home.write('keys.json', decoded(change['after']), change['mode'], expected=original_keys,
+                       on_publish=lambda: published.update(keys=True))
         print('Installed panorama. Current layout unchanged.')
         print('Switch when ready: ctrl-shift-l or herdr-app do layout.switch \'{"name":"panorama"}\'')
     except BaseException:
         leftovers = remove_files(home, {'files': written})
-        if keys_written:
-            note = undo(home, change)
-            if note:
-                leftovers.append(note)
-        if manifest_written:
-            if not home.remove(MANIFEST, manifest_written):
+        if published['keys']:
+            try:
+                note = undo(home, change)
+                if note:
+                    leftovers.append(note)
+            except (OSError, ValueError) as error:
+                leftovers.append('keys.json (rollback incomplete: ' + str(error) + ')')
+        if published['manifest']:
+            if leftovers:
+                leftovers.append(MANIFEST + ' (recovery journal retained)')
+            elif not home.remove(MANIFEST, manifest_written):
                 leftovers.append(MANIFEST + ' (changed; preserved)')
         leftovers.extend(remove_dirs(home, manifest['dirs']))
         for path in leftovers:
@@ -125,11 +129,12 @@ def install(home, args):
         raise
 
 
-def uninstall(home):
+def uninstall(home, package):
     stored = home.read(MANIFEST)
     if stored is None:
         raise ValueError('No panorama install manifest; nothing removed')
-    manifest = validate(stored[0])
+    definitions = bindings((Path(package) / 'keys.json').read_bytes())
+    manifest = validate(stored[0], definitions)
     # Validate keys and every ancestor before destructive work. A substituted link
     # in one subtree must not cause partial removal elsewhere.
     for path in [*manifest['files'], 'keys.json']:
@@ -163,7 +168,7 @@ def main():
             if args.action == 'install':
                 install(home, args)
             else:
-                uninstall(home)
+                uninstall(home, args.package)
         finally:
             os.close(home.fd)
         return 0

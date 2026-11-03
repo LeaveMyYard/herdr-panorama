@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync, readFileSync, mkdirSync, chmodSync, symlinkSync, rmSync, existsSync, linkSync } from 'node:fs';
 import { join } from 'node:path';
-import { spawn } from 'node:child_process';
-import { sandbox, tree } from './helpers.mjs';
+import { spawn, spawnSync } from 'node:child_process';
+import { root, sandbox, tree } from './helpers.mjs';
 
 const ok = result => assert.equal(result.status, 0, result.stderr || result.stdout);
 const fail = result => assert.notEqual(result.status, 0, result.stdout);
@@ -215,3 +215,48 @@ test('duplicate keys JSON and unsafe mod placement fail without mutation', t => 
   rmSync(join(s.home, 'keys.json')); writeFileSync(join(s.packageDir, 'mods/panorama/mod.json'), '{"place":"left"}');
   before = tree(s.home); fail(s.run('install')); assert.deepEqual(tree(s.home), before);
 });
+
+test('coherent forged manifest delta cannot claim a personal binding as installer-owned', t => {
+  const s = sandbox(t); personal(s); ok(s.run('install'));
+  const manifest = JSON.parse(readFileSync(s.manifest));
+  assert.equal(manifest.keys, null);
+  const render = value => JSON.stringify(value, null, 2) + '\n';
+  const personalKeys = JSON.parse(readFileSync(join(s.home, 'keys.json')));
+  // Recompute every dependent field coherently: self-consistency is insufficient.
+  writeFileSync(join(s.home, 'keys.json'), render(personalKeys));
+  manifest.keys = {
+    before: Buffer.from(render({ global: {} })).toString('base64'), before_mode: 0o640,
+    after: Buffer.from(render(personalKeys)).toString('base64'), mode: 0o640,
+    added: personalKeys, sections: [],
+  };
+  writeFileSync(s.manifest, JSON.stringify(manifest));
+  const before = tree(s.home); const result = s.run('uninstall'); fail(result);
+  assert.match(result.stderr, /key authority differs/); assert.deepEqual(tree(s.home), before);
+});
+
+test('coherent forged extra key is rejected even when the package defines valid own keys', t => {
+  const s = sandbox(t, { 'mod:panorama': { 'alt-f': 'panorama.fold' } }); personal(s); ok(s.run('install'));
+  const manifest = JSON.parse(readFileSync(s.manifest));
+  const original = JSON.parse(Buffer.from(manifest.keys.before, 'base64'));
+  delete original.global['alt-p'];
+  manifest.keys.before = Buffer.from(JSON.stringify(original, null, 2) + '\n').toString('base64');
+  manifest.keys.added.global = { 'alt-p': 'personal.command' };
+  writeFileSync(s.manifest, JSON.stringify(manifest));
+  const before = tree(s.home); fail(s.run('uninstall')); assert.deepEqual(tree(s.home), before);
+});
+
+for (const scenario of ['journal', 'payload', 'keys', 'rollback']) {
+  test(`post-publication ${scenario} failure preserves ownership and rollback/recovery`, t => {
+    const s = sandbox(t, { global: { 'alt-s': 'panorama.open' } }); personal(s);
+    const before = tree(s.home);
+    const result = spawnSync('python3', [join(root, 'app/tests/write-fault.py'), root, s.home, s.packageDir, s.checker, scenario], { env: s.env, encoding: 'utf8' });
+    ok(result); assert.match(result.stdout, /Fault injected and handled/);
+    if (scenario === 'rollback') {
+      assert.equal(existsSync(s.manifest), true, 'incomplete rollback keeps its ownership journal');
+      assert.equal(existsSync(join(s.home, 'layouts/panorama.json')), true);
+      assert.match(result.stderr, /recovery journal retained/);
+      ok(s.run('uninstall'));
+    } else assert.equal(existsSync(s.manifest), false, 'complete rollback leaves no journal');
+    assert.deepEqual(tree(s.home), before);
+  });
+}

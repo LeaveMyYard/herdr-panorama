@@ -76,7 +76,7 @@ class Home:
                 os.close(check)
                 return False
 
-    def write(self, path, data, mode, expected=None):
+    def write(self, path, data, mode, expected=None, on_publish=None):
         if self.read(path) != expected:
             raise ValueError(f'File changed or destination occupied: {path}')
         with self.parent(path) as (fd, name):
@@ -95,6 +95,10 @@ class Home:
                     os.link(temp, name, src_dir_fd=fd, dst_dir_fd=fd, follow_symlinks=False)
                 else:
                     os.replace(temp, name, src_dir_fd=fd, dst_dir_fd=fd)
+                # Publication precedes durability. Register ownership even if the
+                # following fsync or temporary-file cleanup fails.
+                if on_publish is not None:
+                    on_publish()
                 os.fsync(fd)
             finally:
                 try:
