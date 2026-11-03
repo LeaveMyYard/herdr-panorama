@@ -1,3 +1,4 @@
+// Generated from app/shared/feed-client.js by scripts/app-build.
 import { appHome, exec, readTextFile, watchFolder, shared, setShared, layout } from 'herdr';
 import { readResult } from './contract.js';
 import { installReceipt, verifiedBinary } from './binary.js';

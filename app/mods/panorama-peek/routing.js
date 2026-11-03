@@ -1,3 +1,4 @@
+// Generated from app/shared/routing.js by scripts/app-build.
 // All addresses originate in the verified live app/native join, never agent IDs.
 export function rootTarget(item) {
   return item.terminal ? { name: item.isNative ? 'terminal.peek' : 'agent.focus', args: { terminal: item.terminal } } : null;

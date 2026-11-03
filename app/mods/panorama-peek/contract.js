@@ -1,3 +1,4 @@
+// Generated from app/shared/contract.js by scripts/app-build.
 // Portable v1 validation. Unknown additive fields/vocabulary stay intact.
 const fields = {
   Feed: { v: 'i', generated_at: 'n', herdr_ok: 'b', inbox_ok: 'b', errors: ['s'], counts: 'Counts', orchestrators: ['Root'] },

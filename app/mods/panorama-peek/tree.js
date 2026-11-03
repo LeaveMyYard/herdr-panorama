@@ -1,3 +1,4 @@
+// Generated from app/shared/tree.js by scripts/app-build.
 import { agentKey, threadKey } from './contract.js';
 export const needs = status => ['fail', 'blk', 'wait'].includes(status);
 export const finished = status => ['done', 'cxl', 'inf'].includes(status);

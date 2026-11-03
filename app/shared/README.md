@@ -20,6 +20,7 @@ Current exports for later app slices:
   `annotate`, `isOpen`, `rows`.
 - `marks.js`: native `icon`, `mark`, `rootMarks`, `phases`, `lines`,
   `borderMotion`, `age`. It imports native gpui APIs and is not a Node module.
+- `peek-caller.js`: `PeekCaller`; caller-local current-G scope, token/owned-overlay lifecycle and Transcript replacement. No persisted keys.
 - `routing.js`: `rootTarget`, `detailTarget`; only model-verified addresses can
   produce a root command. Every detailed transcript agent targets Peek.
 

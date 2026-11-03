@@ -1,3 +1,4 @@
+// Generated from app/shared/marks.js by scripts/app-build.
 import { div, svg, image } from 'gpui-kit';
 import { h_flex } from 'gpui-base';
 import { iconProgram } from './model.js';

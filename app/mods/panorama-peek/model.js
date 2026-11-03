@@ -1,3 +1,4 @@
+// Generated from app/shared/model.js by scripts/app-build.
 import { rootKey } from './contract.js';
 import { aggregate, urgency } from './tree.js';
 const clean = text => (text ?? '').replace(/^[^\p{L}\p{N}]+/u, '').trim();

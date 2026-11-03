@@ -8,7 +8,7 @@ export function subject(packet, client, intent) {
   let key;
   try { key = rootKey(intent.root); } catch { return null; }
   const root = packet.feed.orchestrators.find(candidate => rootKey(candidate) === key);
-  if (!root) return null;
+  if (!root || root.session_id !== intent.root.session_id) return null;
   const thread = intent.thread ? root.threads.find(candidate => candidate.id === intent.thread.id) : null;
   if (intent.thread && !thread) return null;
   const agent = intent.agent && thread ? thread.agents.find(candidate => candidate.id === intent.agent.id) : null;

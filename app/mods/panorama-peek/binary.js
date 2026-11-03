@@ -1,3 +1,4 @@
+// Generated from app/shared/binary.js by scripts/app-build.
 // These are explicitly declared native host adapters, not a Node dependency.
 import { createHash } from 'crypto';
 import { readFile } from 'fs/promises';

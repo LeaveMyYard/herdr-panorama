@@ -1,13 +1,13 @@
 {
   "isolation": {
-    "core_id": "21c77e941904e5f22396649d8d23fcb8",
-    "pid": 2520950,
-    "start": "2611967",
-    "session": "p4n-38ba8dbd",
+    "core_id": "c76c44332013717f06216e8e7f753568",
+    "pid": 2976814,
+    "start": "3008650",
+    "session": "p4n-ae6a210d",
     "sockets": [
       [
-        "/home/leavemyyard/.cache/p4n-k65ev7xd/runtime/herdr-core/p4n-38ba8dbd.sock",
-        123358030
+        "/home/leavemyyard/.cache/p4n-owz_zwfb/runtime/herdr-core/p4n-ae6a210d.sock",
+        123478807
       ]
     ],
     "exact_process_environment_verified": true
@@ -34,9 +34,9 @@
     "zoom": 2.0,
     "font_size": 28.0,
     "ui_font_size": 26.0,
-    "space": "spfe3b9e86f0d48faa96fe830532ade6c0",
-    "tab": "tbf7294f5aebc1fe5691a3d95854d9d6a4",
-    "focused_pane": "pbc0787e67cf8540eafe9d637af1a9215",
+    "space": "sp076984bf2b15a7713f78d71fbdbc3a00",
+    "tab": "tbbaed1d88a8041759d325a72c16f232a7",
+    "focused_pane": "p06ed4cee316c865bfb2054f7f9f977ab",
     "layout": "b4-probe",
     "agent": "t1",
     "floats": {},
@@ -79,9 +79,9 @@
     "zoom": 2.0,
     "font_size": 28.0,
     "ui_font_size": 26.0,
-    "space": "spfe3b9e86f0d48faa96fe830532ade6c0",
-    "tab": "tbf7294f5aebc1fe5691a3d95854d9d6a4",
-    "focused_pane": "pbc0787e67cf8540eafe9d637af1a9215",
+    "space": "sp076984bf2b15a7713f78d71fbdbc3a00",
+    "tab": "tbbaed1d88a8041759d325a72c16f232a7",
+    "focused_pane": "p06ed4cee316c865bfb2054f7f9f977ab",
     "layout": "b4-probe",
     "agent": "t1",
     "floats": {},
@@ -91,16 +91,14 @@
     "errors": []
   },
   "caller": {
+    "command": "peek-closed-8a22babf65ade62a16631030098c7f75",
     "current": {
-      "token": "00000000000000000000000000000002",
+      "token": "67768295802574dc130a5224f2a3b013",
       "id": "o2",
-      "install_id": "0123456789abcdef0123456789abcdef"
+      "install_id": "0123456789abcdef0123456789abcdef",
+      "rowKey": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"fixture-fixer\"]"
     },
-    "events": [
-      "probe-open",
-      "peek-transcript-00000000000000000000000000000001",
-      "peek-closed-00000000000000000000000000000001"
-    ]
+    "error": null
   },
   "artifact": {
     "source_base": "1269daccd0da27df8df355fcc234dcd18ca9440c",
@@ -111,26 +109,28 @@
     "primary_evidence": "B/author/real-writer-interop.json",
     "invoked": false
   },
-  "scope": "synthetic registered feed + real merged private artifact; actual native currentG init/read/callback, not B2/B3 caller integration",
+  "scope": "synthetic registered feed + real merged private artifact; actual native currentG init/read/callback, production sidebar/helper/child callbacks with seeded follower feed; sidebar init role injected as consumer to avoid replacing seeded data; not installer acceptance",
   "stop_code": 0,
   "captured_process_exited": true,
   "runtime_source_sha256": {
+    "app/mods/panorama/main.js": "e0f481183d22f738430039e94b2104cd3d493ac72b76b3fd404e9c957cea6d48",
+    "app/mods/panorama-graph/main.js": "0e8a94de652ad38034671a81b6cf6229a60d9b4855de8afc8e779c068cf69da9",
     "app/mods/panorama-peek/actions.js": "4b14ebd6eb0afd6b7aa2426f045578afcabb95329c364bebc5defc12c5b539c3",
-    "app/mods/panorama-peek/binary.js": "10b59b4d7b1a4ce0b4c4bf5a7271fd4bd7a203433de93defe5bd66ada261f78e",
+    "app/mods/panorama-peek/binary.js": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
     "app/mods/panorama-peek/bundle.json": "db4d8657f4df0649f981dcd57d4790efd44368bcc9adc71ad2044a7e04efdcbc",
-    "app/mods/panorama-peek/contract.js": "152537ee066d9ec116d2ca267685015ee385a154b8871193a21757b9d6695d45",
-    "app/mods/panorama-peek/feed-client.js": "b9ce6dfcad29b76ca0598d3f99ba1726c75bbe92a57cf5144f1b54d10cf9a1b6",
+    "app/mods/panorama-peek/contract.js": "799534499636f7121188b6c7fc6f6a3f05d0781b236a75e05bb8536be56eca2c",
+    "app/mods/panorama-peek/feed-client.js": "bd6f2072bb83197ee560e414167c64f1c8834b72b532f5a62620bf7319c31436",
     "app/mods/panorama-peek/main.js": "ad03d930fae9ca4a44cddb5bdc59f4ca14c99f9aa67ad2db97bd7d198c27911f",
-    "app/mods/panorama-peek/marks.js": "f41170ec11d65bf321929f6d7ca98b0ceb6575e99403aa970f1641f6ce234aad",
+    "app/mods/panorama-peek/marks.js": "13e5d13607af063dd3ff06db5671c986da80a5189b2bdda4c96b1e04aef2ea2a",
     "app/mods/panorama-peek/metadata.js": "c72b6b71af3f2c0db2c06e13e82e48de5b03e0d32c1e0c3c80f12070754f3c5e",
     "app/mods/panorama-peek/mod.json": "8ded8a3a0cff0e5348d95b12d363fdbdfea201dd66f37107c289852048f9191d",
-    "app/mods/panorama-peek/model.js": "322d4ad2582160e90a3095d6caf6563c3f433803ce527bd1c6f35d29ba35e106",
+    "app/mods/panorama-peek/model.js": "4d653d8cbf77c11ce49d502bacf8f986bd607e4fde3039b06fccb9ff7757b12d",
     "app/mods/panorama-peek/paging.js": "370fcf8f2812f8fecbcaa30520bc01e6cce0e3a35416c63a979aea82088d7410",
-    "app/mods/panorama-peek/routing.js": "9d57cca518f6a9b72be3f00734a532413ed0814ea1299a85f83598154063651c",
-    "app/mods/panorama-peek/subject.js": "33e96b4b33b31b03563f5ef2951855d1f2614432536b566aacc8ad326130435b",
-    "app/mods/panorama-peek/tree.js": "f3f09ed7962eb5a25f04c4e66cf11df381e67c3abf99ffe1f4e25ceaeb60e2a0"
+    "app/mods/panorama-peek/routing.js": "0a0c932d301427c9c6fbd6365a670945f0515db237eef3ba070fa67a9f450ae2",
+    "app/mods/panorama-peek/subject.js": "9689bc858b772663cc223645fd6b639e3476a7b61767d9c2477f3942b390bd57",
+    "app/mods/panorama-peek/tree.js": "eb481ed97705f98fe8eb43d340b16c7f62bb1eefcf71bff236637075ad29b079",
+    "app/shared/peek-caller.js": "b3f5415b2149cb957a78a9292f4c15b627ab110372039d0c950ef04a7c34e471"
   },
-  "design_sha256": "ae2073d0cc3817aaba949bd94043dff91e9cc3e4f49691a0ce64dbd4440a77e3",
   "capture_viewport": {
     "physical": [
       1288,
@@ -138,5 +138,11 @@
     ],
     "zoom": 2,
     "peek_logical_width": 284
-  }
+  },
+  "fixture_seams": [
+    "Sidebar main source wrapped with nonvisual probe-command callback in its existing command loop.",
+    "Sidebar import aliases startConsumer as startSidebar for this seeded follower fixture, preventing writer replacement of the synthetic published feed. Receipt/control/binary authority checks are unchanged.",
+    "Peek wrapped with nonvisual diagnostic/transcript/next callbacks in a private command loop. No additional production command consumer."
+  ],
+  "design_sha256": "ae2073d0cc3817aaba949bd94043dff91e9cc3e4f49691a0ce64dbd4440a77e3"
 }
