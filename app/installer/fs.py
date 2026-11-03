@@ -112,7 +112,9 @@ class Home:
                     pass
 
     def remove(self, path, expected):
-        if self.read(path) != expected:
+        # A file can grow after preflight. Never allocate beyond the bytes
+        # already validated merely to recheck them before deletion.
+        if self.read(path, len(expected[0])) != expected:
             return False
         with self.parent(path) as (fd, name):
             os.unlink(name, dir_fd=fd)

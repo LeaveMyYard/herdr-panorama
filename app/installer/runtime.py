@@ -14,6 +14,7 @@ from manifest import BINARY
 ROOT = 'data/panorama'
 RUNTIME = ROOT + '/runtime'
 FEED = ROOT + '/feed.json'
+FEED_LIMIT = 32 * 1024 * 1024
 
 
 def generation(receipt):
@@ -139,9 +140,9 @@ def preflight_cleanup(home, receipt):
     if parent_unknown:
         raise ValueError(f'Unknown panorama runtime artifact; preserved: {ROOT}/{sorted(parent_unknown)[0]}')
     record = ownership(home, receipt)
-    feed = managed(home, FEED, None)
+    feed = managed(home, FEED, FEED_LIMIT)
     temp_path = f"{ROOT}/.feed-{receipt['install_id']}.tmp"
-    temp = managed(home, temp_path, None)
+    temp = managed(home, temp_path, FEED_LIMIT)
     allowed = set() if record is None else {record[1]['feed_sha256'], record[1]['pending_feed_sha256']} - {None}
     if feed is not None and digest(feed[0]) not in allowed:
         raise ValueError(f'Feed digest is not owned; preserved: {FEED}')
