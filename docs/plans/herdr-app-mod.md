@@ -14,10 +14,12 @@ every agent row.
 
 The design is final and is the source of truth for the look:
 
-- `docs/design/herdr-app/` — PNG per frame (`v2-a-window`, `v2-b-sidebar`, `v2-c-peek`,
-  `v2-d-graph-tab`), the reference HTML (`Herdr App Panorama v2.dc.html` + `icons/`, `ui/`),
-  and **`SPEC.md`**: theme() colour names, sizes, status marks, fold rules, animation timings,
-  click behaviour, and the list of things a real mod has to do differently from the HTML.
+- `docs/design/herdr-app/` — all five final PNG frames: `v2-a-window`, `v2-b-sidebar`,
+  `v2-c-peek`, `v2-d-graph-tab` and `v2-d2-graph-scrolled`; the reference HTML
+  (`Herdr App Panorama v2.dc.html` + `icons/`, `ui/`); and **`SPEC.md`** for theme colours,
+  sizes, marks, folds, motion and interaction. The operator approved this refreshed A–D2
+  design and its click split on **2026-11-03**. Graph layout/navigation follows Swarm View 5
+  deep and final SPEC §§6.4–6.7. Design approval does not release the §6 main visual hold.
 - The operator's screenshot of stock herdr-app is the reference for everything that is not
   the sidebar or the graph tab: it must look unchanged.
 
@@ -41,7 +43,7 @@ The design is final and is the source of truth for the look:
    - **Parity floor:** every agent the stock `agents()` list shows also appears in panorama,
      even when panorama has no transcript data for it (then as a plain orchestrator row with
      no threads). The panel must never show fewer agents than the stock one.
-2. **Clicks.** An orchestrator (has a terminal) → `agent.focus {terminal}` (same as stock).
+2. **Sidebar clicks.** An orchestrator (has a terminal) → `agent.focus {terminal}` (same as stock).
    A pane-less subagent → the mod's own Peek popup (`openOverlay`, kind `popup`): status,
    error, last message, "Open orchestrator", "Transcript". Chevrons fold/unfold.
 3. **Spaces.** A clone of the shipped `spaces` mod, unchanged apart from: a coral count of
@@ -53,15 +55,21 @@ The design is final and is the source of truth for the look:
    then `tab.select` it. The tab is named "Swarm" (pill per SPEC). `tab.new` returns no id:
    find the new tab in `spaces()`; check whether `tab.move`'s index is 0- or 1-based; nothing
    pins the tab first, so re-move it only when the mod creates it, never fight a user's drag.
-4. **Graph tab.** A `panorama-graph` mod tab showing that space's swarm as the graph in
-   frame D (orchestrators → threads → agents → subagents, restyled to herdr-app). Clicking an
-   agent node behaves exactly like clicking it in the sidebar (rule 2).
+4. **Graph tab.** A `panorama-graph` tab shows that space's swarm using the final D/D2 Swarm
+   View 5 deep design: one column per spawn depth, with the computed horizontal window and
+   independently scrolled columns. Final SPEC §6.6 defines the click split: an
+   orchestrator/thread click selects and drills down; double-click or Enter opens its
+   orchestrator. An agent click selects and opens its verified terminal or pane-less Peek.
+   `a`/`i` navigate to the existing Inbox or verified permission pane; they never answer,
+   type, or allow/deny in the mod.
 5. **Install / uninstall.** One command installs the mods and a `panorama` layout (a clone of
    `main` with the `agents` block → `panorama` and `spaces` → `panorama-spaces`) into
    `~/.config/herdr-app` without touching shipped or personal files, merges its keys into
    `keys.json` (asking before replacing a used key), and prints how to switch
    (`ctrl-shift-l` or `herdr-app do layout.switch '{"name":"panorama"}'`). Uninstall removes
-   exactly what install added.
+   unchanged owned payload while preserving personal edits and refusing unsafe/ambiguous
+   runtime cleanup. The exact operator-approved retention exceptions and reinstall
+   boundaries are documented in §4 below.
 6. **TUI flavour untouched.** Everything that works in the herdr TUI plugin today still works;
    its tests stay green.
 
@@ -140,6 +148,11 @@ app/
 `keys.json`, records what it installed for uninstall, then runs `herdr-app check` on each mod.
 It never edits shipped files and never switches the operator's layout.
 
+**Operator update, 2026-11-03:** used-home uninstall has the finite retention exceptions
+recorded in §4. The installer still never edits shipped/personal files or switches layouts.
+Preference-directory reuse grants no deletion ownership, rewrite/chmod authority, or
+generic host-state cleanup permission.
+
 ## 4. Lanes
 
 Dependencies: A1 (contract + fixture) unblocks lane B. Lanes A and B then run in parallel;
@@ -150,22 +163,85 @@ C joins them.
 | A feed | A1 | `docs/protocol/app-feed-v1.md` + fixtures | reviewed; fixture validates against the doc |
 | A feed | A2 | host detection; hooks record `HC_TERMINAL_ID`; `hc` collector source behind a trait | unit tests with recorded `hc ls --json`; TUI tests green |
 | A feed | A3 | per-agent harness; feed v1 serialisation; `panorama app-feed --ensure` writer | feed from a fixture world equals the fixture; atomic write test; idle-out test |
-| B mods | B1 | `app/` scaffold, install/uninstall, `scripts/app-check`, Node test harness in CI | installs into a temp app home; uninstall leaves no trace |
+| B mods | B1 | `app/` scaffold, install/uninstall, `scripts/app-check`, Node test harness in CI | installs into a temp app home; uninstall leaves no trace subject to the exact retention exceptions below |
 | B mods | B2 | sidebar mod on the fixture: sections, tree, marks, icons, folds, animations | matches `v2-b-sidebar.png` per SPEC; `herdr-app check` passes |
-| B mods | B3 | `panorama-spaces` (counts, spinner, click → graph tab) + `panorama-graph` tab | space click creates/selects the first tab; graph matches `v2-d-graph-tab.png` |
-| B mods | B4 | Peek popup + click routing in sidebar and graph | rule 2 holds in both places |
+| B mods | B3 | `panorama-spaces` (counts, spinner, click → graph tab) + `panorama-graph` tab | space click creates/selects the first tab; graph matches final D/D2 PNGs and SPEC §6 |
+| B mods | B4 | Peek popup + click routing in sidebar and graph | sidebar rule 2 and graph SPEC §6.6 hold |
 | C integration | C1 | live feed end to end in a real herdr-app; parity floor; perf check of the tick | operator's visual check (below) |
 | C integration | C2 | README section "herdr-app flavour", screenshots, RECIPE.md/preview.png | docs reviewed |
+
+### Operator-approved uninstall retention — 2026-11-03
+
+The operator chose **“Allow two null keys (Recommended)”**, **“Keep preference
+files (Recommended)”**, and **“Keep host layout state (Recommended)”**. These are the
+only no-trace exceptions:
+
+- Host shared state may retain only the inert slots `panorama.feed:null` and
+  `panorama.feed.owner:null`. No cached feed/transcript, changed-age map or active lease is
+  approved, and the installer never edits personal `shared.json`.
+- Exactly `data/panorama-spaces/store.json` and `data/panorama-tabs/store.json`, with their
+  necessary parent directories, may remain to preserve stock panel selection, machine
+  folding and machine-reconnection recovery across ordinary restart and reinstall. No
+  graph store or other owned payload cache is approved.
+- Exactly `layouts/.state/panorama.json` and its necessary parent may remain as
+  host-owned layout state. Herdr can persist the full Panorama snapshot there, including
+  the automatic Spaces `layout.resize` result. Preserve it without installer deletion,
+  rewriting, chmod or adoption authority. No other layout-state file or generic host
+  bookkeeping retention/cleanup exception is added.
+
+Reinstall may safely reuse those exact preference directories without recording
+preexisting parents as newly created, acquiring deletion ownership, or rewriting, chmodding
+or deleting personal files. Known stores must pass bounded no-follow, single-link
+regular-file/mode/strict-JSON and consumed-shape validation; unsafe input is preserved and
+refused. Unknown keys/files remain personal and untouched. Newly created parents remain
+receipt-tracked and are removed only when empty. There is no generic store adoption or
+cleanup permission. The earlier proposed strict preference-store cleanup/cohort approach is
+superseded; retain normal stock preference behavior.
+
+The host-layout-state approval followed the original C1 inventory's omission of that
+existing snapshot; the corrected evidence records the actual file and later policy
+resolution without changing the original run or claiming its initial inventory was complete.
+
+Actual manual used-home uninstall/reinstall must show these exact permitted retentions,
+safe reuse and personal-file preservation. Runtime ownership, cooperative writer/frontend
+stop, refusal/recovery and receipt-last rules still apply; see
+[runtime ownership](../protocol/app-feed-runtime-v1.md).
 
 ## 5. Verification
 
 - Rust: `cargo test`, clippy, the existing parity/oracle tools stay green.
 - JS: Node tests over the fixture for tree/fold/sort/join logic; `scripts/app-check` for every
   mod.
-- Visual: screenshots of the installed mods compared with `docs/design/herdr-app/*.png`
-  (herdr-app can't be screenshotted headlessly; capture the window, or ask the operator).
+- Visual: actual seeded native screenshots compared with all five final PNGs.
+  `herdr-app shot` captures the running window selected by `HERDR_APP_HOME`; preserve source
+  SHA, viewport/zoom, input method and synthetic-versus-producer provenance. Existing
+  captures may be reused when their source/rendering relationship is verified; they do not
+  prove states they never exercised.
 - **Personal-review hold:** before the integration branch merges to `main`, the operator looks
   at the installed panorama layout in their own herdr-app and approves it.
+
+### Operator faster-delivery override — 2026-11-03
+
+The operator deferred **new automated feature coverage** for this delivery and explicitly
+retained tests already written. C1 is a short manual assembled real-app smoke with evidence,
+using existing tools/fixtures and private one-shot setup when needed. Do not build a new
+permanent rich-E2E harness, feature matrix or exhaustive probe instrumentation as a readiness
+gate. C2 may reuse existing truthful captures.
+
+Deferred automation is tracked in actual GitHub issues:
+
+- [#143: rich assembled E2E](https://github.com/LeaveMyYard/herdr-panorama/issues/143).
+- [#144: Peek/transcript native integration](https://github.com/LeaveMyYard/herdr-panorama/issues/144).
+- [#145: retained preferences/reinstall](https://github.com/LeaveMyYard/herdr-panorama/issues/145).
+- [#146: extended native input/visual/performance](https://github.com/LeaveMyYard/herdr-panorama/issues/146).
+
+Keep existing tests enabled. Existing regressions, material implementation/safety defects,
+independent review and actual relevant green CI on the reviewed final head remain gates;
+this is not a failed-check exception. Manual evidence must distinguish actual producer
+ingestion from synthetic renderer fixtures and must not imply that unverified preexisting
+sessions have rich data. The §6 operator own installed-layout visual approval still gates
+main. No release/tag/gallery, global hook/configuration, TUI installation or operator
+layout-switch authority is added.
 
 ## 6. Authority and boundaries
 

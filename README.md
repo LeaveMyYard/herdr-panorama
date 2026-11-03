@@ -47,6 +47,42 @@ Claude-only during the Rust port.
 |---|---|
 | ![](docs/screenshots/wide-160x45.png) | ![](docs/screenshots/narrow-70x45.png) |
 
+## herdr-app flavour
+
+Panorama also runs as native herdr-app mods: an Agents sidebar, a Swarm graph per
+space, and a Peek popup with a read-only transcript viewer. Native agent roots
+and their terminal children remain visible when transcript enrichment is unavailable.
+
+From a reviewed checkout, install an optimized Rust `panorama` binary into your
+existing app home:
+
+```sh
+scripts/app-install install --app-home "$HOME/.config/herdr-app" \
+  --binary /absolute/path/to/reviewed/panorama
+```
+
+Choose the layout yourself with `ctrl-shift-l`, or:
+
+```sh
+herdr-app do layout.switch '{"name":"panorama"}'
+```
+
+The installer does not select a layout, change hook configuration, or alter the
+TUI installation. Rich threads require a verified current session association;
+older unbound sessions appear as basic native roots. See the [app guide](app/README.md)
+for requirements, controls, uninstall and recovery.
+
+Approved uninstall retention is limited to `panorama.feed:null` and
+`panorama.feed.owner:null`, the exact `data/panorama-spaces/store.json` and
+`data/panorama-tabs/store.json` preferences, and host-owned
+`layouts/.state/panorama.json`, with necessary parents. This grants no installer
+deletion or adoption authority over personal/host files.
+
+![Native Swarm graph on synthetic design data](app/preview.png)
+
+*Native app rendering with synthetic design data; this preview does not demonstrate
+natural session ingestion. [Capture provenance](docs/review/herdr-app/b3/FINAL.md).*
+
 ## Pick your setup
 
 ### 🗺️ Graph only: panorama in its own tab
