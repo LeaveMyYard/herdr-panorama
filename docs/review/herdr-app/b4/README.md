@@ -1,6 +1,6 @@
 # B4 native Peek and transcript evidence
 
-These captures use the actual Peek source identified by SHA256 in [native-provenance.json](native-provenance.json), a synthetic registered current-generation feed, and the optimized merged private panorama artifact. The private child validated its receipt/control/artifact before rendering. The basic smoke now uses the actual sidebar caller/helper and child callback route. Its private fixture aliases sidebar startup to the normal consumer role, so the seeded feed stays available; receipt/control/artifact checks run unchanged. The graph caller is compiled and covered by existing relevant checks; full installed assembly and installer acceptance follow the remaining integration handoff.
+These captures use the actual Peek source identified by SHA256 in [native-provenance.json](native-provenance.json), a synthetic registered current-generation feed, and the optimized merged private panorama artifact. The private child validated its receipt/control/artifact before rendering. The basic smoke now uses the actual sidebar caller/helper and child callback route. Its private fixture aliases sidebar startup to the normal consumer role, so the seeded feed stays available; receipt/control/artifact checks run unchanged. The graph caller is compiled and covered by existing relevant checks; installed producer/installer acceptance remains separate. Final combined-source patches and capture boundaries are recorded in [FINAL.md](FINAL.md).
 
 ![Native Peek](frame-c-native.png)
 

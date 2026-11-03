@@ -1,105 +1,126 @@
 {
   "integration_merge": "ef22f7d09149c066001e0647082a71d7b173161d",
-  "combined_runtime_source": "7325c0300aad35c08d9071033790317c4114f850",
-  "reviewed_native_source": "b06323cb54d36a2c2b4a390e405340a3b802b29e",
-  "reused_evidence_commit": "d4459915f761b6768cfef2af45dab753c66473cf",
+  "combined_runtime_source": "df0c88ba6df9771f75260543a7229a8d97289dc3",
+  "checker_patch": "57398ae98fcab8ccda785928a6329e11fe78f37b",
+  "freshness_patch": "8a58dd78c4f159668b77df5536d2ee4edf9c77c5",
+  "graph_scope_patch": "ff0178631cee2dce71952d7e29d74381a9531184",
+  "historical_reviewed_source": "b06323cb54d36a2c2b4a390e405340a3b802b29e",
   "files": [
     {
       "path": "app/mods/panorama-peek/actions.js",
       "sha256": "4b14ebd6eb0afd6b7aa2426f045578afcabb95329c364bebc5defc12c5b539c3",
-      "equals_reviewed_native_source": true
+      "equals_historical_b063": true
     },
     {
       "path": "app/mods/panorama-peek/binary.js",
       "sha256": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
-      "equals_reviewed_native_source": true
+      "equals_historical_b063": true
     },
     {
       "path": "app/mods/panorama-peek/bundle.json",
       "sha256": "db4d8657f4df0649f981dcd57d4790efd44368bcc9adc71ad2044a7e04efdcbc",
-      "equals_reviewed_native_source": true
+      "equals_historical_b063": true
     },
     {
       "path": "app/mods/panorama-peek/contract.js",
       "sha256": "799534499636f7121188b6c7fc6f6a3f05d0781b236a75e05bb8536be56eca2c",
-      "equals_reviewed_native_source": true
+      "equals_historical_b063": true
     },
     {
       "path": "app/mods/panorama-peek/feed-client.js",
-      "sha256": "bd6f2072bb83197ee560e414167c64f1c8834b72b532f5a62620bf7319c31436",
-      "equals_reviewed_native_source": true
+      "sha256": "8a836fbc95b4d7d0d29946c39d88b75ce48b5293df8e1c9c4b4b5dcda09214ed",
+      "equals_historical_b063": false
     },
     {
       "path": "app/mods/panorama-peek/main.js",
       "sha256": "87652b85d744551508a62e24b32d76d8363bc939805e65413f7435276c090dd0",
-      "equals_reviewed_native_source": true
+      "equals_historical_b063": true
     },
     {
       "path": "app/mods/panorama-peek/marks.js",
       "sha256": "13e5d13607af063dd3ff06db5671c986da80a5189b2bdda4c96b1e04aef2ea2a",
-      "equals_reviewed_native_source": true
+      "equals_historical_b063": true
     },
     {
       "path": "app/mods/panorama-peek/metadata.js",
       "sha256": "c72b6b71af3f2c0db2c06e13e82e48de5b03e0d32c1e0c3c80f12070754f3c5e",
-      "equals_reviewed_native_source": true
+      "equals_historical_b063": true
     },
     {
       "path": "app/mods/panorama-peek/mod.json",
       "sha256": "8ded8a3a0cff0e5348d95b12d363fdbdfea201dd66f37107c289852048f9191d",
-      "equals_reviewed_native_source": true
+      "equals_historical_b063": true
     },
     {
       "path": "app/mods/panorama-peek/model.js",
       "sha256": "4d653d8cbf77c11ce49d502bacf8f986bd607e4fde3039b06fccb9ff7757b12d",
-      "equals_reviewed_native_source": true
+      "equals_historical_b063": true
     },
     {
       "path": "app/mods/panorama-peek/paging.js",
       "sha256": "b5ee4fece7bfcff5476a53c94ade2ba29a130394b6236e01d2ac1eeb35acb1e1",
-      "equals_reviewed_native_source": true
+      "equals_historical_b063": true
     },
     {
       "path": "app/mods/panorama-peek/routing.js",
       "sha256": "0a0c932d301427c9c6fbd6365a670945f0515db237eef3ba070fa67a9f450ae2",
-      "equals_reviewed_native_source": true
+      "equals_historical_b063": true
     },
     {
       "path": "app/mods/panorama-peek/subject.js",
       "sha256": "9689bc858b772663cc223645fd6b639e3476a7b61767d9c2477f3942b390bd57",
-      "equals_reviewed_native_source": true
+      "equals_historical_b063": true
     },
     {
       "path": "app/mods/panorama-peek/tree.js",
       "sha256": "eb481ed97705f98fe8eb43d340b16c7f62bb1eefcf71bff236637075ad29b079",
-      "equals_reviewed_native_source": true
+      "equals_historical_b063": true
     },
     {
       "path": "app/mods/panorama/main.js",
       "sha256": "e0f481183d22f738430039e94b2104cd3d493ac72b76b3fd404e9c957cea6d48",
-      "equals_reviewed_native_source": true
+      "equals_historical_b063": true
     },
     {
       "path": "app/mods/panorama/peek-caller.js",
       "sha256": "2feb99ac0380095169bca403e8767b9f98c2c3858b8b4b7895c48e0683caaa90",
-      "equals_reviewed_native_source": true
+      "equals_historical_b063": true
     },
     {
       "path": "app/mods/panorama-graph/main.js",
-      "sha256": "0e8a94de652ad38034671a81b6cf6229a60d9b4855de8afc8e779c068cf69da9",
-      "equals_reviewed_native_source": true
+      "sha256": "d3c469ffb0f0ce5bb9dfb7b45ce81220824e9442543465b97ea74546a7f41e1c",
+      "equals_historical_b063": false
     },
     {
       "path": "app/mods/panorama-graph/peek-caller.js",
       "sha256": "2feb99ac0380095169bca403e8767b9f98c2c3858b8b4b7895c48e0683caaa90",
-      "equals_reviewed_native_source": true
+      "equals_historical_b063": true
     },
     {
       "path": "app/shared/peek-caller.js",
       "sha256": "b3f5415b2149cb957a78a9292f4c15b627ab110372039d0c950ef04a7c34e471",
-      "equals_reviewed_native_source": true
+      "equals_historical_b063": true
+    },
+    {
+      "path": "app/shared/feed-client.js",
+      "sha256": "752ba8b07991a8103745a8d9e00063e0e43837223b467eec1a95e30efe959ed9",
+      "equals_historical_b063": false
+    },
+    {
+      "path": "app/installer/check.py",
+      "sha256": "3998f0644cd5a7970cbb4b502a874273ecd20fbdd614631f10870863d7fd3370",
+      "equals_historical_b063": false
+    },
+    {
+      "path": "app/installer/main.py",
+      "sha256": "b0cbe8af856b3fd23de0dfe3ca19ac78c61694d0aebe4387bff69af111d734ef",
+      "equals_historical_b063": false
+    },
+    {
+      "path": "scripts/app-check",
+      "sha256": "400475771510af699975a689ff3414852fb3721d4d88cd1f02aa4ca6063a4101",
+      "equals_historical_b063": false
     }
   ],
-  "canonical_graph_cards_equal_integration": true,
-  "scope": "Peek/sidebar-helper/native readonly viewer evidence only; no graph keyframe claim"
+  "capture_scope": "New author combined-source currentG/sidebar-helper/Peek/viewer smoke. Historical independent b063 captures document unchanged rendering but do not prove new freshness or graph action behavior."
 }
