@@ -106,7 +106,7 @@ def install(home, args):
                 destination = planned / path
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 destination.write_bytes(value[0])
-        files.update(check_mods([planned / 'mods' / name for name in MODS], checker))
+        files.update(check_mods([planned / 'mods' / name for name in MODS], checker, args.checker_core))
     preflight(home, files)
     manifest = {'v': 2, 'install_id': secrets.token_hex(16), 'files': {p: {'sha256': digest(v[0]), 'mode': v[1]} for p, v in files.items()},
                 'dirs': [], 'keys': change}
@@ -232,10 +232,14 @@ def main():
     parser.add_argument('--package', default=str(Path(__file__).resolve().parents[1]), help='app package directory')
     parser.add_argument('--binary', help='absolute reviewed panorama executable to copy privately (install only)')
     parser.add_argument('--checker', help='absolute native herdr-app checker (test fixtures may supply a substitute)')
+    parser.add_argument('--checker-core', choices=('managed', 'none'), default='managed',
+                        help='none is only for an explicit standalone custom checker that never starts a core')
     args = parser.parse_args()
     try:
         if args.action == 'uninstall' and (args.binary or args.checker):
             raise ValueError('--binary and --checker apply only to install')
+        if args.checker_core == 'none' and (args.action != 'install' or not args.checker):
+            raise ValueError('--checker-core none requires install with an explicit standalone --checker')
         home = Home(args.app_home)
         try:
             fcntl.flock(home.fd, fcntl.LOCK_EX)
