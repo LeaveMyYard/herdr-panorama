@@ -1,0 +1,59 @@
+{
+  "v": 1,
+  "generated_at": 1800000000.0,
+  "herdr_ok": true,
+  "inbox_ok": true,
+  "errors": [],
+  "counts": {
+    "orchestrators": 1,
+    "threads": 1,
+    "active_threads": 1,
+    "agents": 0,
+    "running": 0,
+    "waiting": 0,
+    "questions": 0,
+    "blocked": 0,
+    "failed": 0
+  },
+  "orchestrators": [
+    {
+      "pane_id": "core:t10",
+      "tab_id": null,
+      "tab_label": "Read-only check",
+      "session_id": null,
+      "herdr_status": "working",
+      "workspace_id": null,
+      "focused": false,
+      "cwd": null,
+      "flavour": "pr-review",
+      "transcript": null,
+      "pending": [],
+      "inbox": [],
+      "inbox_texts": [],
+      "threads": [
+        {
+          "id": "empty-failed",
+          "name": "Check",
+          "source": "ref",
+          "phases": [],
+          "agents": [],
+          "status": "failed",
+          "started": 1799999995.0,
+          "ended": 1799999999.0,
+          "worktree": null,
+          "pct": 50,
+          "flavour": null
+        }
+      ],
+      "hidden_done": 0,
+      "tab_no": null,
+      "machine": null,
+      "machine_id": null,
+      "bg": [],
+      "last_activity": null,
+      "harness": "codex",
+      "host": "herdr-core",
+      "terminal": "t10"
+    }
+  ]
+}

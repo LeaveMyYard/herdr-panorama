@@ -185,8 +185,20 @@ fields. App focus, pinning, changed age, section ordering, titles and icons come
 from the matched stock agent; app space/tab membership always comes from live
 app data. Every stock `agents()` row must remain present, including unsupported
 harnesses and roots with no panorama transcript. Feed enrichment must never
-filter those rows out. Unmatched feed roots must not be assigned to a guessed
-space; a space graph contains only roots with an exact app membership join.
+filter those rows out. Unmatched feed roots remain in the sidebar under their opaque feed identity,
+using supplied tab_label, pane_id, harness and status as data. Never invent an
+app space/tab/name/section/membership/focus for them, or portray stale/degraded
+feed provenance as fresh live app evidence. They are excluded from space/graph
+aggregates; a space graph contains only roots with a verified live membership join.
+
+Native pane-less terminals may inherit membership only through a verified LIVE
+terminals().parent chain to an exactly joined live stock ancestor. Direct child
+pane/stock membership wins. Each agents() entry stays a top-level orchestrator,
+including descendants with their own pane. Native sidebar recursion includes
+only children absent from agents(), stops at listed-root boundaries, and gives
+each root its own subtree. Preserve stock descendant urgency and count each
+canonical native terminal identity once. Transcript agents remain separate;
+never infer their address or membership from ids, cwd, titles or session names.
 
 Parents define an arbitrary-depth tree within a thread. Never truncate at a fixed
 depth. Render dangling/self-parent entries as thread children. As in
@@ -198,7 +210,10 @@ stable tie-breaker where a view sorts.
 Agent entries do not carry terminal addresses in v1. Detailed subagents are
 therefore pane-less; do not interpret their ids as terminal addresses. Even a synthetic `main:*` id is not terminal identity proof. Every detailed
 agent opens Peek; its Open orchestrator action uses only its owning root's
-verified terminal. A terminal independently known to the app keeps its stock row. Root clicks use `agent.focus {terminal}`; pane-less agents
+verified LIVE terminal. Without that live target Open orchestrator is unavailable.
+A terminal independently known to the app keeps its stock row. Sidebar root clicks use `agent.focus {terminal}`; graph root/thread clicks
+select and drill, double-click or Enter opens the owning orchestrator per
+SPEC §6.6, and graph agent clicks select and open. Pane-less transcript agents
 open panorama Peek. Transcript references are inert data: pass as an argument
 to a read-only viewer, never interpolate into a shell command. Peek gets status,
 model, timestamps/duration, tool_calls, role, error, last_message, questions,
@@ -234,12 +249,19 @@ ring otherwise. Unknown phase state uses the next/skipped neutral bar.
 
 Root statuses are `working`, `blocked`, `idle`, `done`, `unknown` (future strings
 use idle/unknown fallback). Display one chip for each needs kind present in the
-subtree, ordered fail, blk, wait, then the root's own runtime mark. Own blocked
+subtree, including the fallback fail mark of an EMPTY failed thread, ordered
+fail, blk, wait, then the root's own runtime mark. Own blocked
 contributes the blocked chip once. A root belongs to Needs you if any agent is
-fail/blk/wait, any open root inbox question exists, or its own status is blocked;
-otherwise Done/Working/Idle follow its live stock status. Pinning precedes these
-sections. A root/space working indicator means any run/rev descendant or own
-working status. Finished folding follows thread done/cancelled and agent
+fail/blk/wait, any empty failed thread exists, any open root inbox question
+exists, or its own status is blocked;
+otherwise its own unseen done status places it in Done. An own idle root with
+run/rev/working descendants belongs to Working; descendant completion alone never
+places its parent in Done. Remaining roots follow their own working/idle status.
+Pinning precedes these sections. A root/space working indicator means any run/rev
+descendant or own working status. Listed native descendants contribute urgency
+and chips even when displayed as independent roots. Space totals count each
+entity's OWN aggregate in its proven space once; display ancestry does not add
+that entity's totals to an ancestor a second time. Finished folding follows thread done/cancelled and agent
 done/cxl/inf states; lost/unknown must not silently disappear as completed.
 
 `inbox`/`inbox_texts` is the complete root inventory; each pair of arrays has
@@ -256,12 +278,19 @@ that previous questions were answered; display the degraded/stale state.
 
 Space needs-you item counts differ from ?N: count each fail/blk/wait agent
 exactly once at any depth. Add exactly one root fallback item when its own status is blocked OR its inbox
-is nonempty, AND the detailed needs count is zero. This conservative fallback
+is nonempty OR any empty failed thread exists, AND the detailed needs count is zero. This conservative fallback
 avoids duplicate counts when the representation is not explicit; never parse
 `main:*` ids to classify ownership. The ?N union is independent of this count.
 Root/space aggregates are derived in the mod after exact membership joins;
 feed counts remain the legacy totals above. Answers stay in the TUI inbox;
-this feed grants no permission to answer, send text, or mutate a session.
+this feed grants no permission to answer, send text, or mutate a session. Graph
+a/i actions navigate to the existing inbox/question group or focus the existing
+permission pane as TUI actions do; they never answer, type, allow or deny.
+
+Graph transcript depth columns contain only the selected thread's recorded spawn
+tree. Use the native terminal tree as a fallback only when no transcript thread
+exists; never invent a thread label or assign native children to a transcript
+thread from their position, title or other guessed association.
 
 ## Executable fixtures
 
@@ -269,6 +298,9 @@ this feed grants no permission to answer, send text, or mutate a session.
 phase/thread/source vocabularies, four nested agent levels, mixed/unknown
 harnesses, a pane-less failure, repeated question attribution, and no-transcript
 roots. `degraded.json` exercises unavailable sources and errors as data.
+`empty-failed.json` isolates an empty failed thread under a working root: it
+needs the operator and retains the root spinner, while legacy failed-agent
+count remains zero.
 Fixtures use synthetic identities and paths.
 
 Run `cargo test --locked --test app_feed_contract`. The test reads these exact

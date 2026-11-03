@@ -206,7 +206,7 @@ fn fixtures_validate_against_the_documented_field_tables_and_model_counts() {
         }
     }
     names.sort();
-    assert_eq!(names, ["degraded.json", "swarm.json"]);
+    assert_eq!(names, ["degraded.json", "empty-failed.json", "swarm.json"]);
     let degraded: Value = serde_json::from_str(DEGRADED).unwrap();
     assert_eq!(degraded["herdr_ok"], false);
     assert_eq!(degraded["inbox_ok"], false);
@@ -408,9 +408,17 @@ fn fixture_pins_needs_items_separately_from_distinct_questions() {
             + usize::from(
                 detailed == 0
                     && (root["herdr_status"] == "blocked"
-                        || !root["inbox"].as_array().unwrap().is_empty()),
+                        || !root["inbox"].as_array().unwrap().is_empty()
+                        || root["threads"].as_array().unwrap().iter().any(|t| {
+                            t["status"] == "failed" && t["agents"].as_array().unwrap().is_empty()
+                        })),
             )
     };
+    let isolated: Value =
+        serde_json::from_str(include_str!("fixtures/app-feed/empty-failed.json")).unwrap();
+    assert_eq!(isolated["counts"]["failed"], 0); // Legacy agent-failure count remains zero.
+    assert_eq!(isolated["orchestrators"][0]["herdr_status"], "working");
+    assert_eq!(items(&isolated["orchestrators"][0]), 1); // Empty failure needs one root item.
     let roots = feed["orchestrators"].as_array().unwrap();
     assert_eq!(
         roots.iter().map(items).collect::<Vec<_>>(),

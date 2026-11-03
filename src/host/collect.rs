@@ -17,12 +17,29 @@ use herdr_agent_kit::{
 };
 use panorama_core::model::Swarm;
 use serde_json::{Map, Value};
+use std::collections::HashMap;
+
+pub struct Collected {
+    pub pending: bool,
+    pub swarm: Swarm,
+    pub host: super::Host,
+    pub terminals: HashMap<String, String>,
+}
+
+pub fn app_source(env: PluginEnv, core: Core) -> impl FnMut() -> Collected + Send {
+    source_full(env, core, false)
+}
 
 pub fn source(env: PluginEnv, core: Core) -> impl FnMut() -> Swarm + Send {
     source_mode(env, core, false)
 }
 
 pub(crate) fn source_mode(env: PluginEnv, core: Core, wait: bool) -> impl FnMut() -> Swarm + Send {
+    let mut source = source_full(env, core, wait);
+    move || source().swarm
+}
+
+fn source_full(env: PluginEnv, core: Core, wait: bool) -> impl FnMut() -> Collected + Send {
     let mut host = CoreSource {
         core: core.clone(),
         env: env.clone(),
@@ -63,10 +80,17 @@ pub(crate) fn source_mode(env: PluginEnv, core: Core, wait: bool) -> impl FnMut(
             let pending = collector.codex_pending(&swarm);
             (swarm, pending)
         };
-        if wait {
+        let swarm = if wait {
             crate::snapshot::warmup::collect(refresh)
         } else {
             refresh().0
+        };
+        let pending = collector.codex_pending(&swarm);
+        Collected {
+            pending,
+            swarm,
+            host: observation.host,
+            terminals: observation.terminals,
         }
     }
 }

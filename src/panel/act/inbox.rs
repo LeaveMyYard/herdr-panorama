@@ -10,9 +10,11 @@
 //! inbox's CLI, so the actor can hand a clone to each task.
 
 mod detect;
+mod installed;
 mod run;
 
 pub use detect::{DEEP_LINK, before_popup, version};
+pub use installed::InstalledInbox;
 pub use run::{Ran, Runner, UvRunner, command};
 
 use herdr_agent_kit::herdr_api::Herdr;
