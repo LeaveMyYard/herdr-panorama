@@ -9,7 +9,17 @@ add the Swarm glyph/count and graph header while retaining stock terminal behavi
 The graph uses fixed depth columns, independent vertical scrolling, folding,
 keyboard navigation and selected-card details. A selected transcript thread
 shows its recorded spawn tree; a root without a transcript thread can show its
-proven same-space native-terminal tree. Peek/transcript content is a separate slice.
+proven same-space native-terminal tree. Pane-less detail rows open Peek with supplied
+status, error and last message; Enter opens a verified live owning orchestrator.
+Transcript (t) opens a readonly native viewer using the current pinned installation
+and feed scope. It reads supplied absolute producer-local paths through existing
+local line paging, preferring the agent transcript then the root transcript.
+Arrows page and t refreshes; one read is pending at a time. Path/authority loss
+clears displayed text. A same-path read error preserves the previous valid page
+with the raw error. Oversized or escape-expanded responses remain unavailable
+with their raw API error; pages are not an immutable whole-file snapshot.
+Caller-owned overlay tokens keep the row highlighted until its own view closes;
+Transcript replaces that view without clearing the replacement highlight.
 Installing does not select the panorama layout.
 The TUI plugin is independent and is not changed by this installer.
 
@@ -35,11 +45,10 @@ and scratch XDG config/state/runtime paths with inherited HERDR_/HC_ endpoints
 removed. Only the checker-generated gpui-kit.d.ts and jsconfig.json are copied
 as explicitly fingerprinted optional static files; changed copies are preserved.
 No generated SDK types are committed to Git. Install never calls layout.switch,
-layout.clone or the TUI installer. If a native checker started an empty core,
-cleanup verifies its private endpoint, executable, session/config environment and
-zero children, then calls only that exact isolated session's documented core
-stop. Captured process exit is checked without a post-stop status call (status
-would autostart a new core). Uncertain cleanup preserves private diagnostic state.
+layout.clone or the TUI installer. Native checking establishes and pins one verified empty private core before
+loading modules. It verifies private HOME/app/XDG/session identity, uses scoped
+shutdown, and observes the captured process exit before removing scratch state.
+Uncertain identity or shutdown preserves diagnostics instead of deleting them.
 After installation it prints the command to switch when the person chooses.
 The sidebar and owned consumers read app-home data/panorama/feed.json through
 the same generation-pinned client and invoke only the reviewed app-private
@@ -121,7 +130,11 @@ parity. Automated graphical app homes therefore live in owned HOME scratch.
 Changed-age state is view-local. A sidebar, or a consumer in a layout without
 any panorama reference, coordinates one file reader via an advisory lease. The
 lease grants no writer or installation authority. Each live view retains its
-matching-generation stale cache. Final close or missing/changed receipt clears
+matching-generation stale cache. Collections older than15 seconds, missing a
+finite timestamp, or timestamped in the future are stale even while the advisory
+lease is renewed. Only the current owner can request one pending generation-
+guarded recovery; ensure success alone does not freshen old collection bytes.
+Final close or missing/changed receipt clears
 shared feed/owner to null only with matching generation and current owner token;
 a losing old owner cannot clear another client. Native probes show null keys
 remain persisted: the operator explicitly approved ONLY these two inert null slots after uninstall.
@@ -160,7 +173,13 @@ interruption, manifest, symlink, concurrent operation and personal-file tests.
 The separate App CI workflow executes those tests on Linux and macOS for every
 PR base. Python syntax is checked without bytecode files. Tests use temporary
 app homes and a checker fixture; `--package` and `--checker` select explicit test
-packages/checkers. Omit both for a real installation. No test installs live.
+packages/checkers. Standalone compiler fixtures must explicitly supply
+`--checker ABSOLUTE_PATH --checker-core none`. This opt-in contract is only for
+trusted custom checkers that never start a core; it is not native runtime proof.
+Normal installs and actual scripts/app-check gates use default managed mode.
+The none mode still refuses uncertain endpoints without stopping an unproven
+process, and never calls autostarting status without a private endpoint.
+Omit custom fixture flags for a real installation. No test installs live.
 
 `scripts/app-check` runs the actual native checker over every runtime mod with
 isolated environment/state. herdr-app is not available in CI, so this is a local

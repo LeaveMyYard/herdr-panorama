@@ -33,7 +33,7 @@ if os.environ.get('TEST_FAIL') == os.path.basename(sys.argv[2]):
  sys.exit(9)
 `, { mode: 0o755 });
   const env = { ...process.env, TEST_APP_HOME: home, TEST_LOG: join(temp, 'checks.log'), HC_SOCKET: '/live/core', HERDR_SOCKET: '/live/tui' };
-  const args = action => [join(root, 'scripts/app-install'), action, '--app-home', home, '--package', packageDir, ...(action === 'install' ? ['--checker', checker] : [])];
+  const args = action => [join(root, 'scripts/app-install'), action, '--app-home', home, '--package', packageDir, ...(action === 'install' ? ['--checker', checker, '--checker-core', 'none'] : [])];
   const run = (action, extra = [], extraEnv = {}) => spawnSync('python3', [...args(action), ...extra], { env: { ...env, ...extraEnv }, encoding: 'utf8' });
   return { temp, home, packageDir, checker, env, args, run, manifest: join(home, 'data/panorama/install.json') };
 }

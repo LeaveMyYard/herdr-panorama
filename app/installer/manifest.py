@@ -18,9 +18,10 @@ BINARY = 'data/panorama/bin/panorama'
 BASE_FILES = {f'mods/{name}/{file}' for name in MODS for file in ('main.js', 'mod.json')}
 BASE_FILES.update(('layouts/panorama.json', 'mods/panorama/LICENSE.herdr-app', 'mods/panorama/NOTICE'))
 RUNTIME_FILES = {
-    'panorama': ('contract.js', 'tree.js', 'model.js', 'feed-client.js', 'marks.js', 'routing.js', 'binary.js', 'viewport.js', 'viewport-math.js'),
+    'panorama': ('contract.js', 'tree.js', 'model.js', 'feed-client.js', 'marks.js', 'routing.js', 'binary.js', 'viewport.js', 'viewport-math.js', 'peek-caller.js'),
     'panorama-spaces': ('LICENSE.herdr-app', 'contract.js', 'tree.js', 'model.js', 'binary.js', 'feed-client.js', 'tabs.js'),
-    'panorama-graph': ('contract.js', 'tree.js', 'model.js', 'binary.js', 'feed-client.js', 'marks.js', 'routing.js', 'actions.js', 'cards.js', 'graph.js', 'inbox.js'),
+    'panorama-graph': ('contract.js', 'tree.js', 'model.js', 'binary.js', 'feed-client.js', 'marks.js', 'routing.js', 'actions.js', 'cards.js', 'graph.js', 'inbox.js', 'peek-caller.js'),
+    'panorama-peek': ('actions.js', 'binary.js', 'contract.js', 'feed-client.js', 'marks.js', 'metadata.js', 'model.js', 'paging.js', 'routing.js', 'subject.js', 'tree.js'),
     'panorama-tabs': ('LICENSE.herdr-app', 'contract.js', 'tree.js', 'model.js', 'binary.js', 'feed-client.js', 'swarm.js'),
     'panorama-pane': ('LICENSE.herdr-app', 'contract.js', 'tree.js', 'model.js', 'binary.js', 'feed-client.js', 'marks.js', 'space.js', 'swarm.js'),
 }

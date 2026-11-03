@@ -46,7 +46,7 @@ os.fsync = fail_after_publication
 Home.remove = fail_one_rollback
 sys.argv = ['app-install', 'uninstall' if scenario == 'uninstall-keys' else 'install', '--app-home', home_path, '--package', package]
 if scenario != 'uninstall-keys':
-    sys.argv += ['--checker', checker]
+    sys.argv += ['--checker', checker, '--checker-core', 'none']
 result = installer.main()
 assert tripped and result == 1, 'fault did not exercise the intended published write'
 assert scenario != 'rollback' or removal_failed, 'incomplete rollback was not exercised'

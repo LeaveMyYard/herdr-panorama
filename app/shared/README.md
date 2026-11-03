@@ -20,6 +20,7 @@ Current exports for later app slices:
   `annotate`, `isOpen`, `rows`.
 - `marks.js`: native `icon`, `mark`, `rootMarks`, `phases`, `lines`,
   `borderMotion`, `age`. It imports native gpui APIs and is not a Node module.
+- `peek-caller.js`: `PeekCaller`; caller-local current-G scope, token/owned-overlay lifecycle and Transcript replacement. No persisted keys.
 - `routing.js`: `rootTarget`, `detailTarget`; only model-verified addresses can
   produce a root command. Every detailed transcript agent targets Peek.
 
@@ -64,6 +65,22 @@ initialization proof completes. A missing or changed receipt
 permanently stops the old client, retaining stale data without retrying another
 installation. Invalid artifacts never execute. Early private calls await the
 initial identity and fail closed through their returned promise.
+
+Owner publication and every consumer projection conservatively mark collection
+time stale when `generated_at` is missing/nonfinite, in the future, or older
+than 15 seconds (three normal 5-second collection polls). Data and collection
+time remain retained. This is a view freshness window, not proof of writer
+death, a heartbeat guarantee, or membership/command authority; a renewed frontend
+lease cannot make an old collection fresh.
+
+After a previously successful startup, an aged current-generation owner may
+idempotently re-ensure through the existing receipt/hash/generation-verified
+private bridge. The existing 5-second heartbeat permits at most one pending
+recovery and one attempt per interval, with owner/epoch checks after awaits.
+Success only acknowledges startup: old collection bytes remain stale until a
+current collection timestamp is read. Followers independently age their cache;
+they add no competing reader/recovery timer. Disabled, missing or changed
+installation authority still permanently stops that client without retry.
 
 The client exposes `callPrivate(args)`, read-only `install_id` and `stopped`, and
 `close(cx)` (the latter is normally called via closeConsumer). The only permitted

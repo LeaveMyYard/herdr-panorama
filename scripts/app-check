@@ -12,11 +12,15 @@ sys.path.insert(0, str(root / 'app' / 'installer'))
 from check import check_mods
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--checker', default=shutil.which('herdr-app'))
+parser.add_argument('--checker')
+parser.add_argument('--checker-core', choices=('managed', 'none'), default='managed',
+                    help='none requires an explicit standalone custom checker that never starts a core')
 args = parser.parse_args()
+if args.checker_core == 'none' and not args.checker:
+    parser.error('--checker-core none requires an explicit standalone --checker')
 try:
     subprocess.run([sys.executable, str(root / 'scripts/app-build'), '--check'], check=True)
-    check_mods(sorted((root / 'app' / 'mods').iterdir()), args.checker or '')
-except (OSError, ValueError) as error:
+    check_mods(sorted((root / 'app' / 'mods').iterdir()), args.checker or shutil.which('herdr-app') or '', args.checker_core)
+except (OSError, ValueError, subprocess.TimeoutExpired) as error:
     parser.exit(1, str(error) + '\n')
 print('All panorama native mod checks passed.')

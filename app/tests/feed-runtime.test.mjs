@@ -11,7 +11,9 @@ function ready(t) {
   const s = sandbox(t), artifact = join(s.temp, 'reviewed');
   writeFileSync(artifact, '#!/bin/sh\nexit 0\n', { mode: 0o755 });
   const result = s.run('install', ['--binary', artifact]); assert.equal(result.status, 0, result.stderr);
-  writeFileSync(join(s.home, 'data/panorama/feed.json'), readFileSync(join(root, 'tests/fixtures/app-feed/swarm.json')));
+  const feed = JSON.parse(readFileSync(join(root, 'tests/fixtures/app-feed/swarm.json')));
+  feed.generated_at = Date.now() / 1000;
+  writeFileSync(join(s.home, 'data/panorama/feed.json'), JSON.stringify(feed));
   Object.assign(state, { home: s.home, execs: [], shared: [], watches: [], read: null, exec: null, values: {}, layout: { content: { mod: 'panorama' } } });
   const timers = [], failures = [];
   const cx = { notify() {}, spawn(callback) { Promise.resolve(callback(cx)).catch(error => failures.push(error)); }, sleep() { return new Promise(() => {}); }, timer: { every(ms, callback) { const timer = { ms, callback, cancelled: false, cancel() { this.cancelled = true; } }; timers.push(timer); return timer; } } };
@@ -240,7 +242,8 @@ test('fresh initialization rechecks a delayed formerly-enabled control before an
 
 test('a pinned receipt and valid persisted lease cannot present fresh data before full initialization proof', async t=>{
   const s=ready(t);let release,first=true;const receipt=JSON.parse(readFileSync(s.manifest));
-  state.values['panorama.feed']={feed:JSON.parse(readFileSync(join(s.home,'data/panorama/feed.json'))),stale:false,errors:[],generated_at:1,writerError:null,install_id:receipt.install_id};
+  const feed=JSON.parse(readFileSync(join(s.home,'data/panorama/feed.json')));
+  state.values['panorama.feed']={feed,stale:false,errors:[],generated_at:feed.generated_at,writerError:null,install_id:receipt.install_id};
   state.values['panorama.feed.owner']={v:1,token:'other-live-owner',role:'sidebar',seen_at:Date.now()};
   state.read=path=>{if(path.endsWith('/control.json')&&first){first=false;return new Promise(resolve=>{release=resolve;});}return readFileSync(path,'utf8');};
   startConsumer(s.view,s.cx);await until(()=>release);assert.equal(s.view.feedClient.install_id,receipt.install_id);assert.equal(consumerFeed(s.view).stale,true);
