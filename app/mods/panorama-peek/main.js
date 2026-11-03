@@ -14,10 +14,11 @@ function lighten(color) {
   return '#' + [1, 3, 5].map(i => Math.round(parseInt(color.slice(i, i + 2), 16) * .6 + 255 * .4).toString(16).padStart(2, '0')).join('');
 }
 function button(label, key, enabled, solid, action, t) {
-  return h_flex().h(28).px(10).gap(5).rounded(7).items_center().justify_center().flex_none().text_size(12.5)
+  return h_flex().h(28).px(10).gap(5).rounded(7).items_center().justify_center().flex_none().text_size(12)
     .bg(solid ? t.solid : t.raised).text_color(solid ? t.solid_foreground : t.foreground).opacity(enabled ? 1 : .4)
     .when(enabled, el => el.cursor_pointer().on_click((_event, cx) => action(cx)))
-    .child(label).child(div().text_color(solid ? t.dim : t.muted).child(key));
+    .child(div().when(solid, el => el.font_medium()).child(label))
+    .child(div().text_size(11).font_family('JetBrains Mono').opacity(.6).child(key));
 }
 export default class PanoramaPeek extends View {
   init(initial, cx) {
