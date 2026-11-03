@@ -25,3 +25,7 @@ Further assembled checks: [#143](https://github.com/LeaveMyYard/herdr-panorama/i
 Extended input/visual/performance coverage: [#146](https://github.com/LeaveMyYard/herdr-panorama/issues/146).
 The operator reduced new-feature testing for faster delivery; all written tests
 remain enabled. No extra probe permutations were made a readiness gate.
+
+The later installer fix for fractional collection timestamps changes no rendered
+mod, layout or shared JavaScript from the capture source. The same keyframe
+therefore remains the author image for the updated review head.

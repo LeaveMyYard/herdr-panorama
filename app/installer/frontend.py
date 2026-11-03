@@ -30,7 +30,7 @@ def acknowledged(home, receipt):
                 or type(packet['stale']) is not bool or not isinstance(packet['errors'], list)
                 or any(not isinstance(error, str) for error in packet['errors'])
                 or (packet['writerError'] is not None and not isinstance(packet['writerError'], str))
-                or (packet['generated_at'] is not None and (not finite(packet['generated_at']) or packet['generated_at'] != int(packet['generated_at'])))):
+                or (packet['generated_at'] is not None and not finite(packet['generated_at']))):
             raise ValueError('Foreign or ambiguous panorama.feed; preserved')
     if owner is not None:
         if (not isinstance(owner, dict) or set(owner) != {'v', 'token', 'role', 'seen_at'}

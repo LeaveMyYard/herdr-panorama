@@ -8,7 +8,7 @@ const ok = result => assert.equal(result.status,0,result.stderr||result.stdout);
 function setup(t) {
   const s=sandbox(t);writeFileSync(join(s.home,'keys.json'),'{ "global": { "alt-p": "personal" } }\n');ok(s.run('install'));
   s.receipt=JSON.parse(readFileSync(s.manifest));s.control=join(s.home,'data/panorama/runtime',s.receipt.install_id,'control.json');s.shared=join(s.home,'shared.json');
-  s.packet={feed:null,stale:true,errors:[],generated_at:null,writerError:null,install_id:s.receipt.install_id};
+  s.packet={feed:null,stale:true,errors:[],generated_at:1793717546.3210924,writerError:null,install_id:s.receipt.install_id};
   s.owner={v:1,token:'test-owned',role:'sidebar',seen_at:Date.now()};
   return s;
 }
