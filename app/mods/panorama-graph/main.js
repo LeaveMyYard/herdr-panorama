@@ -6,7 +6,7 @@ import { startConsumer, consumerFeed, closeConsumer } from './feed-client.js';
 import { InboxNavigation } from './inbox.js';
 import { rootTarget } from './routing.js';
 import { PeekCaller } from './peek-caller.js';
-import { threadKey, agentKey } from './contract.js';
+import { rootKey, threadKey, agentKey } from './contract.js';
 
 import { graphModel, columnWindow, currentNode, selectNode, navigate, selectionPath, ClickGuard, viewportAnimates, logicalSize } from './graph.js';
 import { card, alpha } from './cards.js';
@@ -65,8 +65,17 @@ export default class Graph extends View {
       if (current && this.state.agent !== current.key) { this.state.agent = current.key; model = graphModel(roots, this.state); }
     }
     model.source = JSON.stringify([wrapper, roots.map(root => [root.key, root.status, root.root])]);
+    for (const node of model.nodes) {
+      const owner = node.item ?? model.item;
+      const thread = node.kind === 'thread' ? node.thread : ['agent', 'fold'].includes(node.kind) ? model.thread : null;
+      node.scope = JSON.stringify([wrapper.install_id, rootKey(owner.root), owner.root.session_id, thread?.id ?? null]);
+    }
     this.current = currentNode(model, this.state);
     return model;
+  }
+  resolveNode(captured, model) {
+    if (!captured || typeof captured.scope !== 'string') return null;
+    return model.nodes.find(node => node.key === captured.key && node.kind === captured.kind && node.scope === captured.scope) ?? null;
   }
   canAnswer(node) { const intent = answerIntent(this.lastModel?.item, node); return intent?.kind === 'permission' || (intent?.kind === 'question' && !this.inbox.busy && this.inbox.canOpen(intent.question)); }
   actionButton(t, action, label, node, primary = false, enabled = true) {
@@ -79,22 +88,24 @@ export default class Graph extends View {
     if (action === 'inbox') { this.openInbox(null, cx); return; }
     if (!node || !this.guard.allows(node.key, Date.now())) return;
     const model = this.model();
+    node = this.resolveNode(node, model); if (!node) return;
+    const item = node.item ?? model.item;
+    const thread = node.kind === 'thread' ? node.thread : ['agent', 'fold'].includes(node.kind) ? model.thread : null;
     if (node.kind === 'fold' && action === 'open') { this.state.expanded.add(node.parent?.key ?? threadKey(model.item.root, model.thread)); this.state.agent = agentKey(model.item.root, node.fold[0]); return; }
-    if (action === 'orchestrator') { const target = rootTarget(model.item); if (target) run(target.name, target.args); return; }
+    if (action === 'orchestrator') { const target = rootTarget(node.kind === 'orch' ? item : model.item); if (target) run(target.name, target.args); return; }
     if (action === 'answer') {
-      const intent = answerIntent(model.item, node);
+      const intent = answerIntent(item, node);
       if (intent?.kind === 'permission') run(intent.target.name, intent.target.args);
       else if (intent?.kind === 'question') this.openInbox(intent.question, cx);
       return;
     }
     if (action === 'transcript') {
-      const item = node.item ?? model.item;
-      this.peekCaller.show({ root: item.root, thread: node.thread ?? model.thread, agent: node.agent ?? null }, node.key, true, cx); return;
+      this.peekCaller.show({ root: item.root, thread, agent: node.agent ?? null }, node.key, true, cx); return;
     }
     if (node.kind === 'orch' || node.kind === 'thread' || node.kind === 'native') {
-      const target = rootTarget(node.item ?? model.item); if (target) run(target.name, target.args); return;
+      const target = rootTarget(item); if (target) run(target.name, target.args); return;
     }
-    this.peekCaller.show({ root: model.item.root, thread: model.thread, agent: node.agent }, node.key, false, cx);
+    this.peekCaller.show({ root: item.root, thread, agent: node.agent }, node.key, false, cx);
   }
   openInbox(question, cx) {
     if (!cx || !this.inbox.canOpen(question) || this.inbox.busy) return;
@@ -102,9 +113,9 @@ export default class Graph extends View {
   }
   close(cx) { this.peekCaller.close(); this.animation?.cancel(); closeConsumer(this, cx); }
   click(node, event, cx) {
-    this.handle.focus();
-    if (!this.guard.allows(node.key, Date.now())) return;
-    const model = this.model(); selectNode(this.state, model, node);
+    if (!node || !this.guard.allows(node.key, Date.now())) return;
+    const model = this.model(); node = this.resolveNode(node, model); if (!node) return;
+    this.handle.focus(); selectNode(this.state, model, node);
     if (node.kind === 'fold') this.act('open', node, cx);
     else if (node.kind === 'agent' || node.kind === 'native' || event.click_count === 2) this.act('open', node, cx);
     cx.notify();
