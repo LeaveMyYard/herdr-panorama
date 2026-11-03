@@ -67,6 +67,7 @@ pub struct Collector {
     procs: bool,
     pids: RefCell<PanePids>,
     window: f64,
+    core_source: bool,
     /// The view's own pane: the agent in its tab is the one it is docked by.
     pub self_pane: Option<String>,
 }
@@ -120,8 +121,15 @@ impl Collector {
             procs: options.procs,
             pids: RefCell::new(PanePids::new(options.pane_pid)),
             window: 0.0,
+            core_source: false,
             self_pane: None,
         }
+    }
+
+    /// Only the core adapter supplies sessions after exact process-backed ownership proof.
+    pub fn with_core_source(mut self) -> Self {
+        self.core_source = true;
+        self
     }
 
     /// Enable local Codex observations explicitly. Remote mirrors and bare test
@@ -170,6 +178,9 @@ impl Collector {
         stale_after: f64,
     ) -> Swarm {
         self.window = window;
+        if self.core_source {
+            self.pids.borrow_mut().clear();
+        }
         if let Some(identity) = self.codex_identity.as_mut() {
             identity.begin_collect();
         }

@@ -14,9 +14,12 @@ pub fn valid_thread_id(id: &str) -> bool {
 
 mod bind;
 mod cli;
+mod core;
 mod owner;
 mod root;
 pub use cli::{hook, manual};
+pub(crate) use core::owns_record as core_owns_record;
+pub use core::resolve as resolve_core;
 
 #[cfg(test)]
 mod tests;

@@ -14,6 +14,7 @@ pub mod core;
 pub mod emit;
 pub mod home;
 pub mod hook;
+pub mod host;
 pub mod machines;
 pub mod mcp;
 pub mod new_agent;

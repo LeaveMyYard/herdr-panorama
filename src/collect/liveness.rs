@@ -42,6 +42,12 @@ pub struct PanePids {
 }
 
 impl PanePids {
+    /// Core foreground ownership is refreshed per collect, even if an old process survives.
+    pub fn clear(&mut self) {
+        self.pids.clear();
+        self.no_pid.clear();
+    }
+
     /// Pids found with `lookup`.
     pub fn new(lookup: Box<PanePid>) -> Self {
         Self {
