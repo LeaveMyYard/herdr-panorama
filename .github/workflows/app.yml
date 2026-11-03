@@ -1,0 +1,32 @@
+name: App
+
+on:
+  push:
+    branches: [main]
+  pull_request: # All bases, including app/herdr-app-mod.
+
+permissions:
+  contents: read
+
+jobs:
+  app-tests:
+    name: app tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Node fixture and installer integrity tests
+        run: node --test app/tests/*.test.mjs
+      - name: Python syntax (without bytecode files)
+        run: python3 -c 'import ast,pathlib; [ast.parse(p.read_text(), filename=str(p)) for p in [*pathlib.Path("app/installer").glob("*.py"), pathlib.Path("scripts/app-install"), pathlib.Path("scripts/app-check")]]'
+      # herdr-app is a native local dependency. scripts/app-check is run locally;
+      # fake isolated checker fixtures here test transaction and isolation behavior.
