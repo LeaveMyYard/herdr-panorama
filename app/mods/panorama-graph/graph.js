@@ -1,17 +1,17 @@
 import { forest, finished, needs, threadMark } from './tree.js';
 import { threadKey, agentKey } from './contract.js';
 export const GAP = 36;
-export const columnWidth = column => column === 0 ? 236 : column === 1 ? 300 : 272;
-export const span = (lo, hi) => {
+export const columnWidth = (column, nativeFallback = false) => column === 0 ? 236 : column === 1 && !nativeFallback ? 300 : 272;
+export const span = (lo, hi, nativeFallback = false) => {
   let size = 0;
-  for (let column = lo; column <= hi; column++) size += columnWidth(column) + (column > lo ? GAP : 0);
+  for (let column = lo; column <= hi; column++) size += columnWidth(column, nativeFallback) + (column > lo ? GAP : 0);
   return size;
 };
-export function columnWindow(count, focus, width, manual = null) {
+export function columnWindow(count, focus, width, manual = null, nativeFallback = false) {
   if (!count) return { lo: 0, hi: -1, columns: [], total: 0, left: 0, shown: 0 };
   focus = Math.max(0, Math.min(focus, count - 1));
   let lo = Math.max(0, focus - 1), hi = focus;
-  const fits = (a, b) => span(a, b) <= Math.max(0, width - 24);
+  const fits = (a, b) => span(a, b, nativeFallback) <= Math.max(0, width - 24);
   // The focused column and its parent are retained even at narrow widths.
   if (hi + 1 < count && fits(lo, hi + 1)) hi++;
   while (hi + 1 < count && fits(lo, hi + 1)) hi++;
@@ -23,9 +23,9 @@ export function columnWindow(count, focus, width, manual = null) {
   let x = lo > 0 ? 24 : 0;
   const columns = [];
   for (let column = lo; column <= hi; column++) {
-    columns.push({ column, x, width: columnWidth(column) }); x += columnWidth(column) + GAP;
+    columns.push({ column, x, width: columnWidth(column, nativeFallback) }); x += columnWidth(column, nativeFallback) + GAP;
   }
-  return { lo, hi, columns, total: span(0, count - 1), left: lo ? span(0, lo - 1) + GAP : 0, shown: span(lo, hi) };
+  return { lo, hi, columns, total: span(0, count - 1, nativeFallback), left: lo ? span(0, lo - 1, nativeFallback) + GAP : 0, shown: span(lo, hi, nativeFallback) };
 }
 export function agentHeight(agent, selected) {
   if (!selected) return 54;

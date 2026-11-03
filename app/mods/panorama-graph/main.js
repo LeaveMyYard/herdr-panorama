@@ -20,13 +20,29 @@ export default class Graph extends View {
     this.state = { focus: 1, orch: null, thread: null, agent: null, expanded: new Set(), remember: new Map(), manual: null, scroll: {} };
     this.guard = new ClickGuard(); this.size = { width: 1000, height: 600 }; this.handle = cx.focus_handle();
     cx.timer.every(30000, cx => { cx.notify(); cx.spawn(async cx => { if (!this.inbox.busy) { await this.inbox.refresh(); cx.notify(); } }); });
-    cx.spawn(async cx => { for (;;) { const command = await nextCommand(); if (command.name === 'focus' || command === 'focus') this.handle.focus(); cx.notify(); } });
+    cx.spawn(async cx => {
+      for (;;) {
+        const command = await nextCommand();
+        if (command === 'focus' || command?.name === 'focus') {
+          const pane = panes().find(pane => pane.pane === focused()?.pane && pane.mod === 'panorama-graph');
+          if (pane) this.graphPane = pane.pane;
+          this.handle.focus();
+        }
+        cx.notify();
+      }
+    });
   }
   isVisible() {
-    const own = panes().find(pane => pane.mod === 'panorama-graph' && pane.pane === props()?.pane);
-    const focus = focused();
-    if (own) return own.tab === focus?.tab && !panes().some(pane => pane.tab === own.tab && pane.zoomed && pane.pane !== own.pane);
-    return focus?.space === this.space && panes().some(pane => pane.mod === 'panorama-graph' && pane.tab === focus?.tab);
+    const all = panes(), focus = focused();
+    let own = all.find(pane => pane.mod === 'panorama-graph' && pane.pane === (this.graphPane ?? props()?.pane));
+    if (!own) {
+      const tabs = new Set(spaces().find(space => space.id === this.space)?.tabs.map(tab => tab.id) ?? []);
+      const candidates = all.filter(pane => pane.mod === 'panorama-graph' && tabs.has(pane.tab));
+      // A normal Swarm space has one graph. Ambiguous copies wait for this copy's
+      // native focus command instead of assigning another pane's visibility.
+      if (candidates.length === 1) { own = candidates[0]; this.graphPane = own.pane; }
+    }
+    return Boolean(own && own.tab === focus?.tab && !all.some(pane => pane.tab === own.tab && pane.zoomed && pane.pane !== own.pane));
   }
   model() {
     const wrapper = consumerFeed(this); this.packet = wrapper;
@@ -57,11 +73,11 @@ export default class Graph extends View {
       .on_click((_e, cx) => { cx.stop_propagation(); if (enabled && this.guard.allows(node.key, Date.now())) this.act(action, node, cx); }).child(label);
   }
   act(action, node = this.current, cx) {
+    if (action === 'inbox') { this.openInbox(null, cx); return; }
     if (!node || !this.guard.allows(node.key, Date.now())) return;
     const model = this.model();
-    if (node.kind === 'fold') { this.state.expanded.add(node.parent?.key ?? threadKey(model.item.root, model.thread)); this.state.agent = agentKey(model.item.root, node.fold[0]); return; }
+    if (node.kind === 'fold' && action === 'open') { this.state.expanded.add(node.parent?.key ?? threadKey(model.item.root, model.thread)); this.state.agent = agentKey(model.item.root, node.fold[0]); return; }
     if (action === 'orchestrator') { const target = rootTarget(model.item); if (target) run(target.name, target.args); return; }
-    if (action === 'inbox') { this.openInbox(null, cx); return; }
     if (action === 'answer') {
       const intent = answerIntent(model.item, node);
       if (intent?.kind === 'permission') run(intent.target.name, intent.target.args);
@@ -147,7 +163,7 @@ export default class Graph extends View {
     const t = theme(), now = Date.now(), model = this.model(); this.lastModel = model;
     const source = model.source;
     this.guard.refresh(model.nodes, now, this.source !== undefined && source !== this.source); this.source = source;
-    const window = columnWindow(model.columns.length, this.state.focus, this.size.width - 32, this.state.manual); this.window = window;
+    const window = columnWindow(model.columns.length, this.state.focus, this.size.width - 32, this.state.manual, model.nativeFallback); this.window = window;
     const height = this.canvasSize?.height ?? Math.max(0, this.size.height - 104); this.canvasHeight = height;
     const offsets = this.offsetsFor(model, height);
     const viewport = JSON.stringify([window.lo, window.hi, offsets]);

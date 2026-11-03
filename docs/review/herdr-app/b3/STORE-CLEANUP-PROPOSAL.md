@@ -1,6 +1,8 @@
 # B3 preference stores: observed lifecycle and proposed finite cleanup
 
-Status: proposal for the root's later explicit inventory/lifecycle handoff. Only graph age persistence has been removed from product code. Tabs and Spaces retain their cloned stock preference persistence. No store deletion, generation marker, shared key, installer change, or cleanup callback is implemented by this proposal.
+**Superseded:** the operator chose to retain exactly `data/panorama-spaces/store.json` and `data/panorama-tabs/store.json` with their necessary parents. Stock panel/folding/machine-reconnection persistence stays. The empty-store deletion/cohort proposal below is historical evidence and will not be implemented. Reinstall validation/preservation is tracked in [#145](https://github.com/LeaveMyYard/herdr-panorama/issues/145); extended native input/visual checks are [#146](https://github.com/LeaveMyYard/herdr-panorama/issues/146).
+
+Original status: proposal for the root's later explicit inventory/lifecycle handoff. Only graph age persistence has been removed from product code. Tabs and Spaces retain their cloned stock preference persistence. No store deletion, generation marker, shared key, installer change, or cleanup callback is implemented by this proposal.
 
 ## Actual owned-host evidence
 
