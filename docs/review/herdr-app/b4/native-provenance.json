@@ -1,13 +1,13 @@
 {
   "isolation": {
-    "core_id": "153fec6ea2eaf5b5e12a91a39863d181",
-    "pid": 3253877,
-    "start": "3334521",
-    "session": "p4n-9dca0b73",
+    "core_id": "01d98b4d3a0f84d6effebfb4ae8d0c32",
+    "pid": 3291425,
+    "start": "3395468",
+    "session": "p4n-abcf14fc",
     "sockets": [
       [
-        "/home/leavemyyard/.cache/p4n-fguxfb4m/runtime/herdr-core/p4n-9dca0b73.sock",
-        123496623
+        "/home/leavemyyard/.cache/p4n-dc1mh7xu/runtime/herdr-core/p4n-abcf14fc.sock",
+        123602587
       ]
     ],
     "exact_process_environment_verified": true
@@ -34,9 +34,9 @@
     "zoom": 2.0,
     "font_size": 28.0,
     "ui_font_size": 26.0,
-    "space": "sp4be408b8c41ebb3ccd913f4f5ed5c36f",
-    "tab": "tbc6ee735e16f03d59e5dcba7bd5af608f",
-    "focused_pane": "p143037a8323100319b17cfd852487b21",
+    "space": "spa8cc848e9d0e22f2cb4b141702ec3c21",
+    "tab": "tb7a1ba126b1fa41c7e63f015765dabad1",
+    "focused_pane": "pf5a7ecf931017338311376bc703f638d",
     "layout": "b4-probe",
     "agent": "t1",
     "floats": {},
@@ -79,9 +79,9 @@
     "zoom": 2.0,
     "font_size": 28.0,
     "ui_font_size": 26.0,
-    "space": "sp4be408b8c41ebb3ccd913f4f5ed5c36f",
-    "tab": "tbc6ee735e16f03d59e5dcba7bd5af608f",
-    "focused_pane": "p143037a8323100319b17cfd852487b21",
+    "space": "spa8cc848e9d0e22f2cb4b141702ec3c21",
+    "tab": "tb7a1ba126b1fa41c7e63f015765dabad1",
+    "focused_pane": "pf5a7ecf931017338311376bc703f638d",
     "layout": "b4-probe",
     "agent": "t1",
     "floats": {},
@@ -91,9 +91,9 @@
     "errors": []
   },
   "caller": {
-    "command": "peek-closed-fbe7e5b1ca8ce66a226fcce8998204d0",
+    "command": "peek-closed-97e732192820f8fb5541a60e08296596",
     "current": {
-      "token": "cdf7cfc1aed909a2bfcb4c8831c4fae9",
+      "token": "ebaccf046bbc0cea6acf4fdc8bde403f",
       "id": "o2",
       "install_id": "0123456789abcdef0123456789abcdef",
       "rowKey": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"fixture-fixer\"]"
@@ -112,14 +112,14 @@
   "scope": "synthetic registered feed + real merged private artifact; actual native currentG init/read/callback, production sidebar/helper/child callbacks with seeded follower feed; sidebar init role injected as consumer to avoid replacing seeded data; not installer acceptance",
   "stop_code": 0,
   "captured_process_exited": true,
-  "combined_source": "df0c88ba6df9771f75260543a7229a8d97289dc3",
+  "combined_source": "80b4e22a1f40c12e1cf72b13d26500dbf739dc5f",
   "runtime_source_sha256": {
     "app/mods/panorama-peek/actions.js": "4b14ebd6eb0afd6b7aa2426f045578afcabb95329c364bebc5defc12c5b539c3",
     "app/mods/panorama-peek/binary.js": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
     "app/mods/panorama-peek/bundle.json": "db4d8657f4df0649f981dcd57d4790efd44368bcc9adc71ad2044a7e04efdcbc",
     "app/mods/panorama-peek/contract.js": "799534499636f7121188b6c7fc6f6a3f05d0781b236a75e05bb8536be56eca2c",
     "app/mods/panorama-peek/feed-client.js": "8a836fbc95b4d7d0d29946c39d88b75ce48b5293df8e1c9c4b4b5dcda09214ed",
-    "app/mods/panorama-peek/main.js": "87652b85d744551508a62e24b32d76d8363bc939805e65413f7435276c090dd0",
+    "app/mods/panorama-peek/main.js": "33d9e49d27b6c7ce1203c740dd433c7f0aa698ac5241e3e10c29502104f143f6",
     "app/mods/panorama-peek/marks.js": "13e5d13607af063dd3ff06db5671c986da80a5189b2bdda4c96b1e04aef2ea2a",
     "app/mods/panorama-peek/metadata.js": "c72b6b71af3f2c0db2c06e13e82e48de5b03e0d32c1e0c3c80f12070754f3c5e",
     "app/mods/panorama-peek/mod.json": "8ded8a3a0cff0e5348d95b12d363fdbdfea201dd66f37107c289852048f9191d",
@@ -147,7 +147,7 @@
     "peek_logical_width": 284
   },
   "fixture_seams": [
-    "Sidebar startup imports the existing consumer role to retain the synthetic published feed; receipt/control/artifact authority checks remain unchanged.",
-    "Nonvisual diagnostic/transcript/next command callbacks wrap the production classes and use fresh contexts. No hardware-input claim."
+    "Sidebar startup imports existing consumer role solely to retain supplied synthetic feed; receipt/control/artifact guards unchanged.",
+    "Private nonvisual diagnostic/transcript/next callbacks use fresh contexts. No hardware-input proof."
   ]
 }

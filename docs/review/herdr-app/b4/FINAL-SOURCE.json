@@ -1,6 +1,6 @@
 {
   "integration_merge": "ef22f7d09149c066001e0647082a71d7b173161d",
-  "combined_runtime_source": "df0c88ba6df9771f75260543a7229a8d97289dc3",
+  "combined_runtime_source": "80b4e22a1f40c12e1cf72b13d26500dbf739dc5f",
   "checker_patch": "57398ae98fcab8ccda785928a6329e11fe78f37b",
   "freshness_patch": "8a58dd78c4f159668b77df5536d2ee4edf9c77c5",
   "graph_scope_patch": "ff0178631cee2dce71952d7e29d74381a9531184",
@@ -33,8 +33,8 @@
     },
     {
       "path": "app/mods/panorama-peek/main.js",
-      "sha256": "87652b85d744551508a62e24b32d76d8363bc939805e65413f7435276c090dd0",
-      "equals_historical_b063": true
+      "sha256": "33d9e49d27b6c7ce1203c740dd433c7f0aa698ac5241e3e10c29502104f143f6",
+      "equals_historical_b063": false
     },
     {
       "path": "app/mods/panorama-peek/marks.js",
@@ -122,5 +122,6 @@
       "equals_historical_b063": false
     }
   ],
-  "capture_scope": "New author combined-source currentG/sidebar-helper/Peek/viewer smoke. Historical independent b063 captures document unchanged rendering but do not prove new freshness or graph action behavior."
+  "capture_scope": "New author current-source currentG/sidebar-helper/Peek/viewer smoke after L1 typography correction. Historical b063 captures are not current typography/client/graph behavior proof.",
+  "typography_review": "L1 accepted: label12px/solid500; hint11px JetBrainsMono/opacity0.6"
 }
