@@ -12,7 +12,7 @@ scripts/app-install install --app-home /absolute/path/to/herdr-app
 scripts/app-install uninstall --app-home /absolute/path/to/herdr-app
 ```
 
-Python 3.11+ and the native `herdr-app` executable are required. The installer
+Linux or macOS, Python 3.11+ and the native `herdr-app` executable are required. The installer
 checks a private copy of every installed mod, using a temporary app home, unique HC_SESSION,
 and scratch XDG config/state/runtime paths with inherited HERDR_/HC_ endpoints
 removed. Checker-generated types/config stay in scratch. It never calls layout.switch, layout.clone, hc or the TUI installer.
@@ -38,12 +38,14 @@ covered with explicit test packages, including collision refusal and exact raw
 original key-byte/mode restoration.
 
 Operations lock the app-home directory itself, leaving no lock-file residue.
+New files use atomic create-only rename (Linux renameat2 / macOS renameatx_np)
+through stdlib ctypes, with no overwrite or link/unlink fallback.
 A mode-0600 `data/panorama/install.json` records file hashes/modes, created
 directories and key additions before payload writes. Failed native checks roll
 back unchanged installed files, including writes whose directory fsync failed
 after publication. Incomplete rollback retains its ownership journal for recovery.
 After an interrupted install, run uninstall before trying to install again. Abrupt termination before the journal is created
-can leave empty directories; no existing files are changed in that interval.
+can leave new temporary files/directories; no existing files change in that interval.
 Filesystem power-loss guarantees are outside this installer.
 
 Uninstall validates its bounded package inventory before deleting anything.

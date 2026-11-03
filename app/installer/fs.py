@@ -5,6 +5,7 @@ import secrets
 import stat
 from contextlib import contextmanager
 from pathlib import PurePosixPath
+from publish import rename_new
 
 
 def digest(data):
@@ -91,8 +92,7 @@ class Home:
                 if self.read(path) != expected:
                     raise ValueError(f'File changed: {path}')
                 if expected is None:
-                    # link is create-only: never replace a late personal file.
-                    os.link(temp, name, src_dir_fd=fd, dst_dir_fd=fd, follow_symlinks=False)
+                    rename_new(fd, temp, name)
                 else:
                     os.replace(temp, name, src_dir_fd=fd, dst_dir_fd=fd)
                 # Publication precedes durability. Register ownership even if the

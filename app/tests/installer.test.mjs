@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync, readFileSync, mkdirSync, chmodSync, symlinkSync, rmSync, existsSync, linkSync } from 'node:fs';
+import { writeFileSync, readFileSync, mkdirSync, chmodSync, symlinkSync, rmSync, existsSync, linkSync, lstatSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { root, sandbox, tree } from './helpers.mjs';
@@ -260,3 +260,25 @@ for (const scenario of ['journal', 'payload', 'keys', 'rollback']) {
     assert.deepEqual(tree(s.home), before);
   });
 }
+
+for (const scenario of ['crash-journal', 'crash-payload']) {
+  test(`abrupt ${scenario} publication exit is recoverable by public uninstall`, t => {
+    const s = sandbox(t); personal(s);
+    const before = tree(s.home);
+    const result = spawnSync('python3', [join(root, 'app/tests/write-fault.py'), root, s.home, s.packageDir, s.checker, scenario], { env: s.env, encoding: 'utf8' });
+    assert.equal(result.status, 91, result.stderr);
+    assert.equal(lstatSync(s.manifest).nlink, 1, 'published recovery journal remains a private regular file');
+    if (scenario === 'crash-payload') assert.equal(lstatSync(join(s.home, 'layouts/panorama.json')).nlink, 1);
+    assert.equal(Object.keys(tree(s.home)).some(path => path.includes('.panorama-')), false, 'publication leaves no second inode name');
+    ok(s.run('uninstall')); assert.deepEqual(tree(s.home), before);
+  });
+}
+
+test('unrelated hardlink to an installed payload still refuses uninstall without mutation', t => {
+  const s = sandbox(t); personal(s); ok(s.run('install'));
+  const path = join(s.home, 'layouts/panorama.json'), outside = join(s.temp, 'external-link');
+  linkSync(path, outside);
+  const before = tree(s.home), sentinel = readFileSync(outside);
+  const result = s.run('uninstall'); fail(result); assert.match(result.stderr, /Not a private regular file/);
+  assert.deepEqual(tree(s.home), before); assert.deepEqual(readFileSync(outside), sentinel);
+});

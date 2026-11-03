@@ -11,7 +11,7 @@ import main as installer
 from fs import Home
 
 home = Path(home_path)
-parent = {'journal': 'data/panorama', 'payload': 'layouts', 'keys': '.', 'rollback': 'layouts'}[scenario]
+parent = {'journal': 'data/panorama', 'payload': 'layouts', 'keys': '.', 'rollback': 'layouts', 'crash-journal': 'data/panorama', 'crash-payload': 'layouts'}[scenario]
 original_fsync = os.fsync
 original_remove = Home.remove
 tripped = False
@@ -26,6 +26,8 @@ def fail_after_publication(fd):
         expected = target.stat()
         if (info.st_dev, info.st_ino) == (expected.st_dev, expected.st_ino):
             tripped = True
+            if scenario.startswith('crash-'):
+                os._exit(91)  # Deliberately bypass finally and normal rollback.
             raise OSError(5, 'injected directory fsync after publication')
     return original_fsync(fd)
 
