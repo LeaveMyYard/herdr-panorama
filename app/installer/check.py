@@ -104,7 +104,10 @@ def check_mods(mods, checker):
     if not os.path.isabs(checker) or not Path(checker).is_file():
         raise ValueError('--checker must name an absolute herdr-app executable')
     metadata = {}
-    scratch = tempfile.mkdtemp(prefix='panorama-check-')
+    # Unix socket paths are limited (104 bytes on macOS). Its default TMPDIR
+    # can already be too deep before hc adds its endpoint name. Keep the whole
+    # exclusively created, mode-0700 checker tree under a short Unix temp path.
+    scratch = tempfile.mkdtemp(prefix='pc-', dir='/tmp')
     env = {k: v for k, v in os.environ.items() if not k.startswith(('HERDR_', 'HC_'))}
     env.update(HERDR_APP_HOME=f'{scratch}/app', HC_SESSION=f'panorama-check-{uuid.uuid4().hex[:12]}',
                XDG_CONFIG_HOME=f'{scratch}/config', XDG_STATE_HOME=f'{scratch}/state',

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs';
+import { writeFileSync, readFileSync, mkdirSync, existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { sandbox, tree } from './helpers.mjs';
 function mockHc(s, source) {
@@ -21,5 +21,6 @@ test('failed check with unprovable private endpoint preserves diagnostic scratch
   const result=s.run('install',[],{...env,TEST_FAIL:'panorama'});
   assert.notEqual(result.status,0);assert.match(result.stderr,/Native checker cleanup refused/);
   const scratch=result.stderr.match(/private state retained at ([^:]+):/)[1];assert.ok(existsSync(scratch));
+  t.after(()=>rmSync(scratch,{recursive:true,force:true}));
   assert.equal(readFileSync(env.CHECK_CORE_LOG,'utf8'),'server status --json\n');assert.deepEqual(tree(s.home),before);
 });
