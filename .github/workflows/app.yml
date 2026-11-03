@@ -24,9 +24,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Reproducible native bundles
+        run: scripts/app-build --check
       - name: Node fixture and installer integrity tests
         run: node --test app/tests/*.test.mjs
       - name: Python syntax (without bytecode files)
-        run: python3 -c 'import ast,pathlib; [ast.parse(p.read_text(), filename=str(p)) for p in [*pathlib.Path("app").rglob("*.py"), pathlib.Path("scripts/app-install"), pathlib.Path("scripts/app-check")]]'
+        run: python3 -c 'import ast,pathlib; [ast.parse(p.read_text(), filename=str(p)) for p in [*pathlib.Path("app").rglob("*.py"), pathlib.Path("scripts/app-install"), pathlib.Path("scripts/app-check"), pathlib.Path("scripts/app-build")]]'
       # herdr-app is a native local dependency. scripts/app-check is run locally;
       # fake isolated checker fixtures here test transaction and isolation behavior.

@@ -2,6 +2,7 @@
 """Check every panorama runtime mod using isolated app/core state."""
 import argparse
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -14,6 +15,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--checker', default=shutil.which('herdr-app'))
 args = parser.parse_args()
 try:
+    subprocess.run([sys.executable, str(root / 'scripts/app-build'), '--check'], check=True)
     check_mods(sorted((root / 'app' / 'mods').iterdir()), args.checker or '')
 except (OSError, ValueError) as error:
     parser.exit(1, str(error) + '\n')

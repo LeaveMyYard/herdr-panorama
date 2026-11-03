@@ -21,6 +21,8 @@ assert len(sys.argv) == 3 and sys.argv[1] == 'check'
 assert os.environ['HC_SESSION'].startswith('panorama-check-')
 assert 'HC_SOCKET' not in os.environ and 'HERDR_SOCKET' not in os.environ
 assert os.environ['HERDR_APP_HOME'] != os.environ['TEST_APP_HOME']
+assert os.environ['HOME'] == os.path.dirname(os.environ['HERDR_APP_HOME'])
+assert Path(os.environ['HOME']).stat().st_mode & 0o777 == 0o700
 assert all(os.path.dirname(os.environ[k]) == os.path.dirname(os.environ['HERDR_APP_HOME']) for k in ['XDG_CONFIG_HOME', 'XDG_STATE_HOME', 'XDG_RUNTIME_DIR'])
 with open(os.environ['TEST_LOG'], 'a') as f: f.write(sys.argv[2] + '\\n')
 Path(sys.argv[2], 'gpui-kit.d.ts').write_text('// generated native types')

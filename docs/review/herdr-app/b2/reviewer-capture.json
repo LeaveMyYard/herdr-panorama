@@ -1,0 +1,32 @@
+{
+  "capture_source_commit": "c1f36da93682be53d49fa9c79b0673aacb9a4001",
+  "source_ui_tree": "01b2bcd14da8c07d366bdc3726d1f217a6c309b7",
+  "source_shared_tree": "1b6fa625e55f04124140e8d0300a67c90760bd3e",
+  "artifact_sha256": "da6d69e802a479d47aa154d3e6464c7286d0c06ef25304c9ca5a22e0aec328f2",
+  "artifact_rust_source": "1269daccd0da27df8df355fcc234dcd18ca9440c",
+  "generation": "1fe82c311bcaae5b0b8d52f17e53bf96",
+  "capture": "independent native herdr-app shot, private HOME/core/app/XDG/HC_SESSION,1920x1080,zoom1.2",
+  "synthetic_visual": "approved design SW literal converted to feed; wrapper supplies data and ages, expanded fold state; unchanged reviewed render/helpers, no fake executable",
+  "reviewed_render_sha256": "04c9d768132444b1f41852dc3116570d758f548501e2dae6a62d6ed267cee5b6",
+  "wrapper_sha256": "7855d3c569d93ac3f467b4201ffe662a78751bd7c1a5ae7d3e1aabfb285d778d",
+  "real_smoke": "actual optimized artifact; fresh native matching-G packet; UI status errors empty; active-window public uninstall exit0, two approved null shared slots",
+  "no_live_install": true,
+  "files": {
+    "reviewer-native.png": {
+      "sha256": "67eeb3337ab6589cd6fc784b992cc3f664590135529e6e51031bfb7aefa6e825",
+      "captured_at_unix": 1793718931.0814111
+    },
+    "reviewer-expanded.png": {
+      "sha256": "3d52b5d99c92ef744702e93407218558d6ecd56715ba9583d4c958e802faf874",
+      "captured_at_unix": 1793718931.7534244
+    },
+    "reviewer-real-writer.png": {
+      "sha256": "4ffd7493a005b09cfbe80ba365fe70dc22ce84d678e70d0f9ce73a9e376cab7f",
+      "captured_at_unix": 1793718929.7073839
+    },
+    "reviewer-comparison.png": {
+      "sha256": "2b2c5cf82b5006e8cf7e920ef71d4ef945d698e9bb06b8080e80b0da97cba978",
+      "captured_at_unix": 1793719269.5261319
+    }
+  }
+}
