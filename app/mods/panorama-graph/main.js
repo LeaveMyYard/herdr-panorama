@@ -20,7 +20,8 @@ export default class Graph extends View {
   isVisible() {
     const own = panes().find(pane => pane.mod === 'panorama-graph' && pane.pane === props()?.pane);
     const focus = focused();
-    return own ? own.tab === focus?.tab : focus?.space === this.space && panes().some(pane => pane.mod === 'panorama-graph' && pane.tab === focus?.tab);
+    if (own) return own.tab === focus?.tab && !panes().some(pane => pane.tab === own.tab && pane.zoomed && pane.pane !== own.pane);
+    return focus?.space === this.space && panes().some(pane => pane.mod === 'panorama-graph' && pane.tab === focus?.tab);
   }
   model() {
     const wrapper = shared('panorama.feed');
