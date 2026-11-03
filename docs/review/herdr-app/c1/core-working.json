@@ -1,0 +1,13 @@
+{
+  "hidden_finished": 0,
+  "terminals": [
+    {
+      "address": "t1",
+      "agent": "claude",
+      "cwd": "<C1_WORKTREE>",
+      "state": "live",
+      "status": "working",
+      "turn": 0
+    }
+  ]
+}
