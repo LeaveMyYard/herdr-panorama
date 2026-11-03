@@ -5,7 +5,7 @@
 pub mod json;
 pub mod print;
 pub mod pyjson;
-mod warmup;
+pub(crate) mod warmup;
 
 use crate::collect::liveness::claude_pid;
 use crate::collect::paths::{events_dir, hooks_dir};
@@ -92,7 +92,7 @@ fn source_mode(
     if host == Host::Core
         || (host == Host::Unknown && crate::host::records::has_live_core(&hooks_dir(&env), &core))
     {
-        return Box::new(crate::host::collect::source(env, core));
+        return Box::new(crate::host::collect::source_mode(env, core, wait));
     }
     let herdr = blocking::Herdr::from_env().with_client("panorama");
     let mut host = crate::host::source::Tui(herdr.clone());

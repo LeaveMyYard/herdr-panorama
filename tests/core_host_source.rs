@@ -1,4 +1,5 @@
 //! Core-host enrichment over a real owned test process and recorded fake hc JSON.
+mod codex_support;
 mod collect_support;
 
 use collect_support::{S1, STALE, Scenario, WINDOW};
@@ -135,4 +136,54 @@ fn snapshot_cli_uses_core_before_tui_and_source_failures_are_data() {
         }
         assert!(!dir.path().join("tui-called").exists());
     }
+}
+
+#[test]
+fn core_codex_binding_and_one_shot_snapshot_keep_existing_history_warmup() {
+    let fixture = codex_support::Fixture::new("complete");
+    let process_dir = fixture.root().join("owned");
+    std::fs::create_dir(&process_dir).unwrap();
+    let process = process_dir.join("codex");
+    symlink("/bin/sleep", &process).unwrap();
+    let owned = Owned(Command::new(&process).arg("30").spawn().unwrap());
+    let pid = owned.0.id();
+    let hc = fixture.root().join("hc");
+    std::fs::write(&hc, format!(r#"#!/usr/bin/env python3
+import json,sys
+assert sys.argv[1:] in [['ls','--json'],['get','--json','t2']]
+if sys.argv[1]=='ls': value={{'hidden_finished':0,'terminals':[{{'address':'t2','agent':'codex','cwd':'/same/cwd','state':'live','status':'working','turn':1,'where':'untrusted / label'}}]}}
+else: value={{'address':'t2','state':'live','foreground':{{'pid':{pid},'name':'codex','argv':['codex'],'cwd':'/same/cwd'}}}}
+print(json.dumps(value))
+"#)).unwrap();
+    std::fs::set_permissions(&hc, std::fs::Permissions::from_mode(0o700)).unwrap();
+    let no_tui = fixture.root().join("no-tui.sock");
+    let binding = fixture
+        .binary(&no_tui)
+        .args(["codex-bind", codex_support::ROOT_A, "--terminal", "t2"])
+        .output()
+        .unwrap();
+    assert!(
+        binding.status.success(),
+        "{}",
+        String::from_utf8_lossy(&binding.stderr)
+    );
+    let out = fixture
+        .binary(&no_tui)
+        .env("HC_TERMINAL_ID", "t2")
+        .args(["snapshot", "--json"])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let model: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    let root = &model["orchestrators"][0];
+    assert_eq!(root["session_id"], codex_support::ROOT_A);
+    assert!(!root["threads"].as_array().unwrap().is_empty());
+    assert_eq!(
+        root["threads"][0]["id"],
+        format!("codex:{}", codex_support::ROOT_A)
+    );
 }

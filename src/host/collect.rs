@@ -19,6 +19,10 @@ use panorama_core::model::Swarm;
 use serde_json::{Map, Value};
 
 pub fn source(env: PluginEnv, core: Core) -> impl FnMut() -> Swarm + Send {
+    source_mode(env, core, false)
+}
+
+pub(crate) fn source_mode(env: PluginEnv, core: Core, wait: bool) -> impl FnMut() -> Swarm + Send {
     let mut host = CoreSource {
         core: core.clone(),
         env: env.clone(),
@@ -47,14 +51,22 @@ pub fn source(env: PluginEnv, core: Core) -> impl FnMut() -> Swarm + Send {
         let cfg: Map<String, Value> = config.load_as().unwrap_or_default();
         let observation = host.read();
         let questions = open_questions(&inbox::db_path(&env));
-        let mut swarm = collector.collect(
-            observation.snapshot.as_ref(),
-            questions.as_deref(),
-            crate::snapshot::now(),
-            done_window(env.var("PANORAMA_DONE_WINDOW"), &cfg),
-            stale_after(env.var("PANORAMA_STALE_AFTER"), &cfg),
-        );
-        swarm.errors.extend(observation.errors);
-        swarm
+        let mut refresh = || {
+            let mut swarm = collector.collect(
+                observation.snapshot.as_ref(),
+                questions.as_deref(),
+                crate::snapshot::now(),
+                done_window(env.var("PANORAMA_DONE_WINDOW"), &cfg),
+                stale_after(env.var("PANORAMA_STALE_AFTER"), &cfg),
+            );
+            swarm.errors.extend(observation.errors.clone());
+            let pending = collector.codex_pending(&swarm);
+            (swarm, pending)
+        };
+        if wait {
+            crate::snapshot::warmup::collect(refresh)
+        } else {
+            refresh().0
+        }
     }
 }
