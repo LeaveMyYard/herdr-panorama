@@ -1,0 +1,142 @@
+{
+  "isolation": {
+    "core_id": "21c77e941904e5f22396649d8d23fcb8",
+    "pid": 2520950,
+    "start": "2611967",
+    "session": "p4n-38ba8dbd",
+    "sockets": [
+      [
+        "/home/leavemyyard/.cache/p4n-k65ev7xd/runtime/herdr-core/p4n-38ba8dbd.sock",
+        123358030
+      ]
+    ],
+    "exact_process_environment_verified": true
+  },
+  "reporter_launch": {
+    "address": "t1",
+    "agent": "python3",
+    "cwd": "/home/leavemyyard/Code/herdr-panorama",
+    "state": "live",
+    "turn": 0
+  },
+  "peek_diagnostic": {
+    "pin": "0123456789abcdef0123456789abcdef",
+    "validated": true,
+    "stopped": false,
+    "writerError": null,
+    "stale": false,
+    "subject": "[\"0123456789abcdef0123456789abcdef\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"fixture-session\",\"fixture-thread\",\"fixture-fixer\"]",
+    "page": null,
+    "editorUnits": null,
+    "error": null
+  },
+  "peek_status": {
+    "zoom": 2.0,
+    "font_size": 28.0,
+    "ui_font_size": 26.0,
+    "space": "spfe3b9e86f0d48faa96fe830532ade6c0",
+    "tab": "tbf7294f5aebc1fe5691a3d95854d9d6a4",
+    "focused_pane": "pbc0787e67cf8540eafe9d637af1a9215",
+    "layout": "b4-probe",
+    "agent": "t1",
+    "floats": {},
+    "overlays": [
+      "panorama-peek"
+    ],
+    "errors": []
+  },
+  "viewer_diagnostic": {
+    "pin": "0123456789abcdef0123456789abcdef",
+    "validated": true,
+    "stopped": false,
+    "writerError": null,
+    "stale": false,
+    "subject": "[\"0123456789abcdef0123456789abcdef\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"fixture-session\",\"fixture-thread\",\"fixture-fixer\"]",
+    "page": {
+      "first": 1,
+      "last": 100,
+      "lines": 2200
+    },
+    "editorUnits": 102290,
+    "error": null
+  },
+  "next_diagnostic": {
+    "pin": "0123456789abcdef0123456789abcdef",
+    "validated": true,
+    "stopped": false,
+    "writerError": null,
+    "stale": false,
+    "subject": "[\"0123456789abcdef0123456789abcdef\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"fixture-session\",\"fixture-thread\",\"fixture-fixer\"]",
+    "page": {
+      "first": 101,
+      "last": 200,
+      "lines": 2200
+    },
+    "editorUnits": 102400,
+    "error": null
+  },
+  "final_status": {
+    "zoom": 2.0,
+    "font_size": 28.0,
+    "ui_font_size": 26.0,
+    "space": "spfe3b9e86f0d48faa96fe830532ade6c0",
+    "tab": "tbf7294f5aebc1fe5691a3d95854d9d6a4",
+    "focused_pane": "pbc0787e67cf8540eafe9d637af1a9215",
+    "layout": "b4-probe",
+    "agent": "t1",
+    "floats": {},
+    "overlays": [
+      "panorama-peek"
+    ],
+    "errors": []
+  },
+  "caller": {
+    "current": {
+      "token": "00000000000000000000000000000002",
+      "id": "o2",
+      "install_id": "0123456789abcdef0123456789abcdef"
+    },
+    "events": [
+      "probe-open",
+      "peek-transcript-00000000000000000000000000000001",
+      "peek-closed-00000000000000000000000000000001"
+    ]
+  },
+  "artifact": {
+    "source_base": "1269daccd0da27df8df355fcc234dcd18ca9440c",
+    "source_path": "/home/leavemyyard/Code/herdr-panorama-worktrees/app-conductor/B/author/b2-rust-target/release/panorama",
+    "private_copy": "/home/leavemyyard/Code/herdr-panorama-worktrees/app-conductor/B/author-b4/artifacts/panorama",
+    "bytes": 9964424,
+    "sha256": "da6d69e802a479d47aa154d3e6464c7286d0c06ef25304c9ca5a22e0aec328f2",
+    "primary_evidence": "B/author/real-writer-interop.json",
+    "invoked": false
+  },
+  "scope": "synthetic registered feed + real merged private artifact; actual native currentG init/read/callback, not B2/B3 caller integration",
+  "stop_code": 0,
+  "captured_process_exited": true,
+  "runtime_source_sha256": {
+    "app/mods/panorama-peek/actions.js": "4b14ebd6eb0afd6b7aa2426f045578afcabb95329c364bebc5defc12c5b539c3",
+    "app/mods/panorama-peek/binary.js": "10b59b4d7b1a4ce0b4c4bf5a7271fd4bd7a203433de93defe5bd66ada261f78e",
+    "app/mods/panorama-peek/bundle.json": "db4d8657f4df0649f981dcd57d4790efd44368bcc9adc71ad2044a7e04efdcbc",
+    "app/mods/panorama-peek/contract.js": "152537ee066d9ec116d2ca267685015ee385a154b8871193a21757b9d6695d45",
+    "app/mods/panorama-peek/feed-client.js": "b9ce6dfcad29b76ca0598d3f99ba1726c75bbe92a57cf5144f1b54d10cf9a1b6",
+    "app/mods/panorama-peek/main.js": "ad03d930fae9ca4a44cddb5bdc59f4ca14c99f9aa67ad2db97bd7d198c27911f",
+    "app/mods/panorama-peek/marks.js": "f41170ec11d65bf321929f6d7ca98b0ceb6575e99403aa970f1641f6ce234aad",
+    "app/mods/panorama-peek/metadata.js": "c72b6b71af3f2c0db2c06e13e82e48de5b03e0d32c1e0c3c80f12070754f3c5e",
+    "app/mods/panorama-peek/mod.json": "8ded8a3a0cff0e5348d95b12d363fdbdfea201dd66f37107c289852048f9191d",
+    "app/mods/panorama-peek/model.js": "322d4ad2582160e90a3095d6caf6563c3f433803ce527bd1c6f35d29ba35e106",
+    "app/mods/panorama-peek/paging.js": "370fcf8f2812f8fecbcaa30520bc01e6cce0e3a35416c63a979aea82088d7410",
+    "app/mods/panorama-peek/routing.js": "9d57cca518f6a9b72be3f00734a532413ed0814ea1299a85f83598154063651c",
+    "app/mods/panorama-peek/subject.js": "33e96b4b33b31b03563f5ef2951855d1f2614432536b566aacc8ad326130435b",
+    "app/mods/panorama-peek/tree.js": "f3f09ed7962eb5a25f04c4e66cf11df381e67c3abf99ffe1f4e25ceaeb60e2a0"
+  },
+  "design_sha256": "ae2073d0cc3817aaba949bd94043dff91e9cc3e4f49691a0ce64dbd4440a77e3",
+  "capture_viewport": {
+    "physical": [
+      1288,
+      1000
+    ],
+    "zoom": 2,
+    "peek_logical_width": 284
+  }
+}
