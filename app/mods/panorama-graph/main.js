@@ -134,7 +134,7 @@ export default class Graph extends View {
     const source = model.source;
     this.guard.refresh(model.nodes, now, this.source !== undefined && source !== this.source); this.source = source;
     const window = columnWindow(model.columns.length, this.state.focus, this.size.width - 32, this.state.manual); this.window = window;
-    const height = Math.max(0, this.size.height - 94); this.canvasHeight = height;
+    const height = this.canvasSize?.height ?? Math.max(0, this.size.height - 104); this.canvasHeight = height;
     const offsets = this.offsetsFor(model, height);
     const viewport = JSON.stringify([window.lo, window.hi, offsets]);
     if (this.viewport !== undefined && this.viewport !== viewport) this.guard.scroll(now);
@@ -148,7 +148,9 @@ export default class Graph extends View {
     let selected = model.nodes.find(node => node.key === this.state.agent); const agentPath = [];
     while (selected) { agentPath.unshift(selected.agent?.id ?? selected.item?.name ?? ''); selected = selected.parent; } crumbs.push(...agentPath);
     const label = column => column === 0 ? 'Orchestrators' : model.nativeFallback ? `Depth ${column}` : column === 1 ? 'Threads' : `Depth ${column - 1}`;
-    const canvas = div().relative().flex_1().min_h(0).w_full().overflow_hidden().on_scroll_wheel((event, cx) => this.scroll(event, cx)).children(this.connectors(t, model, window))
+    const canvas = div().relative().flex_1().min_h(0).w_full().overflow_hidden().id('graph-canvas')
+      .on_size_change((size, cx) => { if (!this.canvasSize || size.height !== this.canvasSize.height || size.width !== this.canvasSize.width) { this.canvasSize = size; cx.notify(); } })
+      .on_scroll_wheel((event, cx) => this.scroll(event, cx)).children(this.connectors(t, model, window))
       .children(window.columns.map(column => div().absolute().left(column.x).top(0).bottom(0).w(column.width)
         .id(`column-${column.column}`).on_scroll_wheel((event, cx) => this.scroll(event, cx, column.column))
         .children(model.columns[column.column].filter(node => node.y + node.height >= this.offsets[column.column] && node.y <= this.offsets[column.column] + height).map(node =>
