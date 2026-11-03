@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { graphModel, treeLayout, columnWindow, navigate, selectNode, currentNode, ClickGuard, animationVisible } from '../mods/panorama-graph/graph.js';
+import { graphModel, treeLayout, columnWindow, navigate, selectNode, currentNode, ClickGuard, animationVisible, viewportAnimates, logicalSize } from '../mods/panorama-graph/graph.js';
 import { agentKey } from '../mods/panorama-graph/contract.js';
 const feed = JSON.parse(readFileSync(new URL('../../tests/fixtures/app-feed/swarm.json', import.meta.url)));
 const item = { key: 'root', root: feed.orchestrators[0], aggregate: { kinds: [], sweep: false }, status: 'working' };
@@ -83,8 +83,8 @@ test('scroll and moved-card refresh guards have exact independent deadlines; sel
 });
 test('animation math pauses cards exactly outside the independent column viewport', () => {
   const node={kind:'agent',agent:agent('x','wait'),y:100,height:54};
-  assert.ok(animationVisible(node,0,101));assert.equal(animationVisible(node,0,100),false);
-  assert.equal(animationVisible(node,154,200),false);assert.ok(animationVisible(node,153,200));
+  assert.ok(animationVisible(node,0,109));assert.equal(animationVisible(node,0,108),false);
+  assert.equal(animationVisible(node,146,200),false);assert.ok(animationVisible(node,145,200));
   node.agent.status='done';assert.equal(animationVisible(node,100,200),false);
 });
 test('fixture agent identity remains scoped to its owning root and does not become a terminal', () => {
@@ -122,4 +122,38 @@ test('an arrow at the column boundary preserves an independently scrolled viewpo
  selectNode(s,model,model.orchs[0]);s.scroll={0:64};s.manual=2;
  assert.equal(navigate(s,model,'up'),false);
  assert.deepEqual(s.scroll,{0:64});assert.equal(s.manual,2);
+});
+
+test('vertical motion intersection excludes visible nonanimated corners and clipped bottom sweeps',()=>{
+ const waiting={kind:'agent',agent:agent('wait','wait'),y:100,height:54};
+ assert.equal(animationVisible(waiting,0,108),false); // Only the rounded top corner is inside.
+ assert.equal(animationVisible(waiting,0,109),true);
+ assert.equal(animationVisible(waiting,146,100),false); // Only the rounded bottom corner is inside.
+ const working={kind:'agent',agent:agent('run','run'),y:100,height:54};
+ assert.equal(animationVisible(working,0,150),false); // Spinner/card visible, animated bottom entirely below.
+ assert.equal(animationVisible(working,0,153),true);
+ assert.equal(animationVisible(working,155,100),false);
+ assert.equal(animationVisible(working,154,100),true); // The outside half of the border strip is still visible.
+ assert.equal(animationVisible(waiting,100,0),false);
+});
+test('horizontal clip and independent vertical column offsets jointly govern animation',()=>{
+ const card=(id,column,y,status)=>({key:id,column,y,height:54,kind:'agent',agent:agent(id,status)});
+ const model={columns:[[card('quiet',0,0,'done')],[card('run',1,0,'run')],[card('wait',2,0,'wait')]]};
+ const window={columns:[{column:0,x:0,width:236},{column:1,x:272,width:300}]};
+ assert.equal(viewportAnimates(model,window,{},200,500),false); // Included fixed-width column is completely clipped.
+ assert.equal(viewportAnimates(model,window,{},290,500),true);
+ assert.equal(viewportAnimates(model,window,{1:100},500,500),false); // Working card above its column viewport.
+ assert.equal(viewportAnimates(model,window,{1:-600},500,500),false); // Working card below its column viewport.
+ assert.equal(viewportAnimates(model,window,{1:0,2:0},500,500),true);
+ const onlyQuiet={columns:[window.columns[0]]};
+ assert.equal(viewportAnimates(model,onlyQuiet,{},500,500),false); // Horizontally hidden needs edge never animates.
+});
+
+test('native zoomed canvas bounds normalize into the same units as graph card placement',()=>{
+ const measured={width:1475,height:814}, size=logicalSize(measured,1.2);
+ assert.equal(size.width,1475/1.2);assert.equal(size.height,814/1.2);
+ const run={kind:'agent',agent:agent('last','run'),y:1856,height:54};
+ assert.equal(animationVisible(run,1096,size.height),false); // Initial native evidence: card entirely below actual viewport.
+ assert.equal(animationVisible(run,1910-size.height,size.height),true);
+ assert.deepEqual(logicalSize(measured,1),measured);assert.deepEqual(logicalSize(measured,NaN),measured);
 });

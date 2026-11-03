@@ -40,7 +40,7 @@ export class InboxNavigation {
     const task = (async () => {
       try {
         const help = await this.callPrivate(['app-inbox', '--help']);
-        if (help.code !== 0 || help.stdout.trim() !== 'panorama app-inbox v1') {
+        if (help.code !== 0 || help.stdout.split(/\r?\n/)[0].trim() !== 'panorama app-inbox v1') {
           this.capabilities = unavailable(); this.error = help.stderr || null; return this.capabilities;
         }
         const result = await this.callPrivate(['app-inbox', '--available', '--app-home', this.appHome]);

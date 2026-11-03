@@ -3,6 +3,7 @@ import { h_flex, v_flex } from 'gpui-base';
 import { icon, mark, rootMarks, phases, age } from './marks.js';
 import { harnessOf, iconProgram } from './model.js';
 import { needs } from './tree.js';
+import { cardMotion } from './graph.js';
 const statusWord = status => ({ run: 'running', rev: 'reviewing', wait: 'needs answer', blk: 'blocked', fail: 'failed', done: 'finished', cxl: 'cancelled', q: 'queued', bg: 'waiting', inf: 'finished', lost: 'lost', stale: 'stale' }[status] ?? status);
 export const statusTone = (t, status) => needs(status) ? t.blocked : status === 'run' ? t.working : status === 'rev' ? t.ansi5 : t.dim;
 export const alpha = (color, opacity) => color.slice(0, 7) + opacity;
@@ -27,7 +28,7 @@ function phaseTime(phase) {
 }
 export function card(view, cx, t, node, model, window, path, now) {
   const selected = view.current?.key === node.key, onPath = path.has(node.key);
-  let edge = false, sweep = false, body;
+  const { edge, sweep } = cardMotion(node); let body;
   if (node.kind === 'fold') {
     const roles = new Map(); node.fold.forEach(agent => roles.set(agent.role, (roles.get(agent.role) ?? 0) + 1));
     const label = `${node.fold.length} finished · ${[...roles].map(([role, count]) => count > 1 ? `${role} ×${count}` : role).join(', ')}`;
@@ -35,7 +36,6 @@ export function card(view, cx, t, node, model, window, path, now) {
       .child(text(label, t.dim).ml(5).flex_1());
   } else if (node.kind === 'orch' || node.kind === 'native') {
     const item = node.item;
-    edge = item.aggregate.kinds.length > 0; sweep = item.aggregate.sweep;
     const harness = item.program?.name ?? item.root.harness;
     body = v_flex().px(12).pt(9).gap(6)
       .child(h_flex().items_center().gap(7).child(icon(item.program, 16, t.foreground))
@@ -58,7 +58,6 @@ export function card(view, cx, t, node, model, window, path, now) {
     const agent = node.agent, program = iconProgram(harnessOf(agent, model.item.root, model.thread));
     const tone = statusTone(t, agent.status), off = node.column + 1 > window.hi;
     const children = model.tree.nodes.filter(child => child.parent?.key === node.key).reduce((n, child) => n + (child.fold?.length ?? 1), 0);
-    edge = needs(agent.status); sweep = ['run', 'rev'].includes(agent.status);
     const top = h_flex().items_center().gap(6).child(icon(program, 14, t.foreground))
       .child(text(agent.role, onPath ? t.foreground : t.muted, 12.5).flex_none())
       .child(text([agent.id, agent.model].filter(Boolean).join(' · '), t.dim, 11.5).flex_1())

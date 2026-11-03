@@ -183,4 +183,26 @@ export class ClickGuard {
   }
   allows(key, now) { return now - this.scrolled >= 300 && now - (this.moved.get(key) ?? -Infinity) >= 1000; }
 }
-export const animationVisible = (node, offset, height) => node.y + node.height > offset && node.y < offset + height && (node.kind === 'orch' ? node.item.aggregate.kinds.length || node.item.aggregate.sweep : node.kind === 'native' ? node.item.aggregate.kinds.length || node.item.aggregate.working : node.kind === 'agent' && (needs(node.agent.status) || ['run', 'rev'].includes(node.agent.status)));
+export function cardMotion(node) {
+  if (node.kind === 'orch') return { edge: node.item.aggregate.kinds.length > 0, sweep: Boolean(node.item.aggregate.sweep) };
+  if (node.kind === 'native') return { edge: node.item.aggregate.kinds.length > 0, sweep: Boolean(node.item.aggregate.working) };
+  if (node.kind === 'agent') return { edge: needs(node.agent.status), sweep: ['run', 'rev'].includes(node.agent.status) };
+  return { edge: false, sweep: false };
+}
+const intersects = (start, end, clip) => clip > 0 && end > 0 && start < clip && end > start;
+export function animationVisible(node, offset, height, x = 0, width = 272, clipWidth = Infinity) {
+  const motion = cardMotion(node), top = node.y - offset;
+  // Match the drawn overlays, not the full card: its top/bottom corners do not animate.
+  const edge = motion.edge && intersects(x - 1.5, x + .5, clipWidth) && intersects(top + 8, top + node.height - 8, height);
+  const sweep = motion.sweep && intersects(x + 10, x + width - 10, clipWidth) && intersects(top + node.height - 1.5, top + node.height + .5, height);
+  return edge || sweep;
+}
+export function viewportAnimates(model, window, offsets, width, height) {
+  return window.columns.some(column => model.columns[column.column].some(node => animationVisible(node, offsets[column.column] ?? 0, height, column.x, column.width, width)));
+}
+
+// The installed app reports post-zoom bounds; graph card coordinates remain pre-zoom.
+export function logicalSize(measured, zoom) {
+  const scale = Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
+  return { width: measured.width / scale, height: measured.height / scale };
+}

@@ -1,11 +1,11 @@
 import { View, div } from 'gpui-kit';
 import { h_flex, v_flex } from 'gpui-base';
-import { agents, terminals, panes, spaces, focused, props, shared, theme, run, openOverlay, nextCommand } from 'herdr';
+import { agents, terminals, panes, spaces, focused, props, shared, theme, run, openOverlay, nextCommand, settings } from 'herdr';
 import { joinRoots } from './model.js';
 import { rootTarget, detailTarget } from './routing.js';
 import { threadKey, agentKey } from './contract.js';
 
-import { graphModel, columnWindow, currentNode, selectNode, navigate, selectionPath, ClickGuard, animationVisible } from './graph.js';
+import { graphModel, columnWindow, currentNode, selectNode, navigate, selectionPath, ClickGuard, viewportAnimates, logicalSize } from './graph.js';
 import { card, alpha } from './cards.js';
 import { answerIntent, transcriptProps } from './actions.js';
 export default class Graph extends View {
@@ -132,6 +132,9 @@ export default class Graph extends View {
     return result;
   }
   render(cx) {
+    const zoom = settings().zoom;
+    if (this.measuredSize) this.size = logicalSize(this.measuredSize, zoom);
+    if (this.measuredCanvas) this.canvasSize = logicalSize(this.measuredCanvas, zoom);
     const t = theme(), now = Date.now(), model = this.model(); this.lastModel = model;
     const source = model.source;
     this.guard.refresh(model.nodes, now, this.source !== undefined && source !== this.source); this.source = source;
@@ -141,8 +144,7 @@ export default class Graph extends View {
     const viewport = JSON.stringify([window.lo, window.hi, offsets]);
     if (this.viewport !== undefined && this.viewport !== viewport) this.guard.scroll(now);
     this.viewport = viewport; this.offsets = offsets;
-    const visible = window.columns.flatMap(column => model.columns[column.column]);
-    const animate = this.isVisible() && visible.some(node => animationVisible(node, this.offsets[node.column] ?? 0, height));
+    const animate = this.isVisible() && viewportAnimates(model, window, this.offsets, this.canvasSize?.width ?? this.size.width - 32, height);
     if (animate && !this.animation) this.animation = cx.timer.every(50, cx => { if (this.isVisible()) cx.notify(); else { this.animation.cancel(); this.animation = null; } });
     if (!animate && this.animation) { this.animation.cancel(); this.animation = null; }
     const path = selectionPath(model, this.state), hiddenRight = model.columns.length - 1 - window.hi;
@@ -151,7 +153,7 @@ export default class Graph extends View {
     while (selected) { agentPath.unshift(selected.agent?.id ?? selected.item?.name ?? ''); selected = selected.parent; } crumbs.push(...agentPath);
     const label = column => column === 0 ? 'Orchestrators' : model.nativeFallback ? `Depth ${column}` : column === 1 ? 'Threads' : `Depth ${column - 1}`;
     const canvas = div().relative().flex_1().min_h(0).w_full().overflow_hidden().id('graph-canvas')
-      .on_size_change((size, cx) => { if (!this.canvasSize || size.height !== this.canvasSize.height || size.width !== this.canvasSize.width) { this.canvasSize = size; cx.notify(); } })
+      .on_size_change((size, cx) => { if (!this.measuredCanvas || size.height !== this.measuredCanvas.height || size.width !== this.measuredCanvas.width) { this.measuredCanvas = size; cx.notify(); } })
       .on_scroll_wheel((event, cx) => this.scroll(event, cx)).children(this.connectors(t, model, window))
       .children(window.columns.map(column => div().absolute().left(column.x).top(0).bottom(0).w(column.width)
         .id(`column-${column.column}`).on_scroll_wheel((event, cx) => this.scroll(event, cx, column.column))
@@ -169,7 +171,7 @@ export default class Graph extends View {
       .tooltip((shared('panorama.feed')?.errors ?? []).join(' · '))
       .track_focus(this.handle).on_key_down((event, cx) => this.key(event, cx))
       .on_mouse_down('left', () => this.handle.focus())
-      .on_size_change((size, cx) => { if (size.width !== this.size.width || size.height !== this.size.height) { this.size = size; cx.notify(); } })
+      .on_size_change((size, cx) => { if (!this.measuredSize || size.width !== this.measuredSize.width || size.height !== this.measuredSize.height) { this.measuredSize = size; cx.notify(); } })
       .child(h_flex().h(22).flex_none().items_center().text_size(11.5)
         .child(div().flex_1().truncate().text_color(t.muted).child(window.lo ? `‹ ${crumbs.slice(0, window.lo).filter(Boolean).join(' › ')}   ${window.lo} columns left` : ''))
         .child(div().flex_none().text_color(t.dim).child(hiddenRight ? `depth ${window.hi}–${model.columns.length - 2} · ${hiddenRight} columns right ›` : '')))

@@ -64,3 +64,10 @@ test('success records RPC acceptance only; shown/closed fields cannot fabricate 
   assert.equal(parseOpened(result({opened:true})),true);
   for(const value of [{opened:true,shown:true},{opened:true,closed:true},{shown:true},{opened:1}]) assert.equal(parseOpened(result(value)),false);
 });
+
+test('help accepts following usage lines but never a different version token',async()=>{
+ const good=bridge([{code:0,stdout:'panorama app-inbox v1\nUsage: app-inbox',stderr:''},result({available:true,questions:false})]);
+ assert.equal((await good.navigation.refresh()).available,true);assert.equal(good.calls.length,2);
+ const wrong=bridge([{code:0,stdout:'panorama app-inbox v10\nUsage',stderr:''}]);
+ assert.equal((await wrong.navigation.refresh()).available,false);assert.equal(wrong.calls.length,1);
+});
