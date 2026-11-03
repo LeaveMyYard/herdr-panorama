@@ -38,9 +38,12 @@ Added personal files remain preserved/reported, never recursively removed.
 `data/panorama` is the explicit writer inventory above, not a generic mod-data
 reservation. No direct global `shared.json` edits are authorized. The only
 approved shared residue is `panorama.feed:null` and `panorama.feed.owner:null`.
-Together with the exact two retained preference stores/necessary parents, these
-are the operator's complete no-trace exceptions. Cached feed/transcript payload,
-graph age maps and other owned residue are not approved.
+Together with the exact two retained preference stores/necessary parents and the
+separately approved host-owned `layouts/.state/panorama.json` snapshot/necessary
+parent, these are the operator's complete no-trace exceptions. Preserve that exact
+layout-state snapshot without granting installer deletion, adoption, rewrite or
+chmod authority; it adds no receipt or runtime-inventory entry. Cached feed/transcript
+payload, graph age maps and other owned residue are not approved.
 The six-mod installer refuses older four-mod B2 v2 receipts before mutation;
 uninstall with the reviewed package that created that receipt before installing
 the six-mod version. There is no in-place receipt/profile adoption. Legacy v1
