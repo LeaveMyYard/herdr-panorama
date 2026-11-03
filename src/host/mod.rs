@@ -1,5 +1,6 @@
 //! Host adapters: exact terminal observations feed the existing collector.
 pub mod collect;
+pub mod command;
 pub mod context;
 pub mod core;
 pub mod records;

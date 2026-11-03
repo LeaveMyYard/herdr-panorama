@@ -4,9 +4,9 @@ use herdr_agent_kit::{agent_procs::ProcessTable, herdr_api::ProcessInfo};
 use serde_json::{Value, json};
 use std::{
     ffi::OsString,
-    io::Read,
-    process::{Command, Stdio},
-    time::{Duration, Instant},
+    process::Command,
+    sync::{Arc, atomic::AtomicBool},
+    time::Duration,
 };
 
 const MAX_BYTES: u64 = 2 * 1024 * 1024;
@@ -15,6 +15,7 @@ const MAX_BYTES: u64 = 2 * 1024 * 1024;
 pub struct Core {
     binary: OsString,
     timeout: Duration,
+    stop: Option<Arc<AtomicBool>>,
 }
 impl Default for Core {
     fn default() -> Self {
@@ -26,61 +27,46 @@ impl Core {
         Self {
             binary: self.binary.clone(),
             timeout,
+            stop: self.stop.clone(),
         }
     }
     pub fn new(binary: OsString, timeout: Duration) -> Self {
-        Self { binary, timeout }
+        Self {
+            binary,
+            timeout,
+            stop: None,
+        }
+    }
+    pub fn with_stop(mut self, stop: Arc<AtomicBool>) -> Self {
+        self.stop = Some(stop);
+        self
+    }
+    pub fn binary(&self) -> &std::ffi::OsStr {
+        &self.binary
     }
     pub fn read(&self, args: &[&str]) -> Result<Value, &'static str> {
-        let mut child = Command::new(&self.binary)
-            .args(args)
-            .env_remove("HC_TERMINAL_ID")
-            .stdin(Stdio::null())
-            .stderr(Stdio::null())
-            .stdout(Stdio::piped())
-            .spawn()
-            .map_err(|_| "hc unavailable")?;
-        let mut stdout = child.stdout.take().ok_or("hc output unavailable")?;
-        use rustix::fs::{OFlags, fcntl_getfl, fcntl_setfl};
-        if fcntl_getfl(&stdout)
-            .and_then(|flags| fcntl_setfl(&stdout, flags | OFlags::NONBLOCK))
-            .is_err()
-        {
-            let _ = child.kill();
-            let _ = child.wait();
-            return Err("hc output setup failed");
+        let mut command = Command::new(&self.binary);
+        command.args(args).env_remove("HC_TERMINAL_ID");
+        let output = super::command::read(
+            command,
+            self.timeout,
+            MAX_BYTES as usize,
+            self.stop.as_deref(),
+        )
+        .map_err(|e| match e {
+            "helper unavailable" => "hc unavailable",
+            "helper stdout unavailable" | "helper stderr unavailable" => "hc output unavailable",
+            "helper output setup failed" => "hc output setup failed",
+            "helper output unreadable" => "hc output unreadable",
+            "helper output exceeds limit" => "hc output exceeds limit",
+            "helper wait failed" => "hc wait failed",
+            "helper read timed out" => "hc read timed out",
+            _ => "hc read cancelled",
+        })?;
+        if !output.status.success() {
+            return Err("hc read failed");
         }
-        let deadline = Instant::now() + self.timeout;
-        let mut bytes = Vec::new();
-        let mut eof = false;
-        let result = loop {
-            let mut chunk = [0_u8; 8192];
-            match stdout.read(&mut chunk) {
-                Ok(0) => eof = true,
-                Ok(n) => bytes.extend_from_slice(&chunk[..n]),
-                Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {}
-                Err(_) => break Err("hc output unreadable"),
-            }
-            if bytes.len() > MAX_BYTES as usize {
-                break Err("hc output exceeds limit");
-            }
-            match child.try_wait() {
-                Ok(Some(status)) if !status.success() => break Err("hc read failed"),
-                Ok(Some(_)) if eof => break Ok(()),
-                Err(_) => break Err("hc wait failed"),
-                _ if Instant::now() >= deadline => break Err("hc read timed out"),
-                _ => std::thread::sleep(Duration::from_millis(1)),
-            }
-        };
-        if result.is_err() {
-            let _ = child.kill();
-        }
-        let _ = child.wait();
-        result?;
-        if bytes.len() > MAX_BYTES as usize {
-            return Err("hc output exceeds limit");
-        }
-        serde_json::from_slice(&bytes).map_err(|_| "hc output is not JSON")
+        serde_json::from_slice(&output.stdout).map_err(|_| "hc output is not JSON")
     }
     pub fn list(&self) -> Result<Value, &'static str> {
         self.read(&["ls", "--json"])
