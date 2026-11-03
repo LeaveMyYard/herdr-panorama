@@ -222,3 +222,49 @@ fn plugin_lookup_transport_timeout_is_an_operation_error_before_any_helper() {
     assert_eq!(h.calls()[0].0, "plugin.list");
     assert!(!marker.exists());
 }
+
+#[test]
+fn malformed_plugin_result_shapes_cannot_prove_absent_capability() {
+    let i = Installed::new();
+    let marker = i.dir.path().join("unexpected-malformed-result-helper");
+    let script = format!(
+        "#!/usr/bin/env python3\nimport pathlib\npathlib.Path({:?}).write_text('unexpected')\nprint('--question')\n",
+        marker.to_str().unwrap()
+    );
+    let h = plugin(&i, &script);
+    for result in [json!({}), json!({"plugins":{}}), json!({"plugins":[null]})] {
+        h.on("plugin.list", Reply::Result(result.clone()));
+        let before = h.calls().len();
+        let out = call(&i, &h, &["--available"]);
+        assert_eq!(
+            out.status.code(),
+            Some(1),
+            "{result}: {}",
+            String::from_utf8_lossy(&out.stdout)
+        );
+        assert!(out.stdout.is_empty());
+        assert!(String::from_utf8_lossy(&out.stderr).contains("malformed plugin lookup result"));
+        assert_eq!(h.calls().len(), before + 1);
+        assert_eq!(h.calls().last().unwrap().0, "plugin.list");
+        assert!(!marker.exists());
+    }
+    for result in [
+        json!({"plugins":[]}),
+        json!({"plugins":[{"plugin_id":INBOX_ID,"plugin_root":i.dir.path().join("inbox"),"enabled":false,"future_metadata":true}]}),
+    ] {
+        h.on("plugin.list", Reply::Result(result));
+        let before = h.calls().len();
+        let out = call(&i, &h, &["--available"]);
+        assert!(
+            out.status.success(),
+            "{}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        assert_eq!(
+            serde_json::from_slice::<Value>(&out.stdout).unwrap(),
+            json!({"available":false,"questions":false})
+        );
+        assert_eq!(h.calls().len(), before + 1);
+        assert!(!marker.exists());
+    }
+}

@@ -22,6 +22,15 @@ absent/disabled registration; lookup transport errors, refusals and malformed
 replies are operation errors. A command timeout is an error, not availability
 proof. `questions` is false whenever `available` is false.
 
+Strict lookup validates the raw result object and its required `plugins` array.
+Every entry must be an object with a nonempty string `plugin_id`, string
+`plugin_root` and boolean `enabled`; plugin identities must be unique. These are
+the identity/availability fields of the existing registered-plugin response;
+other metadata is additive and ignored. No malformed entry is silently skipped.
+A valid empty array or disabled Inbox registration is ordinary unavailable data.
+An empty string root cannot provide the installed entrypoint and is unavailable.
+The existing kit/TUI lenient decoder is unchanged.
+
 Optional `--install-id` pins the operation to a 32-lower-case-hex generation.
 Malformed or duplicate generation arguments exit 2 before I/O. A supplied value
 that differs from the validated v2 receipt exits 1 before any TUI RPC or helper.

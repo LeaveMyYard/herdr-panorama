@@ -53,6 +53,48 @@ lock while disabling and waiting, then acquires and holds the writer lock
 through runtime cleanup and receipt removal. Ensure cannot restart between
 stop and cleanup. Delayed ensure after receipt removal refuses to start.
 
+After disabling and proving writer quiescence, uninstall also waits for frontend
+acknowledgement before cleanup, deleting static payload or removing the receipt
+last. Keep disabled control and the receipt present throughout this wait.
+Poll at 25 ms for at most 2 s under the lifecycle lock. A frontend observing its
+current pinned generation disabled permanently stops that client and clears its
+owned shared state only through the supported API. It may release a lease whose
+token it owns without a matching packet; clearing the feed requires BOTH its own
+lease token and a packet matching its pinned generation.
+
+The installer only READS `<appHome>/shared.json`: no-follow, single-link regular
+file, at most 8 MiB, strict duplicate-free JSON object. Inspect ONLY
+`panorama.feed` and `panorama.feed.owner`. A missing file or both keys absent/null
+is acknowledgement. Foreign/ambiguous data, malformed/oversized/unsafe files,
+read refusal or timeout preserve disabled control, receipt and static payload;
+never edit the shared file to manufacture acknowledgement. A crashed app with
+nonnull data refuses. The user may manually reopen the current mod to clear its
+disabled-generation state and retry; the installer never launches the app or
+switches layout. The exact two-null-key operator exception above is unchanged.
+
+A new view validates the current receipt and control BEFORE ordinary lease claim
+or publication. Generation/control guards apply across every await: revalidate
+before using asynchronous results to claim or publish. Disabled-generation
+recovery may claim and null ONLY a packet matching its pinned generation; it
+cannot claim foreign or missing packets. The own-token lease-release rule above
+still applies independently of packet matching.
+
+The first shared acknowledgement is checked under lifecycle and writer locks.
+Retain validated bytes/open FDs, original mode and digest ONLY for unchanged owned
+static entries actually removed by this invocation. After static removal, perform
+the same FINAL read-only shared check BEFORE key undo, runtime control/lock cleanup
+or receipt-last success. Late nonnull/ambiguous data refuses: restore ONLY those
+recorded entries by exclusive no-replace creation with their original mode/digest.
+Never overwrite a reappeared personal path. Report collisions or restoration
+failures as partial recovery gaps; retain the receipt, disabled control and
+lifetime-lock file, with keys untouched. Retry is supported only if the usable
+owned payload was restored; do not claim usable recovery after a partial failure.
+On success, the final check precedes key undo, runtime cleanup and receipt removal
+last. No new runtime path or shared-file edit is authorized. These are bounded
+validation/recovery rules, not universal crash atomicity across the host store
+and filesystem. Frontend/installer race and restoration tests remain separate
+integration proof; the Rust writer fixture alone does not establish acceptance.
+
 ## Exact paths
 
 Let `G = data/panorama/runtime/<install_id>`; all paths below are relative to

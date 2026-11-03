@@ -1,5 +1,33 @@
 //! Constrained app navigation: existing installed CLI only, with no action fallback.
 use super::*;
+use serde::Deserialize;
+use std::collections::HashSet;
+
+/// The identity/availability projection of InstalledPluginInfo; extra metadata is additive.
+#[derive(Deserialize)]
+struct Registration {
+    plugin_id: String,
+    plugin_root: String,
+    enabled: bool,
+}
+fn registrations(value: serde_json::Value) -> Result<Vec<Registration>, String> {
+    let entries = value
+        .as_object()
+        .and_then(|o| o.get("plugins"))
+        .and_then(serde_json::Value::as_array)
+        .ok_or("malformed plugin lookup result: expected plugins array")?;
+    let entries: Vec<Registration> =
+        serde_json::from_value(serde_json::Value::Array(entries.clone()))
+            .map_err(|e| format!("malformed plugin lookup result: {e}"))?;
+    let mut ids = HashSet::new();
+    if entries
+        .iter()
+        .any(|p| p.plugin_id.is_empty() || !ids.insert(&p.plugin_id))
+    {
+        return Err("malformed plugin lookup result: empty or duplicate plugin id".into());
+    }
+    Ok(entries)
+}
 
 #[derive(Clone, Debug)]
 pub struct InstalledInbox {
@@ -16,19 +44,23 @@ impl InboxLink {
     ) -> Result<Option<InstalledInbox>, String> {
         // The ordinary TUI lookup intentionally treats failures as optional absence.
         // Strict app availability must retain transport/parse errors, without caching them.
-        let plugins = h
-            .plugins()
+        // The kit's typed list decoder intentionally skips malformed items for legacy UI.
+        // Validate this raw projection before drawing any absence/disabled conclusion.
+        let result = h
+            .raw("plugin.list", serde_json::json!({}))
             .await
             .map_err(|e| format!("installed inbox plugin lookup failed: {e}"))?;
+        let plugins = registrations(result)?;
         let Some(plugin) = plugins
             .into_iter()
-            .find(|p| p.plugin_id.as_deref() == Some(INBOX_ID) && p.enabled)
+            .find(|p| p.plugin_id == INBOX_ID && p.enabled)
         else {
             return Ok(None);
         };
-        let Some(root) = plugin.plugin_root.filter(|r| !r.is_empty()) else {
+        let root = plugin.plugin_root;
+        if root.is_empty() {
             return Ok(None);
-        };
+        }
         let result = run.inbox(&root, &["open", "--help"]).await;
         if result.code == 124 {
             return Err("installed inbox help timed out".into());

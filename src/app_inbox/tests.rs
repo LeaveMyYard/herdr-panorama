@@ -244,3 +244,49 @@ async fn ordinary_tui_lookup_keeps_its_existing_optional_failure_fallback() {
     );
     assert!(run.calls.borrow().is_empty());
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn malformed_result_shapes_are_errors_before_any_installed_help() {
+    let h = FakeHerdr::start();
+    let run = Script {
+        calls: RefCell::default(),
+        code: 0,
+        help: "--question",
+    };
+    let client = h.client();
+    let link = InboxLink::default();
+    for result in [
+        json!({}),
+        json!({"plugins":{}}),
+        json!({"plugins":[null]}),
+        json!({"plugins":[{}]}),
+        json!({"plugins":[{"plugin_id":INBOX_ID,"plugin_root":"/fixture","enabled":"false"}]}),
+        json!({"plugins":[{"plugin_id":INBOX_ID,"plugin_root":false,"enabled":false}]}),
+        json!({"plugins":[{"plugin_id":"","plugin_root":"/fixture","enabled":false}]}),
+    ] {
+        h.on("plugin.list", Reply::Result(result));
+        let error = link.installed(&client, &run).await.unwrap_err();
+        assert!(error.contains("malformed plugin lookup result"), "{error}");
+        assert!(run.calls.borrow().is_empty());
+    }
+    let disabled = json!({"plugin_id":INBOX_ID,"plugin_root":"/fixture","enabled":false,"future_metadata":{"anything":true}});
+    h.on(
+        "plugin.list",
+        Reply::Result(json!({"plugins":[disabled.clone(),disabled.clone()]})),
+    );
+    assert!(link.installed(&client, &run).await.is_err());
+    for result in [json!({"plugins":[]}), json!({"plugins":[disabled]})] {
+        h.on("plugin.list", Reply::Result(result));
+        assert!(link.installed(&client, &run).await.unwrap().is_none());
+        assert!(run.calls.borrow().is_empty());
+    }
+    // The primary captured plugin.list response also satisfies this strict projection.
+    let recorded = FakeHerdr::recorded();
+    let installed = link
+        .installed(&recorded.client(), &run)
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(installed.questions);
+    assert_eq!(*run.calls.borrow(), vec![vec!["open", "--help"]]);
+}
