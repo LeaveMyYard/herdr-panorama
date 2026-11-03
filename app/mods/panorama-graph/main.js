@@ -7,6 +7,7 @@ import { threadKey, agentKey } from './contract.js';
 
 import { graphModel, columnWindow, currentNode, selectNode, navigate, selectionPath, ClickGuard, animationVisible } from './graph.js';
 import { card, alpha } from './cards.js';
+import { answerIntent, transcriptProps } from './actions.js';
 export default class Graph extends View {
   init(initial, cx) {
     this.changed = JSON.parse(localStorage.getItem('changed') ?? '{}');
@@ -43,7 +44,7 @@ export default class Graph extends View {
     this.current = currentNode(model, this.state);
     return model;
   }
-  canAnswer(node) { return node.kind === 'agent' && (node.agent.status === 'blk' || (node.agent.status === 'wait' && Boolean(this.inboxTarget))); }
+  canAnswer(node) { const intent = answerIntent(this.lastModel?.item, node); return intent?.kind === 'permission' || (intent?.kind === 'question' && Boolean(this.inboxTarget)); }
   actionButton(t, action, label, node, primary = false, enabled = true) {
     return div().id(`${node.key}-${action}`).h(24).px(9).rounded(6).flex_none().flex().items_center().text_size(11.5)
       .text_color(!enabled ? t.dim : primary ? t.solid_foreground : t.foreground).bg(primary ? t.solid : t.raised)
@@ -57,18 +58,18 @@ export default class Graph extends View {
     if (action === 'orchestrator') { const target = rootTarget(model.item); if (target) run(target.name, target.args); return; }
     if (action === 'inbox') { if (this.inboxTarget) run(this.inboxTarget.name, this.inboxTarget.args); return; }
     if (action === 'answer') {
-      if (node.agent?.status === 'blk' || model.item?.status === 'blocked') this.act('orchestrator', node);
-      else if (this.inboxTarget) run(this.inboxTarget.name, this.inboxTarget.args);
+      const intent = answerIntent(model.item, node);
+      if (intent?.kind === 'permission') run(intent.target.name, intent.target.args);
+      else if (intent?.kind === 'question' && this.inboxTarget) run(this.inboxTarget.name, { ...this.inboxTarget.args, question: intent.question });
       return;
     }
-    if ((node.kind === 'orch' || node.kind === 'thread' || node.kind === 'native') && action === 'transcript') {
-      openOverlay({ mod: 'panorama-peek', kind: 'popup', width: 284, props: { root: (node.item ?? model.item).root, thread: node.thread ?? null, agent: null, terminal: (node.item ?? model.item).terminal, terminalAction: (node.item ?? model.item).isNative ? 'peek' : 'focus', action: 'transcript' } }); return;
+    if (action === 'transcript') {
+      openOverlay({ mod: 'panorama-peek', kind: 'popup', width: 284, props: transcriptProps(model.item, node, model.thread) }); return;
     }
     if (node.kind === 'orch' || node.kind === 'thread' || node.kind === 'native') {
       const target = rootTarget(node.item ?? model.item); if (target) run(target.name, target.args); return;
     }
     const target = detailTarget(model.item, { thread: model.thread, agent: node.agent });
-    if (action === 'transcript') target.props.action = 'transcript';
     openOverlay(target);
   }
   click(node, event, cx) {
