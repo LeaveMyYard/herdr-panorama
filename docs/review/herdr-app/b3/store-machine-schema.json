@@ -1,0 +1,73 @@
+{
+  "source": "installed hc schema -> components.schemas.MachineView",
+  "schema": {
+    "description": "A machine as `machine ls` and `ls` show it: its profile and its line now.",
+    "properties": {
+      "host": {
+        "description": "What that core calls itself (its hostname).",
+        "type": "string"
+      },
+      "id": {
+        "description": "The other core's permanent id.",
+        "type": "string"
+      },
+      "name": {
+        "description": "What this core calls it: `rohan` in `rohan/t7`.",
+        "type": "string"
+      },
+      "session": {
+        "description": "The hc session there (null: its default).",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "since_ms": {
+        "description": "Since when it is not connected (ms since the epoch).",
+        "format": "uint64",
+        "minimum": 0,
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "state": {
+        "description": "connecting, connected, needs_login or unreachable.",
+        "type": "string"
+      },
+      "target": {
+        "description": "How it is reached: an ssh target, or (`via`) a command.",
+        "type": "string"
+      },
+      "temporary": {
+        "default": false,
+        "description": "Short-lived (a sandbox for a task): clients may show it apart from the\nmachines that stay. hc treats it like any other.",
+        "type": "boolean"
+      },
+      "version": {
+        "description": "Its hc version when last seen.",
+        "type": "string"
+      },
+      "via": {
+        "default": false,
+        "description": "`target` is a command that runs a shell line there, given as its last\nargument, like ssh (a provider's own CLI, ssh with its options).",
+        "type": "boolean"
+      },
+      "why": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "name",
+      "target",
+      "id",
+      "host",
+      "version",
+      "state"
+    ],
+    "type": "object"
+  }
+}

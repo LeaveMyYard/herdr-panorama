@@ -15,7 +15,7 @@ export default class Graph extends View {
     const client = startConsumer(this, cx);
     this.inbox = new InboxNavigation({ callPrivate: client.callPrivate, appHome: appHome() });
     cx.spawn(async cx => { await this.inbox.refresh(); cx.notify(); });
-    this.changed = JSON.parse(localStorage.getItem('changed') ?? '{}');
+    this.changed = {}; // Status ages belong to this live view, never a persisted store.
     this.space = initial?.space ?? props()?.space ?? focused()?.space;
     this.state = { focus: 1, orch: null, thread: null, agent: null, expanded: new Set(), remember: new Map(), manual: null, scroll: {} };
     this.guard = new ClickGuard(); this.size = { width: 1000, height: 600 }; this.handle = cx.focus_handle();
@@ -30,12 +30,11 @@ export default class Graph extends View {
   }
   model() {
     const wrapper = consumerFeed(this); this.packet = wrapper;
-    const stock = agents(); let dirty = false;
+    const stock = agents();
     for (const agent of stock) {
       const status = agent.status === 'done' ? 'idle' : agent.status;
-      if (this.changed[agent.address]?.s !== status) { this.changed[agent.address] = { s: status, at: Date.now() }; dirty = true; }
+      if (this.changed[agent.address]?.s !== status) { this.changed[agent.address] = { s: status, at: Date.now() }; }
     }
-    if (dirty) localStorage.setItem('changed', JSON.stringify(this.changed));
     const roots = joinRoots(wrapper?.feed, stock, terminals(), panes(), spaces(), this.changed).filter(item => item.space === this.space);
     let model = graphModel(roots, this.state);
     if (model.item && this.state.orch !== model.item.key) this.state.orch = model.item.key;
