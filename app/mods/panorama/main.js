@@ -1,9 +1,10 @@
 import { View, div, svg } from 'gpui-kit';
 import { v_flex, h_flex } from 'gpui-base';
-import { agents, terminals, panes, spaces, layout, theme, shared, setShared, setAgentOrder, run, openOverlay, closeOverlay, props, window } from 'herdr';
+import { agents, terminals, panes, spaces, layout, theme, shared, setShared, setAgentOrder, run, openOverlay, closeOverlay, props, window, nextCommand } from 'herdr';
 import { startSidebar, consumerFeed, closeConsumer } from './feed-client.js';
 import { initViewport, wheelViewport, viewport } from './viewport.js';
-import { rootTarget, detailTarget } from './routing.js';
+import { rootTarget } from './routing.js';
+import { PeekCaller } from './peek-caller.js';
 import { joinRoots, groups, rootSignature, harnessOf, iconProgram } from './model.js';
 import { rows, isOpen, needs } from './tree.js';
 import { icon, mark, rootMarks, phases, lines, borderMotion, age } from './marks.js';
@@ -26,7 +27,9 @@ export default class Panorama extends View {
     this.changed = {};
     if (props()?.sortMenu) return;
     initViewport(this, cx);
-    startSidebar(this, cx);
+    const client = startSidebar(this, cx);
+    this.peekCaller = new PeekCaller('panorama', client, () => consumerFeed(this));
+    cx.spawn(async cx => { for (;;) { const command = await nextCommand(); this.peekCaller.receive(command, cx); } });
     cx.timer.every(30000, cx => cx.notify());
     cx.timer.every(250, cx => {
       const needed = this.animate && window().active && shown(layout(), 'panorama');
@@ -34,13 +37,13 @@ export default class Panorama extends View {
       if (!needed && this.motion) { this.motion.cancel(); this.motion = null; }
     });
   }
-  close(cx) { closeConsumer(this, cx); this.motion?.cancel(); this.scrollState?.release(); this.scrollFocus?.release(); }
+  close(cx) { this.peekCaller?.close(); closeConsumer(this, cx); this.motion?.cancel(); this.scrollState?.release(); this.scrollFocus?.release(); }
   wheel(event, cx) { wheelViewport(this, event, cx); }
   toggle(key, signature, open, cx) {
     this.folds.set(key, { signature, open: !open }); cx.notify();
   }
-  peek(item, row) {
-    openOverlay(detailTarget(item, row));
+  peek(item, row, cx) {
+    this.peekCaller.show({ root: item.root, thread: row.thread, agent: row.agent }, row.key, false, cx);
   }
   sortMenu(t) {
     const options = [{ id: 'priority', label: 'Priority', icon: 'clock' }, { id: 'grouped', label: 'Grouped by space', icon: 'layers' }];
@@ -80,7 +83,7 @@ export default class Panorama extends View {
   }
   detailRow(item, row, now, cx) {
     const t = theme(), agent = row.agent;
-    const base = h_flex().id(row.key).relative().px(8).h(26).flex_none().rounded(8).items_center().gap(0).text_size(12.5).hover(el => el.bg(t.hover)).when(this.hovered === row.key, el => el.bg(t.hover)).cursor_pointer().children(lines(t, row.lines)).child(div().w(4).flex_none());
+    const base = h_flex().id(row.key).relative().px(8).h(26).flex_none().rounded(8).items_center().gap(0).text_size(12.5).hover(el => el.bg(t.hover)).when(this.hovered === row.key, el => el.bg(t.hover)).when(this.peekCaller?.rowKey === row.key, el => el.bg(t.raised)).cursor_pointer().children(lines(t, row.lines)).child(div().w(4).flex_none());
     if (row.kind === 'summary') return base.on_click((_event, cx) => this.toggle(row.key, row.signature, false, cx))
       .child(div().flex_none().text_color(t.dim).child(`✓ ${row.count} ${row.tasks ? 'tasks done' : 'done'}`))
       .child(div().ml(5).flex_1().truncate().text_color(t.dim).child(`· ${row.names.join(', ')}`));
@@ -88,7 +91,7 @@ export default class Panorama extends View {
       .child(div().flex_1().min_w(0).truncate().font_medium().text_color(t.foreground).child(row.thread.name))
       .child(phases(t, row.thread.phases)).child(mark(t, row.mark.status, row.mark.questions));
     const harness = harnessOf(agent, item.root, row.thread), on = this.hovered === row.key;
-    return base.on_click(() => this.peek(item, row)).on_hover((hovered, cx) => { this.hovered = hovered ? row.key : null; cx.notify(); })
+    return base.on_click((_event, cx) => this.peek(item, row, cx)).on_hover((hovered, cx) => { this.hovered = hovered ? row.key : null; cx.notify(); })
       .child(div().id(`icon-${row.key}`).mr(7).flex_none().when(row.children > 0, el => el.on_click((event, cx) => { cx.stop_propagation(); this.toggle(row.key, row.signature, row.open, cx); })).child(icon(iconProgram(harness), 14, t.foreground)))
       .child(div().max_w(110).truncate().text_color(t.muted).child(agent.role))
       .child(div().ml(5).flex_1().min_w(0).truncate().text_color(needs(agent.status) ? t.blocked : t.dim).child(agent.activity ? `· ${agent.activity}` : ''))
@@ -99,7 +102,7 @@ export default class Panorama extends View {
   }
   render(cx) {
     const t = theme(); if (props()?.sortMenu) return this.sortMenu(t);
-    this.feed = consumerFeed(this);
+    this.feed = consumerFeed(this); this.peekCaller.sync();
     const now = Date.now(), compact = narrow(), raw = agents(), all = terminals(), ps = panes(), ss = spaces();
     const current = raw.find(agent => agent.focused);
     if (!current || current.address !== this.held?.address || current.status !== 'idle') this.held = current ? { address: current.address, status: current.status } : null;
@@ -151,7 +154,7 @@ export default class Panorama extends View {
         }
       }
     }
-    const errors = [...(this.feed?.errors ?? []), ...(this.writerError ? [this.writerError] : [])];
+    const errors = [...(this.feed?.errors ?? []), ...(this.peekCaller.error ? [this.peekCaller.error] : []), ...(this.writerError ? [this.writerError] : [])];
     return v_flex().size_full().min_h(0).bg(t.chrome).border_t(1).border_color(t.border).text_size(13)
       .when(!compact, el => el.child(h_flex().px(16).h(41).pt(14).pb(5).flex_none().items_center().justify_between()
         .child(div().text_size(11.5).font_medium().text_color(t.dim).child('Agents'))

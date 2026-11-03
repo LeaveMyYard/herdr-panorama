@@ -1,0 +1,153 @@
+{
+  "isolation": {
+    "core_id": "01d98b4d3a0f84d6effebfb4ae8d0c32",
+    "pid": 3291425,
+    "start": "3395468",
+    "session": "p4n-abcf14fc",
+    "sockets": [
+      [
+        "/home/leavemyyard/.cache/p4n-dc1mh7xu/runtime/herdr-core/p4n-abcf14fc.sock",
+        123602587
+      ]
+    ],
+    "exact_process_environment_verified": true
+  },
+  "reporter_launch": {
+    "address": "t1",
+    "agent": "python3",
+    "cwd": "/home/leavemyyard/Code/herdr-panorama",
+    "state": "live",
+    "turn": 0
+  },
+  "peek_diagnostic": {
+    "pin": "0123456789abcdef0123456789abcdef",
+    "validated": true,
+    "stopped": false,
+    "writerError": null,
+    "stale": false,
+    "subject": "[\"0123456789abcdef0123456789abcdef\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"fixture-session\",\"fixture-thread\",\"fixture-fixer\"]",
+    "page": null,
+    "editorUnits": null,
+    "error": null
+  },
+  "peek_status": {
+    "zoom": 2.0,
+    "font_size": 28.0,
+    "ui_font_size": 26.0,
+    "space": "spa8cc848e9d0e22f2cb4b141702ec3c21",
+    "tab": "tb7a1ba126b1fa41c7e63f015765dabad1",
+    "focused_pane": "pf5a7ecf931017338311376bc703f638d",
+    "layout": "b4-probe",
+    "agent": "t1",
+    "floats": {},
+    "overlays": [
+      "panorama-peek"
+    ],
+    "errors": []
+  },
+  "viewer_diagnostic": {
+    "pin": "0123456789abcdef0123456789abcdef",
+    "validated": true,
+    "stopped": false,
+    "writerError": null,
+    "stale": false,
+    "subject": "[\"0123456789abcdef0123456789abcdef\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"fixture-session\",\"fixture-thread\",\"fixture-fixer\"]",
+    "page": {
+      "first": 1,
+      "last": 100,
+      "lines": 2200
+    },
+    "editorUnits": 102290,
+    "error": null
+  },
+  "next_diagnostic": {
+    "pin": "0123456789abcdef0123456789abcdef",
+    "validated": true,
+    "stopped": false,
+    "writerError": null,
+    "stale": false,
+    "subject": "[\"0123456789abcdef0123456789abcdef\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"fixture-session\",\"fixture-thread\",\"fixture-fixer\"]",
+    "page": {
+      "first": 101,
+      "last": 200,
+      "lines": 2200
+    },
+    "editorUnits": 102400,
+    "error": null
+  },
+  "final_status": {
+    "zoom": 2.0,
+    "font_size": 28.0,
+    "ui_font_size": 26.0,
+    "space": "spa8cc848e9d0e22f2cb4b141702ec3c21",
+    "tab": "tb7a1ba126b1fa41c7e63f015765dabad1",
+    "focused_pane": "pf5a7ecf931017338311376bc703f638d",
+    "layout": "b4-probe",
+    "agent": "t1",
+    "floats": {},
+    "overlays": [
+      "panorama-peek"
+    ],
+    "errors": []
+  },
+  "caller": {
+    "command": "peek-closed-97e732192820f8fb5541a60e08296596",
+    "current": {
+      "token": "ebaccf046bbc0cea6acf4fdc8bde403f",
+      "id": "o2",
+      "install_id": "0123456789abcdef0123456789abcdef",
+      "rowKey": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"fixture-fixer\"]"
+    },
+    "error": null
+  },
+  "artifact": {
+    "source_base": "1269daccd0da27df8df355fcc234dcd18ca9440c",
+    "source_path": "/home/leavemyyard/Code/herdr-panorama-worktrees/app-conductor/B/author/b2-rust-target/release/panorama",
+    "private_copy": "/home/leavemyyard/Code/herdr-panorama-worktrees/app-conductor/B/author-b4/artifacts/panorama",
+    "bytes": 9964424,
+    "sha256": "da6d69e802a479d47aa154d3e6464c7286d0c06ef25304c9ca5a22e0aec328f2",
+    "primary_evidence": "B/author/real-writer-interop.json",
+    "invoked": false
+  },
+  "scope": "synthetic registered feed + real merged private artifact; actual native currentG init/read/callback, production sidebar/helper/child callbacks with seeded follower feed; sidebar init role injected as consumer to avoid replacing seeded data; not installer acceptance",
+  "stop_code": 0,
+  "captured_process_exited": true,
+  "combined_source": "80b4e22a1f40c12e1cf72b13d26500dbf739dc5f",
+  "runtime_source_sha256": {
+    "app/mods/panorama-peek/actions.js": "4b14ebd6eb0afd6b7aa2426f045578afcabb95329c364bebc5defc12c5b539c3",
+    "app/mods/panorama-peek/binary.js": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
+    "app/mods/panorama-peek/bundle.json": "db4d8657f4df0649f981dcd57d4790efd44368bcc9adc71ad2044a7e04efdcbc",
+    "app/mods/panorama-peek/contract.js": "799534499636f7121188b6c7fc6f6a3f05d0781b236a75e05bb8536be56eca2c",
+    "app/mods/panorama-peek/feed-client.js": "8a836fbc95b4d7d0d29946c39d88b75ce48b5293df8e1c9c4b4b5dcda09214ed",
+    "app/mods/panorama-peek/main.js": "33d9e49d27b6c7ce1203c740dd433c7f0aa698ac5241e3e10c29502104f143f6",
+    "app/mods/panorama-peek/marks.js": "13e5d13607af063dd3ff06db5671c986da80a5189b2bdda4c96b1e04aef2ea2a",
+    "app/mods/panorama-peek/metadata.js": "c72b6b71af3f2c0db2c06e13e82e48de5b03e0d32c1e0c3c80f12070754f3c5e",
+    "app/mods/panorama-peek/mod.json": "8ded8a3a0cff0e5348d95b12d363fdbdfea201dd66f37107c289852048f9191d",
+    "app/mods/panorama-peek/model.js": "4d653d8cbf77c11ce49d502bacf8f986bd607e4fde3039b06fccb9ff7757b12d",
+    "app/mods/panorama-peek/paging.js": "b5ee4fece7bfcff5476a53c94ade2ba29a130394b6236e01d2ac1eeb35acb1e1",
+    "app/mods/panorama-peek/routing.js": "0a0c932d301427c9c6fbd6365a670945f0515db237eef3ba070fa67a9f450ae2",
+    "app/mods/panorama-peek/subject.js": "9689bc858b772663cc223645fd6b639e3476a7b61767d9c2477f3942b390bd57",
+    "app/mods/panorama-peek/tree.js": "eb481ed97705f98fe8eb43d340b16c7f62bb1eefcf71bff236637075ad29b079",
+    "app/mods/panorama/main.js": "e0f481183d22f738430039e94b2104cd3d493ac72b76b3fd404e9c957cea6d48",
+    "app/mods/panorama/peek-caller.js": "2feb99ac0380095169bca403e8767b9f98c2c3858b8b4b7895c48e0683caaa90",
+    "app/mods/panorama-graph/main.js": "d3c469ffb0f0ce5bb9dfb7b45ce81220824e9442543465b97ea74546a7f41e1c",
+    "app/mods/panorama-graph/peek-caller.js": "2feb99ac0380095169bca403e8767b9f98c2c3858b8b4b7895c48e0683caaa90",
+    "app/shared/peek-caller.js": "b3f5415b2149cb957a78a9292f4c15b627ab110372039d0c950ef04a7c34e471",
+    "app/shared/feed-client.js": "752ba8b07991a8103745a8d9e00063e0e43837223b467eec1a95e30efe959ed9",
+    "app/installer/check.py": "3998f0644cd5a7970cbb4b502a874273ecd20fbdd614631f10870863d7fd3370",
+    "app/installer/main.py": "b0cbe8af856b3fd23de0dfe3ca19ac78c61694d0aebe4387bff69af111d734ef",
+    "scripts/app-check": "400475771510af699975a689ff3414852fb3721d4d88cd1f02aa4ca6063a4101"
+  },
+  "capture_viewport": {
+    "physical": [
+      1288,
+      1000
+    ],
+    "zoom": 2,
+    "peek_logical_width": 284
+  },
+  "fixture_seams": [
+    "Sidebar startup imports existing consumer role solely to retain supplied synthetic feed; receipt/control/artifact guards unchanged.",
+    "Private nonvisual diagnostic/transcript/next callbacks use fresh contexts. No hardware-input proof."
+  ]
+}

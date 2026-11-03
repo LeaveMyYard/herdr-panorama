@@ -256,6 +256,17 @@ An idle exit retains the last feed and registration as stale data, not live app
 membership. Normal collection polls changed source signatures and at least
 every 5 s as a fallback; runtime control never enters UI membership fields.
 
+The frontend conservatively projects a retained collection as stale when its
+`generated_at` is missing/nonfinite, future, or older than 15 s (three normal
+polls), independently of its advisory frontend lease. It retains data and age.
+This view policy is not writer-death proof, a heartbeat guarantee, or membership
+authority. Only after prior successful startup may the current owner use its
+existing verified current-G bridge to idempotently re-ensure an aged feed, at
+most once per existing 5 s heartbeat with one pending attempt and owner/epoch
+guards after awaits. Ensure success alone never refreshes old collection time;
+consumers independently age cached packets. Missing/changed/disabled authority
+remains a permanent client stop; no new runtime key, schema or CLI is involved.
+
 ## Shared evidence
 
 `tests/fixtures/app-feed-runtime/lifecycle.json` supplies the same generation,

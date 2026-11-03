@@ -61,11 +61,11 @@ def exited(pid, identity):
     return result.returncode != 0 or result.stdout.strip() != identity[1]
 
 
-def stop_checker_core(scratch, env):
+def capture_checker_core(scratch, env):
     # IMPORTANT: `hc server status` AUTOSTARTS a missing core. Do not call it
     # without a preexisting private endpoint, or after stop to test absence.
     if not private_sockets(scratch):
-        return
+        return None
     hc = shutil.which('hc', path=env.get('PATH'))
     if not hc:
         raise ValueError('Private checker endpoint exists but hc is unavailable')
@@ -80,6 +80,36 @@ def stop_checker_core(scratch, env):
     handle = os.pidfd_open(pid) if hasattr(os, 'pidfd_open') else None
     try:
         identity = process_identity(pid, env)
+        return (hc, pid, identity, handle)
+    except BaseException:
+        if handle is not None:
+            os.close(handle)
+        raise
+
+
+def start_checker_core(scratch, env):
+    hc = shutil.which('hc', path=env.get('PATH'))
+    if not hc:
+        raise ValueError('hc is required for managed native checker isolation')
+    started = subprocess.run([hc, 'server', 'start', '--json'], env=env, capture_output=True, text=True, timeout=3)
+    if started.returncode:
+        raise ValueError('Cannot establish private checker core')
+    captured = capture_checker_core(scratch, env)
+    if captured is None:
+        raise ValueError('Managed checker core has no private endpoint')
+    return captured
+
+
+def stop_checker_core(scratch, env, captured=None):
+    captured = captured or capture_checker_core(scratch, env)
+    if captured is None:
+        return
+    hc, pid, identity, handle = captured
+    try:
+        # Managed checks pin this process before loading any module. An early
+        # exit or replacement leaves uncertain startup work: preserve the tree.
+        if exited(pid, identity) or process_identity(pid, env) != identity or not private_sockets(scratch):
+            raise ValueError('Captured private checker core changed before shutdown')
         stopped = subprocess.run([hc, 'server', 'stop', '--json'], env=env, capture_output=True, text=True, timeout=3)
         if handle is not None:
             poll = select.poll(); poll.register(handle, select.POLLIN)
@@ -100,7 +130,9 @@ def stop_checker_core(scratch, env):
             os.close(handle)
 
 
-def check_mods(mods, checker):
+def check_mods(mods, checker, checker_core='managed'):
+    if checker_core not in ('managed', 'none'):
+        raise ValueError('Unknown checker core mode')
     if not os.path.isabs(checker) or not Path(checker).is_file():
         raise ValueError('--checker must name an absolute herdr-app executable')
     metadata = {}
@@ -113,9 +145,15 @@ def check_mods(mods, checker):
                XDG_CONFIG_HOME=f'{scratch}/config', XDG_STATE_HOME=f'{scratch}/state',
                XDG_RUNTIME_DIR=f'{scratch}/runtime', HERDR_TELEMETRY='0', DO_NOT_TRACK='1')
     failure = None
+    captured = None
     try:
         for name in ('app', 'config', 'state', 'runtime'):
             Path(scratch, name).mkdir(mode=0o700)
+        if checker_core == 'managed':
+            # Establish and pin the empty core before eager module imports can
+            # asynchronously launch it. Socket absence at teardown is no longer
+            # used as evidence that a real native checker has no pending core.
+            captured = start_checker_core(scratch, env)
         for mod in mods:
             checked = Path(scratch, 'mods', mod.name)
             shutil.copytree(mod, checked, ignore=shutil.ignore_patterns('gpui-kit.d.ts', 'jsconfig.json'))
@@ -137,7 +175,9 @@ def check_mods(mods, checker):
         raise
     finally:
         try:
-            stop_checker_core(scratch, env)
+            if checker_core == 'managed' and captured is None:
+                raise ValueError('Managed checker core was not captured')
+            stop_checker_core(scratch, env, captured)
         except BaseException as error:
             # Do not unlink an uncertain live core's socket/config state.
             detail = f'; original check failure: {failure}' if failure else ''
