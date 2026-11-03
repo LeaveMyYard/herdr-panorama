@@ -2,7 +2,7 @@
 use super::hydrate::MAX_TURNS;
 use super::{
     Observation, Options, Thread,
-    discovery::{self, Graph, MAX_THREADS, Scan},
+    discovery::{self, Graph, MAX_THREADS},
     hydrate, parse,
     protocol::{Client, Error, Result},
 };
@@ -14,14 +14,20 @@ const ITEM_PAGES: usize = 2;
 async fn read(
     client: &mut Client,
     id: &str,
+    expected_parent: Option<&str>,
     unsupported: &mut HashSet<String>,
-    scan: &mut Scan,
+    graph: &mut Graph,
 ) -> Result<(Thread, Vec<String>, bool)> {
     let meta = client
         .call("thread/read", json!({"threadId":id,"includeTurns":false}))
         .await?;
     let raw = meta.get("thread").ok_or(Error::Invalid)?;
     let mut thread = parse::thread(raw, id).ok_or(Error::Invalid)?;
+    if thread.parent_thread_id.as_deref() != expected_parent {
+        return Err(Error::Invalid);
+    }
+    // A rejected candidate must not allocate/evict persisted valid ancestry progress.
+    let scan = graph.scan(id);
     let mode = match raw.get("historyMode").and_then(Value::as_str) {
         None | Some("legacy") => "legacy",
         Some("paginated") => "paginated",
@@ -111,19 +117,27 @@ async fn query(
     graph.root(id);
     let (root, child_ids, mut partial) = tokio::time::timeout_at(deadline, async {
         client.initialize().await?;
-        read(client, id, unsupported, graph.scan(id)).await
+        read(client, id, None, unsupported, graph).await
     })
     .await
     .unwrap_or(Err(Error::Unavailable))?;
+    let focus = graph.focus();
     let mut queue: VecDeque<_> = graph
         .order(id, child_ids)
         .into_iter()
         .map(|child| (id.to_owned(), child))
         .collect();
+    for pair in focus.into_iter().rev() {
+        queue.push_front(pair);
+    }
     let mut seen = HashSet::from([id.to_owned()]);
     let mut children = Vec::new();
     let mut reads = 1;
     while let Some((parent, child)) = queue.pop_front() {
+        if !seen.contains(&parent) {
+            partial = true;
+            continue;
+        }
         if seen.contains(&child) {
             continue;
         }
@@ -132,9 +146,10 @@ async fn query(
             break;
         }
         reads += 1;
+        graph.attempt(&child);
         let child_result = match tokio::time::timeout_at(
             deadline,
-            read(client, &child, unsupported, graph.scan(&child)),
+            read(client, &child, Some(&parent), unsupported, graph),
         )
         .await
         {

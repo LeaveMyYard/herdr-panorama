@@ -158,8 +158,10 @@ does not by itself remove a known child or mark it done.
 The observer still reads at most eight threads per refresh (root included), with
 bounded per-root scan caches, 64 candidate IDs per scanned thread, continuation
 limits, the existing whole-refresh deadline and wire byte limits. Known valid
-candidates get lookup priority while unverified siblings rotate, so a prefix of
-foreign references cannot permanently starve a valid sibling. Oversized graphs,
+candidates get lookup priority while unverified siblings rotate. A bounded target
+path also schedules work across depths; each ancestor must freshly verify before
+its descendant can appear. Rejected metadata never allocates persisted scan state,
+so foreign references cannot reset a valid branch's older backfill. Oversized graphs,
 truncated display history, unsupported/failed reads and exhausted limits remain
 partial. Cached ancestry never refreshes metadata proof merely by reuse. Only a
 fresh, complete, verified descendant graph permits reading child report files.

@@ -95,7 +95,7 @@ async fn cached_candidates_never_authorize_wrong_roots_cycles_or_fabricated_runt
 #[tokio::test]
 async fn hung_backfill_uses_whole_refresh_deadline_and_reaps_owned_observer() {
     for mode in ["backfill-hang", "full-hang"] {
-        let (dir, mut options) = setup(mode);
+        let (_dir, mut options) = setup(mode);
         options.timeout = std::time::Duration::from_millis(400);
         let mut graph = Graph::new("root-a");
         let start = std::time::Instant::now();
@@ -115,7 +115,7 @@ async fn hung_backfill_uses_whole_refresh_deadline_and_reaps_owned_observer() {
         assert!(
             !std::path::Path::new(&format!(
                 "/proc/{}",
-                std::fs::read_to_string(dir.path().join("pid")).unwrap()
+                std::fs::read_to_string(_dir.path().join("pid")).unwrap()
             ))
             .exists()
         );
@@ -223,4 +223,69 @@ async fn oversized_valid_graphs_keep_the_eight_read_cap_without_starving_new_sib
         12,
         "previously verified oversized siblings also rotate"
     );
+}
+
+#[tokio::test]
+async fn within_eight_valid_nodes_cross_depth_work_is_not_starved_by_foreign_references() {
+    let (dir, options) = setup("breadth");
+    let mut graph = Graph::new("root-a");
+    let mut unsupported = HashSet::new();
+    let mut found = false;
+    for _ in 0..10 {
+        let before = calls(dir.path()).len();
+        let value = refresh(&options, &mut graph, "root-a", &mut unsupported).await;
+        assert!(
+            calls(dir.path())[before..]
+                .iter()
+                .filter(|c| c["method"] == "thread/read")
+                .count()
+                <= 8
+        );
+        if value.children.iter().any(|t| t.thread_id == "grand") {
+            assert_eq!(value.children.len(), 7);
+            found = true;
+        }
+        assert!(
+            value.partial,
+            "foreign reference cannot authorize a complete graph"
+        );
+    }
+    assert!(
+        found,
+        "root+6direct+grandchild must fit the unchanged eight-thread cap"
+    );
+    assert!(
+        calls(dir.path())
+            .iter()
+            .any(|c| c["method"] == "thread/read" && c["params"]["threadId"] == "grand")
+    );
+}
+#[tokio::test]
+async fn rejected_parent_metadata_cannot_evict_a_valid_childs_old_backfill() {
+    let (dir, options) = setup("scan-eviction");
+    let mut graph = Graph::new("root-a");
+    let mut unsupported = HashSet::new();
+    let mut found = false;
+    for _ in 0..10 {
+        let value = refresh(&options, &mut graph, "root-a", &mut unsupported).await;
+        if value.children.iter().any(|t| t.thread_id == "grand") {
+            found = true;
+        }
+    }
+    assert!(
+        found,
+        "eight foreign IDs must not reset the only valid child's scan before item800"
+    );
+    let calls = calls(dir.path());
+    assert!(calls.iter().any(|c| c["method"] == "thread/items/list"
+        && c["params"]["threadId"] == "a-child"
+        && c["params"]["cursor"] == "768"));
+    assert!(!calls.iter().any(|c| {
+        matches!(
+            c["method"].as_str(),
+            Some("thread/items/list" | "thread/turns/list")
+        ) && c["params"]["threadId"]
+            .as_str()
+            .is_some_and(|id| id.starts_with("bad-"))
+    }));
 }
