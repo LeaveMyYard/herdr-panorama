@@ -139,9 +139,9 @@ test('a frozen B1 v1 static receipt remains uninstallable by the v2 package with
   const legacy = new Set(['layouts/panorama.json', 'mods/panorama/LICENSE.herdr-app', 'mods/panorama/NOTICE', ...['panorama', 'panorama-spaces', 'panorama-graph', 'panorama-peek'].flatMap(mod => [`mods/${mod}/main.js`, `mods/${mod}/mod.json`])]);
   for (const path of Object.keys(s.receipt.files)) if (!legacy.has(path)) { rmSync(join(s.home, path)); delete s.receipt.files[path]; }
   rmSync(s.runtime, { recursive: true });
-  const legacyDataDirs = new Set(['data/panorama-spaces','data/panorama-graph','data/panorama-peek']);
-  for (const path of legacyDataDirs) rmSync(join(s.home,path),{recursive:true});
-  s.receipt.v = 1; delete s.receipt.install_id; s.receipt.dirs = s.receipt.dirs.filter(path => !path.startsWith('data/panorama/runtime') && !legacyDataDirs.has(path));
+  const v2OnlyDirs = new Set(['data/panorama-spaces','data/panorama-graph','data/panorama-peek','data/panorama-tabs','data/panorama-pane','mods/panorama-tabs','mods/panorama-pane']);
+  for (const path of v2OnlyDirs) rmSync(join(s.home,path),{recursive:true});
+  s.receipt.v = 1; delete s.receipt.install_id; s.receipt.dirs = s.receipt.dirs.filter(path => !path.startsWith('data/panorama/runtime') && !v2OnlyDirs.has(path));
   writeManaged(s.manifest, s.receipt);
   const foreign = join(s.home, 'data/panorama/runtime/unowned'); mkdirSync(foreign, { recursive: true });
   const control = join(foreign, 'control.json'); writeManaged(control, { disabled: false, personal: true });
@@ -182,11 +182,18 @@ test('failed key restoration keeps the quiescent runtime journal recoverable unt
 
 
 for (const name of ['panorama-spaces','panorama-graph','panorama-peek']) {
-  test(`exact empty mod-data reservation ${name} refuses preexisting personal directories`, t => {
+  test(`exact mod-data reservation ${name} ${name === 'panorama-spaces' ? 'reuses its retained preference parent without deletion authority' : 'refuses preexisting personal directories'}`, t => {
     const s = sandbox(t); mkdirSync(join(s.home,'data',name),{recursive:true});
     writeFileSync(join(s.home,'data',name,'personal.json'),'personal');
-    const before = tree(s.home); const result = s.run('install'); fail(result);
-    assert.match(result.stderr,/Name collision/); assert.deepEqual(tree(s.home),before);
+    const before = tree(s.home); const result = s.run('install');
+    if (name === 'panorama-spaces') {
+      ok(result);
+      assert.equal(JSON.parse(readFileSync(s.manifest)).dirs.includes(`data/${name}`),false);
+      ok(s.run('uninstall'));
+    } else {
+      fail(result); assert.match(result.stderr,/Name collision/);
+    }
+    assert.deepEqual(tree(s.home),before);
   });
 }
 test('owned empty mod-data dirs are removed; added mod-data files survive without recursive cleanup', t => {

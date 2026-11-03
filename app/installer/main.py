@@ -17,6 +17,7 @@ from keys import bindings, decoded, merge, render, undo
 from manifest import BASE_FILES, BINARY, MANIFEST, MODS, MOD_DATA_DIRS, parents, validate
 import runtime
 import frontend
+import preferences
 
 
 def inventory(package, binary):
@@ -45,9 +46,10 @@ def preflight(home, files):
     for mod in MODS:
         if home.exists(f'mods/{mod}'):
             raise ValueError(f'Name collision: mods/{mod}')
-    for path in [*files, MANIFEST, *MOD_DATA_DIRS]:
+    for path in [*files, MANIFEST, *(MOD_DATA_DIRS - preferences.DIRECTORIES)]:
         if home.exists(path):
             raise ValueError(f'Name collision: {path}')
+    preferences.preflight(home)
     # Walk every existing ancestor now: reject links before any writes.
     for directory in sorted({p for f in [*files, MANIFEST] for p in parents(f)}, key=lambda p: (p.count('/'), p)):
         if home.exists(directory):
@@ -117,9 +119,12 @@ def install(home, args):
             if home.mkdir(directory):
                 manifest['dirs'].append(directory)
         for directory in sorted(MOD_DATA_DIRS):
-            if not home.mkdir(directory):
+            if home.mkdir(directory):
+                manifest['dirs'].append(directory)
+            elif directory in preferences.DIRECTORIES:
+                preferences.inspect(home, directory)
+            else:
                 raise ValueError(f'Name collision: {directory}')
-            manifest['dirs'].append(directory)
         runtime.reserve(home, manifest, runtime_created)
         # Journal before payload changes, so interrupted installs can be uninstalled.
         manifest_written = (render(manifest), 0o600)
@@ -178,6 +183,7 @@ def uninstall(home, package):
     for path in [*manifest['files'], 'keys.json']:
         home.read(path)
     if manifest['v'] == 2:
+        preferences.preflight(home)
         with runtime.quiesce(home, manifest):
             runtime_plan = runtime.preflight_cleanup(home, manifest)
             frontend.wait(home, manifest)
@@ -211,6 +217,8 @@ def finish_uninstall(home, manifest, stored, runtime_plan=None):
         runtime.cleanup(home, runtime_plan)
     if not home.remove(MANIFEST, stored):
         raise ValueError('Install manifest changed during uninstall; preserved')
+    if manifest['v'] == 2:
+        leftovers.extend(preferences.preserved(home, manifest['dirs']))
     leftovers.extend(remove_dirs(home, manifest['dirs']))
     for path in leftovers:
         print('Preserved: ' + path)

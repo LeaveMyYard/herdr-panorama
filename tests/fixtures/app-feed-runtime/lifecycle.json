@@ -91,6 +91,12 @@
   "empty_mod_data_dirs": [
     "data/panorama-spaces",
     "data/panorama-graph",
-    "data/panorama-peek"
+    "data/panorama-peek",
+    "data/panorama-tabs",
+    "data/panorama-pane"
+  ],
+  "retained_preference_files": [
+    "data/panorama-spaces/store.json",
+    "data/panorama-tabs/store.json"
   ]
 }

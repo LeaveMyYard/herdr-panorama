@@ -26,7 +26,7 @@ test('empty keys plus optional binary roundtrip restores exact content and modes
   assert.equal(readFileSync(join(s.home, 'data/panorama/bin/panorama'), 'utf8'), readFileSync(binary, 'utf8'));
   const manifest = JSON.parse(readFileSync(s.manifest));
   assert.equal(manifest.files['data/panorama/bin/panorama'].mode, 0o755);
-  assert.equal(readFileSync(join(s.temp, 'checks.log'), 'utf8').trim().split('\n').length, 4);
+  assert.equal(readFileSync(join(s.temp, 'checks.log'), 'utf8').trim().split('\n').length, 6);
   assert.equal(readFileSync(join(s.home, 'view.json'), 'utf8'), '{"layout":"personal"}\n');
   ok(s.run('uninstall'));
   assert.deepEqual(tree(s.home), before);
@@ -68,9 +68,9 @@ test('existing binding even with identical action requires a decision, with no m
 test('last staged native check failure leaves files, binary destinations, dirs and original keys untouched', t => {
   const s = sandbox(t, { global: { 'alt-s': 'panorama.open' } }); personal(s);
   const before = tree(s.home);
-  fail(s.run('install', ['--binary', artifact(s)], { TEST_FAIL: 'panorama-peek' }));
+  fail(s.run('install', ['--binary', artifact(s)], { TEST_FAIL: 'panorama-pane' }));
   assert.deepEqual(tree(s.home), before);
-  assert.equal(readFileSync(join(s.temp, 'checks.log'), 'utf8').trim().split('\n').length, 4);
+  assert.equal(readFileSync(join(s.temp, 'checks.log'), 'utf8').trim().split('\n').length, 6);
 });
 
 test('personal source edits and later files survive uninstall and are listed', t => {
@@ -163,7 +163,7 @@ test('directory lock serializes competing installers; one succeeds and one refus
   });
   const results = await Promise.all([start(), start()]);
   assert.deepEqual(results.map(x => x.code).sort(), [0, 1], JSON.stringify(results));
-  assert.equal(readFileSync(join(s.temp, 'checks.log'), 'utf8').trim().split('\n').length, 4);
+  assert.equal(readFileSync(join(s.temp, 'checks.log'), 'utf8').trim().split('\n').length, 6);
   ok(s.run('uninstall')); assert.deepEqual(tree(s.home), {});
 });
 
@@ -288,7 +288,7 @@ test('staged native metadata is explicitly fingerprinted; changed host-update me
   const s = sandbox(t); ok(s.run('install'));
   const manifest = JSON.parse(readFileSync(s.manifest));
   const metadata = Object.keys(manifest.files).filter(path => path.endsWith('/gpui-kit.d.ts') || path.endsWith('/jsconfig.json'));
-  assert.equal(metadata.length, 8); assert.ok(metadata.every(path => manifest.files[path].mode === 0o644));
+  assert.equal(metadata.length, 12); assert.ok(metadata.every(path => manifest.files[path].mode === 0o644));
   const updated = join(s.home, 'mods/panorama/gpui-kit.d.ts'); writeFileSync(updated, '// next host version');
   const result = s.run('uninstall'); ok(result); assert.match(result.stdout, /gpui-kit.d.ts \(edited; preserved\)/);
   assert.equal(readFileSync(updated, 'utf8'), '// next host version'); assert.equal(existsSync(s.manifest), false);
