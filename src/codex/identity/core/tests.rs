@@ -85,12 +85,33 @@ async fn core_binding_reuses_root_proof_and_cannot_overwrite_tui_namespace() {
     let mut reused = herdr_agent_kit::agent_procs::fake::FakeProcesses::default();
     reused.insert(20, 1, "codex", "new-start", &["codex", "--no-daemon"]);
     assert!(resolve(&env, "t2", &info, &reused).is_none());
-    let mut foreign = store::core_existing(&env, "t2").unwrap();
+}
+
+#[test]
+fn foreign_core_namespace_is_unavailable_even_with_matching_pid_and_start() {
+    let dir = tempfile::tempdir().unwrap();
+    let env = state_env(dir.path());
+    let store = Store::core_lock(&env, "t2").unwrap();
+    let mut foreign = Association {
+        version: 1,
+        pane_id: "core:t2".into(),
+        thread_id: ROOT.into(),
+        owner_pid: 20,
+        owner_start: "start".into(),
+        embedded: true,
+        conflicted: false,
+        host: Some("herdr-core".into()),
+        terminal: Some("t2".into()),
+        pidns: None,
+    };
+    let info = json!({"process_info":{"pane_id":"core:t2","foreground_processes":[{"pid":20}]}});
+    store.write(&foreign).unwrap();
+    assert_eq!(
+        resolve(&env, "t2", &info, processes().as_ref()).as_deref(),
+        Some(ROOT)
+    );
     foreign.pidns = Some("pid:[foreign-namespace]".into());
-    Store::core_lock(&env, "t2")
-        .unwrap()
-        .write(&foreign)
-        .unwrap();
+    store.write(&foreign).unwrap();
     assert!(resolve(&env, "t2", &info, processes().as_ref()).is_none());
 }
 
