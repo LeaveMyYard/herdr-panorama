@@ -60,7 +60,7 @@ export function card(view, cx, t, node, model, window, path, now) {
     const children = model.tree.nodes.filter(child => child.parent?.key === node.key).reduce((n, child) => n + (child.fold?.length ?? 1), 0);
     const top = h_flex().items_center().gap(6).child(icon(program, 14, t.foreground))
       .child(text(agent.role, onPath ? t.foreground : t.muted, 12.5).flex_none())
-      .child(text([agent.id, agent.model].filter(Boolean).join(' · '), t.dim, 11.5).flex_1())
+      .child(text([agent.id, agent.model, selected ? stamp(agent.last_at || agent.started, now) : ''].filter(Boolean).join(' · '), t.dim, 11.5).flex_1())
       .child(selected ? text(statusWord(agent.status), tone, 11.5).flex_none() : mark(t, agent.status, agent.question_ids.length));
     body = v_flex().px(12).pt(9).gap(6).child(top);
     if (!selected) body = body.child(h_flex().items_center().gap(8).child(text(agent.activity, edge ? t.blocked : t.dim).flex_1())
