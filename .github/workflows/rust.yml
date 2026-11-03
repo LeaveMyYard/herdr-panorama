@@ -59,6 +59,7 @@ jobs:
               - 'tests/fixtures/app-feed/**'
               - 'docs/protocol/app-feed-v1.md'
               - 'tests/core_host_source.rs'
+              - 'tests/codex_identity_store.rs'
               - 'tests/fixtures/hc-list.json'
               - 'docs/protocol/core-host.md'
               - '.github/workflows/rust.yml'
