@@ -20,7 +20,7 @@ export class Pages {
     this.history = []; this.intent = 0; this.closed = false; this.pending = false;
   }
   async load(scope, offset = 1, history = []) {
-    if (this.closed || !this.current(scope)) return false;
+    if (this.closed || this.pending || !this.current(scope)) return false;
     const intent = ++this.intent;
     if (this.page && this.page.scope !== scope.key) { this.page = null; this.history = []; this.error = null; }
     this.pending = true;

@@ -22,7 +22,7 @@ function button(label, key, enabled, solid, action, t) {
 export default class PanoramaPeek extends View {
   init(initial, cx) {
     this.intent = initial ?? props() ?? {}; this.viewer = this.intent.action === 'transcript';
-    this.closed = false; this.editor = null; this.requested = null; this.shown = null; this.busy = false;
+    this.closed = false; this.editor = null; this.requested = null; this.shown = null; this.busy = false; this.reading = false;
     this.handle = cx.focus_handle(); this.handle.focus();
     this.client = startConsumer(this, cx); this.newPages();
   }
@@ -42,19 +42,23 @@ export default class PanoramaPeek extends View {
   }
   releaseEditor() { this.editor?.release(); this.editor = null; }
   load(direction, cx) {
-    const scope = this.scope(); if (!scope || this.closed) return;
-    if (this.pages.page?.scope !== scope.key) this.releaseEditor();
+    const scope = this.scope(); if (!scope || this.closed || this.reading) return false;
+    // This view-wide gate survives page resets while an old native read settles.
+    const pages = this.pages; this.reading = true;
+    if (pages.page?.scope !== scope.key) this.releaseEditor();
     cx.spawn(async cx => {
-      const read = direction === 'next' ? this.pages.next(scope) : direction === 'previous' ? this.pages.previous(scope) : this.pages.load(scope, this.pages.page?.scope === scope.key ? this.pages.page.first : 1);
-      const changed = await read;
-      if (this.closed || !this.current(scope)) return;
-      if (changed) {
-        this.releaseEditor();
-        this.editor = EditorState.new({ readonly: true, value: this.pages.page.text, language: 'json', soft_wrap: false,
-          font_family: settings().font_family, font_size: 12 });
-      }
-      cx.notify();
+      try {
+        const read = direction === 'next' ? pages.next(scope) : direction === 'previous' ? pages.previous(scope) : pages.load(scope, pages.page?.scope === scope.key ? pages.page.first : 1);
+        const changed = await read;
+        if (this.closed || pages !== this.pages || !this.current(scope)) return;
+        if (changed) {
+          this.releaseEditor();
+          this.editor = EditorState.new({ readonly: true, value: pages.page.text, language: 'json', soft_wrap: false,
+            font_family: settings().font_family, font_size: 12 });
+        }
+      } finally { this.reading = false; if (!this.closed) cx.notify(); }
     });
+    return true;
   }
   target(value) { return focusTarget(value, this.intent, { feed: consumerFeed(this).feed, agents: agents(), terminals: terminals(), panes: panes(), spaces: spaces() }); }
   open(cx) {
@@ -93,12 +97,13 @@ export default class PanoramaPeek extends View {
   }
   render(cx) {
     const t = theme(), value = this.value(), scope = this.scope();
-    if (this.shown !== value?.key) { this.shown = value?.key; this.releaseEditor(); this.newPages(); this.requested = null; }
-    if (this.viewer && scope && this.requested !== scope.key) { this.requested = scope.key; this.load('initial', cx); }
+    const shown = this.viewer ? scope?.key ?? null : value?.key ?? null;
+    if (this.shown !== shown) { this.shown = shown; this.releaseEditor(); this.newPages(); this.requested = null; }
+    if (this.viewer && scope && this.requested !== scope.key && this.load('initial', cx)) this.requested = scope.key;
     const frame = v_flex().id('panorama-peek').w_full().min_h(0).p(12).gap(9).bg(t.popover).border(1).border_color('#ffffff1f').rounded(10)
       .text_size(12.5).track_focus(this.handle).on_key_down((event, cx) => this.key(event, cx));
     if (this.viewer) {
-      const page = this.pages.page, enabled = Boolean(scope) && !this.pages.pending;
+      const page = this.pages.page, enabled = Boolean(scope) && !this.reading && !this.pages.pending;
       return frame.size_full().child(h_flex().items_center().gap(8).child(div().font_semibold().child('Transcript'))
         .child(div().flex_1().text_size(11.5).text_color(t.dim).child(page ? `${page.first}–${page.last} / ${page.lines}` : ''))
         .child(button('←', '', enabled && this.pages.history.length > 0, false, cx => this.load('previous', cx), t))

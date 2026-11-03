@@ -9,7 +9,17 @@ add the Swarm glyph/count and graph header while retaining stock terminal behavi
 The graph uses fixed depth columns, independent vertical scrolling, folding,
 keyboard navigation and selected-card details. A selected transcript thread
 shows its recorded spawn tree; a root without a transcript thread can show its
-proven same-space native-terminal tree. Peek/transcript content is a separate slice.
+proven same-space native-terminal tree. Pane-less detail rows open Peek with supplied
+status, error and last message; Enter opens a verified live owning orchestrator.
+Transcript (t) opens a readonly native viewer using the current pinned installation
+and feed scope. It reads supplied absolute producer-local paths through existing
+local line paging, preferring the agent transcript then the root transcript.
+Arrows page and t refreshes; one read is pending at a time. Path/authority loss
+clears displayed text. A same-path read error preserves the previous valid page
+with the raw error. Oversized or escape-expanded responses remain unavailable
+with their raw API error; pages are not an immutable whole-file snapshot.
+Caller-owned overlay tokens keep the row highlighted until its own view closes;
+Transcript replaces that view without clearing the replacement highlight.
 Installing does not select the panorama layout.
 The TUI plugin is independent and is not changed by this installer.
 
