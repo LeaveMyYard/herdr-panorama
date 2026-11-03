@@ -1,6 +1,10 @@
 # B3 author evidence
 
-Runtime source: `92babb4ccadc28397674d8738cb6611252cd1fda`, after actual B2 merge `96ff7ae` / reviewed `87ec111`. `FINAL-SOURCE.json` records exact production JS hashes and cleanup. Later evidence/document commits do not change those runtime bytes. Review and operator installed visual acceptance remain pending.
+Initial round-one runtime source: `92babb4ccadc28397674d8738cb6611252cd1fda`, after actual B2 merge `96ff7ae` / reviewed `87ec111`. `FINAL-SOURCE.json` records exact production JS hashes and cleanup. Later evidence/document commits do not change those runtime bytes. Review and operator installed visual acceptance remain pending.
+
+## Round-one selected-age correction
+
+The independent [round-one review](reviewer-round1/REVIEW.md) identified one Medium omission: selected agent metadata dropped its available age. Commit `d905531` adds the existing last_at/started age only when selected; absent timestamps remain absent. No layout, routing, persistence or shared API changes. [Affected D2 comparison](compare-age-fix-d2.png) / [native D2](age-fix-d2.png) visibly shows `c1 · sonnet · 7m`; `AGE-FIX-SOURCE.json` records exact source/hash and clean stack exit. The same stale synthetic rendering limits below apply. All35 existing B3 tests, canonical bundle/diff checks and the affected actual native graph check pass; no new automated coverage/matrix. The earlier captures remain preserved at their original source; this correction does not claim to rerun current-G lifecycle behavior.
 
 ## Design comparison
 
