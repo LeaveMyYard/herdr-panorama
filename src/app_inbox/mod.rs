@@ -14,15 +14,17 @@ use std::{
     time::{Duration, Instant},
 };
 
-pub const HELP: &str = "panorama app-inbox v1\nusage: panorama app-inbox (--available | --open [--question POSITIVE_SAFE_ID]) --app-home ABSOLUTE_HOME\n";
+pub const HELP: &str = "panorama app-inbox v1\nusage: panorama app-inbox (--available | --open [--question POSITIVE_SAFE_ID]) --app-home ABSOLUTE_HOME [--install-id GENERATION]\n";
 #[derive(Debug, PartialEq)]
 pub struct Args {
     pub home: PathBuf,
     pub open: bool,
     pub question: Option<i64>,
+    pub install_id: Option<String>,
 }
 pub fn arguments(args: &[String]) -> Result<Args, String> {
     let (mut available, mut open, mut home, mut question) = (false, false, None, None);
+    let mut install_id = None;
     let mut at = 0;
     while at < args.len() {
         match args[at].as_str() {
@@ -31,6 +33,13 @@ pub fn arguments(args: &[String]) -> Result<Args, String> {
             "--app-home" if home.is_none() && at + 1 < args.len() => {
                 at += 1;
                 home = Some(PathBuf::from(&args[at]));
+            }
+            "--install-id" if install_id.is_none() && at + 1 < args.len() => {
+                at += 1;
+                if !crate::app_feed::json::hex(&args[at], 32) {
+                    return Err(HELP.into());
+                }
+                install_id = Some(args[at].clone());
             }
             "--question" if question.is_none() && at + 1 < args.len() => {
                 at += 1;
@@ -57,25 +66,30 @@ pub fn arguments(args: &[String]) -> Result<Args, String> {
         home,
         open,
         question,
+        install_id,
     })
 }
-fn proof(args: &Args, deadline: Instant) -> Result<(), String> {
+fn proof(args: &Args, deadline: Instant) -> Result<String, String> {
     let home = Home::open(&args.home)?;
     let remaining = deadline
         .checked_duration_since(Instant::now())
         .ok_or("navigation timed out")?;
     fs::lock(&home.fd, remaining)?;
     let receipt = Receipt::read(&home)?;
+    receipt.require_generation(args.install_id.as_deref())?;
     receipt.check_artifact_until(&home, Some(deadline))?;
     receipt.enabled(&home)?;
     if Instant::now() >= deadline {
         return Err("navigation timed out".into());
     }
-    Ok(())
+    Ok(receipt.id)
 }
 async fn navigate(args: &Args, h: &Herdr, deadline: Instant) -> Result<Value, String> {
     let run = runner::InstalledRunner { deadline };
-    let installed = InboxLink::default().installed(h, &run).await;
+    let installed = InboxLink::default().installed(h, &run).await?;
+    if Instant::now() >= deadline {
+        return Err("navigation timed out; no retry".into());
+    }
     if !args.open {
         return Ok(installed.map_or(
             json!({"available":false,"questions":false}),
@@ -93,7 +107,7 @@ pub fn run(args: &[String]) -> i32 {
         print!("{HELP}");
         return 0;
     }
-    let args = match arguments(args) {
+    let mut args = match arguments(args) {
         Ok(a) => a,
         Err(e) => {
             eprintln!("{e}");
@@ -101,7 +115,9 @@ pub fn run(args: &[String]) -> i32 {
         }
     };
     let deadline = Instant::now() + Duration::from_millis(4800);
-    let result = proof(&args, deadline).and_then(|()| {
+    let result = proof(&args, deadline).and_then(|generation| {
+        // Even an unpinned manual operation must keep its first verified generation.
+        args.install_id = Some(generation);
         let rt = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()

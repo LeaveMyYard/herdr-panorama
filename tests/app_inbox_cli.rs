@@ -128,21 +128,28 @@ fn unavailable_is_explicit_and_whole_operation_deadline_reaps_owned_helper() {
         marker.to_str().unwrap()
     );
     let h = plugin(&i, &script);
-    let began = Instant::now();
-    let o = call(&i, &h, &["--open"]);
-    assert!(
-        began.elapsed() < Duration::from_secs(5),
-        "{:?}",
-        began.elapsed()
-    );
-    assert_eq!(o.status.code(), Some(1));
-    assert!(o.stdout.is_empty());
-    let pid = std::fs::read_to_string(marker)
-        .unwrap()
-        .parse::<u32>()
-        .unwrap();
-    assert!(herdr_agent_kit::agent_procs::start_token(pid).is_none());
-    assert_eq!(h.calls().len(), 1);
+    for action in ["--available", "--open", "--available"] {
+        let began = Instant::now();
+        let o = call(&i, &h, &[action]);
+        assert!(
+            began.elapsed() < Duration::from_secs(5),
+            "{:?}",
+            began.elapsed()
+        );
+        assert_eq!(
+            o.status.code(),
+            Some(1),
+            "{action}: {}",
+            String::from_utf8_lossy(&o.stdout)
+        );
+        assert!(o.stdout.is_empty());
+        let pid = std::fs::read_to_string(&marker)
+            .unwrap()
+            .parse::<u32>()
+            .unwrap();
+        assert!(herdr_agent_kit::agent_procs::start_token(pid).is_none());
+    }
+    assert_eq!(h.calls().len(), 3);
     // A contended lifecycle lock consumes the same total budget; no plugin call follows.
     let home = Home::open(&i.app).unwrap();
     fs::lock(&home.fd, Duration::from_millis(1)).unwrap();
@@ -152,4 +159,37 @@ fn unavailable_is_explicit_and_whole_operation_deadline_reaps_owned_helper() {
     assert_eq!(o.status.code(), Some(1));
     assert!(began.elapsed() < Duration::from_secs(5));
     assert_eq!(h.calls().len(), before);
+}
+
+#[test]
+fn old_generation_after_reinstall_never_queries_or_opens_inbox() {
+    let fixture: Value =
+        serde_json::from_str(include_str!("fixtures/app-feed-runtime/lifecycle.json")).unwrap();
+    let next = fixture["generation_fence"]["replacement_install_id"]
+        .as_str()
+        .unwrap();
+    let i = Installed::new();
+    i.replace_generation(next);
+    let h = FakeHerdr::start();
+    h.on("plugin.list", Reply::Result(json!({"plugins":[]})));
+    for action in ["--available", "--open"] {
+        let o = call(&i, &h, &[action, "--install-id", app_feed_support::ID]);
+        assert_eq!(o.status.code(), Some(1));
+        assert!(o.stdout.is_empty());
+        assert!(h.calls().is_empty());
+    }
+    let o = call(&i, &h, &["--available", "--install-id", next]);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    assert_eq!(
+        serde_json::from_slice::<Value>(&o.stdout).unwrap(),
+        json!({"available":false,"questions":false})
+    );
+    assert_eq!(h.calls().len(), 1);
+    for args in [
+        vec!["--available", "--install-id", "bad"],
+        vec!["--open", "--install-id", next, "--install-id", next],
+    ] {
+        assert_eq!(call(&i, &h, &args).status.code(), Some(2));
+        assert_eq!(h.calls().len(), 1);
+    }
 }

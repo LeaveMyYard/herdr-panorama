@@ -9,8 +9,8 @@ runner and its existing fallback behavior are unchanged.
 | Invocation | Success stdout | Exit behavior |
 |---|---|---|
 | `app-inbox --help` | Constant text beginning `panorama app-inbox v1` | 0, no filesystem/RPC/helper activity. |
-| `app-inbox --available --app-home ABSOLUTE_HOME` | Exactly `{available:boolean,questions:boolean}` as JSON | 0 for a valid private installation, including unavailable `false,false`. |
-| `app-inbox --open [--question ID] --app-home ABSOLUTE_HOME` | Exactly `{"opened":true}` | 0 only when the existing installed CLI returns success. |
+| `app-inbox --available --app-home ABSOLUTE_HOME [--install-id GENERATION]` | Exactly `{available:boolean,questions:boolean}` as JSON | 0 for a valid private installation, including unavailable `false,false`. |
+| `app-inbox --open [--question ID] --app-home ABSOLUTE_HOME [--install-id GENERATION]` | Exactly `{"opened":true}` | 0 only when the existing installed CLI returns success. |
 
 `questions` is a capability boolean: the installed `open --help` advertises
 `--question`. It is never a count, array, or question query. `available` requires
@@ -19,6 +19,15 @@ help run through that root's existing regular executable `.venv/bin/inbox`.
 Missing executable, disabled/missing plugin, failed help, or unsupported optional
 integration becomes unavailable. A command timeout is an error, not availability
 proof. `questions` is false whenever `available` is false.
+
+Optional `--install-id` pins the operation to a 32-lower-case-hex generation.
+Malformed or duplicate generation arguments exit 2 before I/O. A supplied value
+that differs from the validated v2 receipt exits 1 before any TUI RPC or helper.
+Omission is manual invocation targeting the current receipt; after initial proof,
+that operation also retains its verified generation through the final pre-open
+check. Frontend clients MUST supply their initially pinned generation on each
+non-help call, re-read receipt/artifact each time, and permanently stop on a
+changed/missing receipt as specified in the runtime protocol.
 
 `ID` is canonical ASCII decimal in [1, 9007199254740991], without leading zero,
 sign, prefix, exponent or fraction. Unknown/duplicate/malformed arguments or IDs

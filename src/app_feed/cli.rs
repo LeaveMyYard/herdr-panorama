@@ -1,8 +1,7 @@
 use super::{ensure, fs::Home, json};
 use std::path::PathBuf;
 
-pub const HELP: &str =
-    "panorama app-feed v1\nusage: panorama app-feed --ensure [--app-home ABSOLUTE_HOME]\n";
+pub const HELP: &str = "panorama app-feed v1\nusage: panorama app-feed --ensure [--app-home ABSOLUTE_HOME] [--install-id GENERATION]\n";
 fn arguments(args: &[String]) -> Result<(bool, PathBuf, Option<String>), String> {
     let mut ensure = false;
     let mut watch = false;
@@ -26,8 +25,8 @@ fn arguments(args: &[String]) -> Result<(bool, PathBuf, Option<String>), String>
         at += 1;
     }
     if ensure == watch
-        || (ensure && id.is_some())
-        || (watch && (home.is_none() || id.as_deref().is_none_or(|s| !json::hex(s, 32))))
+        || id.as_deref().is_some_and(|s| !json::hex(s, 32))
+        || (watch && (home.is_none() || id.is_none()))
     {
         return Err(HELP.into());
     }
@@ -50,10 +49,16 @@ pub fn run(args: &[String]) -> i32 {
         print!("{HELP}");
         return 0;
     }
-    let result = arguments(args).and_then(|(start, path, id)| {
-        let home = Home::open(&path)?;
+    let (start, path, id) = match arguments(args) {
+        Ok(parsed) => parsed,
+        Err(error) => {
+            eprintln!("panorama app-feed: {error}");
+            return 2;
+        }
+    };
+    let result = Home::open(&path).and_then(|home| {
         if start {
-            ensure::ensure(home)
+            ensure::ensure(home, id.as_deref())
         } else {
             ensure::serve(home, id.as_deref().unwrap())
         }

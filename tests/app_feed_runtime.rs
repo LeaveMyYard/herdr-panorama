@@ -313,3 +313,91 @@ fn cooperative_runtime_stop_never_executes_an_edited_private_binary() {
     assert!(!marker.exists());
     assert!(!install.app.join(RECEIPT).exists());
 }
+
+#[test]
+fn old_generation_cannot_start_a_reinstalled_writer_but_current_generation_can() {
+    let fixture: serde_json::Value =
+        serde_json::from_str(include_str!("fixtures/app-feed-runtime/lifecycle.json")).unwrap();
+    let next = fixture["generation_fence"]["replacement_install_id"]
+        .as_str()
+        .unwrap();
+    let installed = Installed::new();
+    installed.replace_generation(next);
+    let attempt = |id: &str| {
+        installed
+            .command()
+            .args(["app-feed", "--ensure", "--install-id", id, "--app-home"])
+            .arg(&installed.app)
+            .output()
+            .unwrap()
+    };
+    let out = attempt(app_feed_support::ID);
+    assert_eq!(out.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&out.stderr).contains("generation changed"));
+    assert!(
+        !installed
+            .app
+            .join(format!("data/panorama/runtime/{next}/ownership.json"))
+            .exists()
+    );
+    assert!(!installed.data.join("calls").exists());
+    let out = attempt(next);
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    installed.wait_feed(|v| v["orchestrators"][0]["terminal"] == "t2");
+    assert_eq!(installed.owner().install_id, next);
+}
+
+#[test]
+fn malformed_or_duplicate_generation_arguments_fail_before_home_io() {
+    let temp = tempfile::tempdir().unwrap();
+    for ids in [
+        vec!["--install-id", "bad"],
+        vec![
+            "--install-id",
+            app_feed_support::ID,
+            "--install-id",
+            app_feed_support::ID,
+        ],
+    ] {
+        let out = Command::new(env!("CARGO_BIN_EXE_panorama"))
+            .env_clear()
+            .args(["app-feed", "--ensure", "--app-home"])
+            .arg(temp.path().join("absent"))
+            .args(ids)
+            .output()
+            .unwrap();
+        assert_eq!(out.status.code(), Some(2));
+        assert!(out.stdout.is_empty());
+        assert_eq!(std::fs::read_dir(temp.path()).unwrap().count(), 0);
+    }
+}
+
+#[test]
+fn a_foreign_generation_staging_file_refuses_start_without_changing_bytes() {
+    let installed = Installed::new();
+    let foreign = installed
+        .app
+        .join("data/panorama/.feed-fedcba9876543210fedcba9876543210.tmp");
+    let bytes = b"{\"v\":1,\"personal\":true}\n";
+    std::fs::write(&foreign, bytes).unwrap();
+    let receipt = std::fs::read(installed.app.join(RECEIPT)).unwrap();
+    let out = installed.ensure();
+    assert_eq!(out.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&out.stderr).contains("unknown runtime parent entry"));
+    assert_eq!(std::fs::read(&foreign).unwrap(), bytes);
+    assert_eq!(std::fs::read(installed.app.join(RECEIPT)).unwrap(), receipt);
+    assert!(
+        !installed
+            .app
+            .join(format!(
+                "data/panorama/runtime/{}/ownership.json",
+                app_feed_support::ID
+            ))
+            .exists()
+    );
+    assert!(!installed.data.join("calls").exists());
+}

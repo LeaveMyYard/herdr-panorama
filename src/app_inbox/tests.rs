@@ -36,7 +36,7 @@ async fn installed_navigation_is_exact_and_never_falls_back_to_an_action_or_answ
         code: 0,
         help: "usage: open --question --no-hold",
     };
-    let installed = link.installed(&h.client(), &run).await.unwrap();
+    let installed = link.installed(&h.client(), &run).await.unwrap().unwrap();
     assert!(installed.questions);
     installed.open(&run, Some(14)).await.unwrap();
     installed.open(&run, None).await.unwrap();
@@ -79,6 +79,7 @@ async fn absent_question_capability_does_not_open_plain_instead() {
     let i = InboxLink::default()
         .installed(&h.client(), &run)
         .await
+        .unwrap()
         .unwrap();
     assert!(!i.questions);
     assert!(i.open(&run, Some(1)).await.is_err());
@@ -161,4 +162,25 @@ fn installed_command_strips_callers_and_python_writes_and_rejects_symlinks() {
     std::fs::remove_file(&bin).unwrap();
     std::os::unix::fs::symlink("/bin/sh", &bin).unwrap();
     assert!(runner::command_for(dir.path().to_str().unwrap(), &["open"], []).is_err());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_help_timeout_is_an_error_instead_of_missing_capability() {
+    struct TimedOut;
+    impl Runner for TimedOut {
+        async fn inbox(&self, _: &str, _: &[&str]) -> Ran {
+            Ran {
+                code: 124,
+                out: "timeout".into(),
+            }
+        }
+    }
+    let h = fake();
+    assert!(
+        InboxLink::default()
+            .installed(&h.client(), &TimedOut)
+            .await
+            .is_err()
+    );
+    assert_eq!(h.calls().len(), 1);
 }

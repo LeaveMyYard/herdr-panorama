@@ -51,9 +51,10 @@ fn ready(child: &mut Child, id: &str) -> Result<()> {
     }
 }
 
-pub fn ensure(home: Home) -> Result<()> {
+pub fn ensure(home: Home, expected: Option<&str>) -> Result<()> {
     fs::lock(&home.fd, Duration::from_secs(2))?;
     let r = Receipt::read(&home)?;
+    r.require_generation(expected)?;
     r.check_artifact(&home)?;
     r.enabled(&home)?;
     let lifetime = r.lock_file(&home)?;

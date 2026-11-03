@@ -9,14 +9,27 @@ pub struct InstalledInbox {
 }
 impl InboxLink {
     /// Only successful installed `open --help` proves this entrypoint available.
-    pub async fn installed(&self, h: &Herdr, run: &impl Runner) -> Option<InstalledInbox> {
-        let info = self.info(h, Instant::now()).await?;
-        let help = self.help(&info, run).await?;
-        Some(InstalledInbox {
+    pub async fn installed(
+        &self,
+        h: &Herdr,
+        run: &impl Runner,
+    ) -> Result<Option<InstalledInbox>, String> {
+        let Some(info) = self.info(h, Instant::now()).await else {
+            return Ok(None);
+        };
+        let result = run.inbox(&info.root, &["open", "--help"]).await;
+        if result.code == 124 {
+            return Err("installed inbox help timed out".into());
+        }
+        if result.code != 0 {
+            return Ok(None);
+        }
+        let help = result.out;
+        Ok(Some(InstalledInbox {
             root: info.root,
             questions: help.contains("--question"),
             no_hold: help.contains("--no-hold"),
-        })
+        }))
     }
 }
 impl InstalledInbox {

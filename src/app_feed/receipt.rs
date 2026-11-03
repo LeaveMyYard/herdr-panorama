@@ -55,6 +55,12 @@ impl Receipt {
             binary_sha: sha.into(),
         })
     }
+    pub fn require_generation(&self, expected: Option<&str>) -> Result<()> {
+        if expected.is_some_and(|id| id != self.id) {
+            return Err("installer generation changed; refusing stale client".into());
+        }
+        Ok(())
+    }
     pub fn path(&self, name: &str) -> String {
         format!("data/panorama/runtime/{}/{name}", self.id)
     }
@@ -120,6 +126,20 @@ impl Receipt {
         self.names(home, true)
     }
     fn names(&self, home: &Home, busy: bool) -> Result<()> {
+        let feed_temp = format!(".feed-{}.tmp", self.id);
+        for name in home.names("data/panorama")? {
+            if ![
+                "install.json",
+                "bin",
+                "runtime",
+                "feed.json",
+                feed_temp.as_str(),
+            ]
+            .contains(&name.as_str())
+            {
+                return Err(format!("unknown runtime parent entry {name}; preserved"));
+            }
+        }
         if home.names("data/panorama/runtime")? != [self.id.clone()] {
             return Err("unknown runtime generation; preserved".into());
         }

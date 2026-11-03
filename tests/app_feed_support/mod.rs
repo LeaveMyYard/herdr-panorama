@@ -123,6 +123,34 @@ else: raise SystemExit(7)
             data,
         }
     }
+    /// Models an uninstall/reinstall generation transition without invoking B's installer.
+    pub fn replace_generation(&self, next: &str) {
+        assert!(
+            !self
+                .app
+                .join(format!("data/panorama/runtime/{ID}/ownership.json"))
+                .exists()
+        );
+        let receipt_path = self.app.join(RECEIPT);
+        let mut receipt: Value =
+            serde_json::from_slice(&std::fs::read(&receipt_path).unwrap()).unwrap();
+        let old = format!("data/panorama/runtime/{ID}");
+        let new = format!("data/panorama/runtime/{next}");
+        std::fs::rename(self.app.join(&old), self.app.join(&new)).unwrap();
+        receipt["install_id"] = json!(next);
+        for dir in receipt["dirs"].as_array_mut().unwrap() {
+            if dir.as_str() == Some(&old) {
+                *dir = json!(new);
+            }
+        }
+        std::fs::write(&receipt_path, serde_json::to_vec(&receipt).unwrap()).unwrap();
+        let control = json!({"v":1,"install_id":next,"disabled":false});
+        std::fs::write(
+            self.app.join(new).join("control.json"),
+            serde_json::to_vec(&control).unwrap(),
+        )
+        .unwrap();
+    }
     pub fn command(&self) -> Command {
         let mut command = Command::new(self.app.join(BINARY));
         let inherited = std::env::var_os("PATH").unwrap_or_default();

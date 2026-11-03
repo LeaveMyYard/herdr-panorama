@@ -14,7 +14,18 @@ never mutable runtime/control/ownership fingerprints. Explicit fingerprinted
 only inside the owned panorama mods; the installer stages native-checker bytes,
 verifies their equality and journals them before publication. Generated metadata
 is not committed to this repository or adopted from personal files. `dirs` may also record
-created `runtime` and generation directories.
+created `runtime` and generation directories. The finite additional empty host mod-data
+reservation allowlist is `data/panorama-spaces`, `data/panorama-graph` and
+`data/panorama-peek`. Reserve and journal these directories BEFORE loading any
+owned module; never adopt a preexisting directory. Cleanup uses rmdir only when
+the exact owned directory is empty. Added files remain personal: preserve/report,
+never recursively remove them. `data/panorama` is the explicit writer inventory
+above, not a generic empty mod-data reservation. No `shared.json` or `store.json`
+cleanup is authorized. Host shared bookkeeping is outside this deletion authority;
+observed residue remains an OUTSTANDING integration acceptance gap until a
+supported safe cleanup API or an explicit operator decision resolves it.
+The no-trace requirement is not waived. Any future owned-mod name
+requires an explicit finite-inventory handoff before reservation.
 Legacy v1 receives only its original static uninstall behavior; it never grants
 writer/runtime authority. There is no in-place receipt upgrade or dev bypass.
 
@@ -57,6 +68,11 @@ receipt cannot adopt an old generation directory or preexisting feed.
 | `G/.control.tmp` | Installer / failed-start ensure | Exclusive-create staging for control replacement; leftover is ambiguous and preserved/refused. |
 | `data/panorama/feed.json` | Writer | Atomic full feed v1; bytes must match a recorded ownership digest before replacement/removal. |
 | `data/panorama/.feed-<install_id>.tmp` | Writer | Exclusive-create sibling staging; removable only if complete bytes match pending digest for this generation. |
+
+The shared `data/panorama` parent contains only `install.json`, `bin`, `runtime`,
+the optional `feed.json` and this generation's optional `.feed-<install_id>.tmp`.
+A foreign-generation feed staging file is unknown runtime data: preserve it and
+refuse ensure before spawn, even if its bytes are complete JSON. No adoption.
 
 No glob cleanup. Unexpected runtime files, unknown generations, invalid/partial
 staging, runtime provenance/digest mismatches and stop timeouts are preserved,
@@ -135,8 +151,23 @@ leaves the last valid feed intact. No receipt or control means no new writes.
 
 `panorama app-feed --help` is a non-starting, no-files capability probe, exit 0,
 with `panorama app-feed v1` in stdout. Public startup is
-`app-feed --ensure --app-home ABSOLUTE_HOME`; default home matches herdr-app:
+`app-feed --ensure --app-home ABSOLUTE_HOME [--install-id GENERATION]`;
+default home matches herdr-app:
 HERDR_APP_HOME, otherwise HOME/.config/herdr-app. No alternate development mode.
+
+Optional `--install-id` pins startup to exactly that 32-lower-case-hex receipt
+generation. Malformed or duplicate generation arguments exit 2 before any I/O.
+A supplied generation differing from the validated v2 receipt exits 1 before any
+spawn. Omission is for manual invocation and targets the current receipt. The
+child still receives the currently validated generation and reserved lifetime FD;
+its existing receipt/control/FD proof remains mandatory.
+
+Every frontend client pins the generation from its initially validated receipt
+and supplies it on every non-help ensure/Inbox call. It re-reads the receipt and
+private artifact fingerprint before each call. A changed or missing receipt
+permanently stops that old client; retained feed data stays stale, never becomes
+fresh evidence for another generation. Uninstall/reinstall therefore cannot turn
+a delayed old-client request into a new writer or navigation request.
 
 Ensure holds the lifecycle lock, validates the receipt/artifact/control/state,
 reserves the lifetime lock, and spawns only the exact private executable. Child

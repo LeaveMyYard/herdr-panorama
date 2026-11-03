@@ -19,6 +19,28 @@ fn shared_lifecycle_fixture_parses_exact_fields_and_hashes() {
         fixture["committed_ownership"]["feed_sha256"],
         fs::digest(include_bytes!("fixtures/app-feed/degraded.json"))
     );
+    assert_eq!(
+        fixture["generation_fence"]["install_id"],
+        fixture["install_id"]
+    );
+    let generation = fixture["install_id"].as_str().unwrap();
+    for key in ["ensure_args", "inbox_available_args", "inbox_open_args"] {
+        let args = fixture["generation_fence"][key].as_array().unwrap();
+        assert_eq!(args[args.len() - 2], "--install-id");
+        assert_eq!(args.last().unwrap(), generation);
+    }
+    assert_ne!(
+        fixture["generation_fence"]["replacement_install_id"],
+        fixture["install_id"]
+    );
+    assert_eq!(
+        fixture["empty_mod_data_dirs"],
+        value!([
+            "data/panorama-spaces",
+            "data/panorama-graph",
+            "data/panorama-peek"
+        ])
+    );
     let installed = Installed::new();
     let home = Home::open(&installed.app).unwrap();
     let receipt = Receipt::read(&home).unwrap();

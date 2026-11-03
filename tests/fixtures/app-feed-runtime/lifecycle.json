@@ -57,5 +57,40 @@
     "writer_pidns": null,
     "feed_sha256": "3a73d25e0020918b1274f803aa2211e3cb96d9e94a72aa53a4c89935d56106b0",
     "pending_feed_sha256": null
-  }
+  },
+  "generation_fence": {
+    "install_id": "0123456789abcdef0123456789abcdef",
+    "replacement_install_id": "fedcba9876543210fedcba9876543210",
+    "ensure_args": [
+      "app-feed",
+      "--ensure",
+      "--app-home",
+      "/fixture/app",
+      "--install-id",
+      "0123456789abcdef0123456789abcdef"
+    ],
+    "inbox_available_args": [
+      "app-inbox",
+      "--available",
+      "--app-home",
+      "/fixture/app",
+      "--install-id",
+      "0123456789abcdef0123456789abcdef"
+    ],
+    "inbox_open_args": [
+      "app-inbox",
+      "--open",
+      "--question",
+      "14",
+      "--app-home",
+      "/fixture/app",
+      "--install-id",
+      "0123456789abcdef0123456789abcdef"
+    ]
+  },
+  "empty_mod_data_dirs": [
+    "data/panorama-spaces",
+    "data/panorama-graph",
+    "data/panorama-peek"
+  ]
 }

@@ -249,9 +249,10 @@ impl Home {
             parent.sync_all().map_err(|e| e.to_string())
         })();
         // Remove only this still-open staging inode; never an externally replaced path.
-        if let Ok(st) = fs::statat(&temp_parent, temp_name.as_str(), AtFlags::SYMLINK_NOFOLLOW)
-            && st.st_ino == created.ino
-            && st.st_dev == created.dev
+        if let Ok(Some(staged)) = self.open_file(temp, false)
+            && let Ok(st) = staged.metadata()
+            && st.ino() == created.ino
+            && st.dev() == created.dev
         {
             let _ = fs::unlinkat(&temp_parent, temp_name.as_str(), AtFlags::empty());
         }
