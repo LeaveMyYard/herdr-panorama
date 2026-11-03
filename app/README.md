@@ -23,6 +23,88 @@ Transcript replaces that view without clearing the replacement highlight.
 Installing does not select the panorama layout.
 The TUI plugin is independent and is not changed by this installer.
 
+## Install and select
+
+Use an optimized Rust `panorama` binary from the reviewed checkout, Linux or macOS,
+Python 3.11+ and native herdr-app/herdr-core. The app home must already exist at a
+canonical absolute path. From the checkout:
+
+```sh
+scripts/app-install install --app-home "$HOME/.config/herdr-app" \
+  --binary /absolute/path/to/reviewed/panorama
+```
+
+Choose Panorama yourself with `ctrl-shift-l`, or:
+
+```sh
+herdr-app do layout.switch '{"name":"panorama"}'
+```
+
+For a custom app home, use the same `HERDR_APP_HOME` for app commands and pass its
+path to the installer. Installation does not select a layout, configure session
+hooks, change the TUI installation or add global key bindings. Name/key collisions
+are refused. An install without the private binary keeps basic stock rows but
+cannot start transcript enrichment; oversized debug builds may also be unavailable.
+
+## Use it
+
+- Click a space to create/select its Swarm tab; later clicks respect a tab you
+  dragged elsewhere. Arrows or `hjkl` navigate the graph. Wheel scrolls a column;
+  shift-wheel moves the column window.
+- In the graph, a root/thread click selects and drills down; Enter or double-click
+  opens its orchestrator. Clicking an agent opens its verified terminal or Peek.
+  Sidebar roots focus their terminal; chevrons fold. `g` opens the orchestrator.
+- Peek shows supplied status/error/last message. Transcript (`t`) opens a native
+  read-only JSONL viewer; its arrows page 100 lines and `t` refreshes. Escape closes
+  the popup/dialog. `a`/`i` navigate to an available existing Inbox bridge or verified
+  permission pane; they never answer, type or allow/deny from the mod.
+
+## Session coverage
+
+Rich Claude/Codex data requires an exact current core-terminal/session association
+and a supported local transcript/history source. The installer does not enable or
+configure hooks or bind old sessions. Unverified sessions remain basic native roots;
+a matching folder/title does not establish ownership. Claude core-session proof
+comes from the separately configured opt-in `panorama hook session-start` running
+under that session's actual Claude process. Existing local Codex sessions can be
+bound explicitly when current ownership can be verified:
+
+```sh
+/absolute/app/home/data/panorama/bin/panorama codex-bind THREAD_ID --terminal tN
+```
+
+Replace both identities with the actual local session/terminal. This verifies root
+metadata and the terminal's current foreground process; it is your chosen association,
+not detection of which conversation a shared-daemon TUI displays. Rebind after an
+in-process root switch. See [feed identity rules](../docs/protocol/app-feed-v1.md)
+and [Codex setup](../docs/codex.md). Synthetic previews do not prove natural rich
+session ingestion.
+
+## Uninstall and troubleshoot
+
+Use the reviewed checkout/package that installed the inventory:
+
+```sh
+scripts/app-install uninstall --app-home "$HOME/.config/herdr-app"
+```
+
+Choose another layout yourself before removing one you are using; uninstall never
+switches it. Personal edits survive. The exact two null shared slots and two
+retained preference stores are described below; the installer does not rewrite
+personal shared state or acquire deletion ownership over retained preferences.
+
+- **No threads:** verify the private release artifact and current session proof;
+  older unbound roots are expected to stay basic.
+- **Stale/unavailable feed:** inspect `herdr-app status` for the intended app home.
+  Stock roots and last valid stale data remain; a visible cache is not live proof.
+- **Frontend stop timeout:** manually reopen the current mod/layout so it can clear
+  its disabled generation, then retry. The installer does not launch/select it.
+- **Collision, unsafe retained store or runtime/receipt refusal:** preserve the
+  reported files and resolve that conflict. Do not delete receipt/runtime/shared
+  state to bypass checks. Older inventories need their original uninstall package.
+
+## Runtime, ownership and verification details
+
 The sidebar measures its viewport at the current app zoom and mounts only
 intersecting rows, so offscreen animation timers pause. Its thumb is a native
 vertical Slider labelled Agents, with an owned focus wrapper supporting arrows,
@@ -130,7 +212,7 @@ parity. Automated graphical app homes therefore live in owned HOME scratch.
 Changed-age state is view-local. A sidebar, or a consumer in a layout without
 any panorama reference, coordinates one file reader via an advisory lease. The
 lease grants no writer or installation authority. Each live view retains its
-matching-generation stale cache. Collections older than15 seconds, missing a
+matching-generation stale cache. Collections older than 15 seconds, missing a
 finite timestamp, or timestamped in the future are stale even while the advisory
 lease is renewed. Only the current owner can request one pending generation-
 guarded recovery; ensure success alone does not freshen old collection bytes.
