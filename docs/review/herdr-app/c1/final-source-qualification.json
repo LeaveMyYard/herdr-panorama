@@ -1,0 +1,30 @@
+{
+  "captured_source": "87bfdd5ed1b93adb53bc53899afa940fe822ce0c",
+  "captured_immutable_b4": "1f10c156a3c052d12109f02cdbe76b99bbc53579",
+  "actual_b4_integration_merge": "9b8736f9f7784d4308a79a805ec8fb030b99a755",
+  "synced_c1_source": "30a3b2544c800407e33691a4294ded80013717ff",
+  "compared_component_files": 95,
+  "unchanged_component_files": 94,
+  "changed_components": [
+    {
+      "path": "app/mods/panorama-peek/main.js",
+      "captured_sha256": "87652b85d744551508a62e24b32d76d8363bc939805e65413f7435276c090dd0",
+      "final_sha256": "33d9e49d27b6c7ce1203c740dd433c7f0aa698ac5241e3e10c29502104f143f6"
+    }
+  ],
+  "qualified_visible_components": [
+    "panorama sidebar",
+    "panorama-spaces",
+    "panorama-graph",
+    "panorama-tabs",
+    "panorama-pane",
+    "shared client/model/routing closures",
+    "layouts/panorama.json",
+    "actual installer"
+  ],
+  "change_scope": "Only uninstantiated panorama-peek button/shortcut typography; no claim for corrected Peek pixels or whole-package byte equality",
+  "rust_build_inputs_equal_a3": true,
+  "src_tree": "3abf072056d432c056253bca8b8bca556627e710",
+  "runtime_rerun_required_for_unused_peek_style": false,
+  "new_tests_added": false
+}

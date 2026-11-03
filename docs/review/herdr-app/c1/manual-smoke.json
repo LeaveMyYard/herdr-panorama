@@ -1,0 +1,165 @@
+{
+  "scope": "ONE PRIVATE manual assembled six-mod basic-root smoke; author evidence, not independent acceptance",
+  "source_head": "87bfdd5ed1b93adb53bc53899afa940fe822ce0c",
+  "immutable_b4": "1f10c156a3c052d12109f02cdbe76b99bbc53579",
+  "base": "ef22f7d09149c066001e0647082a71d7b173161d",
+  "artifact_rust_source": "1269daccd0da27df8df355fcc234dcd18ca9440c",
+  "artifact_sha256": "da6d69e802a479d47aa154d3e6464c7286d0c06ef25304c9ca5a22e0aec328f2",
+  "artifact_bytes": 9964424,
+  "artifact_mode": "0755",
+  "source_app_tree": "02a1c7303888ca981fe0d070c7ab2d30a515d0cb",
+  "source_src_tree": "3abf072056d432c056253bca8b8bca556627e710",
+  "native_versions": {
+    "hc": "hc 0.1.17",
+    "herdr_app": "herdr-app 0.1.12"
+  },
+  "setup": {
+    "state": "PRIVATE_RUNTIME_SETUP",
+    "source_head": "87bfdd5ed1b93adb53bc53899afa940fe822ce0c",
+    "immutable_b4": "1f10c156a3c052d12109f02cdbe76b99bbc53579",
+    "base": "ef22f7d09149c066001e0647082a71d7b173161d",
+    "compiled_existing_reporter_sha256": "3a7022de0117cff446adcedddf794c70a41b75df324eb4901255113b4e493e47",
+    "compiler": "<EXISTING_RUSTC>",
+    "app_home": "<PRIVATE_SCRATCH>/home/.config/herdr-app",
+    "scratch": "<PRIVATE_SCRATCH>",
+    "hc_session": "pc1-c77204e8",
+    "graphics_transport": "Wayland",
+    "caller_endpoints_inherited": false,
+    "diagnostic_package_override": false,
+    "feed_injection": false
+  },
+  "private_core_identity": {
+    "pid": 3304583,
+    "start": "3410604",
+    "core_id": "96fd332855dd46c8d7b55ec6b5733d8c",
+    "zero_initial_terminals": true,
+    "environment": {
+      "HC_SESSION": "pc1-c77204e8",
+      "HOME": "<PRIVATE_SCRATCH>/home",
+      "XDG_CONFIG_HOME": "<PRIVATE_SCRATCH>/config",
+      "XDG_RUNTIME_DIR": "<PRIVATE_SCRATCH>/runtime",
+      "XDG_STATE_HOME": "<PRIVATE_SCRATCH>/state"
+    },
+    "sockets": [
+      {
+        "path": "<PRIVATE_SCRATCH>/runtime/herdr-core/pc1-c77204e8.sock",
+        "inode": 123624070
+      }
+    ],
+    "captured_pidfd": true,
+    "status_before_stop_only": {
+      "core": {
+        "id": "96fd332855dd46c8d7b55ec6b5733d8c",
+        "name": "archlinux"
+      },
+      "finished": 0,
+      "holder": null,
+      "holders": [],
+      "installed_by": null,
+      "live": 0,
+      "pid": 3304583,
+      "uptime_ms": 7,
+      "version": "0.1.17"
+    }
+  },
+  "installation": {
+    "code": 0,
+    "stdout": "Installed panorama. Current layout unchanged.\nSwitch when ready: ctrl-shift-l or herdr-app do layout.switch '{\"name\":\"panorama\"}'\n",
+    "stderr": "",
+    "managed_checker_default": true
+  },
+  "observation": {
+    "source_head": "87bfdd5ed1b93adb53bc53899afa940fe822ce0c",
+    "immutable_b4": "1f10c156a3c052d12109f02cdbe76b99bbc53579",
+    "actual_status_transition": "working -> blocked",
+    "generation": "d2f0aa050e9d94ae7253e63f31b287b7",
+    "terminal": "t1",
+    "session_id": null,
+    "thread_count": 0,
+    "packet_stale": false,
+    "capture_file": "assembled-basic-root.png",
+    "capture_sha256": "c230651f65baf1d3ab1807835bb4df26902f7d1e8eab7c750eba78e3a9aad238",
+    "physical_dimensions": [
+      3840,
+      2128
+    ],
+    "zoom": 1.2,
+    "status_rpc_seconds": 0.0032168120014830492,
+    "status_errors": [],
+    "viewport_repaint": "owned private window.maximize; first initial-frame capture rejected",
+    "visible_observation": "Needs you 1 sidebar root, Space count 1, selected Swarm, blocked t1 card; source/app/core agree",
+    "motion_observation": "needs border/static mark visible; window responded to scoped commands; no temporal animation or CPU measurement",
+    "navigation": "actual app CLI, not hardware pointer/key",
+    "peek_instantiated": false,
+    "rich_or_natural_session_claim": false
+  },
+  "uninstall": {
+    "code": 0,
+    "stdout": "Preserved: data/panorama-tabs/store.json (retained preferences; no deletion authority)\nPreserved: data/panorama-tabs (not empty or changed; preserved)\nPreserved: mods (not empty or changed; preserved)\nPreserved: layouts (not empty or changed; preserved)\nPreserved: data (not empty or changed; preserved)\nUninstalled unchanged panorama files; personal leftovers listed above.\n",
+    "stderr": "",
+    "seconds": 0.2290665850014193,
+    "active_native_window": true,
+    "same_actual_installer": true
+  },
+  "used_home": {
+    "panorama_runtime_removed": true,
+    "personal_fixture_bytes_modes_preserved": true,
+    "shared_slots": {
+      "panorama.feed.owner": null,
+      "panorama.feed": null
+    },
+    "retained_preference_files": [
+      "data/panorama-tabs/store.json"
+    ],
+    "graph_store_present": false,
+    "no_forced_writer_signal": true
+  },
+  "writer_exit": {
+    "captured_pidfd_cooperative_exit": true,
+    "no_signal_sent": true
+  },
+  "app_exit": {
+    "direct_child_exit": true,
+    "code": 0
+  },
+  "core_exit": {
+    "captured_pidfd_exit": true,
+    "private_sockets_remaining": []
+  },
+  "cleanup_commands": [
+    {
+      "action": "kill_owned_terminal",
+      "address": "t1",
+      "code": 0,
+      "stdout": "{\"address\":\"t1\",\"argv\":[\"<PRIVATE_SCRATCH>/bin/claude\",\"<PRIVATE_SCRATCH>/inputs/root-state\"],\"cols\":200,\"created_ms\":1793725355436,\"cwd\":\"<C1_WORKTREE>\",\"die_with_parent\":false,\"exit_code\":null,\"finished_ms\":1793725659791,\"identity\":\"ghostty\",\"keep\":true,\"labels\":{\"herdr.space\":\"spf78e4830894e4493e8e195487c897778\",\"herdr.tab\":\"tb3947cb1e7179658dfc38dda14a888eff\",\"where\":\"C1 isolated smoke / Claude Code\"},\"name\":null,\"notify\":false,\"parent\":null,\"pid\":3306742,\"reason\":\"killed\",\"reported\":true,\"rm\":false,\"rows\":120,\"screen\":\"exact\",\"signal\":1,\"state\":\"finished\",\"status\":null,\"status_ms\":1793725659791,\"template\":null,\"title\":\"\",\"turn\":1}\n",
+      "stderr": ""
+    },
+    {
+      "action": "kill_owned_terminal",
+      "address": "t2",
+      "code": 0,
+      "stdout": "{\"address\":\"t2\",\"argv\":[\"/bin/sh\",\"-ic\",\"\\\"$@\\\"; exec \\\"$0\\\" -i\",\"/bin/sh\",\"/bin/sh\",\"-c\",\"sleep 300\"],\"cols\":200,\"created_ms\":1793725406207,\"cwd\":\"<PRIVATE_SCRATCH>/home\",\"die_with_parent\":false,\"exit_code\":null,\"finished_ms\":1793725659832,\"identity\":\"ghostty\",\"keep\":true,\"labels\":{\"herdr.seen\":\"0\",\"herdr.space\":\"spf78e4830894e4493e8e195487c897778\",\"herdr.tab\":\"tb5bbdbde034ed8a732e2ee2d56d220631\",\"where\":\"C1 isolated smoke / 2\"},\"name\":null,\"notify\":true,\"parent\":null,\"pid\":3310398,\"reason\":\"killed\",\"reported\":false,\"rm\":false,\"rows\":120,\"screen\":\"exact\",\"signal\":1,\"state\":\"finished\",\"status\":null,\"status_ms\":null,\"template\":null,\"title\":\"\",\"turn\":0}\n",
+      "stderr": ""
+    },
+    {
+      "action": "stop_verified_private_core",
+      "code": 0,
+      "stdout": "{\"stopped\":true}\n",
+      "stderr": ""
+    }
+  ],
+  "runtime_lock_released": true,
+  "failed_initial_capture": {
+    "sha256": "0239e223488faf6eafc6e8413b61d27e1cce6f26df86cd17899a3395f041c71c",
+    "reason": "Initial empty/main frame despite settled model; rejected. Private window.maximize produced the accepted current frame. Raw failed image retained in owned scratch."
+  },
+  "remaining_scope_limits": [
+    "No bound transcript session or rich producer ingestion",
+    "No Peek instantiation or final corrected Peek style pixels",
+    "No hardware input",
+    "No temporal motion/CPU/performance measurement",
+    "No reinstall matrix",
+    "No operator natural data or live install",
+    "C1 final freeze and PR wait actual B4 merge/latest component qualification"
+  ]
+}
