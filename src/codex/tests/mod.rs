@@ -1,4 +1,5 @@
 mod cache;
+mod discovery;
 mod history;
 mod parse;
 use super::Options;

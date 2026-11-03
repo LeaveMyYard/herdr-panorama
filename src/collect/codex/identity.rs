@@ -14,7 +14,7 @@ pub(in crate::collect) struct LocalIdentity {
     env: PluginEnv,
     herdr: Herdr,
     cache: HashMap<String, Option<Value>>,
-    deadline: Instant,
+    remaining: Duration,
 }
 
 impl LocalIdentity {
@@ -23,13 +23,13 @@ impl LocalIdentity {
             env,
             herdr,
             cache: HashMap::new(),
-            deadline: Instant::now() + BUDGET,
+            remaining: BUDGET,
         }
     }
 
     pub(in crate::collect) fn begin_collect(&mut self) {
         self.cache.clear();
-        self.deadline = Instant::now() + BUDGET;
+        self.remaining = BUDGET;
     }
 
     pub(in crate::collect) fn resolve(
@@ -45,16 +45,18 @@ impl LocalIdentity {
         if let Some(value) = self.cache.get(pane) {
             return value.clone();
         }
-        let remaining = self.deadline.checked_duration_since(Instant::now())?;
+        let remaining = self.remaining;
         if remaining.is_zero() || self.cache.len() >= MAX_PANES {
             return None;
         }
+        let started = Instant::now();
         let value = self
             .herdr
             .clone()
             .with_timeout(remaining.min(REQUEST))
             .raw("pane.process_info", json!({"pane_id":pane}))
             .ok();
+        self.remaining = self.remaining.saturating_sub(started.elapsed());
         self.cache.insert(pane.to_owned(), value.clone());
         value
     }

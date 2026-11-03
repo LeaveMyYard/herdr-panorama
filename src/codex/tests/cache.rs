@@ -65,3 +65,24 @@ fn dropping_observer_cancels_queued_work_with_bounded_inflight_lifetime() {
         assert!(!std::path::Path::new(&format!("/proc/{pid}")).exists());
     }
 }
+
+#[test]
+fn worker_keeps_progress_and_reverified_children_across_refreshes() {
+    let (dir, mut options) = super::discovery::setup("progress");
+    options.refresh_interval = Duration::ZERO;
+    let mut observer = Observer::new(options);
+    let mut value = finish(&mut observer, "root-a").unwrap();
+    assert!(value.children.is_empty());
+    for _ in 0..8 {
+        std::thread::sleep(Duration::from_millis(1050));
+        value = finish(&mut observer, "root-a").unwrap();
+        if value.children.len() == 6 {
+            break;
+        }
+    }
+    assert_eq!(value.children.len(), 6);
+    std::fs::write(dir.path().join("mode"), "aged").unwrap();
+    std::thread::sleep(Duration::from_millis(1050));
+    assert_eq!(finish(&mut observer, "root-a").unwrap().children.len(), 6);
+    assert!(finish(&mut observer, "root-b").unwrap().children.is_empty());
+}

@@ -50,3 +50,18 @@ fn hung_process_lookup_has_one_budget_for_all_panes() {
     assert!(start.elapsed() < Duration::from_millis(500));
     assert!(fake.calls().len() <= 2);
 }
+
+#[test]
+fn unrelated_elapsed_time_does_not_consume_lookup_budget() {
+    let fake = FakeHerdr::start();
+    let dir = tempfile::tempdir().unwrap();
+    let mut identity = identity(&fake, dir.path());
+    fake.on(
+        "pane.process_info",
+        Reply::Result(json!({"process_info":{}})),
+    );
+    identity.begin_collect();
+    std::thread::sleep(Duration::from_millis(120));
+    assert!(identity.process("pane").is_some());
+    assert_eq!(fake.calls().len(), 1);
+}

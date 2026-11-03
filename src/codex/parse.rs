@@ -69,23 +69,7 @@ pub(super) fn item(thread: &mut Thread, entry: &Value, children: &mut Vec<String
         return;
     };
     let kind = item.get("type").and_then(Value::as_str).unwrap_or("");
-    if kind == "subAgentActivity" {
-        if let Some(child) = id(item, "agentThreadId") {
-            children.push(child);
-        }
-    } else if kind == "collabAgentToolCall" {
-        // Receiver IDs are only candidates; child metadata must prove parentage.
-        for child in item
-            .get("receiverThreadIds")
-            .and_then(Value::as_array)
-            .into_iter()
-            .flatten()
-        {
-            if let Some(child) = child.as_str().filter(|s| valid_id(s)) {
-                children.push(child.into());
-            }
-        }
-    }
+    child_ids(item, children);
     let turn_id = entry.get("turnId").and_then(Value::as_str).unwrap_or("");
     let tool_name = match kind {
         "commandExecution" => Some("command".to_owned()),
@@ -132,5 +116,27 @@ pub(super) fn item(thread: &mut Thread, entry: &Value, children: &mut Vec<String
             .next()
             .map(clean)
             .unwrap_or_default();
+    }
+}
+
+/// Typed references only. Metadata still has to establish the exact parent.
+pub(super) fn child_ids(item: &Value, children: &mut Vec<String>) {
+    let kind = item.get("type").and_then(Value::as_str).unwrap_or("");
+    if kind == "subAgentActivity" {
+        if let Some(child) = id(item, "agentThreadId") {
+            children.push(child);
+        }
+    } else if kind == "collabAgentToolCall" {
+        // Receiver IDs are only candidates; child metadata must prove parentage.
+        for child in item
+            .get("receiverThreadIds")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+        {
+            if let Some(child) = child.as_str().filter(|s| valid_id(s)) {
+                children.push(child.into());
+            }
+        }
     }
 }
