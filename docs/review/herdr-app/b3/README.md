@@ -1,0 +1,9 @@
+# B3 visual evidence (work in progress)
+
+The `prototype-d.png` and `prototype-d2.png` files are actual native `herdr-app shot` captures of a task-owned temporary app home and isolated core. They show the current B3 graph/tab/pane/Spaces implementation against the approved D/D2 graph design. These are development captures, before the B2 merge and final shared-source regeneration; they are not review acceptance or installed-layout approval.
+
+The data comes from the approved design HTML's `SW2`/`T144`/`DEEP` dataset, translated onto the merged v1 fixture shape, with exact addresses of synthetic OSC-reporting terminals in the isolated core. A temporary publisher mod supplies `panorama.feed`; a temporary wrapper sets the selected thread/depth-4 checker. All card drawing, placement, window, navigation, and command routing come from the product source. The sidebar is intentionally empty in this first capture because B2 is independently owned and not yet merged; no sidebar fidelity claim is made. The header uses actual fixture counts, including agents outside the selected thread, rather than copying the reference image's static totals.
+
+Isolation was verified before structural commands: distinct core identity/PID, zero initial live terminals, unique HC_SESSION, private XDG config/state/runtime and socket under task scratch. Only existing compositor environment values were reused. The private app process/core were stopped and temporary state removed. The operator's configuration, app layout, and terminals were untouched.
+
+Known development gaps: shared consumer/totals handoff pending; native child graph representation decision pending; inbox navigation bridge absent in current native commands; B4 owns full Peek/transcript implementation. Final author and independent reviewer captures, immutable source SHA, full relevant gates, and design comparisons are required before signoff.
