@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, existsSync, symlinkSync, linkSync } from 'node:fs';
+import { readFileSync, writeFileSync, renameSync, existsSync, symlinkSync, linkSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { sandbox, tree, root } from './helpers.mjs';
@@ -22,7 +22,8 @@ test('frontend ack waits before static removal and never edits unrelated host st
   const exited=new Promise(resolve=>child.on('exit',resolve));
   await until(()=>JSON.parse(readFileSync(s.control)).disabled);
   assert.deepEqual(payload(s),before);assert.ok(existsSync(s.manifest));
-  const acknowledged=JSON.stringify({personal:{opaque:['preserve',7]},'panorama.feed':null,'panorama.feed.owner':null});writeFileSync(s.shared,acknowledged);
+  const acknowledged=JSON.stringify({personal:{opaque:['preserve',7]},'panorama.feed':null,'panorama.feed.owner':null});
+  const complete=s.shared+'.ack';writeFileSync(complete,acknowledged);renameSync(complete,s.shared);
   assert.equal(await exited,0,stderr);assert.equal(readFileSync(s.shared,'utf8'),acknowledged);assert.equal(existsSync(s.manifest),false);
 });
 

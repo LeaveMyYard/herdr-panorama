@@ -18,7 +18,7 @@ def private_sockets(scratch):
 
 def process_identity(pid, env):
     """Read selected identity facts; never print/copy the full process env."""
-    expected = {name: env[name] for name in ('HC_SESSION', 'HERDR_APP_HOME', 'XDG_CONFIG_HOME', 'XDG_STATE_HOME', 'XDG_RUNTIME_DIR')}
+    expected = {name: env[name] for name in ('HOME', 'HC_SESSION', 'HERDR_APP_HOME', 'XDG_CONFIG_HOME', 'XDG_STATE_HOME', 'XDG_RUNTIME_DIR')}
     proc = Path('/proc') / str(pid)
     if proc.exists():
         if Path(os.readlink(proc / 'exe')).name != 'herdr-core':
@@ -35,7 +35,7 @@ def process_identity(pid, env):
     command = subprocess.run(['ps', '-p', str(pid), '-o', 'comm='], capture_output=True, text=True, timeout=2)
     if command.returncode or Path(command.stdout.strip()).name != 'herdr-core':
         raise ValueError('Private checker endpoint process is not herdr-core')
-    # BSD/macOS has no /proc. Read privately, check only our five exact values,
+    # BSD/macOS has no /proc. Read privately, check only our six exact values,
     # and discard the rest; it must never be included in diagnostics.
     raw = subprocess.run(['ps', 'eww', '-p', str(pid), '-o', 'command='], capture_output=True, text=True, timeout=2)
     if raw.returncode or any(not re.search(r'(?:^| )' + re.escape(key + '=' + value) + r'(?: |$)', raw.stdout) for key, value in expected.items()):
@@ -106,10 +106,10 @@ def check_mods(mods, checker):
     metadata = {}
     # Unix socket paths are limited (104 bytes on macOS). Its default TMPDIR
     # can already be too deep before hc adds its endpoint name. Keep the whole
-    # exclusively created, mode-0700 checker tree under a short Unix temp path.
+    # exclusively created, mode-0700 checker HOME under a short Unix temp path.
     scratch = tempfile.mkdtemp(prefix='pc-', dir='/tmp')
     env = {k: v for k, v in os.environ.items() if not k.startswith(('HERDR_', 'HC_'))}
-    env.update(HERDR_APP_HOME=f'{scratch}/app', HC_SESSION=f'panorama-check-{uuid.uuid4().hex[:12]}',
+    env.update(HOME=scratch, HERDR_APP_HOME=f'{scratch}/app', HC_SESSION=f'panorama-check-{uuid.uuid4().hex[:12]}',
                XDG_CONFIG_HOME=f'{scratch}/config', XDG_STATE_HOME=f'{scratch}/state',
                XDG_RUNTIME_DIR=f'{scratch}/runtime', HERDR_TELEMETRY='0', DO_NOT_TRACK='1')
     failure = None
