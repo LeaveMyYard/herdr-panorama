@@ -68,34 +68,65 @@ export function treeLayout(item, thread, selected, expanded = new Set()) {
   }
   return { nodes, groups, depth: nodes.reduce((depth, node) => Math.max(depth, node.depth), 0) };
 }
+export function nativeLayout(item, selected) {
+  // A separate fallback projection: native ancestry never acquires a transcript thread.
+  const items = (item.nativeChildren ?? []).filter(child => child.space === item.space);
+  const terminals = new Map(items.map(child => [child.terminal, child]));
+  const roots = items.filter(child => !terminals.has(child.nativeParent) || child.nativeParent === child.terminal);
+  const nodes = [], groups = [], seen = new Set(), cur = [], trunk = [];
+  const work = roots.slice().reverse().map(child => ({ child, parent: null, depth: 1 }));
+  for (;;) {
+    if (!work.length) {
+      const disconnected = items.find(child => !seen.has(child.key));
+      if (!disconnected) break;
+      work.push({ child: disconnected, parent: null, depth: 1 });
+    }
+    const task = work.pop();
+    if (task.end) { trunk[task.node.depth] = Math.max(trunk[task.node.depth] ?? 0, task.node.y + task.node.mid); continue; }
+    if (seen.has(task.child.key)) continue;
+    seen.add(task.child.key);
+    const children = items.filter(child => child.nativeParent === task.child.terminal && !seen.has(child.key));
+    const y = Math.max(cur[task.depth] ?? 0, task.parent?.y ?? 0, children.length ? (trunk[task.depth + 1] ?? -100) - 27 + 16 : 0);
+    const node = { kind: 'native', key: task.child.key, item: task.child, parent: task.parent, depth: task.depth, column: task.depth, y, mid: 27, height: task.child.key === selected ? 100 : 54 };
+    nodes.push(node); cur[task.depth] = y + node.height + 10;
+    let group = groups.find(group => group.parent === task.parent && group.depth === task.depth);
+    if (!group) { group = { parent: task.parent, depth: task.depth, ys: [] }; groups.push(group); }
+    group.ys.push(y + node.mid);
+    work.push({ end: true, node });
+    work.push(...children.slice().reverse().map(child => ({ child, parent: node, depth: task.depth + 1 })));
+  }
+  return { nodes, groups, depth: nodes.reduce((depth, node) => Math.max(depth, node.depth), 0) };
+}
 export function graphModel(roots, state) {
   const item = roots.find(item => item.key === state.orch) ?? roots[0] ?? null;
   const threads = item?.root.threads ?? [];
   const thread = threads.find(thread => threadKey(item.root, thread) === state.thread) ?? threads[0] ?? null;
-  const tree = item ? treeLayout(item, thread, state.focus >= 2 ? state.agent : null, state.expanded) : { nodes: [], groups: [], depth: 0 };
+  const selected = state.focus >= (thread ? 2 : 1) ? state.agent : null;
+  const tree = item ? (thread ? treeLayout(item, thread, selected, state.expanded) : nativeLayout(item, selected)) : { nodes: [], groups: [], depth: 0 };
   const orchs = roots.map((root, index) => ({ key: root.key, kind: 'orch', item: root, column: 0, y: index * 64, height: 54, mid: 27 }));
   let y = 0;
   const threadNodes = threads.map(entry => {
     const key = threadKey(item.root, entry), height = entry === thread && state.focus === 1 ? 64 + entry.phases.length * 20 : 54;
     const node = { key, kind: 'thread', thread: entry, column: 1, y, height, mid: 27, mark: threadMark(entry) }; y += height + 10; return node;
   });
-  const nodes = [...orchs, ...threadNodes, ...tree.nodes.map(node => ({ ...node, kind: node.fold ? 'fold' : 'agent' }))];
-  const columns = Array.from({ length: 2 + tree.depth }, (_, column) => nodes.filter(node => node.column === column));
-  return { item, thread, tree, nodes, columns, orchs, threadNodes };
+  const nodes = [...orchs, ...threadNodes, ...tree.nodes.map(node => ({ ...node, kind: node.kind ?? (node.fold ? 'fold' : 'agent') }))];
+  const columns = Array.from({ length: (thread ? 2 : 1) + tree.depth }, (_, column) => nodes.filter(node => node.column === column));
+  return { item, thread, tree, nodes, columns, orchs, threadNodes, nativeFallback: !thread };
 }
 export function currentNode(model, state) {
-  const key = state.focus === 0 ? state.orch : state.focus === 1 ? state.thread : state.agent;
+  const key = state.focus === 0 ? state.orch : model.columns[state.focus]?.[0]?.kind === 'thread' ? state.thread : state.agent;
   return model.columns[state.focus]?.find(node => node.key === key) ?? model.columns[state.focus]?.[0] ?? null;
 }
 export function selectNode(state, model, node) {
   if (!node) return;
-  if (node.column === 0) {
+  if (node.kind === 'orch') {
     if (state.orch !== node.key) { state.orch = node.key; state.thread = null; state.agent = null; }
-  } else if (node.column === 1) {
+  } else if (node.kind === 'thread') {
     if (state.thread !== node.key) { state.thread = node.key; state.agent = null; }
   } else {
     state.agent = node.key;
     if (node.parent) state.remember.set(node.parent.key, node.key);
+    else if (node.kind === 'native') state.remember.set(model.item.key, node.key);
   }
   state.focus = node.column; state.manual = null; state.scroll = {}; state.follow = true;
 }
@@ -109,13 +140,17 @@ export function navigate(state, model, direction) {
   }
   if (direction === 'left') {
     if (!state.focus) return false;
-    if (state.focus >= 3 && current.parent) selectNode(state, model, current.parent);
+    if (current.kind === 'native') {
+      if (current.parent) selectNode(state, model, current.parent);
+      else { state.focus = 0; state.manual = null; state.scroll = {}; }
+    }
+    else if (state.focus >= 3 && current.parent) selectNode(state, model, current.parent);
     else { state.focus--; state.manual = null; state.scroll = {}; }
     return true;
   }
   const next = model.columns[state.focus + 1];
   if (!next?.length || current.kind === 'fold') return false;
-  let choices = state.focus >= 2 ? next.filter(node => node.parent?.key === current.key) : next;
+  let choices = (current.kind === 'native' || state.focus >= 2) ? next.filter(node => node.parent?.key === current.key) : next;
   if (!choices.length) return false;
   const remembered = state.remember.get(current.key);
   let target = choices.find(node => node.key === remembered);
@@ -147,4 +182,4 @@ export class ClickGuard {
   }
   allows(key, now) { return now - this.scrolled >= 300 && now - (this.moved.get(key) ?? -Infinity) >= 1000; }
 }
-export const animationVisible = (node, offset, height) => node.y + node.height > offset && node.y < offset + height && (node.kind === 'orch' ? node.item.aggregate.kinds.length || node.item.aggregate.sweep : node.kind === 'agent' && (needs(node.agent.status) || ['run', 'rev'].includes(node.agent.status)));
+export const animationVisible = (node, offset, height) => node.y + node.height > offset && node.y < offset + height && (node.kind === 'orch' ? node.item.aggregate.kinds.length || node.item.aggregate.sweep : node.kind === 'native' ? node.item.aggregate.kinds.length || node.item.aggregate.working : node.kind === 'agent' && (needs(node.agent.status) || ['run', 'rev'].includes(node.agent.status)));

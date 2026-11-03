@@ -3,7 +3,7 @@ import { h_flex } from "gpui-base";
 import { spaces, panes, run, openOverlay, theme, window, shared, layout, settings, agents, terminals } from "herdr";
 
 import { joinRoots } from './model.js';
-import { spaceTotals, graphTab } from './space.js';
+import { spaceTotals } from './space.js';
 import { glyph, countChip } from './swarm.js';
 
 function find(node, id) {
@@ -56,12 +56,12 @@ export default class Tabs extends View {
     const allPanes = panes();
     const roots = joinRoots(shared('panorama.feed')?.feed, agents(), terminals(), allPanes, spaces());
     const totals = spaceTotals(roots, space?.id);
-    const swarmId = graphTab(space, allPanes)?.id;
+    const swarmTabs = new Set(allPanes.filter(pane => pane.mod === 'panorama-graph').map(pane => pane.tab));
     const stop = (_e, cx) => cx.stop_propagation();
     const button = (id, label, action) => div().id(id).size(26).flex_none().flex().items_center().justify_center().rounded(6).text_color(t.dim).hover(s => s.bg(t.hover).text_color(t.foreground))
       .on_mouse_down("left", stop).on_click(action).child(label);
     const item = (c, i) => {
-      const swarm = c.id === swarmId;
+      const swarm = swarmTabs.has(c.id);
       const program = panes().find(p => p.tab === c.id && p.program?.agent)?.program ?? panes().find(p => p.tab === c.id)?.program;
       const name = /^tb\d+$/.test(c.name) ? program?.name ?? "Terminal" : c.name;
       return h_flex().id(`tab-${c.id}`).h(29).px(10).gap(7).rounded(7).items_center().flex_none().text_size(12.8)

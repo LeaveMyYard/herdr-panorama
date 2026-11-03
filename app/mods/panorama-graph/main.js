@@ -3,7 +3,7 @@ import { h_flex, v_flex } from 'gpui-base';
 import { agents, terminals, panes, spaces, focused, props, shared, theme, run, openOverlay, nextCommand } from 'herdr';
 import { joinRoots } from './model.js';
 import { rootTarget, detailTarget } from './routing.js';
-import { threadKey } from './contract.js';
+import { threadKey, agentKey } from './contract.js';
 
 import { graphModel, columnWindow, currentNode, selectNode, navigate, selectionPath, ClickGuard, animationVisible } from './graph.js';
 import { card, alpha } from './cards.js';
@@ -34,6 +34,11 @@ export default class Graph extends View {
     if (model.item && this.state.orch !== model.item.key) this.state.orch = model.item.key;
     if (model.thread && this.state.thread !== threadKey(model.item.root, model.thread)) this.state.thread = threadKey(model.item.root, model.thread);
     this.state.focus = Math.min(this.state.focus, model.columns.length - 1);
+    while (this.state.focus > 0 && !model.columns[this.state.focus]?.length) this.state.focus--;
+    if (this.state.focus >= (model.nativeFallback ? 1 : 2)) {
+      const current = currentNode(model, this.state);
+      if (current && this.state.agent !== current.key) { this.state.agent = current.key; model = graphModel(roots, this.state); }
+    }
     model.source = JSON.stringify([wrapper, roots.map(root => [root.key, root.status, root.root])]);
     this.current = currentNode(model, this.state);
     return model;
@@ -48,7 +53,7 @@ export default class Graph extends View {
   act(action, node = this.current) {
     if (!node || !this.guard.allows(node.key, Date.now())) return;
     const model = this.model();
-    if (node.kind === 'fold') { this.state.expanded.add(node.parent?.key ?? threadKey(model.item.root, model.thread)); this.state.agent = null; return; }
+    if (node.kind === 'fold') { this.state.expanded.add(node.parent?.key ?? threadKey(model.item.root, model.thread)); this.state.agent = agentKey(model.item.root, node.fold[0]); return; }
     if (action === 'orchestrator') { const target = rootTarget(model.item); if (target) run(target.name, target.args); return; }
     if (action === 'inbox') { if (this.inboxTarget) run(this.inboxTarget.name, this.inboxTarget.args); return; }
     if (action === 'answer') {
@@ -56,7 +61,10 @@ export default class Graph extends View {
       else if (this.inboxTarget) run(this.inboxTarget.name, this.inboxTarget.args);
       return;
     }
-    if (node.kind === 'orch' || node.kind === 'thread') {
+    if ((node.kind === 'orch' || node.kind === 'thread' || node.kind === 'native') && action === 'transcript') {
+      openOverlay({ mod: 'panorama-peek', kind: 'popup', width: 284, props: { root: (node.item ?? model.item).root, thread: node.thread ?? null, agent: null, terminal: (node.item ?? model.item).terminal, terminalAction: (node.item ?? model.item).isNative ? 'peek' : 'focus', action: 'transcript' } }); return;
+    }
+    if (node.kind === 'orch' || node.kind === 'thread' || node.kind === 'native') {
       const target = rootTarget(node.item ?? model.item); if (target) run(target.name, target.args); return;
     }
     const target = detailTarget(model.item, { thread: model.thread, agent: node.agent });
@@ -68,7 +76,7 @@ export default class Graph extends View {
     if (!this.guard.allows(node.key, Date.now())) return;
     const model = this.model(); selectNode(this.state, model, node);
     if (node.kind === 'fold') this.act('open', node);
-    else if (node.kind === 'agent' || event.click_count === 2) this.act('open', node);
+    else if (node.kind === 'agent' || node.kind === 'native' || event.click_count === 2) this.act('open', node);
     cx.notify();
   }
   key(event, cx) {
@@ -117,7 +125,7 @@ export default class Graph extends View {
     if (orch) groupLine(orch, 1, model.threadNodes.map(node => node.y + node.mid), true);
     for (const group of model.tree.groups) {
       const parent = group.parent ?? model.threadNodes.find(node => node.thread === model.thread);
-      groupLine(parent, group.depth + 1, group.ys, !group.parent || path.has(group.parent.key));
+      groupLine(parent ?? orch, group.depth + (model.nativeFallback ? 0 : 1), group.ys, !group.parent || path.has(group.parent.key));
     }
     return result;
   }
@@ -126,16 +134,20 @@ export default class Graph extends View {
     const source = model.source;
     this.guard.refresh(model.nodes, now, this.source !== undefined && source !== this.source); this.source = source;
     const window = columnWindow(model.columns.length, this.state.focus, this.size.width - 32, this.state.manual); this.window = window;
-    const height = Math.max(0, this.size.height - 94); this.canvasHeight = height; this.offsets = this.offsetsFor(model, height);
+    const height = Math.max(0, this.size.height - 94); this.canvasHeight = height;
+    const offsets = this.offsetsFor(model, height);
+    const viewport = JSON.stringify([window.lo, window.hi, offsets]);
+    if (this.viewport !== undefined && this.viewport !== viewport) this.guard.scroll(now);
+    this.viewport = viewport; this.offsets = offsets;
     const visible = window.columns.flatMap(column => model.columns[column.column]);
     const animate = this.isVisible() && visible.some(node => animationVisible(node, this.offsets[node.column] ?? 0, height));
     if (animate && !this.animation) this.animation = cx.timer.every(50, cx => { if (this.isVisible()) cx.notify(); else { this.animation.cancel(); this.animation = null; } });
     if (!animate && this.animation) { this.animation.cancel(); this.animation = null; }
     const path = selectionPath(model, this.state), hiddenRight = model.columns.length - 1 - window.hi;
-    const crumbs = [model.item?.detail || model.item?.name, model.thread?.name];
+    const crumbs = [model.item?.detail || model.item?.name, ...(model.thread ? [model.thread.name] : [])];
     let selected = model.nodes.find(node => node.key === this.state.agent); const agentPath = [];
-    while (selected) { agentPath.unshift(selected.agent?.id ?? ''); selected = selected.parent; } crumbs.push(...agentPath);
-    const label = column => column === 0 ? 'Orchestrators' : column === 1 ? 'Threads' : `Depth ${column - 1}`;
+    while (selected) { agentPath.unshift(selected.agent?.id ?? selected.item?.name ?? ''); selected = selected.parent; } crumbs.push(...agentPath);
+    const label = column => column === 0 ? 'Orchestrators' : model.nativeFallback ? `Depth ${column}` : column === 1 ? 'Threads' : `Depth ${column - 1}`;
     const canvas = div().relative().flex_1().min_h(0).w_full().overflow_hidden().on_scroll_wheel((event, cx) => this.scroll(event, cx)).children(this.connectors(t, model, window))
       .children(window.columns.map(column => div().absolute().left(column.x).top(0).bottom(0).w(column.width)
         .id(`column-${column.column}`).on_scroll_wheel((event, cx) => this.scroll(event, cx, column.column))

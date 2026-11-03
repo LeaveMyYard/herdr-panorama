@@ -33,14 +33,16 @@ export function card(view, cx, t, node, model, window, path, now) {
     const label = `${node.fold.length} finished · ${[...roles].map(([role, count]) => count > 1 ? `${role} ×${count}` : role).join(', ')}`;
     body = h_flex().h_full().px(12).gap(3).items_center().children(node.fold.slice(0, 3).map(() => div().size(12).rounded(3).bg(t.dim)))
       .child(text(label, t.dim).ml(5).flex_1());
-  } else if (node.kind === 'orch') {
+  } else if (node.kind === 'orch' || node.kind === 'native') {
     const item = node.item;
     edge = item.aggregate.kinds.length > 0; sweep = item.aggregate.sweep;
     const harness = item.program?.name ?? item.root.harness;
     body = v_flex().px(12).pt(9).gap(6)
       .child(h_flex().items_center().gap(7).child(icon(item.program, 16, t.foreground))
         .child(text(item.detail || item.name, t.foreground, 12.5).font_medium().flex_1()).child(rootMarks(t, item)))
-      .child(text([harness, item.changed ? age(item.changed, now) : '', item.stock?.tab_index ? `tab ${item.stock.tab_index}` : ''].filter(Boolean).join(' · '), t.dim));
+      .child(text([harness, item.changed ? age(item.changed, now) : '', item.stock?.tab_index ? `tab ${item.stock.tab_index}` : ''].filter(Boolean).join(' · '), t.dim))
+      .when(selected && node.kind === 'native', el => el.child(h_flex().h(24).items_center()
+        .child(view.actionButton(t, 'open', 'Open pane ⏎', node, true))));
   } else if (node.kind === 'thread') {
     const thread = node.thread, phase = thread.phases.find(phase => ['now', 'failed', 'waiting'].includes(phase.state));
     const count = thread.agents.length, levels = model.tree.depth;

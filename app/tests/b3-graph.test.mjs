@@ -92,3 +92,27 @@ test('fixture agent identity remains scoped to its owning root and does not beco
   assert.ok(result.nodes.some(node=>node.key===agentKey(item.root,thread.agents[0])));
   assert.ok(result.nodes.every(node=>node.terminal===undefined));
 });
+test('selected card details collapse when focus returns to thread and expand only in focused depth',()=>{
+ const root=scenario(), s=state();const key=agentKey(root.root,root.root.threads[0].agents.find(a=>a.id==='checker'));
+ s.agent=key;s.focus=4;let model=graphModel([root],s);
+ assert.ok(model.nodes.find(node=>node.key===key).height>54);
+ assert.equal(model.threadNodes[0].height,54);
+ s.focus=1;model=graphModel([root],s);
+ assert.equal(model.nodes.find(node=>node.key===key).height,54);
+ assert.ok(model.threadNodes[0].height>54);
+});
+test('threadless native fallback uses only verified same-space ancestry and never invents a thread',()=>{
+ const root=scenario();root.space='s';root.root.threads=[];
+ const native=(id,parent,space='s')=>({key:id,terminal:id,nativeParent:parent,space,status:'working',root:{threads:[],inbox:[],herdr_status:'working'},aggregate:{kinds:[],working:true},isNative:true,name:id});
+ root.nativeChildren=[native('t-child','t-root'),native('t-grandchild','t-child'),native('other','t-root','other-space')];
+ const s=state();let model=graphModel([root],s);
+ assert.equal(model.thread,null);assert.equal(model.threadNodes.length,0);assert.equal(model.nativeFallback,true);
+ assert.deepEqual(model.tree.nodes.map(n=>[n.key,n.column]),[['t-child',1],['t-grandchild',2]]);
+ selectNode(s,model,model.orchs[0]);navigate(s,model,'right');model=graphModel([root],s);
+ assert.equal(currentNode(model,s).key,'t-child');
+ navigate(s,model,'right');model=graphModel([root],s);assert.equal(currentNode(model,s).key,'t-grandchild');
+ navigate(s,model,'left');model=graphModel([root],s);assert.equal(currentNode(model,s).key,'t-child');
+ navigate(s,model,'left');assert.equal(s.focus,0);
+ root.root.threads=scenario().root.threads;model=graphModel([root],s);
+ assert.equal(model.nativeFallback,false);assert.ok(model.tree.nodes.every(n=>n.kind!=='native'));
+});
