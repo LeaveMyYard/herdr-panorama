@@ -6,10 +6,11 @@
 
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex } from "gpui-base";
-import { panes, props, run, theme, home, agents, terminals, spaces, shared } from "herdr";
+import { panes, props, run, theme, home, agents, terminals, spaces } from "herdr";
 
-import { joinRoots } from './model.js';
-import { spaceTotals } from './space.js';
+import { joinRoots, spaceTotals } from './model.js';
+import { startConsumer, consumerFeed, closeConsumer } from './feed-client.js';
+import { spaceInventory } from './space.js';
 import { glyph } from './swarm.js';
 import { rootMarks } from './marks.js';
 
@@ -25,7 +26,7 @@ function folder(cwd) {
 }
 
 export default class Pane extends View {
-  init() { this.hovered = false; }
+  init(_props, cx) { startConsumer(this, cx); this.hovered = false; }
 
   me() {
     return panes().find((p) => p.pane === props()?.pane);
@@ -45,15 +46,18 @@ export default class Pane extends View {
       .child(svg(`mods/pane/${icon}.svg`).size(14));
   }
 
+  close(cx) { closeConsumer(this, cx); }
+
   render(cx) {
     const t = theme();
+    this.packet = consumerFeed(this);
     const p = this.me();
     if (!p) return div();
     if (p.mod === 'panorama-graph') {
       const space = spaces().find(space => space.tabs.some(tab => tab.id === p.tab));
-      const roots = joinRoots(shared('panorama.feed')?.feed, agents(), terminals(), panes(), spaces());
-      const totals = spaceTotals(roots, space?.id);
-      return h_flex().size_full().px(10).gap(8).items_center().bg(t.background).border_b(1).border_color(t.border).text_size(12)
+      const roots = joinRoots(this.packet.feed, agents(), terminals(), panes(), spaces());
+      const totals = { ...spaceTotals(roots, space?.id), ...spaceInventory(roots, space?.id) };
+      return h_flex().size_full().tooltip(this.packet.errors.join(' · ')).px(10).gap(8).items_center().bg(t.background).border_b(1).border_color(t.border).text_size(12)
         .on_click(() => run('pane.focus', { pane: p.pane }))
         .child(glyph(t, totals)).child(div().font_medium().text_color(t.foreground).child('Swarm'))
         .child(div().flex_1().truncate().text_color(t.dim).child(`${space?.name ?? ''} · ${totals.orchestrators} orchestrators · ${totals.threads} threads · ${totals.agents} agents`))

@@ -1,7 +1,9 @@
 import { View, div } from 'gpui-kit';
 import { h_flex, v_flex } from 'gpui-base';
-import { agents, terminals, panes, spaces, focused, props, shared, theme, run, openOverlay, nextCommand, settings } from 'herdr';
+import { agents, terminals, panes, spaces, focused, props, theme, run, openOverlay, nextCommand, settings, appHome } from 'herdr';
 import { joinRoots } from './model.js';
+import { startConsumer, consumerFeed, closeConsumer } from './feed-client.js';
+import { InboxNavigation } from './inbox.js';
 import { rootTarget, detailTarget } from './routing.js';
 import { threadKey, agentKey } from './contract.js';
 
@@ -10,11 +12,14 @@ import { card, alpha } from './cards.js';
 import { answerIntent, transcriptProps } from './actions.js';
 export default class Graph extends View {
   init(initial, cx) {
+    const client = startConsumer(this, cx);
+    this.inbox = new InboxNavigation({ callPrivate: client.callPrivate, appHome: appHome() });
+    cx.spawn(async cx => { await this.inbox.refresh(); cx.notify(); });
     this.changed = JSON.parse(localStorage.getItem('changed') ?? '{}');
     this.space = initial?.space ?? props()?.space ?? focused()?.space;
     this.state = { focus: 1, orch: null, thread: null, agent: null, expanded: new Set(), remember: new Map(), manual: null, scroll: {} };
     this.guard = new ClickGuard(); this.size = { width: 1000, height: 600 }; this.handle = cx.focus_handle();
-    cx.timer.every(30000, cx => cx.notify());
+    cx.timer.every(30000, cx => { cx.notify(); cx.spawn(async cx => { if (!this.inbox.busy) { await this.inbox.refresh(); cx.notify(); } }); });
     cx.spawn(async cx => { for (;;) { const command = await nextCommand(); if (command.name === 'focus' || command === 'focus') this.handle.focus(); cx.notify(); } });
   }
   isVisible() {
@@ -24,7 +29,7 @@ export default class Graph extends View {
     return focus?.space === this.space && panes().some(pane => pane.mod === 'panorama-graph' && pane.tab === focus?.tab);
   }
   model() {
-    const wrapper = shared('panorama.feed');
+    const wrapper = consumerFeed(this); this.packet = wrapper;
     const stock = agents(); let dirty = false;
     for (const agent of stock) {
       const status = agent.status === 'done' ? 'idle' : agent.status;
@@ -45,23 +50,23 @@ export default class Graph extends View {
     this.current = currentNode(model, this.state);
     return model;
   }
-  canAnswer(node) { const intent = answerIntent(this.lastModel?.item, node); return intent?.kind === 'permission' || (intent?.kind === 'question' && Boolean(this.inboxTarget)); }
+  canAnswer(node) { const intent = answerIntent(this.lastModel?.item, node); return intent?.kind === 'permission' || (intent?.kind === 'question' && !this.inbox.busy && this.inbox.canOpen(intent.question)); }
   actionButton(t, action, label, node, primary = false, enabled = true) {
     return div().id(`${node.key}-${action}`).h(24).px(9).rounded(6).flex_none().flex().items_center().text_size(11.5)
       .text_color(!enabled ? t.dim : primary ? t.solid_foreground : t.foreground).bg(primary ? t.solid : t.raised)
       .on_mouse_down('left', (_e, cx) => cx.stop_propagation())
-      .on_click((_e, cx) => { cx.stop_propagation(); if (enabled && this.guard.allows(node.key, Date.now())) this.act(action, node); }).child(label);
+      .on_click((_e, cx) => { cx.stop_propagation(); if (enabled && this.guard.allows(node.key, Date.now())) this.act(action, node, cx); }).child(label);
   }
-  act(action, node = this.current) {
+  act(action, node = this.current, cx) {
     if (!node || !this.guard.allows(node.key, Date.now())) return;
     const model = this.model();
     if (node.kind === 'fold') { this.state.expanded.add(node.parent?.key ?? threadKey(model.item.root, model.thread)); this.state.agent = agentKey(model.item.root, node.fold[0]); return; }
     if (action === 'orchestrator') { const target = rootTarget(model.item); if (target) run(target.name, target.args); return; }
-    if (action === 'inbox') { if (this.inboxTarget) run(this.inboxTarget.name, this.inboxTarget.args); return; }
+    if (action === 'inbox') { this.openInbox(null, cx); return; }
     if (action === 'answer') {
       const intent = answerIntent(model.item, node);
       if (intent?.kind === 'permission') run(intent.target.name, intent.target.args);
-      else if (intent?.kind === 'question' && this.inboxTarget) run(this.inboxTarget.name, { ...this.inboxTarget.args, question: intent.question });
+      else if (intent?.kind === 'question') this.openInbox(intent.question, cx);
       return;
     }
     if (action === 'transcript') {
@@ -73,12 +78,17 @@ export default class Graph extends View {
     const target = detailTarget(model.item, { thread: model.thread, agent: node.agent });
     openOverlay(target);
   }
+  openInbox(question, cx) {
+    if (!cx || !this.inbox.canOpen(question) || this.inbox.busy) return;
+    cx.spawn(async cx => { const pending = this.inbox.open(question); cx.notify(); await pending; cx.notify(); });
+  }
+  close(cx) { this.animation?.cancel(); closeConsumer(this, cx); }
   click(node, event, cx) {
     this.handle.focus();
     if (!this.guard.allows(node.key, Date.now())) return;
     const model = this.model(); selectNode(this.state, model, node);
-    if (node.kind === 'fold') this.act('open', node);
-    else if (node.kind === 'agent' || node.kind === 'native' || event.click_count === 2) this.act('open', node);
+    if (node.kind === 'fold') this.act('open', node, cx);
+    else if (node.kind === 'agent' || node.kind === 'native' || event.click_count === 2) this.act('open', node, cx);
     cx.notify();
   }
   key(event, cx) {
@@ -86,7 +96,7 @@ export default class Graph extends View {
     const direction = ({ up: 'up', k: 'up', down: 'down', j: 'down', right: 'right', l: 'right', left: 'left', h: 'left' })[event.key];
     if (direction) { navigate(this.state, this.model(), direction); cx.stop_propagation(); cx.notify(); return; }
     const action = ({ enter: 'open', t: 'transcript', a: 'answer', i: 'inbox', g: 'orchestrator' })[event.key];
-    if (action) { this.act(action); cx.stop_propagation(); cx.notify(); }
+    if (action) { this.act(action, this.current, cx); cx.stop_propagation(); cx.notify(); }
   }
   scroll(event, cx, column = null) {
     cx.stop_propagation(); this.guard.scroll(Date.now());
@@ -168,7 +178,7 @@ export default class Graph extends View {
         .children(Array.from({ length: 26 }, (_, index) => div().absolute().top(0).bottom(0).w(1).bg(t.background).opacity(1 - index / 26)
           .when(side === 'left', el => el.left(index)).when(side === 'right', el => el.right(index))))));
     return v_flex().id('graph-root').size_full().min_h(0).min_w(0).bg(t.background).pt(10).px(16).pb(8)
-      .tooltip((shared('panorama.feed')?.errors ?? []).join(' · '))
+      .tooltip([...(this.packet?.errors ?? []), ...(this.inbox.error ? [this.inbox.error] : [])].join(' · '))
       .track_focus(this.handle).on_key_down((event, cx) => this.key(event, cx))
       .on_mouse_down('left', () => this.handle.focus())
       .on_size_change((size, cx) => { if (!this.measuredSize || size.width !== this.measuredSize.width || size.height !== this.measuredSize.height) { this.measuredSize = size; cx.notify(); } })

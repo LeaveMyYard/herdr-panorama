@@ -2,8 +2,9 @@ import { View, div, svg, image } from "gpui-kit";
 import { h_flex } from "gpui-base";
 import { spaces, panes, run, openOverlay, theme, window, shared, layout, settings, agents, terminals } from "herdr";
 
-import { joinRoots } from './model.js';
-import { spaceTotals } from './space.js';
+import { joinRoots, spaceTotals } from './model.js';
+import { startConsumer, consumerFeed, closeConsumer } from './feed-client.js';
+
 import { glyph, countChip } from './swarm.js';
 
 function find(node, id) {
@@ -16,7 +17,8 @@ function find(node, id) {
 }
 
 export default class Tabs extends View {
-  init() {
+  init(_props, cx) {
+    startConsumer(this, cx);
     this.pressed = null;
     this.panels = JSON.parse(localStorage.getItem("panels") ?? "{}");
   }
@@ -49,12 +51,15 @@ export default class Tabs extends View {
     localStorage.setItem("panels", JSON.stringify(this.panels));
   }
 
+  close(cx) { closeConsumer(this, cx); }
+
   render() {
     const t = theme();
+    this.packet = consumerFeed(this);
     const space = spaces().find(p => p.active);
     const shown = space?.tabs ?? [];
     const allPanes = panes();
-    const roots = joinRoots(shared('panorama.feed')?.feed, agents(), terminals(), allPanes, spaces());
+    const roots = joinRoots(this.packet.feed, agents(), terminals(), allPanes, spaces());
     const totals = spaceTotals(roots, space?.id);
     const swarmTabs = new Set(allPanes.filter(pane => pane.mod === 'panorama-graph').map(pane => pane.tab));
     const stop = (_e, cx) => cx.stop_propagation();
@@ -100,7 +105,7 @@ export default class Tabs extends View {
           else { run("layout.select", { stack: "panel-body", child: id }); run("layout.show", { id: "panel" }); }
         }).child(svg(icon).size(14)).child(label);
     };
-    return h_flex().size_full().min_w(0).px(10).pl(lightsPadding).gap(3).items_center().bg(t.chrome).border_b(1).border_color(t.border)
+    return h_flex().size_full().min_w(0).tooltip(this.packet.errors.join(' · ')).px(10).pl(lightsPadding).gap(3).items_center().bg(t.chrome).border_b(1).border_color(t.border)
       .on_mouse_up("left", () => { this.pressed = null; })
       .on_scroll_wheel(e => { if (Math.abs(e.delta.y) >= 1) run(e.delta.y > 0 ? "tab.prev" : "tab.next"); })
       .child(h_flex().id("tab-scroll").flex_1().min_w(0).h_full().items_center().gap(3).overflow_x_scrollbar().children(shown.map(item)))

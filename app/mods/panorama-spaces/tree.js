@@ -35,7 +35,7 @@ export function aggregate(root, ownStatus = root.herdr_status) {
   const kinds = ['fail', 'blk', 'wait'].filter(status => statuses.has(status) || (status === 'fail' && emptyFailure) || (status === 'blk' && ownStatus === 'blocked') || (status === 'wait' && root.inbox.length));
   const detailed = agents.filter(agent => needs(agent.status)).length;
   const needsCount = detailed || (ownStatus === 'blocked' || root.inbox.length > 0 || emptyFailure ? 1 : 0);
-  return { kinds, needsCount, questions: root.inbox.length, working: ownStatus === 'working' || statuses.has('run') || statuses.has('rev'), sweep: statuses.has('run') || statuses.has('rev'), priority: kinds.length ? 4 : ownStatus === 'done' ? 3 : ownStatus === 'working' ? 2 : 1, urgency: Math.max(0, ...kinds.map(urgency)) };
+  return { kinds, needsCount, questions: root.inbox.length, working: ownStatus === 'working' || statuses.has('run') || statuses.has('rev'), sweep: statuses.has('run') || statuses.has('rev'), priority: kinds.length ? 4 : ownStatus === 'done' ? 3 : ownStatus === 'working' || statuses.has('run') || statuses.has('rev') ? 2 : 1, urgency: Math.max(0, ...kinds.map(urgency)) };
 }
 export function threadMark(thread) {
   if (!thread.agents.length) return { status: { done: 'done', cancelled: 'cxl', failed: 'fail' }[thread.status] ?? 'q', questions: 0 };

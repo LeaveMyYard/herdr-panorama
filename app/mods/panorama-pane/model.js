@@ -1,6 +1,6 @@
 // Generated from app/shared/model.js by scripts/app-build.
 import { rootKey } from './contract.js';
-import { aggregate } from './tree.js';
+import { aggregate, urgency } from './tree.js';
 const clean = text => (text ?? '').replace(/^[^\p{L}\p{N}]+/u, '').trim();
 function title(tab, pane, fallback) {
   if (!tab) return fallback ?? '';
@@ -34,15 +34,23 @@ export function joinRoots(feed, stock, terminals, panes, spaces, changes = {}) {
       const membership = nativeMembership(terminal.address, stock, terminals, panes, spaces);
       return { key: rootKey(root), root, stock: null, terminal: terminal.address, isNative: true, nativeChildren: [], nativeParent: terminal.parent ?? null, detail: null, pinned: false, focused: false, seq: 0, changed: 0, depth: node.depth, program: terminal.program ?? null, name: terminal.name || terminal.program?.name || terminal.address, status, aggregate: aggregate(root, status), ...membership };
     });
-    for (const child of item.nativeChildren) {
-      item.aggregate.kinds = ['fail', 'blk', 'wait'].filter(kind => item.aggregate.kinds.includes(kind) || child.aggregate.kinds.includes(kind));
-      item.aggregate.needsCount += child.aggregate.needsCount;
-      item.aggregate.questions += child.aggregate.questions;
-      item.aggregate.working ||= child.aggregate.working;
-      item.aggregate.sweep ||= child.aggregate.working;
-      item.aggregate.priority = Math.max(item.aggregate.priority, child.aggregate.priority);
-      item.aggregate.urgency = Math.max(item.aggregate.urgency, child.aggregate.urgency);
-    }
+  }
+  // Projection follows the full native tree, independently of display ownership.
+  // Listed descendants stay top-level but still affect their ancestors' urgency.
+  const canonical = new Map();
+  for (const item of roots) {
+    canonical.set(item.stock.address, item);
+    for (const child of item.nativeChildren) canonical.set(child.terminal, child);
+  }
+  for (const [address, entity] of canonical) {
+    const related = [entity, ...terminalChildren(address, terminals, []).map(node => canonical.get(node.terminal.address)).filter(Boolean)];
+    const own = aggregate(entity.root, entity.status);
+    const contributions = related.map(item => aggregate(item.root, item.status));
+    const kinds = ['fail', 'blk', 'wait'].filter(kind => contributions.some(part => part.kinds.includes(kind)));
+    entity.aggregate = { ...own, kinds, needsCount: contributions.reduce((n, part) => n + part.needsCount, 0), questions: questions(related).size,
+      working: contributions.some(part => part.working), sweep: own.sweep || contributions.slice(1).some(part => part.working),
+      priority: kinds.length ? 4 : entity.status === 'done' ? 3 : contributions.some(part => part.working) ? 2 : 1,
+      urgency: Math.max(0, ...kinds.map(urgency)) };
   }
   // Feed roots without exact app agent matches remain visible, without assigning
   // legacy titles, cwd or sessions to an app space or inventing a focus target.
@@ -108,4 +116,21 @@ export function nativeMembership(address, stock, terminals, panes, spaces) {
     current = live.get(current).parent;
   }
   return { space: null, tab: null };
+}
+
+function questions(entities) {
+  return new Set(entities.flatMap(entity => entity.root.inbox.map(id => JSON.stringify([rootKey(entity.root), entity.root.session_id ?? null, id]))));
+}
+
+export function spaceTotals(roots, spaceId) {
+  const entities = [], seen = new Set();
+  for (const root of roots) for (const entity of [root, ...(root.nativeChildren ?? [])]) {
+    const address = entity.stock?.address ?? entity.terminal;
+    if (entity.space !== spaceId || address === null || address === undefined || seen.has(address)) continue;
+    seen.add(address); entities.push(entity);
+  }
+  const own = entities.map(entity => aggregate(entity.root, entity.status));
+  return { kinds: ['fail', 'blk', 'wait'].filter(kind => own.some(part => part.kinds.includes(kind))),
+    needsCount: own.reduce((sum, part) => sum + part.needsCount, 0), questions: questions(entities).size,
+    working: own.some(part => part.working), done: entities.some(entity => entity.status === 'done') };
 }

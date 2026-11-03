@@ -7,8 +7,9 @@ import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { spaces, machines, panes, run, openOverlay, exec, hc, theme, shared, setShared, watchFolder, window, layout, agents, terminals } from "herdr";
 
-import { joinRoots } from './model.js';
-import { spaceTotals } from './space.js';
+import { joinRoots, spaceTotals } from './model.js';
+import { startConsumer, consumerFeed, closeConsumer } from './feed-client.js';
+
 import { createSwarmOpener, contentHeight } from './tabs.js';
 
 function find(node, id) {
@@ -51,6 +52,7 @@ export function tone(t, status) {
 
 export default class Spaces extends View {
   init(_props, cx) {
+    startConsumer(this, cx);
     this.swarmPending = new Map();
     this.git = {}; // where() -> { name, branch, ahead, behind, repo, linked }, null: not a repo
     this.checked = {}; // where() -> when it was last looked at
@@ -422,9 +424,12 @@ export default class Spaces extends View {
       .child(div().text_color(tone(t, w.status)).child(glyph(w.status)));
   }
 
+  close(cx) { closeConsumer(this, cx); }
+
   render() {
     const t = theme();
-    const roots = joinRoots(shared('panorama.feed')?.feed, agents(), terminals(), panes(), spaces());
+    this.packet = consumerFeed(this);
+    const roots = joinRoots(this.packet.feed, agents(), terminals(), panes(), spaces());
     this.totals = Object.fromEntries(spaces().map(space => [space.id, spaceTotals(roots, space.id)]));
     const collapsed = narrow();
     const palette = ["ansi6", "ansi3", "ansi4", "ansi5", "ansi2", "ansi1"];
@@ -445,7 +450,7 @@ export default class Spaces extends View {
       changed = true;
     }
     if (changed) setShared("space.colors", kept);
-    return v_flex().size_full().min_h(0).bg(t.chrome).text_size(13)
+    return v_flex().size_full().min_h(0).bg(t.chrome).text_size(13).tooltip(this.packet.errors.join(' · '))
       .child(h_flex().h(31).pl(16).pr(10).items_center().justify_between().text_size(11.5).text_color(t.dim)
         .when(!collapsed, el => el.child("Spaces"))
         .child(div().id("space-new").size(26).flex_none().flex().items_center().justify_center().rounded(6).hover(s => s.bg(t.hover).text_color(t.foreground))
