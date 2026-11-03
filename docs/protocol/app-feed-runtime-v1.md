@@ -20,11 +20,14 @@ reservation allowlist is `data/panorama-spaces`, `data/panorama-graph` and
 owned module; never adopt a preexisting directory. Cleanup uses rmdir only when
 the exact owned directory is empty. Added files remain personal: preserve/report,
 never recursively remove them. `data/panorama` is the explicit writer inventory
-above, not a generic empty mod-data reservation. No `shared.json` or `store.json`
-cleanup is authorized. Host shared bookkeeping is outside this deletion authority;
-observed residue remains an OUTSTANDING integration acceptance gap until a
-supported safe cleanup API or an explicit operator decision resolves it.
-The no-trace requirement is not waived. Any future owned-mod name
+above, not a generic empty mod-data reservation. No direct `shared.json` or `store.json`
+cleanup or personal shared-file editing is authorized. Operator decision
+(2026-11-03) explicitly allows ONLY the two inert host shared slots
+`panorama.feed:null` and `panorama.feed.owner:null` after used-home uninstall,
+using supported null clearing. Those exact two null slots are not an outstanding
+acceptance gap. This exception does not cover cached transcripts, changed key
+values, other residue or personal shared-file edits. All other cleanup and
+no-trace acceptance gaps remain unwaived. Any future owned-mod name
 requires an explicit finite-inventory handoff before reservation.
 Legacy v1 receives only its original static uninstall behavior; it never grants
 writer/runtime authority. There is no in-place receipt upgrade or dev bypass.

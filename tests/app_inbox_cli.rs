@@ -193,3 +193,32 @@ fn old_generation_after_reinstall_never_queries_or_opens_inbox() {
         assert_eq!(h.calls().len(), 1);
     }
 }
+
+#[test]
+fn plugin_lookup_transport_timeout_is_an_operation_error_before_any_helper() {
+    let i = Installed::new();
+    let marker = i.dir.path().join("unexpected-inbox-helper");
+    let script = format!(
+        "#!/usr/bin/env python3\nimport pathlib\npathlib.Path({:?}).write_text('unexpected')\nprint('--question')\n",
+        marker.to_str().unwrap()
+    );
+    let h = plugin(&i, &script);
+    h.on("plugin.list", Reply::Hang);
+    let began = Instant::now();
+    let out = call(&i, &h, &["--available"]);
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stdout.is_empty());
+    let diagnostic = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        diagnostic.contains("plugin lookup failed") && diagnostic.contains("timed out"),
+        "{diagnostic}"
+    );
+    assert!(
+        began.elapsed() < Duration::from_secs(5),
+        "{:?}",
+        began.elapsed()
+    );
+    assert_eq!(h.calls().len(), 1);
+    assert_eq!(h.calls()[0].0, "plugin.list");
+    assert!(!marker.exists());
+}

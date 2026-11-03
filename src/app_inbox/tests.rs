@@ -184,3 +184,63 @@ async fn a_help_timeout_is_an_error_instead_of_missing_capability() {
     );
     assert_eq!(h.calls().len(), 1);
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn strict_lookup_retains_transport_errors_without_caching_them_as_absence() {
+    for reply in [
+        Reply::Hang,
+        Reply::Close,
+        Reply::Raw(b"malformed\n".to_vec()),
+        Reply::error("ui_busy", "try later"),
+    ] {
+        let h = FakeHerdr::start();
+        h.on("plugin.list", reply.clone());
+        let client = h.client().with_timeout(Duration::from_millis(100));
+        let run = Script {
+            calls: RefCell::default(),
+            code: 0,
+            help: "--question",
+        };
+        let link = InboxLink::default();
+        let error = link.installed(&client, &run).await.unwrap_err();
+        assert!(error.contains("plugin lookup failed"), "{error}");
+        if reply == Reply::Hang {
+            assert!(error.contains("timed out"), "{error}");
+        }
+        assert_eq!(h.calls().len(), 1);
+        assert_eq!(h.calls()[0].0, "plugin.list");
+        assert!(run.calls.borrow().is_empty());
+        // A later explicit query can observe genuine absence; the error is not cached.
+        h.on("plugin.list", Reply::Result(json!({"plugins":[]})));
+        assert!(link.installed(&client, &run).await.unwrap().is_none());
+        assert_eq!(h.calls().len(), 2);
+        assert!(run.calls.borrow().is_empty());
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn ordinary_tui_lookup_keeps_its_existing_optional_failure_fallback() {
+    let h = FakeHerdr::start();
+    h.on("plugin.list", Reply::Hang);
+    h.on("plugin.action.invoke", Reply::Result(json!({})));
+    let run = Script {
+        calls: RefCell::default(),
+        code: 0,
+        help: "--question",
+    };
+    let client = h.client().with_timeout(Duration::from_millis(100));
+    assert!(
+        InboxLink::default()
+            .open(&client, &run, Some(14), None)
+            .await
+            .is_none()
+    );
+    assert_eq!(
+        h.calls()
+            .iter()
+            .map(|(m, _)| m.as_str())
+            .collect::<Vec<_>>(),
+        vec!["plugin.list", "plugin.action.invoke"]
+    );
+    assert!(run.calls.borrow().is_empty());
+}

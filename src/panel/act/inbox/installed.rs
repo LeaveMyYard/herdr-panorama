@@ -14,10 +14,22 @@ impl InboxLink {
         h: &Herdr,
         run: &impl Runner,
     ) -> Result<Option<InstalledInbox>, String> {
-        let Some(info) = self.info(h, Instant::now()).await else {
+        // The ordinary TUI lookup intentionally treats failures as optional absence.
+        // Strict app availability must retain transport/parse errors, without caching them.
+        let plugins = h
+            .plugins()
+            .await
+            .map_err(|e| format!("installed inbox plugin lookup failed: {e}"))?;
+        let Some(plugin) = plugins
+            .into_iter()
+            .find(|p| p.plugin_id.as_deref() == Some(INBOX_ID) && p.enabled)
+        else {
             return Ok(None);
         };
-        let result = run.inbox(&info.root, &["open", "--help"]).await;
+        let Some(root) = plugin.plugin_root.filter(|r| !r.is_empty()) else {
+            return Ok(None);
+        };
+        let result = run.inbox(&root, &["open", "--help"]).await;
         if result.code == 124 {
             return Err("installed inbox help timed out".into());
         }
@@ -26,7 +38,7 @@ impl InboxLink {
         }
         let help = result.out;
         Ok(Some(InstalledInbox {
-            root: info.root,
+            root,
             questions: help.contains("--question"),
             no_hold: help.contains("--no-hold"),
         }))

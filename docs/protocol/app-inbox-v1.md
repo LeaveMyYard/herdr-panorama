@@ -17,7 +17,9 @@ runner and its existing fallback behavior are unchanged.
 an enabled plugin registration with a nonempty absolute root and a successful
 help run through that root's existing regular executable `.venv/bin/inbox`.
 Missing executable, disabled/missing plugin, failed help, or unsupported optional
-integration becomes unavailable. A command timeout is an error, not availability
+integration becomes unavailable. Only a successful plugin lookup can establish
+absent/disabled registration; lookup transport errors, refusals and malformed
+replies are operation errors. A command timeout is an error, not availability
 proof. `questions` is false whenever `available` is false.
 
 Optional `--install-id` pins the operation to a 32-lower-case-hex generation.
