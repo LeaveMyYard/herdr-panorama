@@ -1,0 +1,10 @@
+The layout app/layouts/panorama.json is derived from Herdr app's shipped
+layouts/main.json, installed on 2026-11-03. The only changes replace the
+agents and spaces mod references with panorama and panorama-spaces.
+
+Herdr app is distributed under the Apache License, Version 2.0.
+See LICENSE.herdr-app in this directory. No artwork is copied; the layout
+continues to reference the app's own shipped mods and assets.
+
+The panorama scaffold JavaScript and installer are original herdr-panorama
+code, covered by the repository's MIT license.
