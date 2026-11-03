@@ -11,6 +11,7 @@ for line in sys.stdin:
  if method=='initialize':pass
  elif method=='thread/read':
   parent='other-root' if tid.startswith('bad-') else 'root-a' if tid.startswith('child-') or tid=='a-child' else ('a-child' if mode=='scan-eviction' else 'child-0') if tid=='grand' else 'other-root' if tid=='foreign' else None
+  if mode=='overlap':parent={'a-grand':'b-child','g-grand':'c-child'}.get(tid,'root-a' if tid.endswith('-child') else None)
   if mode=='changed-parent' and tid=='child-0':parent='other-root'
   result={'thread':{'id':tid,'parentThreadId':parent,'historyMode':'legacy' if mode=='legacy-progress' else 'paginated','createdAt':1,'updatedAt':2,'turns':[]}}
   if p.get('includeTurns'):
@@ -30,7 +31,7 @@ for line in sys.stdin:
   if mode in ('full-progress','full-hang'):error={'code':-32601,'message':'synthetic unsupported'}
   else:
    start=int(p.get('cursor') or 0);limit=p.get('limit',64);size=1024 if tid=='root-a' and mode not in ('recent','aged','changed-parent','scope') else 1
-   if mode in ('fair','wide','breadth','scan-eviction'):size=1
+   if mode in ('fair','wide','breadth','scan-eviction','overlap'):size=1
    if mode=='scan-eviction' and tid=='a-child':size=1024
    if mode=='backfill-hang' and start>=128:time.sleep(30)
    items=[]
@@ -38,6 +39,9 @@ for line in sys.stdin:
     item={'id':f'item-{i}','type':'reasoning'}
     if tid=='root-a' and 800<=i<806:item={'id':f'spawn-{i}','type':'subAgentActivity','agentThreadId':f'child-{i-800}'}
     if tid=='root-a' and mode in ('recent','scope'):item={'id':'spawn','type':'collabAgentToolCall','receiverThreadIds':['child-0','foreign','root-a'] if mode=='scope' else ['child-0']}
+    if mode=='overlap':
+     ids=['a-grand','b-child','c-child','d-child','e-child','f-child'] if tid=='root-a' else ['a-grand'] if tid=='b-child' else ['g-grand'] if tid=='c-child' else []
+     item={'id':'refs','type':'collabAgentToolCall','receiverThreadIds':ids}
     if tid=='root-a' and mode=='breadth':item={'id':'refs','type':'collabAgentToolCall','receiverThreadIds':[f'child-{n}' for n in range(6)]+['foreign']}
     if tid=='root-a' and mode=='scan-eviction':item={'id':'refs','type':'collabAgentToolCall','receiverThreadIds':['a-child']+[f'bad-{n}' for n in range(8)]}
     if mode=='scan-eviction' and tid=='a-child' and i==800:item={'id':'old-grand','type':'subAgentActivity','agentThreadId':'grand'}

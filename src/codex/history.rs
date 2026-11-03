@@ -146,7 +146,7 @@ async fn query(
             break;
         }
         reads += 1;
-        graph.attempt(&child);
+        graph.attempt(&parent, &child);
         let child_result = match tokio::time::timeout_at(
             deadline,
             read(client, &child, Some(&parent), unsupported, graph),

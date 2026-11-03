@@ -289,3 +289,36 @@ async fn rejected_parent_metadata_cannot_evict_a_valid_childs_old_backfill() {
             .is_some_and(|id| id.starts_with("bad-"))
     }));
 }
+
+#[tokio::test]
+async fn wrong_scope_reference_cannot_refresh_or_erase_the_correct_parent_edge() {
+    let (dir, options) = setup("overlap");
+    let mut graph = Graph::new("root-a");
+    let mut unsupported = HashSet::new();
+    let mut seen = HashSet::new();
+    for _ in 0..10 {
+        let before = calls(dir.path()).len();
+        let value = refresh(&options, &mut graph, "root-a", &mut unsupported).await;
+        assert!(
+            calls(dir.path())[before..]
+                .iter()
+                .filter(|c| c["method"] == "thread/read")
+                .count()
+                <= 8
+        );
+        for thread in value.children {
+            if thread.thread_id == "a-grand" {
+                assert_eq!(thread.parent_thread_id.as_deref(), Some("b-child"));
+            }
+            if thread.thread_id == "g-grand" {
+                assert_eq!(thread.parent_thread_id.as_deref(), Some("c-child"));
+            }
+            seen.insert(thread.thread_id);
+        }
+    }
+    assert!(
+        seen.contains("a-grand") && seen.contains("g-grand"),
+        "both valid grandchildren must appear despite the wrong root-scoped reference: {seen:?}"
+    );
+    assert_eq!(seen.len(), 7);
+}

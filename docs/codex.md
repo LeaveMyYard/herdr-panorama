@@ -159,7 +159,9 @@ The observer still reads at most eight threads per refresh (root included), with
 bounded per-root scan caches, 64 candidate IDs per scanned thread, continuation
 limits, the existing whole-refresh deadline and wire byte limits. Known valid
 candidates get lookup priority while unverified siblings rotate. A bounded target
-path also schedules work across depths; each ancestor must freshly verify before
+path also schedules work across depths. Attempts and parent hints are scoped to
+the expected parent-child edge, so a wrong-scope reference cannot age or erase
+the valid edge; each ancestor must freshly verify before
 its descendant can appear. Rejected metadata never allocates persisted scan state,
 so foreign references cannot reset a valid branch's older backfill. Oversized graphs,
 truncated display history, unsupported/failed reads and exhausted limits remain

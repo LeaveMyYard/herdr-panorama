@@ -7,7 +7,7 @@ pub(in crate::codex) struct Graph {
     root: String,
     scans: BTreeMap<String, Scan>,
     proved: BTreeMap<String, String>,
-    attempted: BTreeMap<String, u64>,
+    attempted: BTreeMap<(String, String), u64>,
     clock: u64,
 }
 impl Graph {
@@ -50,6 +50,7 @@ impl Graph {
             .into_iter()
             .filter(|(parent, child)| child != &self.root && parent != child)
             .filter_map(|(parent, child)| {
+                let edge = (parent.clone(), child.clone());
                 let mut path = vec![(parent.clone(), child.clone())];
                 let mut seen = HashSet::from([child.clone()]);
                 let mut ancestor = parent;
@@ -63,7 +64,7 @@ impl Graph {
                 }
                 path.reverse();
                 Some((
-                    self.attempted.get(&child).copied().unwrap_or(0),
+                    self.attempted.get(&edge).copied().unwrap_or(0),
                     std::cmp::Reverse(path.len()),
                     child,
                     path,
@@ -72,10 +73,11 @@ impl Graph {
             .min_by(|a, b| (&a.0, &a.1, &a.2).cmp(&(&b.0, &b.1, &b.2)))
             .map_or_else(Vec::new, |value| value.3)
     }
-    pub fn attempt(&mut self, child: &str) {
+    pub fn attempt(&mut self, parent: &str, child: &str) {
+        let edge = (parent.to_owned(), child.to_owned());
         const MAX_ATTEMPTS: usize = MAX_THREADS * MAX_CANDIDATES;
         if self.attempted.len() >= MAX_ATTEMPTS
-            && !self.attempted.contains_key(child)
+            && !self.attempted.contains_key(&edge)
             && let Some(old) = self
                 .attempted
                 .iter()
@@ -85,7 +87,7 @@ impl Graph {
             self.attempted.remove(&old);
         }
         self.clock = self.clock.saturating_add(1);
-        self.attempted.insert(child.into(), self.clock);
+        self.attempted.insert(edge, self.clock);
     }
     /// Previous proof is a scheduling hint only; every returned thread is still reread.
     /// Rotate unverified candidates so a prefix of foreign IDs cannot starve siblings.
@@ -118,7 +120,8 @@ impl Graph {
     pub fn proof(&mut self, parent: &str, child: &str, valid: bool) {
         if valid && (self.proved.len() < MAX_CANDIDATES || self.proved.contains_key(child)) {
             self.proved.insert(child.into(), parent.into());
-        } else {
+        } else if self.proved.get(child).is_some_and(|p| p == parent) {
+            // A rejected reference from another parent cannot erase a valid edge hint.
             self.proved.remove(child);
         }
     }
