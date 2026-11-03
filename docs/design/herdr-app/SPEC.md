@@ -8,7 +8,8 @@ build rules. The frames:
 | `v2-a-window.png` | The herdr-app window at the app's 1.2 zoom. The `panorama` mod replaces the Agents panel; everything else is the shipped mods. |
 | `v2-b-sidebar.png` | The sidebar at 2x with every fold open, plus a legend of every mark. |
 | `v2-c-peek.png` | 2x crop: the Peek popup on a subagent that has no pane. |
-| `v2-d-graph-tab.png` | A space was clicked. Its **Swarm** tab (mod `panorama-graph`) is the first tab and is selected. |
+| `v2-d-graph-tab.png` | A space was clicked. Its **Swarm** tab (mod `panorama-graph`, based on Swarm View 5 deep) is the first tab and is selected. The thread has focus, so the columns orchestrators → depth 2 show and depths 3–5 are off to the right. |
+| `v2-d2-graph-scrolled.png` | The same tab after → → → → onto a depth-4 agent: the window scrolled right to depths 2–5. The breadcrumb names the hidden columns; the selected card is open with its question and actions. |
 
 The HTML is a reference copy. It needs the Claude Design runtime `support.js` to render, and
 that file is not copied here. The PNGs are the source of truth for the look.
@@ -64,7 +65,7 @@ sidebar (column, px 320)
 | Done phase bar | `dim` at ~85% | `#5c5d61` |
 
 Tints: a chip background is the colour plus alpha `2b` (about 17%), e.g. `t.blocked + "2b"`.
-The shipped mods use `26`; either is fine. The moving bar's track is `t.working + "1c"`.
+The shipped mods use `26`; either is fine. The moving bar has no track of its own: it lights the border it runs on (§4.7).
 
 Amber means working everywhere in herdr-app (tab pills, pane header), so panorama follows
 that: **working is amber, not the TUI's teal**. Everything that needs the operator uses the
@@ -198,9 +199,22 @@ keep the shipped 30 s timer. Spinners use gpui's own `.spin(900)` and need no ti
 
 | Effect | Where | Spec |
 |---|---|---|
-| Needs-you edge | Orchestrator rows with any needs chip (or own `blocked`); agent rows that are `fail/blk/wait`; same on graph nodes | Absolute, left 0, top 6, bottom 6, width 2, radius 1, bg `blocked`. Opacity = `0.3 + 0.7·(0.5 − 0.5·cos(2π·t/1600ms))`, a 1.6 s ease in and out that never fully disappears. |
-| Moving bar | Orchestrator rows (and graph nodes) with any `run` or `rev` descendant | Track: absolute, left 33 (under the text), right 8, bottom 1, h2, radius 1, bg `working + "1c"`, clipped. Segment: 28% of the track width, bg `working` at 0.85 opacity. Position: `p = (t mod 2400ms)/2400`, eased in-out quad (`p<.5 ? 2p² : 1−(−2p+2)²/2`), left = `−28% + eased·128%`, so it sweeps fully across. On graph nodes the track is left 12, right 10, bottom 2. |
+| Needs-you edge (**is the left border**) | Orchestrator rows with any needs chip (or own `blocked`); agent rows that are `fail/blk/wait`; graph cards that need you | The edge is the row's or card's own left border lit in `blocked`, not a separate stroke beside it. **Graph card:** a 2px overlay centred on the card's 1px left border line (left −1.5 relative to the padding box), from top 8 to bottom 8 so it stops short of the rounded corners. **Sidebar orchestrator row:** the row's left side, 2px wide, from top 6 down to the bottom where it meets the hairline bottom border (below), so the two read as one corner of a box. **Sidebar agent row** (no box): 2px at the row's left, top 6 to bottom 6. Opacity = `0.3 + 0.7·(0.5 − 0.5·cos(2π·t/1600ms))`, a 1.6 s ease in and out that never fully disappears. |
+| Moving bar (**runs on the bottom border**) | Orchestrator rows and graph orchestrator cards with any `run` or `rev` descendant; graph agent cards that are `run`/`rev` | A lit segment travels along the bottom border line itself; there is no separate track. **Graph card:** a 2px strip centred on the card's 1px bottom border (bottom −1.5), from left 10 to right 10 (clear of the corners), clipped. **Sidebar orchestrator row:** every orchestrator row has a 1px hairline bottom border in `border` (left 0 to right 8, the TUI cockpit's box line). Working rows carry a 1.5px strip on that hairline (bottom −0.25), clipped to it. Segment: 28% of the strip, `working` at 0.85 opacity. Position: `p = (t mod 2400ms)/2400`, eased in-out quad (`p<.5 ? 2p² : 1−(−2p+2)²/2`), left = `−28% + eased·128%`, so it sweeps fully across and off. |
 | Spinner | Every `run` mark, tab pill, pane header | `.spin(900)` |
+
+**Drawing it in gpui:** draw both as absolutely positioned children laid on the border line, not
+inside the content.
+
+- **Card:** keep the 1px `border` on the card (`.border_1().border_color(t.border)`, `relative()`)
+  and don't clip it with `overflow_hidden()`; clip only the text rows inside.
+- **Edge:** `div().absolute().left(px(-1.5)).top(8).bottom(8).w(2).rounded(1).bg(t.blocked).opacity(a)`.
+- **Bar:** `div().absolute().left(10).right(10).bottom(px(-1.5)).h(2).overflow_hidden()`, holding
+  the segment `div().absolute().left(relative(x)).w(relative(0.28)).h_full().bg(t.working).opacity(0.85)`.
+- **Sidebar orchestrator row:** the same pattern, with an always-present 1px hairline child at
+  the row's bottom (`bg(t.border)`) and the strip laid over it.
+- **Timer:** re-render on the 50 ms timer and set `left` / `opacity` from the clock. No element
+  changes size, so layout stays stable.
 
 ### 4.8 Clicks
 
@@ -251,7 +265,7 @@ tail:
 - **New click behaviour:** clicking a space selects it **and opens its Swarm tab** (§6).
   `space.select` alone stays on drag-to-reorder and keyboard selection.
 
-## 6. Swarm graph tab (`mods/panorama-graph`)
+## 6. Swarm graph tab (`mods/panorama-graph`, based on Swarm View 5 deep)
 
 ### 6.1 Opening
 
@@ -288,49 +302,174 @@ The shipped pane card (border `accent` when focused, radius 10, bg `background`)
 header: glyph · "Swarm" 500 · `dim` text `<space> · N orchestrators · N threads · N agents` ·
 the orchestrator-style aggregate marks for the whole space.
 
-### 6.4 Graph layout
+### 6.4 Graph model: Swarm View 5 deep
 
-The graph runs left to right, the TUI 2a graph restyled to herdr-app. It shows **only this
-space's orchestrators**.
+The graph is **Swarm View 5 deep** (design turn 5, direction 5d), restyled to herdr-app. It is
+the model the TUI ships: `docs/design/swarm-deep.js` and `render-5d.mjs`, docs/DESIGN.md
+"Subagents to any depth", and `src/ui/graph/columns.rs` for the arrow keys. Only the look
+changes; structure and behaviour are the same.
 
-- Graph padding: 18 22. Scrolls both ways when larger than the pane.
-- Four columns, each **264** wide with **44** between them: Orchestrators, Threads, Agents,
-  Subagents.
-- Column headers sit at the top: 11.5 medium `dim`, the count 6px later in `#4d4e52`. The
-  first row starts at y=30.
-- **Rows:** every node is **52** tall on a **62** pitch. A leaf (an agent without subagents,
-  or each subagent) takes one row. A parent node is placed at the top row of its subtree.
-  Orchestrators are separated by an extra 20.
-- **Subagents of subagents** go in the same column, indented 26 per extra depth. They are
-  joined to their parent by an elbow: a vertical at parent.x+13 from the parent's bottom down
-  to the child's centre, then horizontal to the child.
-- **Connectors:** 1.5px `input`. From the parent's right edge at y = top+26, a horizontal line
-  of 22 reaches a spine. The spine runs vertically to the last child's y+26. A horizontal stub
-  goes to each child's left edge.
-- **Node card:** bg `#1d1e21` (raised, slightly darker), 1px `border`, radius 8, padding 8 10
-  0 12, two lines with gap 5.
-  - Line 1 (h18): harness icon (16 on orchestrators, 14 on agents) · title 13 (500 for
-    orchestrator and thread titles; role in `muted` for agents) · marks.
-  - Line 2 (h15, 11.5): `dim` text, or `blocked` when the node needs you. Threads show their
-    phase bars (§4.5) before the text, mr 7.
-  - Orchestrator line 2: `<harness> · <age> · tab <n>`.
-  - Thread line 2: the current phase and its note (`CI · 3 failing`, `review r2`, `author ·
-    waits on Q14`, `done`).
-  - Agent line 2: the activity.
-- **Subagent nodes** use bg `#19191c` and a `muted` title: pane-less, matching the sidebar.
-- A finished orchestrator's whole subtree is drawn at **0.55 opacity**.
-- **Motion:** the same edge and moving bar as the sidebar (§4.7), on nodes.
+**One column per depth:**
 
-### 6.5 Graph clicks
+```
+Orchestrators | Threads | Depth 1 | Depth 2 | … | Depth N
+ (this space)   (of the    (agents of the selected thread, by spawn depth)
+                selected
+                orch.)
+```
 
-These are exactly the sidebar's:
+- **Orchestrators:** this space's orchestrators only (`props.space`).
+- **Threads:** the selected orchestrator's threads.
+- **Depth columns:** there is one per depth of the **selected thread's** spawn tree, as deep as
+  that tree goes. Depth 1 holds the agents the orchestrator spawned; depth k+1 holds the agents
+  that depth-k agents spawned.
+- **Card placement:**
+  - A card sits level with the agent that spawned it, or below the cards already in its
+    column.
+  - An agent with children starts below the previous group's last child, so two groups'
+    connector lines never share rows. This is 5d's `place()`: `y = max(cur[d], parentY,
+    trunk[d+1] − mid + 16)`.
+- **Folding finished agents:**
+  - Finished children fold into one **`n finished · role ×k`** card per parent. It sits last
+    in its group; ⏎ or a click unfolds it.
+  - A finished agent still shows while a live or failed agent is below it (5d's `SHOWN`).
 
-- An orchestrator node, or an agent node with a pane: `pane.focus`. That switches from the
-  Swarm tab to that agent's tab.
-- A pane-less subagent: the Peek popup.
-- A thread node: toggles collapsing its agents into a `✓ N done` node.
+**Sizes (logical px):**
+
+| Part | Value |
+|---|---|
+| Graph padding (inside the pane card) | 10 16 8 |
+| Breadcrumb line | h22, 11.5 |
+| Column header line | h24: 11.5 medium `dim`, count 6px later in `#4d4e52` |
+| Column widths | orchestrators **236**, threads **300**, depth columns **272** |
+| Gap between columns (holds the connectors) | **36**; the spine sits at its middle, 18 left of the child column |
+| Card | h**54**, radius 8, bg `#1d1e21`, 1px `border`, padding 9 10 0 12, two lines with gap 6 |
+| Card gap in a column | 10 |
+| Fold card (`n finished`) | h40, transparent bg, status squares 12×12 (radius 3, gap 3), text 12 `dim` |
+| Selected agent card | 68 + detail lines (17 each, +3 per item); width unchanged |
+| Selected thread card | 64 + 20 per phase |
+| Connector | 1.5px `input`; on the selected path `#ffffff4d` |
+| Horizontal scrollbar | h6 track `#ffffff0a`, radius 3, thumb `#ffffff33`, 6 above the key line |
+| Key line | h22, 11.5 `dim`, keys in `muted` 500 |
+
+Columns **keep their width and align left**. The space left over on the right stays empty;
+the operator decided this in turn 5, because a stretched card's sweep runs too long.
+
+**What a card shows:**
+
+- **Orchestrator:**
+  - Line 1: harness icon 16, title 500, the aggregate marks (§3).
+  - Line 2: `<harness> · <age> · tab <n>`.
+  - Edge and moving bar as in §4.7. A finished orchestrator is drawn at 0.55 opacity.
+- **Thread:**
+  - Line 1: name 500, its one mark.
+  - Line 2: phase bars (§4.5), then the current phase and its note (`CI · 3 failing`, `review
+    r2`, `author · waits on Q14`).
+  - **Selected thread:** border `accent`, and line 2 becomes `<phase> · <age> · N agents, L
+    levels`. Then the phase list follows, one row per phase, h20, 12: a glyph (✓ done, ▸ now,
+    ✗ failed, ? waiting, · next), the name, and the time on the right (`09:02–09:20`, `since
+    09:43`). Done rows are `muted`, the current one `foreground`, next ones `dim`.
+- **Agent:**
+  - Line 1: harness icon 14, role (`muted`; `foreground` on the selected path), `id · model` in
+    `dim` 11.5, then the status mark.
+  - Line 2: the activity (`dim`, or `blocked` when it needs you). On the right goes `age · N
+    calls`, or **`› n`** when its children's column is off-screen.
+  - The needs-you edge is the card's left border on `fail/blk/wait` cards. The moving bar is a
+    segment travelling along the bottom border of every `run`/`rev` card, as the TUI sweep does
+    (§4.7 has the geometry).
+- **Selected agent:** border `accent`, bg `#202226`. Line 1 ends with the status word
+  (`needs answer`, `failed`, `running`, … in that status's colour) instead of the mark. Below
+  it:
+  - detail rows (12, line 17): `now <activity>`, then `? <question>` per open question
+    (`blocked`, wrapped), then `✗ <error>`
+  - an action row of h24 buttons, radius 6, 11.5: **Peek ⏎** (solid; **Open pane ⏎** for an
+    agent with a pane), **Transcript t**, **Answer a** (**Allow / deny a** when blocked;
+    `dim` when there's nothing to answer)
+- **Selected path:** every card from the orchestrator down to the selection gets a brighter
+  border (`#ffffff38`), and its connector stubs light up (`#ffffff4d`).
+
+### 6.5 Horizontal scrolling (the window onto the columns)
+
+- **Window rule** (5d's, unchanged):
+  1. Start with the focused column, the column before it (its parents) and, if it fits, the
+     column after it (its children).
+  2. Then add more columns while they fit: right first, then left.
+  3. Never drop the focused column or the one before it.
+- **Fit:** fit against the graph's inner width, about 1230 at a 320 sidebar and a 1600-wide
+  window, minus 24.
+- **Left inset:** when columns are hidden on the left, the first visible column starts 24 in,
+  leaving room for the lines that come in from the left edge.
+- **Focus moves the window.** In D the thread column has focus: orchestrators, threads and
+  depths 1–2 show, and depths 3–5 are off to the right. In D2, after → → → → onto the
+  checker at depth 4, the window is depths 2–5. Orchestrators, threads and depth 1 are off to
+  the left.
+- **What stays visible when columns are off-screen:**
+  - **Breadcrumb line:** pinned above the column headers. Left: `‹ <orchestrator> › <thread> ›
+    <agent id> …   N columns left`, naming the selected path through the hidden columns, in
+    `muted`, with the count in `#4d4e52`. Right: `depth a–b · N columns right ›`. Both
+    disappear when nothing is hidden on that side.
+  - **Column headers:** pinned while the columns scroll vertically.
+  - **`› n` on cards** whose children's column is hidden.
+  - **Lines in from the left edge** when a group's parent column is hidden.
+  - **26px fades** on a hidden side (`background` to transparent).
+  - **The scrollbar thumb.** Left = the width of the hidden columns on the left; width = the
+    shown span; both out of the total width of all columns.
+- **Wheel:**
+  - The wheel over a column scrolls that column vertically by 3 rows (each column scrolls on
+    its own). A column that overflows shows a `↓ N more below` chip at its bottom: h20, radius
+    5, bg `raised`, 11 `muted`. A wheel-scrolled column stops following the selection until
+    the selection changes.
+  - **shift+wheel, or a horizontal wheel or trackpad,** scrolls the window sideways without
+    moving the selection. The next focus or selection change scrolls back to it.
+  - `shift+wheel scroll` is in the key line while anything is off-screen.
+- **Click safety (TUI rule):** after any scroll, a card that slid under a still pointer
+  ignores clicks for 0.3 s. After a refresh that moved cards, clicks wait 1 s per card.
+
+### 6.6 Keys and mouse
+
+The Swarm tab's mod takes keys while it has focus:
+
+| Key | Action |
+|---|---|
+| `↑` `↓` (`k` `j`) | Move within the focused column; in a depth column, across parents |
+| `→` (`l`) | Into the next column. From a depth-k agent: into its children, picking the child last selected there, else the first one. From the thread: onto the depth-1 agent on the selected path. |
+| `←` (`h`) | Back a column. From a spawned agent: up to the agent that spawned it. |
+| `⏎` | Open: `pane.focus` for an agent with a pane (orchestrators, terminal sub-agents), Peek (§4.9) for a pane-less subagent, unfold on a `n finished` card |
+| `t` | Transcript |
+| `a` | Answer: herdr-inbox for an open question, allow/deny for a permission |
+| `i` | Inbox |
+| `g` | Go to the orchestrator's pane |
+
+Mouse:
+
+- A click on an **orchestrator or thread** card selects it and focuses its column (drill-down).
+  Double-click or ⏎ opens the orchestrator's pane.
+- A click on an **agent** card selects it and opens it, the same as clicking its sidebar row:
+  `agent.focus {terminal}` / `pane.focus` when it has a pane, the Peek popup when it doesn't.
+  So clicking never leaves you without a way back: Peek is a popup, and the Swarm tab stays
+  first.
+- Clicks on the action buttons run their action.
 
 Clicking a node never types into a pane (panorama stays read-only).
+
+### 6.7 What the mod needs from gpui-kit
+
+- **The canvas:** cards and connectors are absolutely positioned, the way the HTML does it.
+  This needs `relative()` / `absolute()` divs with `left` / `top` / `w` / `h`.
+- **Horizontal scrolling:** the window isn't a native horizontal scroll. The mod computes which
+  columns show (§6.5) and lays out only those, so arrow keys can drive it.
+  - shift+wheel and horizontal wheel events have to reach the mod: `on_scroll_wheel` with
+    `delta.x`, or shift held.
+  - The scrollbar is drawn by the mod (two divs), not `overflow_x_scrollbar()`.
+  - If gpui-kit can't deliver horizontal wheel deltas to a mod, keep keys and clicks only, and
+    say so in the key line.
+- **Vertical scrolling per column:** one `overflow_y_scrollbar()` container per visible column.
+  But connectors cross between columns, so the simpler route is a per-column scroll offset
+  the mod applies itself, with lines clipped to the canvas.
+- **Text measurement** for wrapped question lines in the selected card. gpui wraps text
+  itself; the card height can be `auto`, as long as the placement pass runs after layout, or
+  is estimated (the HTML estimates 34 characters a line).
+- **Timer:** the same 50 ms timer as the sidebar (§4.7), only while an edge or bar is on screen.
 
 ## 7. Harness icons
 
