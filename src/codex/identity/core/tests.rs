@@ -64,6 +64,24 @@ async fn core_binding_reuses_root_proof_and_cannot_overwrite_tui_namespace() {
     );
     assert!(resolve(&env, "t3", &info, processes().as_ref()).is_none());
     assert!(resolve(&env, "vps/t2", &info, processes().as_ref()).is_none());
+    let mut conflict = request();
+    conflict.id = "22222222-2222-4222-8222-222222222222";
+    assert!(
+        bind(&hc, &env, &options, "t2", conflict, &processes)
+            .await
+            .is_err()
+    );
+    assert!(resolve(&env, "t2", &info, processes().as_ref()).is_none());
+    let mut recovery = request();
+    recovery.automatic = false;
+    recovery.owner = None;
+    bind(&hc, &env, &options, "t2", recovery, &processes)
+        .await
+        .unwrap();
+    assert_eq!(
+        resolve(&env, "t2", &info, processes().as_ref()).as_deref(),
+        Some(ROOT)
+    );
     let mut reused = herdr_agent_kit::agent_procs::fake::FakeProcesses::default();
     reused.insert(20, 1, "codex", "new-start", &["codex", "--no-daemon"]);
     assert!(resolve(&env, "t2", &info, &reused).is_none());
