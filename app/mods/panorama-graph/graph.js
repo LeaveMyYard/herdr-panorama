@@ -136,6 +136,7 @@ export function navigate(state, model, direction) {
   if (direction === 'up' || direction === 'down') {
     const column = model.columns[state.focus], index = column.indexOf(current);
     const next = column[Math.max(0, Math.min(column.length - 1, index + (direction === 'down' ? 1 : -1)))];
+    if (next.key === current.key) return false;
     selectNode(state, model, next); return true;
   }
   if (direction === 'left') {

@@ -116,3 +116,10 @@ test('threadless native fallback uses only verified same-space ancestry and neve
  root.root.threads=scenario().root.threads;model=graphModel([root],s);
  assert.equal(model.nativeFallback,false);assert.ok(model.tree.nodes.every(n=>n.kind!=='native'));
 });
+
+test('an arrow at the column boundary preserves an independently scrolled viewport',()=>{
+ const root=scenario(), s=state(), model=graphModel([root],s);
+ selectNode(s,model,model.orchs[0]);s.scroll={0:64};s.manual=2;
+ assert.equal(navigate(s,model,'up'),false);
+ assert.deepEqual(s.scroll,{0:64});assert.equal(s.manual,2);
+});
