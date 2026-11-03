@@ -7,7 +7,8 @@ use herdr_agent_kit::{agent_procs::start_token, plugin_env::PluginEnv};
 use panorama::host::{Core, SnapshotSource, source::CoreSource};
 use serde_json::json;
 use std::{
-    os::unix::fs::{PermissionsExt, symlink},
+    os::unix::fs::PermissionsExt,
+    path::Path,
     process::{Child, Command},
     time::Duration,
 };
@@ -20,12 +21,34 @@ impl Drop for Owned {
     }
 }
 
+/// A dedicated executable keeps its harness name without relying on renamed multicall tools.
+fn owned_agent(dir: &Path, harness: &str) -> Owned {
+    let source = dir.join("owned_agent.rs");
+    let executable = dir.join(harness);
+    std::fs::write(
+        &source,
+        "fn main() { std::thread::sleep(std::time::Duration::from_secs(30)); }\n",
+    )
+    .unwrap();
+    let compiled = Command::new("rustc")
+        .arg("--edition=2024")
+        .arg(&source)
+        .arg("-o")
+        .arg(&executable)
+        .output()
+        .unwrap();
+    assert!(
+        compiled.status.success(),
+        "owned-process fixture compilation failed: {}",
+        String::from_utf8_lossy(&compiled.stderr)
+    );
+    Owned(Command::new(executable).spawn().unwrap())
+}
+
 #[test]
 fn exact_terminal_hook_identity_enriches_and_pid_reuse_or_legacy_records_do_not() {
     let sc = Scenario::new("demo");
-    let executable = sc.root().join("claude");
-    symlink("/bin/sleep", &executable).unwrap();
-    let mut owned = Owned(Command::new(&executable).arg("30").spawn().unwrap());
+    let mut owned = owned_agent(sc.root(), "claude");
     let pid = owned.0.id();
     let start = start_token(pid).unwrap();
     let hooks = sc.root().join("core-hooks");
@@ -143,9 +166,7 @@ fn core_codex_binding_and_one_shot_snapshot_keep_existing_history_warmup() {
     let fixture = codex_support::Fixture::new("complete");
     let process_dir = fixture.root().join("owned");
     std::fs::create_dir(&process_dir).unwrap();
-    let process = process_dir.join("codex");
-    symlink("/bin/sleep", &process).unwrap();
-    let owned = Owned(Command::new(&process).arg("30").spawn().unwrap());
+    let owned = owned_agent(&process_dir, "codex");
     let pid = owned.0.id();
     let hc = fixture.root().join("hc");
     std::fs::write(&hc, format!(r#"#!/usr/bin/env python3
