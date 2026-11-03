@@ -11,7 +11,7 @@ import main as installer
 from fs import Home
 
 home = Path(home_path)
-parent = {'journal': 'data/panorama', 'payload': 'layouts', 'keys': '.', 'rollback': 'layouts', 'crash-journal': 'data/panorama', 'crash-payload': 'layouts'}[scenario]
+parent = {'journal': 'data/panorama', 'payload': 'layouts', 'keys': '.', 'rollback': 'layouts', 'crash-journal': 'data/panorama', 'crash-payload': 'layouts', 'metadata': 'mods/panorama', 'uninstall-keys': '.'}[scenario]
 original_fsync = os.fsync
 original_remove = Home.remove
 tripped = False
@@ -22,6 +22,8 @@ def fail_after_publication(fd):
     global tripped
     info = os.fstat(fd)
     target = home / parent
+    if scenario == 'metadata' and not (target / 'gpui-kit.d.ts').exists():
+        return original_fsync(fd)
     if not tripped and stat.S_ISDIR(info.st_mode) and target.exists():
         expected = target.stat()
         if (info.st_dev, info.st_ino) == (expected.st_dev, expected.st_ino):
@@ -42,7 +44,9 @@ def fail_one_rollback(self, path, expected):
 
 os.fsync = fail_after_publication
 Home.remove = fail_one_rollback
-sys.argv = ['app-install', 'install', '--app-home', home_path, '--package', package, '--checker', checker]
+sys.argv = ['app-install', 'uninstall' if scenario == 'uninstall-keys' else 'install', '--app-home', home_path, '--package', package]
+if scenario != 'uninstall-keys':
+    sys.argv += ['--checker', checker]
 result = installer.main()
 assert tripped and result == 1, 'fault did not exercise the intended published write'
 assert scenario != 'rollback' or removal_failed, 'incomplete rollback was not exercised'

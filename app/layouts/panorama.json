@@ -20,7 +20,7 @@
       "id": "sidebar",
       "type": "column",
       "size": {
-        "px": 268
+        "px": 320
       },
       "min": 44,
       "max": 480,
@@ -46,7 +46,7 @@
               "id": "spaces",
               "type": "block",
               "size": {
-                "weight": 1
+                "px": 143
               },
               "min": 90,
               "content": {

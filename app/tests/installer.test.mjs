@@ -65,7 +65,7 @@ test('existing binding even with identical action requires a decision, with no m
   assert.deepEqual(tree(s.home), before);
 });
 
-test('last native check failure rolls back files, binary, dirs, and original keys', t => {
+test('last staged native check failure leaves files, binary destinations, dirs and original keys untouched', t => {
   const s = sandbox(t, { global: { 'alt-s': 'panorama.open' } }); personal(s);
   const before = tree(s.home);
   fail(s.run('install', ['--binary', artifact(s)], { TEST_FAIL: 'panorama-peek' }));
@@ -183,19 +183,20 @@ test('key mutation during native checking refuses commit and preserves the perso
   assert.equal(readFileSync(join(s.home, 'view.json'), 'utf8'), '{"layout":"personal"}\n');
 });
 
-test('install journal recovers a killed process during native checking', async t => {
+test('killed staged native checking precedes the journal and leaves the original home untouched', async t => {
   const s = sandbox(t, { global: { 'alt-s': 'panorama.open' } }); personal(s);
   const before = tree(s.home);
-  const child = spawn('python3', s.args('install'), { detached: true, env: { ...s.env, TEST_DELAY: '20' } });
+  const child = spawn('python3', s.args('install'), { detached: true, env: { ...s.env, TMPDIR: s.temp, TEST_DELAY: '20' } });
   const exited = new Promise(resolve => child.on('exit', resolve));
   t.after(() => { try { process.kill(-child.pid, 'SIGKILL'); } catch (error) { if (error.code !== 'ESRCH') throw error; } });
   const deadline = Date.now() + 5000;
   while (!existsSync(join(s.temp, 'checks.log')) && Date.now() < deadline) {
     await new Promise(resolve => setTimeout(resolve, 10));
   }
-  assert.equal(existsSync(join(s.temp, 'checks.log')), true, 'checker was reached after journal and payload writes');
+  assert.equal(existsSync(join(s.temp, 'checks.log')), true, 'staged checker was reached before journal or payload writes');
   process.kill(-child.pid, 'SIGKILL'); await exited;
-  ok(s.run('uninstall')); assert.deepEqual(tree(s.home), before);
+  assert.equal(existsSync(s.manifest), false); assert.deepEqual(tree(s.home), before);
+  fail(s.run('uninstall')); assert.deepEqual(tree(s.home), before);
 });
 
 test('symlinked manifest and key file are refused without touching their targets', t => {
@@ -281,4 +282,28 @@ test('unrelated hardlink to an installed payload still refuses uninstall without
   const before = tree(s.home), sentinel = readFileSync(outside);
   const result = s.run('uninstall'); fail(result); assert.match(result.stderr, /Not a private regular file/);
   assert.deepEqual(tree(s.home), before); assert.deepEqual(readFileSync(outside), sentinel);
+});
+
+test('staged native metadata is explicitly fingerprinted; changed host-update metadata is preserved', t => {
+  const s = sandbox(t); ok(s.run('install'));
+  const manifest = JSON.parse(readFileSync(s.manifest));
+  const metadata = Object.keys(manifest.files).filter(path => path.endsWith('/gpui-kit.d.ts') || path.endsWith('/jsconfig.json'));
+  assert.equal(metadata.length, 8); assert.ok(metadata.every(path => manifest.files[path].mode === 0o644));
+  const updated = join(s.home, 'mods/panorama/gpui-kit.d.ts'); writeFileSync(updated, '// next host version');
+  const result = s.run('uninstall'); ok(result); assert.match(result.stdout, /gpui-kit.d.ts \(edited; preserved\)/);
+  assert.equal(readFileSync(updated, 'utf8'), '// next host version'); assert.equal(existsSync(s.manifest), false);
+  assert.equal(existsSync(join(s.home, 'mods/panorama/jsconfig.json')), false);
+});
+
+test('metadata post-publication fsync failure rolls back all declared generated payload', t => {
+  const s = sandbox(t); personal(s); const before = tree(s.home);
+  const result = spawnSync('python3', [join(root, 'app/tests/write-fault.py'), root, s.home, s.packageDir, s.checker, 'metadata'], { env: s.env, encoding: 'utf8' });
+  ok(result); assert.match(result.stdout, /Fault injected and handled/); assert.deepEqual(tree(s.home), before);
+});
+
+test('receipt size cap refuses a large key merge without leaving an uninstallable install', t => {
+  const s = sandbox(t, { global: { 'alt-s': 'panorama.open' } });
+  writeFileSync(join(s.home, 'keys.json'), JSON.stringify({ global: { 'alt-p': 'p'.repeat(450000) } }));
+  const before = tree(s.home), result = s.run('install'); fail(result); assert.match(result.stderr, /receipt exceeds 1 MiB/);
+  assert.deepEqual(tree(s.home), before);
 });

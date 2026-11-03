@@ -1,10 +1,23 @@
 The layout app/layouts/panorama.json is derived from Herdr app's shipped
-layouts/main.json, installed on 2026-11-03. The only changes replace the
-agents and spaces mod references with panorama and panorama-spaces.
+layouts/main.json, installed on 2026-11-03. Changes replace the agents/spaces mod references with panorama and
+panorama-spaces, set the sidebar width to 320 and the Spaces block to 143
+logical pixels. B3 will make Spaces sizing follow its actual content.
 
 Herdr app is distributed under the Apache License, Version 2.0.
 See LICENSE.herdr-app in this directory. No artwork is copied; the layout
 continues to reference the app's own shipped mods and assets.
 
-The panorama scaffold JavaScript and installer are original herdr-panorama
-code, covered by the repository's MIT license.
+The sidebar adapts Herdr app's shipped agents/main.js patterns for priority
+sections, row/fold/pin interactions, status marks, icons, age and native tree
+lines; those derived portions retain the same Apache-2.0 attribution.
+Original panorama feed/tree logic and installer code use the repository MIT
+license. No shipped files are edited.
+
+The custom viewport's thumb geometry adapts gpui-base 0.7.1's
+ThumbGeometry::new from Herdr app v0.1.12:
+https://github.com/herdrdev/herdr-app/blob/v0.1.12/vendor/gpui-kit/crates/base/src/scrollbar.rs#L1201
+Git blob: 456addb4dfdeae55bf5cf5e97adf432e1bbdee06.
+This Apache-2.0 source is vendored from longbridge/gpui-kit at 1ccf011
+with Herdr patches. The adaptation converts native physical dimensions through
+the current app zoom and uses a script-owned viewport/native Slider control.
+See LICENSE.herdr-app for the Apache-2.0 license text.

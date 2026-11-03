@@ -47,7 +47,7 @@ class Home:
         finally:
             os.close(fd)
 
-    def read(self, path):
+    def read(self, path, limit=None):
         try:
             with self.parent(path) as (fd, name):
                 child = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=fd)
@@ -55,7 +55,12 @@ class Home:
                     info = os.fstat(stream.fileno())
                     if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
                         raise ValueError(f'Not a private regular file: {path}')
-                    return stream.read(), stat.S_IMODE(info.st_mode)
+                    if limit is not None and info.st_size > limit:
+                        raise ValueError(f'File exceeds read limit: {path}')
+                    data = stream.read() if limit is None else stream.read(limit + 1)
+                    if limit is not None and len(data) > limit:
+                        raise ValueError(f'File exceeds read limit: {path}')
+                    return data, stat.S_IMODE(info.st_mode)
         except FileNotFoundError:
             return None
 
@@ -116,3 +121,16 @@ class Home:
     def rmdir(self, path):
         with self.parent(path) as (fd, name):
             os.rmdir(name, dir_fd=fd)
+
+    def list(self, path):
+        with self.parent(path + '/.probe') as (fd, _name):
+            return os.listdir(fd)
+
+    def replace_temp(self, path, temp, expected):
+        if self.read(path) != expected:
+            raise ValueError(f'File changed: {path}')
+        if parts(path)[:-1] != parts(temp)[:-1]:
+            raise ValueError('Runtime staging must be in the same directory')
+        with self.parent(path) as (fd, name):
+            os.replace(parts(temp)[-1], name, src_dir_fd=fd, dst_dir_fd=fd)
+            os.fsync(fd)
