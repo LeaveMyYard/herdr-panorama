@@ -102,11 +102,17 @@ fn validate(feed: &Value) -> Result<(), String> {
     let normalized = normalize(feed.clone());
     let feed = &normalized;
     let swarm: Swarm = serde_json::from_value(feed.clone()).map_err(|e| e.to_string())?;
-    if serde_json::to_value(swarm.counts()).unwrap() != feed["counts"] {
-        return Err("legacy counts differ".into());
+    let counts = serde_json::to_value(swarm.counts()).unwrap();
+    for (field, _) in &schema()["Counts"] {
+        if counts[*field] != feed["counts"][*field] {
+            return Err(format!("legacy count {field} differs"));
+        }
     }
     let mut roots = HashSet::new();
     for root in feed["orchestrators"].as_array().unwrap() {
+        if root["hidden_done"].as_i64().unwrap() < 0 {
+            return Err("negative hidden_done".into());
+        }
         let host = root["host"].as_str().unwrap();
         if !["herdr-core", "herdr-tui", "unknown"].contains(&host) {
             return Err("invalid host".into());
@@ -148,6 +154,11 @@ fn validate(feed: &Value) -> Result<(), String> {
                 return Err("invalid thread identity".into());
             }
             for agent in thread["agents"].as_array().unwrap() {
+                for field in ["tool_calls", "resumes"] {
+                    if agent[field].as_i64().unwrap() < 0 {
+                        return Err(format!("negative {field}"));
+                    }
+                }
                 let id = agent["id"].as_str().unwrap();
                 if id.is_empty() || !agents.insert(id) || agent["harness"] == "" {
                     return Err("invalid agent identity".into());
@@ -343,6 +354,12 @@ fn identity_membership_and_question_mutations_are_rejected() {
 fn additive_fields_unknown_vocabulary_and_scoped_ids_remain_compatible() {
     let mut feed = fixture();
     feed["future_field"] = json!({"anything": true});
+    feed["counts"]["future_count"] = json!(123);
+    feed["orchestrators"][0]["future_root"] = json!(true);
+    feed["orchestrators"][0]["threads"][0]["future_thread"] = json!(true);
+    feed["orchestrators"][0]["threads"][0]["phases"][0]["future_phase"] = json!(true);
+    feed["orchestrators"][0]["threads"][0]["agents"][0]["future_agent"] = json!(true);
+    feed["orchestrators"][0]["threads"][0]["agents"][8]["bg"][0]["future_task"] = json!(true);
     feed["orchestrators"][0]["harness"] = json!("another-harness");
     feed["orchestrators"][0]["threads"][0]["agents"][0]["status"] = json!("new-status");
     feed["counts"]["running"] = json!(1);
@@ -408,4 +425,19 @@ fn fixture_pins_needs_items_separately_from_distinct_questions() {
     assert_eq!(items(&root), 1);
     root["herdr_status"] = json!("idle");
     assert_eq!(items(&root), 1);
+}
+
+#[test]
+fn documented_nonnegative_counts_reject_negative_values_and_allow_zero() {
+    for pointer in [
+        "/orchestrators/0/hidden_done",
+        "/orchestrators/0/threads/0/agents/0/tool_calls",
+        "/orchestrators/0/threads/0/agents/0/resumes",
+    ] {
+        let mut feed = fixture();
+        *feed.pointer_mut(pointer).unwrap() = json!(-1);
+        assert!(validate(&feed).is_err(), "{pointer}");
+        *feed.pointer_mut(pointer).unwrap() = json!(0);
+        validate(&feed).unwrap();
+    }
 }
