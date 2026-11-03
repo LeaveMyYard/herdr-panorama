@@ -33,71 +33,82 @@ function start(view, cx, role) {
   if (view.feedClient) return view.feedClient;
   const home = appHome(), directory = `${home}/data/panorama`;
   const token = `${Date.now()}:${++serial}:${Math.random()}`;
-  let generation = null, stopped = false, closed = false, reading = null, queued = false, started = false, epoch = 0;
+  let generation = null, stopped = false, closed = false, reading = null, queued = false, started = false, epoch = 0, claiming = false;
   let resolveIdentity;
-  // The deferred promise resolves even on failure; early calls reject in their
-  // caller-owned spawn, without an unhandled initialization rejection.
   const identity = new Promise(resolve => { resolveIdentity = resolve; });
+  const alive = () => !closed && !stopped;
   const eligible = () => role === 'sidebar' || !references(layout());
-  const owns = () => !closed && !stopped && eligible() && validLease(shared(OWNER)) && shared(OWNER).token === token;
+  const owns = () => alive() && eligible() && validLease(shared(OWNER)) && shared(OWNER).token === token;
   const active = revision => revision === epoch && owns();
-  const packet = () => ({ ...view.feed, install_id: generation, writerError: view.writerError ?? null,
-    stale: Boolean(view.feed?.stale || !started || stopped),
+  const packet = () => ({ feed: view.feed?.feed ?? null, generated_at: view.feed?.generated_at ?? null,
+    install_id: generation, writerError: view.writerError ?? null, stale: Boolean(view.feed?.stale || !started || stopped),
     errors: [...(view.feed?.errors ?? []), ...(view.writerError ? [view.writerError] : [])] });
-  const publish = context => { if (owns()) setShared(PACKET, packet()); context.notify(); };
+  const cancelled = () => Object.assign(Error('Client no longer owns operation'), { cancelled: true });
   function clearOwned() {
-    // A losing owner, new generation, or incomplete initialization grants no
-    // authority to clear another client's persisted packet.
-    if (generation !== null && shared(OWNER)?.token === token && shared(PACKET)?.install_id === generation) {
-      setShared(PACKET, null); setShared(OWNER, null);
-    }
+    if (shared(OWNER)?.token !== token) return;
+    if (generation !== null && shared(PACKET)?.install_id === generation) setShared(PACKET, null);
+    // Own-token release is independent of packet authority, including early close.
+    setShared(OWNER, null);
   }
   function stop(error, context) {
-    stopped = true; epoch++;
+    if (error?.cancelled || closed) return;
+    // Recovery of an old crashed generation is synchronous and restricted to
+    // its matching cached packet; never claim a foreign/missing packet.
+    if (error?.disabled && generation !== null && shared(PACKET)?.install_id === generation) {
+      setShared(OWNER, { v: 1, token, role, seen_at: Date.now() });
+    }
+    stopped = true; view.feedValidated = false; epoch++;
     view.writerError = String(error?.message ?? error);
     view.feed = { ...view.feed, stale: true };
-    if (error?.receiptStop) clearOwned();
+    if (error?.receiptStop || error?.disabled) clearOwned();
     else if (shared(OWNER)?.token === token && generation !== null) setShared(PACKET, packet());
     context?.notify();
   }
-  const receipt = async () => {
+  async function authority(guard, pin = false) {
     const text = await readTextFile(`${directory}/install.json`);
+    if (!guard()) throw cancelled();
     if (text === null) throw Object.assign(Error('Install receipt missing'), { receiptStop: true });
     const parsed = installReceipt(text);
     if (generation !== null && parsed.install_id !== generation) throw Object.assign(Error('Installation changed'), { receiptStop: true });
+    if (pin) generation = parsed.install_id;
+    const controlText = await readTextFile(`${directory}/runtime/${parsed.install_id}/control.json`);
+    if (!guard()) throw cancelled();
+    if (controlText === null || controlText.length > 4096) throw Error('Runtime control missing or oversized');
+    const control = JSON.parse(controlText);
+    if (!control || Object.keys(control).length !== 3 || control.v !== 1 || control.install_id !== parsed.install_id
+        || typeof control.disabled !== 'boolean') throw Error('Runtime control invalid');
+    if (control.disabled) throw Object.assign(Error('Installation disabled'), { disabled: true });
     return { text, parsed };
-  };
+  }
+  const publish = context => { if (owns()) setShared(PACKET, packet()); context.notify(); };
   async function invoke(args, guard) {
-    await identity;
-    if (!guard() || closed || stopped || generation === null) throw Error(view.writerError ?? 'Client stopped');
+    await identity; if (!guard() || generation === null) throw cancelled();
     const argv = privateArgs(args, home, generation);
     try {
-      const current = await receipt();
-      if (!guard() || closed || stopped) throw Error('Client stopped');
-      const binary = await verifiedBinary(home, current.text, generation);
-      if (!guard() || closed || stopped) throw Error('Client stopped');
-      // Backend --install-id fences the remaining receipt/replacement race.
-      const result = await exec(binary, argv);
-      if (!guard()) throw Error('Client no longer owns operation');
+      const current = await authority(guard); if (!guard()) throw cancelled();
+      const binary = await verifiedBinary(home, current.text, generation); if (!guard()) throw cancelled();
+      await authority(guard); if (!guard()) throw cancelled();
+      const result = await exec(binary, argv); if (!guard()) throw cancelled();
+      await authority(guard); if (!guard()) throw cancelled();
       return result;
     } catch (error) { if (guard()) stop(error); throw error; }
   }
-  const callPrivate = args => invoke(args, () => !closed && !stopped);
+  const callPrivate = args => invoke(args, alive);
   function reload(context) {
     if (!owns()) return;
     if (reading === epoch) { queued = true; return; }
     const revision = epoch; reading = revision;
     context.spawn(async context => {
       try {
-        await receipt(); if (!active(revision)) return;
+        await authority(() => active(revision)); if (!active(revision)) return;
         const text = await readTextFile(`${directory}/feed.json`); if (!active(revision)) return;
-        await receipt(); if (!active(revision)) return;
+        await authority(() => active(revision)); if (!active(revision)) return;
         view.feed = readResult(view.feed, text);
       } catch (error) {
         if (!active(revision)) return;
-        // Missing/changed/invalid receipt is terminal, unlike a transient feed read.
-        try { await receipt(); if (!active(revision)) return; }
-        catch (receiptError) { if (active(revision)) stop(receiptError, context); return; }
+        if (error?.receiptStop || error?.disabled) { stop(error, context); return; }
+        try { await authority(() => active(revision)); if (!active(revision)) return; }
+        catch (authorityError) { if (active(revision)) stop(authorityError, context); return; }
         view.feed = readResult(view.feed, null, error);
       } finally {
         if (reading === revision) reading = null;
@@ -105,51 +116,70 @@ function start(view, cx, role) {
       }
     });
   }
-  function claim(context) {
-    if (closed || stopped || !eligible()) return;
-    epoch++; started = false; queued = false;
-    setShared(OWNER, { v: 1, token, role, seen_at: Date.now() });
-    setShared(PACKET, { ...(shared(PACKET) ?? view.feed), stale: true });
-    const revision = epoch;
+  function claim(context, initial = false) {
+    if (!alive() || !eligible() || claiming) return;
+    claiming = true;
     context.spawn(async context => {
-      await identity; if (!active(revision)) return;
       try {
+        await identity; if (!alive() || !eligible()) return;
+        await authority(() => alive() && eligible()); if (!alive() || !eligible()) return;
+        if (!initial && validLease(shared(OWNER))) return;
+        epoch++; started = false; queued = false;
+        setShared(OWNER, { v: 1, token, role, seen_at: Date.now() });
+        setShared(PACKET, packet());
+        const revision = epoch;
+        reload(context);
+        context.spawn(async context => {
+          while (active(revision)) {
+            try { await watchFolder(directory); if (!active(revision)) return; reload(context); }
+            catch { if (!active(revision)) return; await context.sleep(HEARTBEAT); if (!active(revision)) return; reload(context); }
+          }
+        });
         const capability = await invoke(['app-feed', '--help'], () => active(revision)); if (!active(revision)) return;
         if (capability.code !== 0 || !capability.stdout.includes('panorama app-feed v1')) throw Error(capability.stderr || capability.stdout);
         const result = await invoke(['app-feed', '--ensure'], () => active(revision)); if (!active(revision)) return;
         if (result.code !== 0) throw Error(result.stderr || result.stdout);
         started = true; view.writerError = null; reload(context);
-      } catch (error) { if (active(revision)) { view.writerError = String(error.message ?? error); publish(context); } }
-    });
-    reload(context);
-    context.spawn(async context => {
-      while (active(revision)) {
-        try { await watchFolder(directory); if (!active(revision)) return; reload(context); }
-        catch { if (!active(revision)) return; await context.sleep(HEARTBEAT); if (!active(revision)) return; reload(context); }
-      }
+      } catch (error) {
+        if (alive()) {
+          if (error?.receiptStop || error?.disabled) stop(error, context);
+          else if (!error?.cancelled && owns()) { view.writerError = String(error.message ?? error); publish(context); }
+        }
+      } finally { claiming = false; }
     });
   }
   const timer = cx.timer.every(HEARTBEAT, context => {
-    if (closed || stopped) return;
-    if (owns()) { setShared(OWNER, { v: 1, token, role, seen_at: Date.now() }); reload(context); }
-    else if (eligible() && !validLease(shared(OWNER))) claim(context);
-    else context.notify();
+    if (!alive()) return;
+    context.spawn(async context => {
+      try {
+        await identity; if (!alive()) return;
+        await authority(alive); if (!alive()) return;
+        if (owns()) { setShared(OWNER, { v: 1, token, role, seen_at: Date.now() }); reload(context); }
+        else if (eligible() && !validLease(shared(OWNER))) claim(context);
+        else context.notify();
+      } catch (error) { if (alive()) stop(error, context); }
+    });
   });
-  const client = { callPrivate, get install_id() { return generation; }, get stopped() { return stopped || closed; },
-    close(context) { clearOwned(); closed = true; epoch++; timer.cancel(); context?.notify(); } };
-  view.feedClient = client;
-  view.reloadFeed = reload;
+  const client = { callPrivate, get install_id() { return generation; }, get stopped() { return !alive(); },
+    close(context) { clearOwned(); view.feedValidated = false; closed = true; epoch++; timer.cancel(); context?.notify(); } };
+  view.feedClient = client; view.reloadFeed = reload; view.feedValidated = false;
   cx.spawn(async context => {
     try {
-      const current = await receipt(); if (closed) return;
-      await verifiedBinary(home, current.text); if (closed) return;
-      generation = current.parsed.install_id;
-    } catch (error) { if (!closed) stop(error, context); }
+      const current = await authority(alive, true); if (!alive()) return;
+      if (eligible()) {
+        const text = await readTextFile(`${directory}/feed.json`); if (!alive()) return;
+        await authority(alive); if (!alive()) return;
+        view.feed = { ...readResult(view.feed, text), install_id: generation, stale: true };
+      }
+      await verifiedBinary(home, current.text, generation); if (!alive()) return;
+      await authority(alive); if (!alive()) return;
+      view.feedValidated = true; context.notify();
+    } catch (error) { if (alive()) stop(error, context); }
     finally { resolveIdentity(generation); }
   });
-  // Initial sidebar priority, or ONE initial no-sidebar consumer takeover even
-  // over a persisted lease. Subsequent heartbeats only reclaim expired leases.
-  if (eligible()) claim(cx);
+  // Claim is deferred until receipt/control/artifact validation. Initial sidebar
+  // priority or initial no-sidebar takeover happens ONCE, never a stealing loop.
+  if (eligible()) claim(cx, true);
   return client;
 }
 export const startSidebar = (view, cx) => start(view, cx, 'sidebar');
@@ -162,7 +192,7 @@ export function consumerFeed(view) {
   const current = view.feed ?? { feed: null, generated_at: null, errors: [], stale: true };
   return { ...current, writerError: view.writerError ?? current.writerError ?? null,
     errors: [...new Set([...(current.errors ?? []), ...(view.writerError ? [view.writerError] : [])])], stale: Boolean(current.stale
-      || !published || !client || client.stopped || !client.install_id || current.install_id !== client.install_id
+      || !published || !client || !view.feedValidated || client.stopped || !client.install_id || current.install_id !== client.install_id
       || published.install_id !== client.install_id || !validLease(shared(OWNER))) };
 }
 export const closeConsumer = (view, cx) => view.feedClient?.close(cx);
