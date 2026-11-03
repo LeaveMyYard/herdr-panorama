@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Inter',system-ui,sans-serif;color:#eeeeef}
+a{color:#96b2d7}a:hover{color:#b8cce6}
+.frame{position:absolute;display:flex;flex-direction:column;gap:12px}
+.flabel{font:500 14px/1.3 'JetBrains Mono',monospace;color:#3d4045;letter-spacing:.01em;cursor:move}
+.fnote{font-size:14px;line-height:1.5;color:#55585d;max-width:1180px;text-wrap:pretty}
+.hx{--chrome:#101114;--canvas:#131518;--bg:#17191d;--border:#ffffff14;--hover:#ffffff0e;--selected:#ffffff17;--raised:#232427;--popover:#1c1d20;--input:#ffffff24;--fg:#eeeeef;--muted:#98999b;--dim:#696a6d;--accent:#96b2d7;--working:#e5c07b;--blocked:#f0705f;--done:#76a8ff;--idle:#65696f;--rev:#b9a0e2;font-family:'Inter',system-ui,sans-serif;color:var(--fg);-webkit-font-smoothing:antialiased}
+.clip{overflow:hidden;border-radius:12px;box-shadow:0 30px 80px rgba(0,0,0,.30),0 0 0 1px #2a2b2e}
+.win{position:relative;width:1600px;height:900px;display:flex;background:var(--chrome);overflow:hidden}
+.z12{zoom:1.2}
+.z2{zoom:2}
+.side{width:320px;flex:none;display:flex;flex-direction:column;background:var(--chrome);border-right:1px solid var(--border);min-height:0}
+.side.tall{border-right:0}
+.brand{height:46px;flex:none;display:flex;align-items:center;gap:4px;padding:0 10px 0 14px;font-size:13.5px}
+.logo{width:20px;height:20px;border-radius:5px;flex:none}
+.brand-t{font-weight:600;color:var(--fg);margin-left:4px}
+.grow{flex:1;min-width:0}
+.ibtn{width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:6px;color:var(--muted);flex:none}
+.ibtn.dim{color:var(--dim)}
+.ui{display:inline-block;flex:none;background:currentColor;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.i-search{--m:url(ui/search.svg)}
+.i-sidebar{--m:url(ui/sidebar.svg)}
+.i-plus{--m:url(ui/plus.svg)}
+.i-clock{--m:url(ui/clock.svg)}
+.i-settings{--m:url(ui/settings.svg)}
+.i-file{--m:url(ui/file-text.svg)}
+.i-compare{--m:url(ui/git-compare.svg)}
+.i-monitor{--m:url(ui/monitor.svg)}
+.i-branch{--m:url(ui/branch.svg)}
+.i-chev-d{--m:url(ui/chevron-down.svg)}
+.i-chev-r{--m:url(ui/chevron-right.svg)}
+.i-close{--m:url(ui/close.svg)}
+.s11{width:11px;height:11px}
+.s12{width:12px;height:12px}
+.s13{width:13px;height:13px}
+.s14{width:14px;height:14px}
+.s15{width:15px;height:15px}
+.sp-h{height:31px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 10px 0 16px;font-size:11.5px;color:var(--dim)}
+.sp-list{display:flex;flex-direction:column;gap:4px;padding:0 8px 14px}
+.sp{height:30px;flex:none;display:flex;align-items:center;gap:9px;padding:0 8px;border-radius:8px}
+.sp.on{background:var(--selected)}
+.tile{width:18px;height:18px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:#fff;flex:none}
+.sp-name{color:var(--fg);font-size:13px;white-space:nowrap}
+.sp-tail{flex:1;min-width:0;display:flex;justify-content:flex-end;align-items:center;font-size:11.5px;color:var(--dim)}
+.repo{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.agents{flex:1;min-height:0;display:flex;flex-direction:column;border-top:1px solid var(--border)}
+.ag-h{height:41px;flex:none;box-sizing:border-box;padding:14px 16px 5px;display:flex;align-items:center;justify-content:space-between;font-size:11.5px;font-weight:500;color:var(--dim)}
+.ag-list{position:relative;flex:1;min-height:0;overflow:hidden;padding:0 8px;display:flex;flex-direction:column}
+.thumb{position:absolute;right:2px;top:4px;width:4px;height:150px;border-radius:2px;background:#ffffff1c}
+.foot{height:69px;flex:none;box-sizing:border-box;border-top:1px solid var(--border);padding:4px 8px 8px;display:flex;flex-direction:column;font-size:13px}
+.fr{height:28px;flex:none;display:flex;align-items:center;gap:9px;padding:0 8px;border-radius:8px;color:var(--muted)}
+.fr.dim{color:var(--dim)}
+.r{position:relative;display:flex;align-items:center;height:26px;flex:none;padding:0 8px;border-radius:8px;font-size:12.5px}
+.r.orch{height:30px;font-size:13px}
+.r.sec{height:30px;box-sizing:border-box;padding-top:8px;font-size:11px;font-weight:500}
+.r.sel{background:var(--selected)}
+.r.hov{background:var(--hover)}
+.r.pk{background:var(--raised)}
+.seg{position:relative;width:13px;align-self:stretch;flex:none}
+.seg.v::before,.seg.t::before{content:"";position:absolute;left:7px;top:-2px;bottom:0;border-left:1.5px solid var(--input)}
+.seg.t::after,.seg.l::after{content:"";position:absolute;left:7px;top:-2px;height:15px;width:6px;border-left:1.5px solid var(--input);border-bottom:1.5px solid var(--input);border-bottom-left-radius:6px}
+.seg.t,.seg.l{margin-right:4px}
+.hic{width:14px;height:14px;flex:none;margin-right:7px}
+.hic.h16{width:16px;height:16px;margin-right:9px}
+.nm{flex:none;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--fg)}
+.nm.grow{flex:1;min-width:0;max-width:none}
+.nm.th{font-weight:500}
+.nm.ag{color:var(--muted)}
+.nm.quiet{color:var(--muted)}
+.nm.sum{color:var(--dim)}
+.sb{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dim);margin-left:5px}
+.sb.need{color:var(--blocked)}
+.nosb{display:none}
+.secl{white-space:nowrap}
+.secl.need{color:var(--blocked)}
+.secl.done{color:var(--done)}
+.secl.working{color:var(--working)}
+.secl.idle{color:var(--dim)}
+.secn{flex:1;color:var(--dim);margin-left:6px}
+.age{font-size:11px;color:var(--dim);margin-left:8px;flex:none}
+.mk{flex:none;margin-left:6px;box-sizing:border-box}
+.mk.spin{width:12px;height:12px;margin:0 1px 0 8px;background:var(--working);-webkit-mask:url(ui/spinner.svg) center/contain no-repeat;mask:url(ui/spinner.svg) center/contain no-repeat}
+.mk.chip{height:16px;min-width:16px;padding:0 4px;border-radius:4px;font-size:10.5px;font-weight:700;line-height:16px;text-align:center}
+.mk.need{background:#f0705f2b;color:var(--blocked)}
+.mk.fail{background:var(--blocked);color:#141516}
+.mk.rev{background:#b9a0e22b;color:var(--rev)}
+.mk.ok{width:14px;text-align:center;font-size:11px;color:var(--dim)}
+.mk.ring{width:7px;height:7px;margin:0 3px 0 9px;border-radius:4px;border:1.5px solid var(--idle)}
+.mk.dot{width:7px;height:7px;margin:0 3px 0 9px;border-radius:4px;background:var(--done)}
+.mk.pchip{height:18px;line-height:18px;padding:0 6px;border-radius:5px;font-size:10.5px;font-weight:500;color:var(--fg);background:var(--raised)}
+.mk.cnt{font-size:11px;color:var(--dim);margin-left:4px}
+.pips{display:flex;gap:2px;margin-left:8px;flex:none}
+.pip{width:8px;height:4px;border-radius:2px;background:var(--input)}
+.pip.d{background:#5c5d61}
+.pip.n{background:var(--working)}
+.pip.f{background:var(--blocked)}
+.pip.w{background:var(--blocked)}
+.fold{display:flex;align-items:center;gap:3px;height:18px;padding:0 3px;border-radius:4px;font-size:11px;color:var(--dim);margin-left:6px;flex:none}
+.fold.need{color:var(--blocked)}
+.fold.done{color:var(--done)}
+.edge{position:absolute;left:0;top:6px;bottom:6px;width:2px;border-radius:1px;background:var(--blocked)}
+.bar{position:absolute;left:33px;right:8px;bottom:1px;height:2px;border-radius:1px;background:#e5c07b1c;overflow:hidden}
+.bar-in{position:absolute;top:0;bottom:0;width:28%;border-radius:1px;background:var(--working);opacity:.85}
+.work{flex:1;display:flex;flex-direction:column;min-width:0}
+.tabs{height:42px;flex:none;box-sizing:border-box;display:flex;align-items:center;gap:3px;padding:0 10px;border-bottom:1px solid var(--border);background:var(--chrome)}
+.tab{height:29px;flex:none;box-sizing:border-box;padding:0 10px;display:flex;align-items:center;gap:7px;border-radius:7px;font-size:12.8px;color:var(--muted)}
+.tab.on{background:#1e1f22;box-shadow:inset 0 0 0 1px #ffffff1a;color:var(--fg)}
+.tab-dot{width:6px;height:6px;border-radius:3px;background:var(--done);flex:none}
+.tic{width:14px;height:14px;flex:none}
+.pbtn{height:26px;flex:none;padding:0 8px;display:flex;align-items:center;gap:5px;border-radius:6px;font-size:12px;color:var(--muted)}
+.wbtn{width:26px;height:26px;flex:none;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--dim)}
+.body{flex:1;min-height:0;padding:8px;background:var(--canvas);display:flex}
+.pane{flex:1;min-width:0;display:flex;flex-direction:column;border:1px solid var(--accent);border-radius:10px;background:var(--bg);overflow:hidden}
+.ph{height:30px;flex:none;box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:1px solid var(--border);font-size:12px}
+.ph-t{font-weight:500;color:var(--fg)}
+.ph-p{flex:1;color:var(--dim)}
+.term{flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 14px;font:13px/19px 'JetBrains Mono',monospace;color:#d2d4d9;overflow:hidden}
+.ln{white-space:pre;min-height:19px}
+.ln.usr{background:#ffffff0b;color:var(--fg);margin:0 -14px;padding:0 14px}
+.ln.dim{color:var(--dim)}
+.ln.err{color:#f0705f}
+.ln.work{color:var(--muted)}
+.ln.hi{color:var(--fg)}
+.ibox{margin-top:auto;border:1px solid #ffffff1f;border-radius:6px;padding:8px 10px;color:var(--dim);display:flex;gap:8px}
+.cur{width:8px;height:17px;background:#d2d4d9}
+.tfoot{display:flex;justify-content:space-between;color:var(--dim);font-size:12px;padding:6px 2px 0}
+.status{height:28px;flex:none;box-sizing:border-box;display:flex;align-items:center;gap:16px;padding:0 14px;border-top:1px solid var(--border);font-size:11.8px;color:var(--muted);background:var(--chrome)}
+.st-l{display:flex;align-items:center;gap:6px}
+.st-dot{width:6px;height:6px;border-radius:3px;background:var(--dim)}
+.st-need{color:var(--blocked)}
+.st-hint{color:var(--dim)}
+.peek{position:absolute;left:328px;top:296px;width:284px;box-sizing:border-box;z-index:5;background:var(--popover);border:1px solid #ffffff1f;border-radius:10px;box-shadow:0 18px 40px rgba(0,0,0,.5);padding:12px;display:flex;flex-direction:column;gap:9px;font-size:12.5px}
+.pk-h{display:flex;align-items:center;gap:8px}
+.pk-n{font-weight:600;color:var(--fg)}
+.pk-meta{font-size:11.5px;color:var(--dim);line-height:1.45}
+.pk-err{background:#f0705f1c;border:1px solid #f0705f40;border-radius:7px;padding:7px 9px;font:11.5px/1.5 'JetBrains Mono',monospace;color:#f6a99e;white-space:pre}
+.pk-k{font-size:11px;color:var(--dim)}
+.pk-msg{color:var(--muted);line-height:1.5;text-wrap:pretty}
+.pk-btns{display:flex;gap:6px}
+.pk-b{height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;border-radius:7px;background:var(--raised);color:var(--fg);font-size:12px}
+.pk-b.solid{background:var(--fg);color:#101114;font-weight:500}
+.kb{font:11px 'JetBrains Mono',monospace;opacity:.6}
+.swg{display:grid;grid-template-columns:5px 5px;gap:2px;flex:none}
+.swg-c{width:5px;height:5px;border-radius:1.5px;background:#5c5d61}
+.swg-c.need{background:var(--blocked)}
+.swg-c.work{background:var(--working)}
+.swg-c.done{background:var(--done)}
+.gwrap{flex:1;min-height:0;overflow:hidden;padding:18px 22px}
+.graph{position:relative}
+.gh{position:absolute;top:0;font-size:11.5px;font-weight:500;color:var(--dim);display:flex;gap:6px}
+.gh-n{color:#4d4e52}
+.gl{position:absolute;background:var(--input)}
+.gn{position:absolute;box-sizing:border-box;height:52px;padding:8px 10px 0 12px;border-radius:8px;background:#1d1e21;border:1px solid var(--border);display:flex;flex-direction:column;gap:5px;overflow:hidden}
+.gn.sub{background:#19191c}
+.gn.dimmed{opacity:.55}
+.gn-1{display:flex;align-items:center;min-width:0;height:18px}
+.gn-2{display:flex;align-items:center;min-width:0;height:15px;font-size:11.5px}
+.gt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;color:var(--fg)}
+.gt.b{font-weight:500}
+.gt.m{color:var(--muted)}
+.gs{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dim)}
+.gs.need{color:var(--blocked)}
+.gbar{left:12px;right:10px;bottom:2px}
+.tab .mk{margin-left:0}
+.brow{display:flex;gap:40px;align-items:flex-start}
+.legend{width:262px;box-sizing:border-box;background:var(--chrome);border-radius:10px;padding:14px 14px 16px;display:flex;flex-direction:column;gap:7px;box-shadow:0 0 0 1px #2a2b2e}
+.lg-h{font-size:11.5px;font-weight:500;color:var(--dim);padding:2px 0 4px}
+.lg-h.gap{padding-top:10px}
+.lg{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);min-height:18px}
+.lg-m{width:30px;flex:none;display:flex;align-items:center;justify-content:center;position:relative;height:18px}
+.lg-m .mk{margin:0}
+.lg-t{flex:1;line-height:1.35}
+.lg-t b{font-weight:500;color:var(--fg)}
+.lg-edge{width:2px;height:14px;border-radius:1px;background:var(--blocked)}
+.lg-bar{position:relative;width:28px;height:2px;border-radius:1px;background:#e5c07b1c;overflow:hidden}
+.lg-p{font-size:12px;color:var(--muted);line-height:1.45;text-wrap:pretty}
+.lg-p b{font-weight:500;color:var(--fg)}
+</style>
+</helmet>
+
+<sc-for list="{{ wins }}" as="w" hint-placeholder-count="3">
+<section class="frame" style="{{ w.pos }}" data-screen-label="{{ w.screen }}">
+  <div class="flabel" data-drags-parent="1">{{ w.label }}</div>
+  <div class="fnote">{{ w.note }}</div>
+  <div class="clip hx" style="{{ w.clipSt }}">
+  <div class="{{ w.winCls }}">
+    <aside class="side">
+      <div class="brand">
+        <img class="logo" src="ui/herdr.png" alt="">
+        <span class="brand-t">Herdr</span>
+        <span class="grow"></span>
+        <span class="ibtn"><span class="ui i-search s15"></span></span>
+        <span class="ibtn"><span class="ui i-sidebar s15"></span></span>
+      </div>
+      <div class="sp-h"><span>Spaces</span><span class="ibtn dim"><span class="ui i-plus s14"></span></span></div>
+      <div class="sp-list">
+        <sc-for list="{{ w.spaces }}" as="s" hint-placeholder-count="3">
+          <div class="{{ s.cls }}">
+            <span class="tile" style="{{ s.tileSt }}">{{ s.l }}</span>
+            <span class="sp-name">{{ s.name }}</span>
+            <span class="sp-tail"><span class="repo">{{ s.repo }}</span><sc-for list="{{ s.marks }}" as="m" hint-placeholder-count="1"><span class="{{ m.cls }}" style="{{ m.st }}">{{ m.t }}</span></sc-for></span>
+          </div>
+        </sc-for>
+      </div>
+      <div class="agents">
+        <div class="ag-h"><span>Agents</span><span class="ui i-clock s14"></span></div>
+        <div class="ag-list">
+          <sc-for list="{{ w.rows }}" as="r" hint-placeholder-count="20">
+            <div class="{{ r.cls }}">
+              <sc-if value="{{ r.edge }}" hint-placeholder-val="{{ false }}"><span class="edge" style="{{ r.edgeSt }}"></span></sc-if>
+              <sc-for list="{{ r.segs }}" as="g" hint-placeholder-count="1"><span class="{{ g }}"></span></sc-for>
+              <sc-if value="{{ r.hasIc }}" hint-placeholder-val="{{ true }}"><span class="{{ r.icCls }}" style="{{ r.icSt }}"></span></sc-if>
+              <span class="{{ r.nameCls }}">{{ r.name }}</span>
+              <span class="{{ r.subCls }}">{{ r.sub }}</span>
+              <sc-if value="{{ r.hasPips }}" hint-placeholder-val="{{ false }}"><span class="pips"><sc-for list="{{ r.pips }}" as="p" hint-placeholder-count="5"><span class="{{ p }}"></span></sc-for></span></sc-if>
+              <sc-if value="{{ r.hasFold }}" hint-placeholder-val="{{ false }}"><span class="{{ r.foldCls }}"><span class="{{ r.chevCls }}"></span>{{ r.foldN }}</span></sc-if>
+              <sc-if value="{{ r.age }}" hint-placeholder-val="{{ false }}"><span class="age">{{ r.age }}</span></sc-if>
+              <sc-for list="{{ r.marks }}" as="m" hint-placeholder-count="1"><span class="{{ m.cls }}" style="{{ m.st }}">{{ m.t }}</span></sc-for>
+              <sc-if value="{{ r.bar }}" hint-placeholder-val="{{ false }}"><span class="bar"><span class="bar-in" style="{{ r.barSt }}"></span></span></sc-if>
+            </div>
+          </sc-for>
+          <sc-if value="{{ w.thumb }}" hint-placeholder-val="{{ true }}"><span class="thumb"></span></sc-if>
+        </div>
+      </div>
+      <div class="foot">
+        <div class="fr"><span class="ui i-settings s14"></span><span>Settings</span></div>
+        <div class="fr dim"><span class="ui i-plus s14"></span><span>Add machine</span></div>
+      </div>
+    </aside>
+    <div class="work">
+      <div class="tabs">
+        <sc-for list="{{ w.tabs }}" as="t" hint-placeholder-count="2">
+          <div class="{{ t.cls }}">
+            <sc-if value="{{ t.swarm }}" hint-placeholder-val="{{ false }}"><span class="swg"><span class="swg-c need"></span><span class="swg-c work"></span><span class="swg-c"></span><span class="swg-c done"></span></span></sc-if>
+            <sc-if value="{{ t.hasIc }}" hint-placeholder-val="{{ true }}"><span class="tic" style="{{ t.icSt }}"></span></sc-if>
+            <span>{{ t.label }}</span>
+            <sc-if value="{{ t.chip }}" hint-placeholder-val="{{ false }}"><span class="mk chip need" style="margin-left:0">{{ t.chip }}</span></sc-if>
+            <sc-if value="{{ t.spin }}" hint-placeholder-val="{{ false }}"><span class="mk spin" style="{{ spinSt }}"></span></sc-if>
+            <sc-if value="{{ t.dot }}" hint-placeholder-val="{{ false }}"><span class="tab-dot"></span></sc-if>
+            <sc-if value="{{ t.close }}" hint-placeholder-val="{{ false }}"><span class="ui i-close s12" style="color:#696a6d"></span></sc-if>
+          </div>
+        </sc-for>
+        <span class="grow"></span>
+        <span class="wbtn"><span class="ui i-plus s14"></span></span>
+        <span class="pbtn"><span class="ui i-file s14"></span>Files</span>
+        <span class="pbtn"><span class="ui i-compare s14"></span>Changes</span>
+        <span class="wbtn">−</span><span class="wbtn">□</span><span class="wbtn"><span class="ui i-close s13"></span></span>
+      </div>
+      <div class="body">
+        <sc-if value="{{ w.graph }}" hint-placeholder-val="{{ false }}">
+        <div class="pane">
+          <div class="ph"><span class="swg"><span class="swg-c need"></span><span class="swg-c work"></span><span class="swg-c"></span><span class="swg-c done"></span></span><span class="ph-t">Swarm</span><span class="ph-p">Test · 2 orchestrators · 5 threads · 11 agents</span><span class="mk chip fail">✗</span><span class="mk chip need">?1</span><span class="mk spin" style="{{ spinSt }}"></span></div>
+          <div class="gwrap">
+            <div class="graph" style="{{ graph.st }}">
+              <sc-for list="{{ graph.heads }}" as="h" hint-placeholder-count="4"><div class="gh" style="{{ h.st }}">{{ h.t }}<span class="gh-n">{{ h.n }}</span></div></sc-for>
+              <sc-for list="{{ graph.lines }}" as="l" hint-placeholder-count="20"><span class="gl" style="{{ l }}"></span></sc-for>
+              <sc-for list="{{ graph.nodes }}" as="n" hint-placeholder-count="16">
+                <div class="{{ n.cls }}" style="{{ n.st }}">
+                  <sc-if value="{{ n.edge }}" hint-placeholder-val="{{ false }}"><span class="edge" style="{{ edgeSt }}"></span></sc-if>
+                  <div class="gn-1">
+                    <sc-if value="{{ n.hasIc }}" hint-placeholder-val="{{ true }}"><span class="{{ n.icCls }}" style="{{ n.icSt }}"></span></sc-if>
+                    <span class="{{ n.tCls }}">{{ n.title }}</span>
+                    <sc-for list="{{ n.marks }}" as="m" hint-placeholder-count="1"><span class="{{ m.cls }}" style="{{ m.st }}">{{ m.t }}</span></sc-for>
+                  </div>
+                  <div class="gn-2">
+                    <sc-if value="{{ n.hasPips }}" hint-placeholder-val="{{ false }}"><span class="pips" style="margin:0 7px 0 0"><sc-for list="{{ n.pips }}" as="p" hint-placeholder-count="5"><span class="{{ p }}"></span></sc-for></span></sc-if>
+                    <span class="{{ n.sCls }}">{{ n.sub }}</span>
+                  </div>
+                  <sc-if value="{{ n.bar }}" hint-placeholder-val="{{ false }}"><span class="bar gbar"><span class="bar-in" style="{{ barSt }}"></span></span></sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ w.term }}" hint-placeholder-val="{{ true }}">
+        <div class="pane">
+          <div class="ph"><span class="tic" style="{{ icCodex }}"></span><span class="ph-t">Codex</span><span class="ph-p">~/Code/herdr-panorama</span><span class="mk spin" style="{{ spinSt }}"></span></div>
+          <div class="term">
+            <sc-for list="{{ lines }}" as="l" hint-placeholder-count="18"><div class="{{ l.c }}">{{ l.t }}</div></sc-for>
+            <div class="ibox"><span style="color:#eeeeef">›</span><span class="cur"></span><span>Ask Codex to do anything</span></div>
+            <div class="tfoot"><span>⏎ send   ⌃J newline   ⌃T transcript</span><span>86% context left</span></div>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+      <div class="status">
+        <span class="st-l"><span class="ui i-monitor s13"></span>This computer</span>
+        <span class="st-l"><span class="ui i-branch s13"></span>main</span>
+        <span class="st-l"><span class="st-dot"></span>5 agents<span class="st-need">· 1 needs you</span></span>
+        <span class="grow"></span>
+        <span class="st-hint">Ctrl+Shift+P commands</span>
+      </div>
+    </div>
+    <sc-if value="{{ w.peek }}" hint-placeholder-val="{{ false }}">
+      <div class="peek">
+        <div class="pk-h"><span class="hic h16" style="{{ icClaude }}"></span><span class="pk-n">fixer</span><span class="grow" style="color:#696a6d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">PR #142 sidebar mod</span><span class="mk chip fail" style="margin:0">✗</span></div>
+        <div class="pk-meta">Failed 1m ago · Claude Code · sonnet · 9m · 23 tools<br>Subagent of Test · Panorama as a herdr-app mod. It has no pane of its own.</div>
+        <div class="pk-err">npm test exited 1
+3 failing in sidebar.spec.ts</div>
+        <div class="pk-k">Last message</div>
+        <div class="pk-msg">Tree rows are 26px but the fold test still expects 30px. Stopping per the CI-failure rule.</div>
+        <div class="pk-btns"><span class="pk-b solid">Open orchestrator <span class="kb">⏎</span></span><span class="pk-b">Transcript <span class="kb">t</span></span></div>
+      </div>
+    </sc-if>
+  </div>
+  </div>
+</section>
+</sc-for>
+
+<section class="frame" style="left:2040px;top:0px" data-screen-label="B Sidebar 2x">
+  <div class="flabel" data-drags-parent="1">B · The panorama sidebar at 2x, fully expanded: every status, orchestrator → thread → agent → subagent → its subagent</div>
+  <div class="fnote">Same mod, every fold open. Rows that have their own pane (orchestrators) read in full white and focus their pane on click. Subagents have no pane, read muted, and open a Peek card on click (hover state shown on the explorer under PR #144). The legend lists the only marks the panel uses.</div>
+  <div class="brow hx">
+    <div class="clip z2" style="border-radius:10px">
+      <aside class="side tall">
+        <div class="brand">
+          <img class="logo" src="ui/herdr.png" alt="">
+          <span class="brand-t">Herdr</span>
+          <span class="grow"></span>
+          <span class="ibtn"><span class="ui i-search s15"></span></span>
+          <span class="ibtn"><span class="ui i-sidebar s15"></span></span>
+        </div>
+        <div class="sp-h"><span>Spaces</span><span class="ibtn dim"><span class="ui i-plus s14"></span></span></div>
+        <div class="sp-list">
+          <sc-for list="{{ spaces }}" as="s" hint-placeholder-count="3">
+            <div class="{{ s.cls }}">
+              <span class="tile" style="{{ s.tileSt }}">{{ s.l }}</span>
+              <span class="sp-name">{{ s.name }}</span>
+              <span class="sp-tail"><span class="repo">{{ s.repo }}</span><sc-for list="{{ s.marks }}" as="m" hint-placeholder-count="1"><span class="{{ m.cls }}" style="{{ m.st }}">{{ m.t }}</span></sc-for></span>
+            </div>
+          </sc-for>
+        </div>
+        <div class="agents">
+          <div class="ag-h"><span>Agents</span><span class="ui i-clock s14"></span></div>
+          <div class="ag-list" style="padding-bottom:10px">
+            <sc-for list="{{ rowsB }}" as="r" hint-placeholder-count="36">
+              <div class="{{ r.cls }}">
+                <sc-if value="{{ r.edge }}" hint-placeholder-val="{{ false }}"><span class="edge" style="{{ r.edgeSt }}"></span></sc-if>
+                <sc-for list="{{ r.segs }}" as="g" hint-placeholder-count="1"><span class="{{ g }}"></span></sc-for>
+                <sc-if value="{{ r.hasIc }}" hint-placeholder-val="{{ true }}"><span class="{{ r.icCls }}" style="{{ r.icSt }}"></span></sc-if>
+                <span class="{{ r.nameCls }}">{{ r.name }}</span>
+                <span class="{{ r.subCls }}">{{ r.sub }}</span>
+                <sc-if value="{{ r.hasPips }}" hint-placeholder-val="{{ false }}"><span class="pips"><sc-for list="{{ r.pips }}" as="p" hint-placeholder-count="5"><span class="{{ p }}"></span></sc-for></span></sc-if>
+                <sc-if value="{{ r.hasFold }}" hint-placeholder-val="{{ false }}"><span class="{{ r.foldCls }}"><span class="{{ r.chevCls }}"></span>{{ r.foldN }}</span></sc-if>
+                <sc-if value="{{ r.age }}" hint-placeholder-val="{{ false }}"><span class="age">{{ r.age }}</span></sc-if>
+                <sc-for list="{{ r.marks }}" as="m" hint-placeholder-count="1"><span class="{{ m.cls }}" style="{{ m.st }}">{{ m.t }}</span></sc-for>
+                <sc-if value="{{ r.bar }}" hint-placeholder-val="{{ false }}"><span class="bar"><span class="bar-in" style="{{ r.barSt }}"></span></span></sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div class="foot">
+          <div class="fr"><span class="ui i-settings s14"></span><span>Settings</span></div>
+          <div class="fr dim"><span class="ui i-plus s14"></span><span>Add machine</span></div>
+        </div>
+      </aside>
+    </div>
+    <div class="legend z2">
+      <div class="lg-h">Marks, right edge of a row</div>
+      <div class="lg"><span class="lg-m"><span class="mk spin" style="{{ spinSt }}"></span></span><span class="lg-t"><b>Working</b>, the app's own spinner and colour</span></div>
+      <div class="lg"><span class="lg-m"><span class="mk chip rev">»</span></span><span class="lg-t"><b>Reviewing</b></span></div>
+      <div class="lg"><span class="lg-m"><span class="mk chip need">?2</span></span><span class="lg-t"><b>Waiting for an answer</b>, open questions</span></div>
+      <div class="lg"><span class="lg-m"><span class="mk chip need">!</span></span><span class="lg-t"><b>Blocked</b> on a permission</span></div>
+      <div class="lg"><span class="lg-m"><span class="mk chip fail">✗</span></span><span class="lg-t"><b>Failed</b></span></div>
+      <div class="lg"><span class="lg-m"><span class="mk ok">✓</span></span><span class="lg-t"><b>Done</b>, a subagent that finished</span></div>
+      <div class="lg"><span class="lg-m"><span class="mk dot"></span></span><span class="lg-t"><b>Done</b>, an orchestrator you haven't looked at</span></div>
+      <div class="lg"><span class="lg-m"><span class="mk ring"></span></span><span class="lg-t"><b>Queued / idle</b></span></div>
+      <div class="lg-h gap">Motion and structure</div>
+      <div class="lg"><span class="lg-m"><span class="lg-edge" style="{{ edgeSt }}"></span></span><span class="lg-t"><b>Needs you</b>: the left edge eases in and out</span></div>
+      <div class="lg"><span class="lg-m"><span class="lg-bar"><span class="bar-in" style="{{ barSt }}"></span></span></span><span class="lg-t"><b>Agents at work</b> under an orchestrator</span></div>
+      <div class="lg"><span class="lg-m"><span class="pips" style="margin:0"><span class="pip d"></span><span class="pip f"></span><span class="pip"></span></span></span><span class="lg-t"><b>Thread phases</b>: done, now, failed, next</span></div>
+      <div class="lg-h gap">Clicks</div>
+      <div class="lg-p"><b>Orchestrator</b>: focuses its pane. <b>Subagent</b>: opens Peek. <b>Chevron</b>: folds; folded, it shows the count in the most urgent colour.</div>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = { t: 0 };
+  componentDidMount() {
+    const t0 = Date.now();
+    this.iv = setInterval(() => this.setState({ t: Date.now() - t0 }), 50);
+  }
+  componentWillUnmount() { clearInterval(this.iv); }
+  renderVals() {
+    const T = this.state.t;
+    const spinSt = { transform: 'rotate(' + ((T % 900) / 900 * 360).toFixed(1) + 'deg)' };
+    const edgeSt = { opacity: 0.3 + 0.7 * (0.5 - 0.5 * Math.cos(2 * Math.PI * T / 1600)) };
+    const bp = (T % 2400) / 2400;
+    const ease = bp < 0.5 ? 2 * bp * bp : 1 - Math.pow(-2 * bp + 2, 2) / 2;
+    const barSt = { left: (-28 + ease * 128).toFixed(2) + '%' };
+    const TINT = { gemini: true, cursor: true };
+    const ic = h => TINT[h]
+      ? { WebkitMask: 'url(icons/' + h + '.svg) center/contain no-repeat', mask: 'url(icons/' + h + '.svg) center/contain no-repeat', background: '#eeeeef' }
+      : { background: 'url(icons/' + h + '.svg) center/contain no-repeat' };
+    const NEED = { fail: true, blk: true, wait: true };
+    const RANK = { fail: 7, blk: 6, wait: 5, rev: 4, run: 3, q: 2, done: 1 };
+    const mark = (st, q) => st === 'run' ? { cls: 'mk spin', t: '', st: spinSt }
+      : st === 'rev' ? { cls: 'mk chip rev', t: '»', st: {} }
+      : st === 'wait' ? { cls: 'mk chip need', t: '?' + (q || 1), st: {} }
+      : st === 'blk' ? { cls: 'mk chip need', t: '!', st: {} }
+      : st === 'fail' ? { cls: 'mk chip fail', t: '✗', st: {} }
+      : st === 'done' ? { cls: 'mk ok', t: '✓', st: {} }
+      : { cls: 'mk ring', t: '', st: {} };
+
+    const A = (role, h, st, act, x) => Object.assign({ role, h, st, act }, x || {});
+    const SW = [
+      { space: 'Test', title: 'Panorama as a herdr-app mod', h: 'codex', st: 'run', age: '4m', focused: true, threads: [
+        { name: 'PR #142 sidebar mod', ph: 'dddf.', agents: [
+          A('author', 'claude', 'done', 'pushed fix r1'),
+          A('reviewer', 'codex', 'done', 'posted 0B 1H 1M'),
+          A('fixer', 'claude', 'fail', 'npm test exited 1', { peek: true, kids: [A('explorer', 'claude', 'done', 'fetched the CI log')] }),
+        ] },
+        { name: 'PR #144 harness icons', ph: 'ddn..', agents: [
+          A('author', 'claude', 'done', 'pushed r1'),
+          A('reviewer', 'codex', 'rev', 'review r2 · 0B 1H so far', { kids: [
+            A('explorer', 'claude', 'run', 'reading mods/agents/main.js', { hov: true, kids: [A('researcher', 'gemini', 'run', 'checking program.tint')] }),
+          ] }),
+        ] },
+        { name: 'PR #145 retry banner copy', ph: 'w...', agents: [
+          A('author', 'claude', 'wait', '"Retrying…" or "Reconnecting…"?', { q: 1 }),
+        ] },
+      ] },
+      { space: 'TrafficLens', title: 'Data pipeline SDD', h: 'claude', st: 'blk', age: '2m', doneThreads: 2, threads: [
+        { name: 'Task 3/7 add retry cap', ph: 'ddw..', agents: [A('implementer', 'claude', 'blk', 'wants Bash(rm -rf build/)')] },
+        { name: 'Task 4/7 dedupe tick events', ph: 'n...', agents: [
+          A('implementer', 'cursor', 'run', 'running tests'),
+          A('task-reviewer', 'claude', 'q', 'queued'),
+        ] },
+      ] },
+      { space: 'Test', title: 'Herdr multi-account limit libraries', h: 'claude', st: 'done', age: '<1m', threads: [
+        { name: 'Compare limiter crates', ph: 'ddd', agents: [A('researcher', 'claude', 'done', 'wrote the comparison')] },
+        { name: 'Prototype token bucket', ph: 'dd', agents: [A('worker', 'claude', 'done', 'pushed a branch')] },
+      ] },
+      { space: '65net', title: 'Assess same-AZ proxy routing', h: 'codex', st: 'run', age: '22m', threads: [
+        { name: 'Measure cross-AZ hops', ph: 'dn.', agents: [
+          A('worker', 'codex', 'run', 'tracing eu-west-1 paths', { kids: [A('probe', 'claude', 'run', 'running mtr from 3 hosts')] }),
+        ] },
+        { name: 'Draft routing ADR', ph: '...', agents: [A('writer', 'gemini', 'q', 'queued until hops are in')] },
+      ] },
+      { space: 'TrafficLens', title: 'Docs refresh', h: 'amp', st: 'q', age: '1h', threads: [] },
+    ];
+
+    const all = a => [a].concat((a.kids || []).flatMap(all));
+    const topOf = list => list.reduce((m, a) => (RANK[a.st] || 0) > (RANK[m] || 0) ? a.st : m, null);
+    const qsum = list => list.filter(a => a.st === 'wait').reduce((s, a) => s + (a.q || 1), 0);
+    const news = a => all(a).some(x => NEED[x.st]);
+    const base = { cls: 'r', segs: [], hasIc: false, icCls: 'hic', icSt: {}, name: '', nameCls: 'nm', sub: '', subCls: 'sb', pips: [], hasPips: false, hasFold: false, foldCls: 'fold', chevCls: 'ui i-chev-d s11', foldN: '', age: '', marks: [], edge: false, edgeSt, bar: false, barSt };
+    const row = o => Object.assign({}, base, o);
+    const segs = (lead, last) => lead.map(l => l ? 'seg v' : 'seg').concat([last ? 'seg l' : 'seg t']);
+
+    const secRow = (label, cls, n) => row({ cls: 'r sec', name: label, nameCls: 'secl ' + cls, sub: String(n), subCls: 'secn' });
+    const orchRow = (o, folded, sel) => {
+      const desc = o.threads.flatMap(t => t.agents.flatMap(all));
+      const needs = [];
+      if (desc.some(a => a.st === 'fail')) needs.push(mark('fail'));
+      if (desc.some(a => a.st === 'blk') && o.st !== 'blk') needs.push(mark('blk'));
+      const q = qsum(desc); if (q) needs.push(mark('wait', q));
+      const own = o.st === 'done' ? { cls: 'mk dot', t: '', st: {} } : mark(o.st);
+      const top = topOf(desc);
+      const n = o.threads.length + (o.doneThreads || 0);
+      return row({
+        cls: 'r orch' + (o.focused && sel ? ' sel' : ''), hasIc: true, icCls: 'hic h16', icSt: ic(o.h),
+        name: o.space, nameCls: o.st === 'q' ? 'nm quiet' : 'nm', sub: '· ' + o.title,
+        hasFold: folded && n > 0, chevCls: folded ? 'ui i-chev-r s11' : 'ui i-chev-d s11', foldN: folded ? String(n) : '',
+        foldCls: folded ? 'fold ' + (NEED[top] ? 'need' : o.st === 'done' ? 'done' : '') : 'fold',
+        age: o.age, marks: needs.concat([own]), edge: needs.length > 0 || o.st === 'blk',
+        bar: desc.some(a => a.st === 'run' || a.st === 'rev'),
+      });
+    };
+    const thRow = (t, sg) => {
+      const fl = t.agents.flatMap(all);
+      return row({ cls: 'r th', segs: sg, name: t.name, nameCls: 'nm grow th', subCls: 'nosb', hasPips: true, pips: t.ph.split('').map(c => 'pip ' + c), marks: [mark(topOf(fl), qsum(fl))] });
+    };
+    const agRow = (a, sg, mode, foldN) => row({
+      cls: 'r ag' + (mode === 'full' && a.hov ? ' hov' : '') + (mode === 'peek' && a.peek ? ' pk' : ''),
+      segs: sg, hasIc: true, icSt: ic(a.h), name: a.role, nameCls: 'nm ag', sub: '· ' + a.act, subCls: NEED[a.st] ? 'sb need' : 'sb',
+      hasFold: !!foldN, chevCls: 'ui i-chev-r s11', foldN: foldN ? String(foldN) : '',
+      marks: (mode === 'full' && a.hov ? [{ cls: 'mk pchip', t: 'Peek', st: {} }] : []).concat([mark(a.st, a.q)]),
+      edge: !!NEED[a.st],
+    });
+    const sumRow = (sg, text, sub) => row({ cls: 'r sum', segs: sg, name: text, nameCls: 'nm sum', sub: sub ? '· ' + sub : '', subCls: sub ? 'sb' : 'nosb' });
+
+    // Expanded: every agent and subagent.
+    const treeFull = (list, lead, out) => list.forEach((a, i) => {
+      const last = i === list.length - 1;
+      out.push(agRow(a, segs(lead, last), 'full'));
+      if (a.kids) treeFull(a.kids, lead.concat([!last]), out);
+    });
+    // Default: threads always; agents only on the path to something that needs you;
+    // finished agents fold into one line, healthy subtrees into the fold count.
+    const treeNews = (list, lead, out, mode) => {
+      const shown = list.filter(news);
+      const done = list.filter(a => a.st === 'done' && !news(a));
+      const items = shown.map(a => ({ a })).concat(done.length ? [{ sum: done }] : []);
+      items.forEach((it, i) => {
+        const last = i === items.length - 1;
+        if (it.sum) { out.push(sumRow(segs(lead, last), '✓ ' + it.sum.length + ' done', it.sum.map(a => a.role).join(', '))); return; }
+        const a = it.a;
+        const kidsNews = (a.kids || []).some(news);
+        out.push(agRow(a, segs(lead, last), mode, kidsNews ? 0 : (a.kids || []).length));
+        if (kidsNews) treeNews(a.kids, lead.concat([!last]), out, mode);
+      });
+    };
+    const build = (mode, sel = true) => {
+      const out = [];
+      const sections = [['Needs you', 'need', o => o.threads.some(t => t.agents.some(news)) || o.st === 'blk'], ['Done', 'done', o => o.st === 'done'], ['Working', 'working', o => o.st === 'run'], ['Idle', 'idle', o => o.st === 'q']];
+      const used = new Set();
+      sections.forEach(([label, cls, test]) => {
+        const members = SW.filter(o => !used.has(o) && test(o));
+        if (!members.length) return;
+        members.forEach(o => used.add(o));
+        out.push(secRow(label, cls, members.length));
+        members.forEach(o => {
+          const folded = cls === 'done' || cls === 'idle';
+          out.push(orchRow(o, folded, sel));
+          if (folded) return;
+          const kids = o.threads.map(t => ({ t })).concat(o.doneThreads ? [{ sum: o.doneThreads }] : []);
+          kids.forEach((k, i) => {
+            const last = i === kids.length - 1;
+            if (k.sum) { out.push(sumRow(segs([], last), '✓ ' + k.sum + ' tasks done', 'schema, migrations')); return; }
+            out.push(thRow(k.t, segs([], last)));
+            if (mode === 'full') treeFull(k.t.agents, [!last], out);
+            else if (k.t.agents.some(news)) treeNews(k.t.agents, [!last], out, mode);
+          });
+        });
+      });
+      return out;
+    };
+
+    const spaces = [
+      { l: 'T', name: 'Test', repo: 'herdr-panorama', cls: 'sp on', tileSt: { background: '#22a99a' }, marks: [{ cls: 'mk chip need', t: '2', st: { marginLeft: '8px' } }, mark('run')] },
+      { l: 'T', name: 'TrafficLens', repo: '', cls: 'sp', tileSt: { background: '#e3814f' }, marks: [{ cls: 'mk chip need', t: '1', st: {} }, mark('run')] },
+      { l: '6', name: '65net', repo: '', cls: 'sp', tileSt: { background: '#5b8def' }, marks: [mark('run')] },
+    ];
+
+    const lines = [
+      { t: '› Run the panorama mod PRs with /review-cycle (auto, github)', c: 'ln usr' },
+      { t: ' ', c: 'ln' },
+      { t: '• Spawned 3 threads: PR #142 sidebar mod, PR #144 harness icons,', c: 'ln hi' },
+      { t: '  PR #145 retry banner copy.', c: 'ln hi' },
+      { t: ' ', c: 'ln' },
+      { t: '• Ran gh pr checks 142', c: 'ln hi' },
+      { t: '  └ ✗ test   npm test exited 1 · 3 failing in sidebar.spec.ts', c: 'ln err' },
+      { t: ' ', c: 'ln' },
+      { t: '• Asked the operator (Q14): "Retrying…" or "Reconnecting…" for the banner?', c: 'ln hi' },
+      { t: '  └ PR #145 waits on the answer; #142 and #144 go on meanwhile.', c: 'ln dim' },
+      { t: ' ', c: 'ln' },
+      { t: '• PR #144: the reviewer is on r2; its explorer reads mods/agents/main.js', c: 'ln hi' },
+      { t: '  └ explorer → researcher (Gemini) is checking program.tint per harness', c: 'ln dim' },
+      { t: ' ', c: 'ln' },
+      { t: '• The #142 failure is real: tree rows are 26px and the fold test still', c: 'ln' },
+      { t: '  expects 30px. I will send it back to the fixer after you look at it.', c: 'ln' },
+      { t: ' ', c: 'ln' },
+      { t: '◦ Working (2m 14s • esc to interrupt)', c: 'ln work' },
+    ];
+
+
+    // Frame D: the space's swarm as a graph (orchestrators → threads → agents → subagents).
+    const COLW = 264, GAP = 44, PITCH = 62, TOP = 30, OGAP = 20, MID = 26;
+    const cx = [0, COLW + GAP, 2 * (COLW + GAP), 3 * (COLW + GAP)];
+    const gnodes = [], glines = [];
+    const H = (x, y, w) => glines.push({ left: x + 'px', top: (y - 0.75) + 'px', width: w + 'px', height: '1.5px' });
+    const V = (x, y, h) => glines.push({ left: (x - 0.75) + 'px', top: y + 'px', width: '1.5px', height: h + 'px' });
+    const fan = (px, py, kids) => {
+      if (!kids.length) return;
+      const sx = px + GAP / 2;
+      H(px, py + MID, GAP / 2);
+      const ys = kids.map(k => k.y + MID);
+      V(sx, Math.min(py + MID, ys[0]), Math.max(...ys) - Math.min(py + MID, ys[0]));
+      kids.forEach(k => H(sx, k.y + MID, k.x - sx));
+    };
+    const node = (o) => { const n = Object.assign({ cls: 'gn', hasIc: false, icCls: 'hic', icSt: {}, title: '', tCls: 'gt', marks: [], hasPips: false, pips: [], sub: '', sCls: 'gs', edge: false, bar: false }, o); n.st = { left: o.x + 'px', top: o.y + 'px', width: o.w + 'px' }; gnodes.push(n); return n; };
+    let gy = TOP;
+    const spaceSW = SW.filter(o => o.space === 'Test');
+    spaceSW.forEach((o, oi) => {
+      if (oi) gy += OGAP;
+      const oy = gy, tnodes = [];
+      o.threads.forEach(t => {
+        const ty = gy, anodes = [];
+        t.agents.forEach(a => {
+          const ay = gy, snodes = [];
+          const flat = [];
+          const walk = (list, d, parent) => list.forEach(k => { flat.push({ k, d, parent }); walk(k.kids || [], d + 1, k); });
+          walk(a.kids || [], 0, a);
+          const placed = new Map();
+          if (!flat.length) gy += PITCH;
+          flat.forEach(f => {
+            const x = cx[3] + f.d * 26;
+            const n = node({ cls: 'gn sub' + (o.st === 'done' ? ' dimmed' : ''), x, y: gy, w: COLW - f.d * 26, hasIc: true, icSt: ic(f.k.h), title: f.k.role, tCls: 'gt m', marks: [mark(f.k.st, f.k.q)], sub: f.k.act, sCls: NEED[f.k.st] ? 'gs need' : 'gs', edge: !!NEED[f.k.st] });
+            placed.set(f.k, n);
+            if (f.d === 0) snodes.push(n);
+            else { const pn = placed.get(f.parent); const ex = pn.x + 13; V(ex, pn.y + 52, gy + MID - pn.y - 52); H(ex, gy + MID, x - ex); }
+            gy += PITCH;
+          });
+          const an = node({ cls: 'gn' + (o.st === 'done' ? ' dimmed' : ''), x: cx[2], y: ay, w: COLW, hasIc: true, icSt: ic(a.h), title: a.role, tCls: 'gt m', marks: [mark(a.st, a.q)], sub: a.act, sCls: NEED[a.st] ? 'gs need' : 'gs', edge: !!NEED[a.st] });
+          fan(an.x + COLW, an.y, snodes);
+          anodes.push(an);
+        });
+        const fl = t.agents.flatMap(all);
+        const cur = { dddf: 'CI · 3 failing', ddn: 'review r2', w: 'author · waits on Q14', ddd: 'done', dd: 'done' }[t.ph.replace(/\./g, '')] || '';
+        const top = topOf(fl);
+        const tn = node({ cls: 'gn' + (o.st === 'done' ? ' dimmed' : ''), x: cx[1], y: ty, w: COLW, title: t.name, tCls: 'gt b', marks: [mark(top, qsum(fl))], hasPips: true, pips: t.ph.split('').map(c => 'pip ' + c), sub: cur, sCls: NEED[top] ? 'gs need' : 'gs' });
+        fan(tn.x + COLW, tn.y, anodes);
+        tnodes.push(tn);
+      });
+      const r = orchRow(o, false, false);
+      const on = node({ cls: 'gn' + (o.st === 'done' ? ' dimmed' : ''), x: cx[0], y: oy, w: COLW, hasIc: true, icCls: 'hic h16', icSt: ic(o.h), title: o.title, tCls: 'gt b', marks: r.marks, sub: (o.h === 'codex' ? 'Codex' : 'Claude Code') + ' · ' + o.age + ' · tab ' + (oi + 1), edge: r.edge, bar: r.bar });
+      fan(on.x + COLW, on.y, tnodes);
+    });
+    const heads = [['Orchestrators', 2], ['Threads', 5], ['Agents', 8], ['Subagents', 3]].map(([t, n], i) => ({ t, n: String(n), st: { left: cx[i] + 'px' } }));
+    const graph = { nodes: gnodes, lines: glines, heads, st: { width: (cx[3] + COLW) + 'px', height: gy + 'px' } };
+    const tabsTerm = [
+      { cls: 'tab on', hasIc: true, icSt: ic('codex'), label: '1', spin: true, close: true },
+      { cls: 'tab', hasIc: true, icSt: ic('claude'), label: '2', dot: true },
+    ];
+    const tabsGraph = [
+      { cls: 'tab on', swarm: true, hasIc: false, label: 'Swarm', chip: '2', close: false },
+      { cls: 'tab', hasIc: true, icSt: ic('codex'), label: '1', spin: true },
+      { cls: 'tab', hasIc: true, icSt: ic('claude'), label: '2', dot: true },
+    ];
+    const rowsA = build('news');
+    const rowsD = build('news', false);
+    const rowsC = build('peek');
+    const rowsB = build('full');
+    const wins = [
+      { screen: 'A herdr-app window', pos: { left: '0px', top: '0px' }, clipSt: { width: '1920px', height: '1080px' }, winCls: 'win z12',
+        label: 'A · herdr-app, default layout, with the panorama mod in the Agents slot (shown at the app\'s 1.2 zoom, like the screenshot)',
+        note: 'Only the sidebar changes. Brand row, Spaces, tab bar, pane card and status bar are the shipped mods. Spaces gains one thing: how many items need you in that space, and a spinner when something works there. The Agents list becomes the swarm: orchestrators sorted into the shipped priority sections, their threads below, and agents only on the path to something that needs you. Codex runs the focused orchestrator; its workers are Claude, Cursor and Gemini.',
+        spaces, rows: rowsA, peek: false, thumb: false, tabs: tabsTerm, term: true, graph: false },
+      { screen: 'C Peek', pos: { left: '0px', top: '1240px' }, clipSt: { width: '1288px', height: '1800px' }, winCls: 'win z2',
+        label: 'C · 2x, the same window cropped: clicking a subagent with no pane opens Peek',
+        note: 'herdr-app peeks a pane-less sub-agent with terminal.peek. A Claude Task subagent has no terminal at all, so panorama opens its own popup overlay instead: status, error, last message, and a way back to the orchestrator that owns it.',
+        spaces, rows: rowsC, peek: true, thumb: false, tabs: tabsTerm, term: true, graph: false },
+      { screen: 'D Graph tab', pos: { left: '0px', top: '3240px' }, clipSt: { width: '1920px', height: '1080px' }, winCls: 'win z12',
+        label: 'D · Clicking a space opens it on its Swarm tab: a panorama graph of that space only, pinned as the first tab',
+        note: 'The Swarm tab is a mod tab (tab.new {space, name: "Swarm", mod: "panorama-graph", props: {space}}, moved to index 1) and is selected when you click the space. Its pill has no program icon: a 2×2 glyph of status squares, the name, and the needs-you count. The graph runs left to right, orchestrators → threads → agents → subagents, with the same marks, edge and bar as the sidebar. Clicking an agent node does what clicking its sidebar row does: pane.focus for an agent with a pane, Peek for a subagent.',
+        spaces, rows: rowsD, peek: false, thumb: false, tabs: tabsGraph, term: false, graph: true },
+    ];
+
+    return { wins, graph, spaces, rowsB, lines, spinSt, edgeSt, barSt, icCodex: ic('codex'), icClaude: ic('claude') };
+  }
+}
+</script>
+</body>
+</html>
