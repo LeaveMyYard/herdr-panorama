@@ -112,7 +112,19 @@
       "data/panorama-tabs/store.json"
     ],
     "graph_store_present": false,
-    "no_forced_writer_signal": true
+    "no_forced_writer_signal": true,
+    "retained_host_layout_state": {
+      "path": "layouts/.state/panorama.json",
+      "bytes": 4597,
+      "mode": "0644",
+      "sha256": "0dd4aef21e6d7da28a6bde9260c1d24182890e134f65045124349a607d406469",
+      "content_kind": "host-owned full panorama layout snapshot",
+      "nodes_spaces_size_px": 90.0,
+      "source": "app/mods/panorama-spaces/main.js automatic content-height layout.resize for its panorama-owned Spaces slot",
+      "policy": "operator approved Keep host layout state (Recommended), 2026-11-03; exact file and necessary parent only; no delete/adopt authority"
+    },
+    "full_panorama_inventory": "used-home-inventory.json",
+    "original_omission_and_policy_resolution": "c811e55 inspected shared slots and data/ entries but omitted layouts/.state/panorama.json; reviewer M1 identified it. Operator approved this exact additional retention after the original capture/report. Original run and capture were not altered."
   },
   "writer_exit": {
     "captured_pidfd_cooperative_exit": true,

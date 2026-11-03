@@ -51,9 +51,23 @@ The same actual installer uninstalled while the native frontend remained open.
 It returned 0 in 0.229s; the real writer's already captured pidfd confirmed
 cooperative exit without a writer signal. Runtime/receipt/private payload were
 removed. Owned personal.txt and keys.json bytes/modes were preserved. Exactly
-the approved null slots remained in shared state; this run also retained the
-approved `data/panorama-tabs/store.json`. No graph store remained. Spaces preference
+the approved null slots remained in shared state; this run also retained
+`data/panorama-tabs/store.json` and the host layout-state snapshot
+`layouts/.state/panorama.json`. No graph store remained. Spaces preference
 retention/reinstall permutations were not repeated here.
+
+**M1 correction, 2026-11-03:** the original `c811e55` inventory checked shared slots
+and `data/` entries but omitted the host layout-state file. The reviewer identified
+that omission. A read-only inspection of the retained original home verifies the
+full snapshot: 4,597 bytes, mode 0644, SHA256
+`0dd4aef21e6d7da28a6bde9260c1d24182890e134f65045124349a607d406469`,
+including `nodes.spaces.size.px=90`. The automatic content-height `layout.resize`
+in panorama-spaces explains this host-owned snapshot. The operator subsequently
+approved **“Keep host layout state (Recommended)”** for exactly this file and its
+necessary parent, adding no deletion, rewrite or adoption authority. This resolves
+the policy after the original capture/report; it does not change the original run
+or pretend that its initial allowlist inventory was complete. No runtime rerun or
+new matrix was performed. See the [complete named-state inventory](used-home-inventory.json).
 
 The private app exited 0. Only recorded owned terminals were stopped, then the
 verified private core was stopped. Its captured pidfd confirmed exit and the
@@ -71,6 +85,8 @@ evidence, without a running app/core/writer or live socket.
   [app membership](app-membership-response.json), [native status](native-status.json),
   [working feed](feed-working.json), [blocked feed](feed-blocked.json),
   [canonical packet](canonical-packet.json), [owned cleanup](owned-cleanup.json).
+- [used-home inventory](used-home-inventory.json): actual retained files/hashes,
+  original M1 omission and the operator-approved host-layout-state exception.
 
 Existing independent slice evidence remains separate: [B2 sidebar](../b2/REVIEWER.md),
 [B3 graph/preference evidence](../b3/FINAL.md) and
