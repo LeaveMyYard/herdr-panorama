@@ -1,0 +1,634 @@
+{
+  "source": "b06323cb54d36a2c2b4a390e405340a3b802b29e",
+  "renderingScope": "Independent native inherited production Peek rendering and caller lifecycle with synthetic current-G feed. Private sidebar role import aliases startSidebar to existing startConsumer solely to prevent real writer collection replacing seeded data. Wrappers add callback/diagnostic commands without replacing rendering, subject, paging, caller, proof, or native Editor. Not assembled installer/sidebar-producer acceptance.",
+  "fixture_home": "/tmp/p4r-948rbmt7",
+  "generation": "cab1dd3b051c4974a8fe14f631e09128",
+  "source_files": {
+    "app/.gitignore": "2a88497de03a9e44d79239bfe6e360b661ceeaaeb2b63fc863fff5908b7a7964",
+    "app/README.md": "5b979162ad4d71c18f61b6182a6f1ad02abd7e46d0aab788e6243e87ca84dc84",
+    "app/installer/check.py": "9057ec7e7a571a455ecb22e4cc7221e045147806aebea866db412fe491fa70f8",
+    "app/installer/frontend.py": "20a31810adba6a2aed8b6105b9fb84a2cabf7dc36c30eaa59362e7da8fa51ad9",
+    "app/installer/fs.py": "afae9390bf9ff305b56c287a9284af65a49edaf171c12b221a362dd1ff07b7d2",
+    "app/installer/keys.py": "3143907ab9c32828a27eb1b46ff4130c59089d116ab3c53ff4b8cbb4921c06ed",
+    "app/installer/main.py": "3f219ca8119d20c21a98a1aef5ae80d2719cf7850b265104c55d82891498c879",
+    "app/installer/manifest.py": "7343bae2f822627e21338ed49964d6fe8407d13af636440ebce3e9193f2d0af7",
+    "app/installer/preferences.py": "cb1620168c2f652f8072b5b4e38f7543acc42297b46eee3b621955cdd51c8bab",
+    "app/installer/publish.py": "87d012cea90bc0e80b2420f2bd52bb503014a3516da6c62019bc66ba6a0a50c5",
+    "app/installer/runtime.py": "925d500f482a5b71ad3dca4b17f53b21a133056cd54d369bddb393a172d4935e",
+    "app/keys.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+    "app/layouts/panorama.json": "491a5c29fd0121aa54f8df79707c0d1676049f1f60c3f9be9479f06800ab353a",
+    "app/mods/panorama/LICENSE.herdr-app": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+    "app/mods/panorama/NOTICE": "6da85f604a3f6cfd51645835b1b6554adc3d51d89736823fd55c742072a57652",
+    "app/mods/panorama/binary.js": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
+    "app/mods/panorama/bundle.json": "d81e5ac06971c2ff9bc8d5c79c55d0d5459065b9101e2f3a2c56ec42279a820c",
+    "app/mods/panorama/contract.js": "799534499636f7121188b6c7fc6f6a3f05d0781b236a75e05bb8536be56eca2c",
+    "app/mods/panorama/feed-client.js": "bd6f2072bb83197ee560e414167c64f1c8834b72b532f5a62620bf7319c31436",
+    "app/mods/panorama/main.js": "e0f481183d22f738430039e94b2104cd3d493ac72b76b3fd404e9c957cea6d48",
+    "app/mods/panorama/marks.js": "13e5d13607af063dd3ff06db5671c986da80a5189b2bdda4c96b1e04aef2ea2a",
+    "app/mods/panorama/mod.json": "e8e0a91d23a0addf19f9f4dab48f597f252a1d44e5063e4d6ae884a88cbf735d",
+    "app/mods/panorama/model.js": "4d653d8cbf77c11ce49d502bacf8f986bd607e4fde3039b06fccb9ff7757b12d",
+    "app/mods/panorama/peek-caller.js": "2feb99ac0380095169bca403e8767b9f98c2c3858b8b4b7895c48e0683caaa90",
+    "app/mods/panorama/routing.js": "0a0c932d301427c9c6fbd6365a670945f0515db237eef3ba070fa67a9f450ae2",
+    "app/mods/panorama/tree.js": "eb481ed97705f98fe8eb43d340b16c7f62bb1eefcf71bff236637075ad29b079",
+    "app/mods/panorama/viewport-math.js": "ef8bde18ea4d282b7573854069084beeac08e46e8b9ffec9c938d50661d617b4",
+    "app/mods/panorama/viewport.js": "2f31c92808ac9021dc5353292b63ad9d53fdbb18986ee8e8bd0ecf9a697ed8e4",
+    "app/mods/panorama-graph/actions.js": "67f947c688ba8de9802be47e662c586b175f255858cc16874bf6e8dfc4e93ab6",
+    "app/mods/panorama-graph/binary.js": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
+    "app/mods/panorama-graph/bundle.json": "7d66363ae80d9eaa9dd96d3d340d00e47e5a035e216a7bd001f09ee63a84d499",
+    "app/mods/panorama-graph/cards.js": "329c5fe0ba2b768b79b4952eccd79a5b0e7c3a0f7dd6cfe540608e3b07f7a0d3",
+    "app/mods/panorama-graph/contract.js": "799534499636f7121188b6c7fc6f6a3f05d0781b236a75e05bb8536be56eca2c",
+    "app/mods/panorama-graph/feed-client.js": "bd6f2072bb83197ee560e414167c64f1c8834b72b532f5a62620bf7319c31436",
+    "app/mods/panorama-graph/graph.js": "02df97d8adb00c9364a06b56aa9dda470684336558be3cd4cf02ff16636cd487",
+    "app/mods/panorama-graph/inbox.js": "74693c2b08e7cb8aaab9c24bbd5f2f83d7a23e0ca4c9461e00f656e1ca7798bb",
+    "app/mods/panorama-graph/main.js": "0e8a94de652ad38034671a81b6cf6229a60d9b4855de8afc8e779c068cf69da9",
+    "app/mods/panorama-graph/marks.js": "13e5d13607af063dd3ff06db5671c986da80a5189b2bdda4c96b1e04aef2ea2a",
+    "app/mods/panorama-graph/mod.json": "b0677fec264986910305561424f8735c740cd376c35d1c5e52968c1df9d043f4",
+    "app/mods/panorama-graph/model.js": "4d653d8cbf77c11ce49d502bacf8f986bd607e4fde3039b06fccb9ff7757b12d",
+    "app/mods/panorama-graph/peek-caller.js": "2feb99ac0380095169bca403e8767b9f98c2c3858b8b4b7895c48e0683caaa90",
+    "app/mods/panorama-graph/routing.js": "0a0c932d301427c9c6fbd6365a670945f0515db237eef3ba070fa67a9f450ae2",
+    "app/mods/panorama-graph/tree.js": "eb481ed97705f98fe8eb43d340b16c7f62bb1eefcf71bff236637075ad29b079",
+    "app/mods/panorama-pane/LICENSE.herdr-app": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+    "app/mods/panorama-pane/binary.js": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
+    "app/mods/panorama-pane/bundle.json": "a3aeeefc115ac0ccb5d671ea6176a64b3ef989f87efad53325878fd11475f294",
+    "app/mods/panorama-pane/contract.js": "799534499636f7121188b6c7fc6f6a3f05d0781b236a75e05bb8536be56eca2c",
+    "app/mods/panorama-pane/feed-client.js": "bd6f2072bb83197ee560e414167c64f1c8834b72b532f5a62620bf7319c31436",
+    "app/mods/panorama-pane/main.js": "529f90bda658b5f3a8fdf19ca2bf3c78fdb33fff410e2d872727cfbd2ded9ee8",
+    "app/mods/panorama-pane/marks.js": "13e5d13607af063dd3ff06db5671c986da80a5189b2bdda4c96b1e04aef2ea2a",
+    "app/mods/panorama-pane/mod.json": "33ca83d69328251ad05028996142851f273e5e5e80d50a38fac552255c02192c",
+    "app/mods/panorama-pane/model.js": "4d653d8cbf77c11ce49d502bacf8f986bd607e4fde3039b06fccb9ff7757b12d",
+    "app/mods/panorama-pane/space.js": "ee9b1763a2cd293882407977de9f41d28b91223246212ddf9fad51088ba03702",
+    "app/mods/panorama-pane/swarm.js": "26ae1411f3f2e6c2dcaa96a02c0c0cdd6bfae388ae643c7ef41fe16b234769ef",
+    "app/mods/panorama-pane/tree.js": "eb481ed97705f98fe8eb43d340b16c7f62bb1eefcf71bff236637075ad29b079",
+    "app/mods/panorama-peek/actions.js": "4b14ebd6eb0afd6b7aa2426f045578afcabb95329c364bebc5defc12c5b539c3",
+    "app/mods/panorama-peek/binary.js": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
+    "app/mods/panorama-peek/bundle.json": "db4d8657f4df0649f981dcd57d4790efd44368bcc9adc71ad2044a7e04efdcbc",
+    "app/mods/panorama-peek/contract.js": "799534499636f7121188b6c7fc6f6a3f05d0781b236a75e05bb8536be56eca2c",
+    "app/mods/panorama-peek/feed-client.js": "bd6f2072bb83197ee560e414167c64f1c8834b72b532f5a62620bf7319c31436",
+    "app/mods/panorama-peek/main.js": "87652b85d744551508a62e24b32d76d8363bc939805e65413f7435276c090dd0",
+    "app/mods/panorama-peek/marks.js": "13e5d13607af063dd3ff06db5671c986da80a5189b2bdda4c96b1e04aef2ea2a",
+    "app/mods/panorama-peek/metadata.js": "c72b6b71af3f2c0db2c06e13e82e48de5b03e0d32c1e0c3c80f12070754f3c5e",
+    "app/mods/panorama-peek/mod.json": "8ded8a3a0cff0e5348d95b12d363fdbdfea201dd66f37107c289852048f9191d",
+    "app/mods/panorama-peek/model.js": "4d653d8cbf77c11ce49d502bacf8f986bd607e4fde3039b06fccb9ff7757b12d",
+    "app/mods/panorama-peek/paging.js": "b5ee4fece7bfcff5476a53c94ade2ba29a130394b6236e01d2ac1eeb35acb1e1",
+    "app/mods/panorama-peek/routing.js": "0a0c932d301427c9c6fbd6365a670945f0515db237eef3ba070fa67a9f450ae2",
+    "app/mods/panorama-peek/subject.js": "9689bc858b772663cc223645fd6b639e3476a7b61767d9c2477f3942b390bd57",
+    "app/mods/panorama-peek/tree.js": "eb481ed97705f98fe8eb43d340b16c7f62bb1eefcf71bff236637075ad29b079",
+    "app/mods/panorama-spaces/LICENSE.herdr-app": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+    "app/mods/panorama-spaces/binary.js": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
+    "app/mods/panorama-spaces/bundle.json": "3180c086000ddc7511668844910f4ac4e772ba7fac8df30c27afacd187f8bc01",
+    "app/mods/panorama-spaces/contract.js": "799534499636f7121188b6c7fc6f6a3f05d0781b236a75e05bb8536be56eca2c",
+    "app/mods/panorama-spaces/feed-client.js": "bd6f2072bb83197ee560e414167c64f1c8834b72b532f5a62620bf7319c31436",
+    "app/mods/panorama-spaces/main.js": "1e70dd2f66209fe536a9c8604622fb81d35999eebfb470fdb10a079fe82f84a3",
+    "app/mods/panorama-spaces/mod.json": "33ca83d69328251ad05028996142851f273e5e5e80d50a38fac552255c02192c",
+    "app/mods/panorama-spaces/model.js": "4d653d8cbf77c11ce49d502bacf8f986bd607e4fde3039b06fccb9ff7757b12d",
+    "app/mods/panorama-spaces/tabs.js": "d39d193f14c0636836242fdf80d631fd51bac366c7fe9547713cf6c87b6a4354",
+    "app/mods/panorama-spaces/tree.js": "eb481ed97705f98fe8eb43d340b16c7f62bb1eefcf71bff236637075ad29b079",
+    "app/mods/panorama-tabs/LICENSE.herdr-app": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+    "app/mods/panorama-tabs/binary.js": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
+    "app/mods/panorama-tabs/bundle.json": "3180c086000ddc7511668844910f4ac4e772ba7fac8df30c27afacd187f8bc01",
+    "app/mods/panorama-tabs/contract.js": "799534499636f7121188b6c7fc6f6a3f05d0781b236a75e05bb8536be56eca2c",
+    "app/mods/panorama-tabs/feed-client.js": "bd6f2072bb83197ee560e414167c64f1c8834b72b532f5a62620bf7319c31436",
+    "app/mods/panorama-tabs/main.js": "d5328f3eaf3b50d06ff484cefec3abd9b0f517e0f7982b9d6c884683878be415",
+    "app/mods/panorama-tabs/mod.json": "33ca83d69328251ad05028996142851f273e5e5e80d50a38fac552255c02192c",
+    "app/mods/panorama-tabs/model.js": "4d653d8cbf77c11ce49d502bacf8f986bd607e4fde3039b06fccb9ff7757b12d",
+    "app/mods/panorama-tabs/swarm.js": "26ae1411f3f2e6c2dcaa96a02c0c0cdd6bfae388ae643c7ef41fe16b234769ef",
+    "app/mods/panorama-tabs/tree.js": "eb481ed97705f98fe8eb43d340b16c7f62bb1eefcf71bff236637075ad29b079",
+    "app/package.json": "e01ed1e3766cacd7e52b75c4b1596bd2f3f6c4bef00483cf0ec438bfbec6ba1b",
+    "app/shared/README.md": "4cc640675319eaf32a0e4fb00e440cc1257785945cac23ba10822ba753c10987",
+    "app/shared/binary.js": "10b59b4d7b1a4ce0b4c4bf5a7271fd4bd7a203433de93defe5bd66ada261f78e",
+    "app/shared/contract.js": "152537ee066d9ec116d2ca267685015ee385a154b8871193a21757b9d6695d45",
+    "app/shared/feed-client.js": "b9ce6dfcad29b76ca0598d3f99ba1726c75bbe92a57cf5144f1b54d10cf9a1b6",
+    "app/shared/marks.js": "f41170ec11d65bf321929f6d7ca98b0ceb6575e99403aa970f1641f6ce234aad",
+    "app/shared/model.js": "322d4ad2582160e90a3095d6caf6563c3f433803ce527bd1c6f35d29ba35e106",
+    "app/shared/peek-caller.js": "b3f5415b2149cb957a78a9292f4c15b627ab110372039d0c950ef04a7c34e471",
+    "app/shared/routing.js": "9d57cca518f6a9b72be3f00734a532413ed0814ea1299a85f83598154063651c",
+    "app/shared/tree.js": "f3f09ed7962eb5a25f04c4e66cf11df381e67c3abf99ffe1f4e25ceaeb60e2a0",
+    "app/tests/b3-actions.test.mjs": "bf6215c92f4810ec447f187362ab566b145ed414beca04a8c87c1c033dd4ac7b",
+    "app/tests/b3-graph.test.mjs": "f946f2617604b34c5d78586c06cc0358925054383f03ce2a058aa7d9839f47bb",
+    "app/tests/b3-inbox.test.mjs": "849606970d99dc67116325ffde62e66d80c1bfeb6fa94c584ed8e3c23e817035",
+    "app/tests/b3-spaces.test.mjs": "7daefb166059090db5fa68341cfaf5f98a83e6d9133f28937b07a82a98858b14",
+    "app/tests/b3-tabs.test.mjs": "9265369096c034019d053ccd574884da3b0582075e28eeeb16af36954d1299bf",
+    "app/tests/b4-actions.test.mjs": "09722b5c90ed74ab40b2fb74869950c2428c51a7ecc8799834847070395b3aa2",
+    "app/tests/b4-metadata.test.mjs": "9ec5ba4e8adf8fb70fce65dc112ef20b93953e0691eb7e92cfbb3e304e74fb9d",
+    "app/tests/b4-paging.test.mjs": "c6a65ecf2ae3bc7a797a922f486185f60ac65fd63f392870e0cec42ff171e134",
+    "app/tests/b4-scope.test.mjs": "a39a445fe2ccf2358dce9eb811f7fe52a85f7da2324127e885d2cab29b71dece",
+    "app/tests/build.test.mjs": "5be805fda58fce0981426afd74741f33744dfaa335f3807f150e7325ebf95aa8",
+    "app/tests/check.test.mjs": "44da48ac130c00eb7c3f630e2fd2d92ad094d0869444b4fd7db341368fe2c335",
+    "app/tests/feed-runtime.test.mjs": "e4c0beaa0002e24125c8e324c912fe0b7d2149ca1969704d125d32a0ba7be702",
+    "app/tests/fixtures.test.mjs": "2f241eee457c5143292cfed91c634310f3b236f79355a4fb82b45603d48015c1",
+    "app/tests/frontend.test.mjs": "ee1b170954dcd850444bf70c376dc6867d1d76371eb3c018a246cc10e3eb0ee2",
+    "app/tests/helpers.mjs": "3dfe71526efe32867aad48fb9c5d764c33bb5a1bfdefa835a66a541de5178494",
+    "app/tests/herdr-fixture.mjs": "cc34fea85902c181a1f946c98aa986a32347933bfa4beab9eee4b75dac0f0eac",
+    "app/tests/herdr-loader.mjs": "b619010a6d12845c0ea030511bb4f7743c6a44569160663df43b7bc13e39427c",
+    "app/tests/installer.test.mjs": "79fd64d404ac4bf3c9dea87f2558fe5e6ec2e7e48665d3bf3bbb04e212d1b5d4",
+    "app/tests/runtime-fixture.test.mjs": "f83a9c58e38afdc1ba7123382996b8f58c9ea5bcd2f17507789a0cbaaa1b00c9",
+    "app/tests/runtime-writer.py": "2b6b63df2dd0a6807ae91af50b2b729b5aa3f8951b20fa98c17b30304db486f9",
+    "app/tests/runtime.test.mjs": "032bcc4440b8687b892f67e8f370996b5854f8d842268a81fc391f8ae0956906",
+    "app/tests/sidebar.test.mjs": "fcd71447833aba6d6cd16f6e18d6314e5c67db5fb89c45a8e511a8eebd4d716b",
+    "app/tests/uninstall-fault.py": "bb77074fcb7c3f1180334bd25f2f57c78b542270fafd55041621408b77291214",
+    "app/tests/viewport.test.mjs": "90e9508586898486ddd891160746d87babf4abd6a2c124c60984724a356d10f4",
+    "app/tests/write-fault.py": "95cf3a3927364d7cc90397099b4eac2263c015bd2232549f6393ad332b5ea4d9"
+  },
+  "native_checks": "Previously passed all six native mod checks at identical b06323c; see b063-native-check.log. No repeat needed for private fixture diagnostics.",
+  "isolation": {
+    "core_id": "f94040a2e7c44127515bb23f8e5e2d35",
+    "pid": 3184058,
+    "start": "3226792",
+    "session": "p4r-1769da4823",
+    "sockets": [
+      [
+        "/tmp/p4r-948rbmt7/runtime/herdr-core/p4r-1769da4823.sock",
+        7866527
+      ]
+    ],
+    "six_exact_environment_values_verified": true
+  },
+  "artifact": {
+    "source_base": "1269daccd0da27df8df355fcc234dcd18ca9440c",
+    "path": "/home/leavemyyard/Code/herdr-panorama-worktrees/app-conductor/B/author/b2-rust-target/release/panorama",
+    "private_copy": "/tmp/p4r-948rbmt7/home/.config/herdr-app/data/panorama/bin/panorama",
+    "sha256": "da6d69e802a479d47aa154d3e6464c7286d0c06ef25304c9ca5a22e0aec328f2",
+    "bytes": 9964424,
+    "source_src_equal": true
+  },
+  "runtime_package": {
+    "mods/panorama-peek/contract.js": {
+      "sha256": "799534499636f7121188b6c7fc6f6a3f05d0781b236a75e05bb8536be56eca2c",
+      "mode": 420
+    },
+    "mods/panorama-peek/binary.js": {
+      "sha256": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
+      "mode": 420
+    },
+    "mods/panorama-peek/metadata.js": {
+      "sha256": "c72b6b71af3f2c0db2c06e13e82e48de5b03e0d32c1e0c3c80f12070754f3c5e",
+      "mode": 420
+    },
+    "mods/panorama-peek/model.js": {
+      "sha256": "4d653d8cbf77c11ce49d502bacf8f986bd607e4fde3039b06fccb9ff7757b12d",
+      "mode": 420
+    },
+    "mods/panorama-peek/paging.js": {
+      "sha256": "b5ee4fece7bfcff5476a53c94ade2ba29a130394b6236e01d2ac1eeb35acb1e1",
+      "mode": 420
+    },
+    "mods/panorama-peek/bundle.json": {
+      "sha256": "db4d8657f4df0649f981dcd57d4790efd44368bcc9adc71ad2044a7e04efdcbc",
+      "mode": 420
+    },
+    "mods/panorama-peek/base.js": {
+      "sha256": "87652b85d744551508a62e24b32d76d8363bc939805e65413f7435276c090dd0",
+      "mode": 420
+    },
+    "mods/panorama-peek/main.js": {
+      "sha256": "1bf7bf296bd678c8c7f8577341276435ee905cb47096423b197dc975ca0fa1f0",
+      "mode": 420
+    },
+    "mods/panorama-peek/routing.js": {
+      "sha256": "0a0c932d301427c9c6fbd6365a670945f0515db237eef3ba070fa67a9f450ae2",
+      "mode": 420
+    },
+    "mods/panorama-peek/subject.js": {
+      "sha256": "9689bc858b772663cc223645fd6b639e3476a7b61767d9c2477f3942b390bd57",
+      "mode": 420
+    },
+    "mods/panorama-peek/actions.js": {
+      "sha256": "4b14ebd6eb0afd6b7aa2426f045578afcabb95329c364bebc5defc12c5b539c3",
+      "mode": 420
+    },
+    "mods/panorama-peek/mod.json": {
+      "sha256": "8ded8a3a0cff0e5348d95b12d363fdbdfea201dd66f37107c289852048f9191d",
+      "mode": 420
+    },
+    "mods/panorama-peek/marks.js": {
+      "sha256": "13e5d13607af063dd3ff06db5671c986da80a5189b2bdda4c96b1e04aef2ea2a",
+      "mode": 420
+    },
+    "mods/panorama-peek/tree.js": {
+      "sha256": "eb481ed97705f98fe8eb43d340b16c7f62bb1eefcf71bff236637075ad29b079",
+      "mode": 420
+    },
+    "mods/panorama-peek/feed-client.js": {
+      "sha256": "bd6f2072bb83197ee560e414167c64f1c8834b72b532f5a62620bf7319c31436",
+      "mode": 420
+    },
+    "mods/panorama-spaces/contract.js": {
+      "sha256": "799534499636f7121188b6c7fc6f6a3f05d0781b236a75e05bb8536be56eca2c",
+      "mode": 420
+    },
+    "mods/panorama-spaces/binary.js": {
+      "sha256": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
+      "mode": 420
+    },
+    "mods/panorama-spaces/model.js": {
+      "sha256": "4d653d8cbf77c11ce49d502bacf8f986bd607e4fde3039b06fccb9ff7757b12d",
+      "mode": 420
+    },
+    "mods/panorama-spaces/bundle.json": {
+      "sha256": "3180c086000ddc7511668844910f4ac4e772ba7fac8df30c27afacd187f8bc01",
+      "mode": 420
+    },
+    "mods/panorama-spaces/main.js": {
+      "sha256": "1e70dd2f66209fe536a9c8604622fb81d35999eebfb470fdb10a079fe82f84a3",
+      "mode": 420
+    },
+    "mods/panorama-spaces/LICENSE.herdr-app": {
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "mode": 420
+    },
+    "mods/panorama-spaces/mod.json": {
+      "sha256": "33ca83d69328251ad05028996142851f273e5e5e80d50a38fac552255c02192c",
+      "mode": 420
+    },
+    "mods/panorama-spaces/tabs.js": {
+      "sha256": "d39d193f14c0636836242fdf80d631fd51bac366c7fe9547713cf6c87b6a4354",
+      "mode": 420
+    },
+    "mods/panorama-spaces/tree.js": {
+      "sha256": "eb481ed97705f98fe8eb43d340b16c7f62bb1eefcf71bff236637075ad29b079",
+      "mode": 420
+    },
+    "mods/panorama-spaces/feed-client.js": {
+      "sha256": "bd6f2072bb83197ee560e414167c64f1c8834b72b532f5a62620bf7319c31436",
+      "mode": 420
+    },
+    "mods/panorama-pane/contract.js": {
+      "sha256": "799534499636f7121188b6c7fc6f6a3f05d0781b236a75e05bb8536be56eca2c",
+      "mode": 420
+    },
+    "mods/panorama-pane/space.js": {
+      "sha256": "ee9b1763a2cd293882407977de9f41d28b91223246212ddf9fad51088ba03702",
+      "mode": 420
+    },
+    "mods/panorama-pane/binary.js": {
+      "sha256": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
+      "mode": 420
+    },
+    "mods/panorama-pane/model.js": {
+      "sha256": "4d653d8cbf77c11ce49d502bacf8f986bd607e4fde3039b06fccb9ff7757b12d",
+      "mode": 420
+    },
+    "mods/panorama-pane/swarm.js": {
+      "sha256": "26ae1411f3f2e6c2dcaa96a02c0c0cdd6bfae388ae643c7ef41fe16b234769ef",
+      "mode": 420
+    },
+    "mods/panorama-pane/bundle.json": {
+      "sha256": "a3aeeefc115ac0ccb5d671ea6176a64b3ef989f87efad53325878fd11475f294",
+      "mode": 420
+    },
+    "mods/panorama-pane/main.js": {
+      "sha256": "529f90bda658b5f3a8fdf19ca2bf3c78fdb33fff410e2d872727cfbd2ded9ee8",
+      "mode": 420
+    },
+    "mods/panorama-pane/LICENSE.herdr-app": {
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "mode": 420
+    },
+    "mods/panorama-pane/mod.json": {
+      "sha256": "33ca83d69328251ad05028996142851f273e5e5e80d50a38fac552255c02192c",
+      "mode": 420
+    },
+    "mods/panorama-pane/marks.js": {
+      "sha256": "13e5d13607af063dd3ff06db5671c986da80a5189b2bdda4c96b1e04aef2ea2a",
+      "mode": 420
+    },
+    "mods/panorama-pane/tree.js": {
+      "sha256": "eb481ed97705f98fe8eb43d340b16c7f62bb1eefcf71bff236637075ad29b079",
+      "mode": 420
+    },
+    "mods/panorama-pane/feed-client.js": {
+      "sha256": "bd6f2072bb83197ee560e414167c64f1c8834b72b532f5a62620bf7319c31436",
+      "mode": 420
+    },
+    "mods/panorama-graph/contract.js": {
+      "sha256": "799534499636f7121188b6c7fc6f6a3f05d0781b236a75e05bb8536be56eca2c",
+      "mode": 420
+    },
+    "mods/panorama-graph/cards.js": {
+      "sha256": "329c5fe0ba2b768b79b4952eccd79a5b0e7c3a0f7dd6cfe540608e3b07f7a0d3",
+      "mode": 420
+    },
+    "mods/panorama-graph/binary.js": {
+      "sha256": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
+      "mode": 420
+    },
+    "mods/panorama-graph/model.js": {
+      "sha256": "4d653d8cbf77c11ce49d502bacf8f986bd607e4fde3039b06fccb9ff7757b12d",
+      "mode": 420
+    },
+    "mods/panorama-graph/inbox.js": {
+      "sha256": "74693c2b08e7cb8aaab9c24bbd5f2f83d7a23e0ca4c9461e00f656e1ca7798bb",
+      "mode": 420
+    },
+    "mods/panorama-graph/bundle.json": {
+      "sha256": "7d66363ae80d9eaa9dd96d3d340d00e47e5a035e216a7bd001f09ee63a84d499",
+      "mode": 420
+    },
+    "mods/panorama-graph/main.js": {
+      "sha256": "0e8a94de652ad38034671a81b6cf6229a60d9b4855de8afc8e779c068cf69da9",
+      "mode": 420
+    },
+    "mods/panorama-graph/routing.js": {
+      "sha256": "0a0c932d301427c9c6fbd6365a670945f0515db237eef3ba070fa67a9f450ae2",
+      "mode": 420
+    },
+    "mods/panorama-graph/graph.js": {
+      "sha256": "02df97d8adb00c9364a06b56aa9dda470684336558be3cd4cf02ff16636cd487",
+      "mode": 420
+    },
+    "mods/panorama-graph/actions.js": {
+      "sha256": "67f947c688ba8de9802be47e662c586b175f255858cc16874bf6e8dfc4e93ab6",
+      "mode": 420
+    },
+    "mods/panorama-graph/mod.json": {
+      "sha256": "b0677fec264986910305561424f8735c740cd376c35d1c5e52968c1df9d043f4",
+      "mode": 420
+    },
+    "mods/panorama-graph/peek-caller.js": {
+      "sha256": "2feb99ac0380095169bca403e8767b9f98c2c3858b8b4b7895c48e0683caaa90",
+      "mode": 420
+    },
+    "mods/panorama-graph/marks.js": {
+      "sha256": "13e5d13607af063dd3ff06db5671c986da80a5189b2bdda4c96b1e04aef2ea2a",
+      "mode": 420
+    },
+    "mods/panorama-graph/tree.js": {
+      "sha256": "eb481ed97705f98fe8eb43d340b16c7f62bb1eefcf71bff236637075ad29b079",
+      "mode": 420
+    },
+    "mods/panorama-graph/feed-client.js": {
+      "sha256": "bd6f2072bb83197ee560e414167c64f1c8834b72b532f5a62620bf7319c31436",
+      "mode": 420
+    },
+    "mods/panorama/contract.js": {
+      "sha256": "799534499636f7121188b6c7fc6f6a3f05d0781b236a75e05bb8536be56eca2c",
+      "mode": 420
+    },
+    "mods/panorama/viewport.js": {
+      "sha256": "2f31c92808ac9021dc5353292b63ad9d53fdbb18986ee8e8bd0ecf9a697ed8e4",
+      "mode": 420
+    },
+    "mods/panorama/binary.js": {
+      "sha256": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
+      "mode": 420
+    },
+    "mods/panorama/NOTICE": {
+      "sha256": "6da85f604a3f6cfd51645835b1b6554adc3d51d89736823fd55c742072a57652",
+      "mode": 420
+    },
+    "mods/panorama/model.js": {
+      "sha256": "4d653d8cbf77c11ce49d502bacf8f986bd607e4fde3039b06fccb9ff7757b12d",
+      "mode": 420
+    },
+    "mods/panorama/bundle.json": {
+      "sha256": "d81e5ac06971c2ff9bc8d5c79c55d0d5459065b9101e2f3a2c56ec42279a820c",
+      "mode": 420
+    },
+    "mods/panorama/base.js": {
+      "sha256": "f31ced69c7e6a1dc6b00f71772c5f1956b524ba9efff8e7b6faa76820217b9c8",
+      "mode": 420
+    },
+    "mods/panorama/main.js": {
+      "sha256": "7ab150c246f4fd9ef96776fec7f9d1f21ef88918fb96470ff98ee7320235ac79",
+      "mode": 420
+    },
+    "mods/panorama/LICENSE.herdr-app": {
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "mode": 420
+    },
+    "mods/panorama/viewport-math.js": {
+      "sha256": "ef8bde18ea4d282b7573854069084beeac08e46e8b9ffec9c938d50661d617b4",
+      "mode": 420
+    },
+    "mods/panorama/routing.js": {
+      "sha256": "0a0c932d301427c9c6fbd6365a670945f0515db237eef3ba070fa67a9f450ae2",
+      "mode": 420
+    },
+    "mods/panorama/mod.json": {
+      "sha256": "e8e0a91d23a0addf19f9f4dab48f597f252a1d44e5063e4d6ae884a88cbf735d",
+      "mode": 420
+    },
+    "mods/panorama/peek-caller.js": {
+      "sha256": "2feb99ac0380095169bca403e8767b9f98c2c3858b8b4b7895c48e0683caaa90",
+      "mode": 420
+    },
+    "mods/panorama/marks.js": {
+      "sha256": "13e5d13607af063dd3ff06db5671c986da80a5189b2bdda4c96b1e04aef2ea2a",
+      "mode": 420
+    },
+    "mods/panorama/tree.js": {
+      "sha256": "eb481ed97705f98fe8eb43d340b16c7f62bb1eefcf71bff236637075ad29b079",
+      "mode": 420
+    },
+    "mods/panorama/feed-client.js": {
+      "sha256": "bd6f2072bb83197ee560e414167c64f1c8834b72b532f5a62620bf7319c31436",
+      "mode": 420
+    },
+    "mods/panorama-tabs/contract.js": {
+      "sha256": "799534499636f7121188b6c7fc6f6a3f05d0781b236a75e05bb8536be56eca2c",
+      "mode": 420
+    },
+    "mods/panorama-tabs/binary.js": {
+      "sha256": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
+      "mode": 420
+    },
+    "mods/panorama-tabs/model.js": {
+      "sha256": "4d653d8cbf77c11ce49d502bacf8f986bd607e4fde3039b06fccb9ff7757b12d",
+      "mode": 420
+    },
+    "mods/panorama-tabs/swarm.js": {
+      "sha256": "26ae1411f3f2e6c2dcaa96a02c0c0cdd6bfae388ae643c7ef41fe16b234769ef",
+      "mode": 420
+    },
+    "mods/panorama-tabs/bundle.json": {
+      "sha256": "3180c086000ddc7511668844910f4ac4e772ba7fac8df30c27afacd187f8bc01",
+      "mode": 420
+    },
+    "mods/panorama-tabs/main.js": {
+      "sha256": "d5328f3eaf3b50d06ff484cefec3abd9b0f517e0f7982b9d6c884683878be415",
+      "mode": 420
+    },
+    "mods/panorama-tabs/LICENSE.herdr-app": {
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "mode": 420
+    },
+    "mods/panorama-tabs/mod.json": {
+      "sha256": "33ca83d69328251ad05028996142851f273e5e5e80d50a38fac552255c02192c",
+      "mode": 420
+    },
+    "mods/panorama-tabs/tree.js": {
+      "sha256": "eb481ed97705f98fe8eb43d340b16c7f62bb1eefcf71bff236637075ad29b079",
+      "mode": 420
+    },
+    "mods/panorama-tabs/feed-client.js": {
+      "sha256": "bd6f2072bb83197ee560e414167c64f1c8834b72b532f5a62620bf7319c31436",
+      "mode": 420
+    },
+    "layouts/panorama.json": {
+      "sha256": "491a5c29fd0121aa54f8df79707c0d1676049f1f60c3f9be9479f06800ab353a",
+      "mode": 420
+    },
+    "data/panorama/bin/panorama": {
+      "sha256": "da6d69e802a479d47aa154d3e6464c7286d0c06ef25304c9ca5a22e0aec328f2",
+      "mode": 493
+    }
+  },
+  "rendering_bytes": {
+    "peek_base_exact": true,
+    "caller_helper_exact": true,
+    "sidebar_only_role_import_changed": true
+  },
+  "private_app": {
+    "pid": 3184078,
+    "start": "3226808",
+    "sha256": "1613c5a2ec74f1ffc4e0173898eba006310fde1e04b9257446db34bb1ae4d949",
+    "six_exact_environment_values_verified": true
+  },
+  "peek": {
+    "overlay": "o1",
+    "pin": "cab1dd3b051c4974a8fe14f631e09128",
+    "validated": true,
+    "stopped": false,
+    "stale": false,
+    "subject": "[\"cab1dd3b051c4974a8fe14f631e09128\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"reviewer-session\",\"reviewer-thread\",\"reviewer-fixer\"]",
+    "scope": "[\"[\\\"cab1dd3b051c4974a8fe14f631e09128\\\",\\\"[\\\\\\\"root\\\\\\\",\\\\\\\"herdr-core\\\\\\\",\\\\\\\"t1\\\\\\\"]\\\",\\\"reviewer-session\\\",\\\"reviewer-thread\\\",\\\"reviewer-fixer\\\"]\",\"/tmp/p4r-948rbmt7/literal ' ; $(data) \u96ea.jsonl\"]",
+    "viewer": false,
+    "reading": false,
+    "page": null,
+    "editorUnits": null,
+    "editorSHA": null,
+    "error": null
+  },
+  "caller_peek": {
+    "command": "reviewer-caller",
+    "current": {
+      "token": "20d3b7cb62c1124ef1baaaee7dced1c5",
+      "id": "o1",
+      "rowKey": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"reviewer-fixer\"]",
+      "install_id": "cab1dd3b051c4974a8fe14f631e09128"
+    },
+    "owned": [
+      "o1"
+    ],
+    "error": null
+  },
+  "peek_status": {
+    "zoom": 2.0,
+    "font_size": 28.0,
+    "ui_font_size": 26.0,
+    "space": "spc70459d3abb43f8629f74f32b377a31b",
+    "tab": "tbd623652d1c7340f0f3530c063c1da74b",
+    "focused_pane": "pe1bcf3545fc0d904c68edf30db9c5203",
+    "layout": "reviewer-b4",
+    "agent": "t1",
+    "floats": {},
+    "overlays": [
+      "panorama-peek"
+    ],
+    "errors": []
+  },
+  "viewer": {
+    "overlay": "o2",
+    "pin": "cab1dd3b051c4974a8fe14f631e09128",
+    "validated": true,
+    "stopped": false,
+    "stale": false,
+    "subject": "[\"cab1dd3b051c4974a8fe14f631e09128\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"reviewer-session\",\"reviewer-thread\",\"reviewer-fixer\"]",
+    "scope": "[\"[\\\"cab1dd3b051c4974a8fe14f631e09128\\\",\\\"[\\\\\\\"root\\\\\\\",\\\\\\\"herdr-core\\\\\\\",\\\\\\\"t1\\\\\\\"]\\\",\\\"reviewer-session\\\",\\\"reviewer-thread\\\",\\\"reviewer-fixer\\\"]\",\"/tmp/p4r-948rbmt7/literal ' ; $(data) \u96ea.jsonl\"]",
+    "viewer": true,
+    "reading": false,
+    "page": {
+      "first": 1,
+      "last": 100,
+      "lines": 2200
+    },
+    "editorUnits": 102290,
+    "editorSHA": "b5a8427655bab09e39d1db357fc5c7c1f3fb17a6eb183484e57a7e47dacb6ab5",
+    "error": null
+  },
+  "caller_viewer": {
+    "command": "reviewer-caller",
+    "current": {
+      "token": "c45d5e5fce000df024a3a8fae3ac2d62",
+      "id": "o2",
+      "rowKey": "[\"agent\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"reviewer-fixer\"]",
+      "install_id": "cab1dd3b051c4974a8fe14f631e09128"
+    },
+    "owned": [
+      "o2"
+    ],
+    "error": null
+  },
+  "next": {
+    "overlay": "o2",
+    "pin": "cab1dd3b051c4974a8fe14f631e09128",
+    "validated": true,
+    "stopped": false,
+    "stale": false,
+    "subject": "[\"cab1dd3b051c4974a8fe14f631e09128\",\"[\\\"root\\\",\\\"herdr-core\\\",\\\"t1\\\"]\",\"reviewer-session\",\"reviewer-thread\",\"reviewer-fixer\"]",
+    "scope": "[\"[\\\"cab1dd3b051c4974a8fe14f631e09128\\\",\\\"[\\\\\\\"root\\\\\\\",\\\\\\\"herdr-core\\\\\\\",\\\\\\\"t1\\\\\\\"]\\\",\\\"reviewer-session\\\",\\\"reviewer-thread\\\",\\\"reviewer-fixer\\\"]\",\"/tmp/p4r-948rbmt7/literal ' ; $(data) \u96ea.jsonl\"]",
+    "viewer": true,
+    "reading": false,
+    "page": {
+      "first": 101,
+      "last": 200,
+      "lines": 2200
+    },
+    "editorUnits": 102400,
+    "editorSHA": "b2c9d67b25afaaeedb69b8e2f5abb220c446650abf1fce6898f4340f249c72b7",
+    "error": null
+  },
+  "caller_closed": {
+    "command": "reviewer-caller",
+    "current": null,
+    "owned": [],
+    "error": null
+  },
+  "final_status": {
+    "zoom": 2.0,
+    "font_size": 28.0,
+    "ui_font_size": 26.0,
+    "space": "spc70459d3abb43f8629f74f32b377a31b",
+    "tab": "tbd623652d1c7340f0f3530c063c1da74b",
+    "focused_pane": "pe1bcf3545fc0d904c68edf30db9c5203",
+    "layout": "reviewer-b4",
+    "agent": "t1",
+    "floats": {},
+    "overlays": [],
+    "errors": []
+  },
+  "transcript": {
+    "bytes": 2258290,
+    "sha256": "ebe65d64e0a4aac5298b005548a63eb17c7219ed0cca7419159dadc0cb3cf429",
+    "path": "/tmp/p4r-948rbmt7/literal ' ; $(data) \u96ea.jsonl",
+    "line_count": 2200,
+    "no_remote_on": true,
+    "page1_and_page2_editor_sha_match": true
+  },
+  "capture": {
+    "window_requested": [
+      1288,
+      1000
+    ],
+    "zoom": 2,
+    "design": "docs/design/herdr-app/v2-c-peek.png",
+    "design_sha256": "ae2073d0cc3817aaba949bd94043dff91e9cc3e4f49691a0ce64dbd4440a77e3",
+    "files": {
+      "docs/review/herdr-app/b4/reviewer/viewer-b063.png": "554d143e6845fdf7e96f7485c9dbcc400260cf01137ee93dec752216dd94369e",
+      "docs/review/herdr-app/b4/reviewer/frame-c-b063.png": "d8031b8c54ddac9bb0c447c2319ac11a330400994763a2496f00cd9674014b4d"
+    },
+    "actual_pixel_sizes": {
+      "viewer-b063.png": [
+        1288,
+        1000
+      ],
+      "frame-c-b063.png": [
+        1288,
+        1000
+      ]
+    }
+  },
+  "stop_code": 0,
+  "captured_core_exited": true,
+  "private_app_exited": true
+}
