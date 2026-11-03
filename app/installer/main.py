@@ -4,15 +4,19 @@ import fcntl
 import json
 import os
 import shutil
+import secrets
 import stat
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 from check import check_mods
 from fs import Home, digest
 from keys import bindings, decoded, merge, render, undo
-from manifest import BASE_FILES, BINARY, MANIFEST, MODS, parents, validate
+from manifest import BASE_FILES, BINARY, MANIFEST, MODS, MOD_DATA_DIRS, parents, validate
+import runtime
+import frontend
 
 
 def inventory(package, binary):
@@ -41,7 +45,7 @@ def preflight(home, files):
     for mod in MODS:
         if home.exists(f'mods/{mod}'):
             raise ValueError(f'Name collision: mods/{mod}')
-    for path in [*files, MANIFEST]:
+    for path in [*files, MANIFEST, *MOD_DATA_DIRS]:
         if home.exists(path):
             raise ValueError(f'Name collision: {path}')
     # Walk every existing ancestor now: reject links before any writes.
@@ -51,7 +55,7 @@ def preflight(home, files):
                 pass
 
 
-def remove_files(home, manifest):
+def remove_files(home, manifest, removed=None):
     leftovers = []
     for path, info in reversed(list(manifest['files'].items())):
         try:
@@ -62,6 +66,8 @@ def remove_files(home, manifest):
                 leftovers.append(path + ' (edited; preserved)')
             elif not home.remove(path, current):
                 leftovers.append(path + ' (changed; preserved)')
+            elif removed is not None:
+                removed[path] = current
         except (OSError, ValueError):
             leftovers.append(path + ' (unsafe or changed; preserved)')
     return leftovers
@@ -86,24 +92,42 @@ def install(home, args):
     original_keys = home.read('keys.json')
     change = merge(original_keys, additions)
     preflight(home, files)
-    manifest = {'v': 1, 'files': {p: {'sha256': digest(v[0]), 'mode': v[1]} for p, v in files.items()},
+    checker = args.checker or shutil.which('herdr-app')
+    if not checker:
+        raise ValueError('herdr-app is required for native mod checks')
+    # Native loading writes deterministic SDK/editor metadata. Check the exact
+    # planned bytes and journal the two known generated filenames before copying.
+    with tempfile.TemporaryDirectory(prefix='panorama-planned-') as planned:
+        planned = Path(planned)
+        for path, value in files.items():
+            if path.startswith('mods/'):
+                destination = planned / path
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(value[0])
+        files.update(check_mods([planned / 'mods' / name for name in MODS], checker))
+    preflight(home, files)
+    manifest = {'v': 2, 'install_id': secrets.token_hex(16), 'files': {p: {'sha256': digest(v[0]), 'mode': v[1]} for p, v in files.items()},
                 'dirs': [], 'keys': change}
     written = {}
+    runtime_created = {}
     published = {'manifest': False, 'keys': False}
     manifest_written = None
     try:
         for directory in sorted({p for f in [*files, MANIFEST] for p in parents(f)}, key=lambda p: (p.count('/'), p)):
             if home.mkdir(directory):
                 manifest['dirs'].append(directory)
+        for directory in sorted(MOD_DATA_DIRS):
+            if not home.mkdir(directory):
+                raise ValueError(f'Name collision: {directory}')
+            manifest['dirs'].append(directory)
+        runtime.reserve(home, manifest, runtime_created)
         # Journal before payload changes, so interrupted installs can be uninstalled.
         manifest_written = (render(manifest), 0o600)
+        if len(manifest_written[0]) > 1048576:
+            raise ValueError('Install receipt exceeds 1 MiB')
         home.write(MANIFEST, *manifest_written, on_publish=lambda: published.update(manifest=True))
         for path, value in files.items():
             home.write(path, *value, on_publish=lambda p=path: written.update({p: manifest['files'][p]}))
-        checker = args.checker or shutil.which('herdr-app')
-        if not checker:
-            raise ValueError('herdr-app is required for native mod checks')
-        check_mods([Path(args.app_home) / 'mods' / name for name in MODS], checker)
         if change:
             home.write('keys.json', decoded(change['after']), change['mode'], expected=original_keys,
                        on_publish=lambda: published.update(keys=True))
@@ -118,6 +142,18 @@ def install(home, args):
                     leftovers.append(note)
             except (OSError, ValueError) as error:
                 leftovers.append('keys.json (rollback incomplete: ' + str(error) + ')')
+        if leftovers and published['manifest']:
+            try:
+                runtime.disable(home, manifest)
+            except (OSError, ValueError) as error:
+                leftovers.append('runtime control preserved: ' + str(error))
+        else:
+            for path, current in reversed(list(runtime_created.items())):
+                try:
+                    if not home.remove(path, current):
+                        leftovers.append(path + ' (changed; preserved)')
+                except (OSError, ValueError):
+                    leftovers.append(path + ' (unsafe or changed; preserved)')
         if published['manifest']:
             if leftovers:
                 leftovers.append(MANIFEST + ' (recovery journal retained)')
@@ -130,19 +166,49 @@ def install(home, args):
 
 
 def uninstall(home, package):
-    stored = home.read(MANIFEST)
+    stored = home.read(MANIFEST, 1048576)
     if stored is None:
         raise ValueError('No panorama install manifest; nothing removed')
+    if stored[1] != 0o600:
+        raise ValueError('Install receipt must have mode 0600')
     definitions = bindings((Path(package) / 'keys.json').read_bytes())
     manifest = validate(stored[0], definitions)
     # Validate keys and every ancestor before destructive work. A substituted link
     # in one subtree must not cause partial removal elsewhere.
     for path in [*manifest['files'], 'keys.json']:
         home.read(path)
-    leftovers = remove_files(home, manifest)
+    if manifest['v'] == 2:
+        with runtime.quiesce(home, manifest):
+            runtime_plan = runtime.preflight_cleanup(home, manifest)
+            frontend.wait(home, manifest)
+            finish_uninstall(home, manifest, stored, runtime_plan)
+    else:
+        finish_uninstall(home, manifest, stored)
+
+
+def finish_uninstall(home, manifest, stored, runtime_plan=None):
+    removed = {}
+    leftovers = remove_files(home, manifest, removed)
+    if runtime_plan is not None:
+        try:
+            if not frontend.acknowledged(home, manifest):
+                raise ValueError('Frontend published after its stop acknowledgment')
+        except (OSError, ValueError, TypeError) as error:
+            # Only this invocation's proven unchanged removed bytes are recovery
+            # authority. Never overwrite a reappeared/personal destination.
+            conflicts = []
+            for path, current in reversed(list(removed.items())):
+                try:
+                    home.write(path, *current)
+                except (OSError, ValueError) as restore_error:
+                    conflicts.append(path + ': ' + str(restore_error))
+            detail = (' Static recovery conflicts (preserved): ' + '; '.join(conflicts)) if conflicts else ' Removed static payload restored for retry.'
+            raise ValueError(str(error) + '; disabled receipt retained.' + detail) from error
     note = undo(home, manifest['keys'])
     if note:
         leftovers.append(note)
+    if runtime_plan is not None:
+        runtime.cleanup(home, runtime_plan)
     if not home.remove(MANIFEST, stored):
         raise ValueError('Install manifest changed during uninstall; preserved')
     leftovers.extend(remove_dirs(home, manifest['dirs']))
