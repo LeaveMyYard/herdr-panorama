@@ -1,0 +1,27 @@
+{
+  "reviewed_sha": "583fac51c1bc6ad7cda011432efa0411b12f3ba3",
+  "base_sha": "96ff7aea7d3725d2b77528b9f93b4c233adb01d6",
+  "runtime_mods_tree": "aafc6e76449f1c3e8986091140f9b4fbade67129",
+  "installer_tree": "37658c696d501cde6c7a0b6fd65e446d06d4b6b9",
+  "native_versions": {
+    "herdr-app": "0.1.12",
+    "hc": "0.1.17"
+  },
+  "synthetic_captures": "Approved SW2/T144/DEEP data converted onto v1; wrapper subclasses seed data and selection only; no receipt means stale provenance; unchanged base production renderers. Independently executed in reviewer-owned home/core/session.",
+  "actual_writer_smoke": "Separate real optimized artifact/current-G/prefs active-uninstall/reinstall run, no rich transcript claims; existing audited one-shot method executed independently, no new feature test matrix.",
+  "artifact_sha256": "da6d69e802a479d47aa154d3e6464c7286d0c06ef25304c9ca5a22e0aec328f2",
+  "rust_source_equal_to": "1269daccd0da27df8df355fcc234dcd18ca9440c",
+  "files": {
+    "compare-d.png": "32e798f0caf8e117264c700380c2792a27e3f3d0deb2b14c4328198a2364c6bd",
+    "compare-d2.png": "5f76a49a1181985591d67e763a297be0efe1dbd508fe5ca6a2f0a4414ea74d1d",
+    "current-generation-manual.json": "3d7ca061cf8324c70b6e3a392cffe97e60b3f80a88a62392615d6012e249eeff",
+    "current-generation-native.png": "4fec6f472c564324366d519df671e22d3c4d49289b8bcb7037b0aff9bc66497e",
+    "final-renderer-app.json": "5a15e74ee2498fe173121278167a14fee956370cad904d0df369afb735740697",
+    "final-renderer-core.json": "74f83e094672c6b99e5beb2a4dfe725f1564bcd6b6d526976513f1d4982b6578",
+    "final-renderer-status.json": "0324914a521013e8c076f2a1d25c97517bac7c88fa5024e0d29c4625ce6b2b6e",
+    "isolation.json": "88efa65cc7ff645bc27f3196b34ed64aa999ec7a461c9e87dc02e90cfcf2934a",
+    "native-d.png": "c11313f25ed9743b0585568ba7bb578625f011b50d145f3c3e215ac99befed36",
+    "native-d2.png": "ff76731ee14f417ebe5e8bd391046163ec8d4c80aabb94fbf6351fb277487b28",
+    "reinstalled-native.png": "7047960d23e4ecf8bcac5c6ed41ec10eb48a1d1ce60cdd999307f5cf5e149ff0"
+  }
+}
