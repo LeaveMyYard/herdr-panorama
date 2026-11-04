@@ -1,6 +1,6 @@
 # U8a sidebar and Peek on feed v2: author capture
 
-Capture source: `b67276f9b399dc6b2a45924685dcb48934647e5b` (clean `app/` tree). Per-file SHA-256 of the captured mods is in [provenance.json](provenance.json).
+Capture source: `4957331667bb7dbad3bb5a712534c23b83f31361` (review r1 fixes) (clean `app/` tree). Per-file SHA-256 of the captured mods is in [provenance.json](provenance.json).
 
 [V11 B design / native](compare-b.png) · [V11 C design / native](compare-c.png) · [native sidebar, Test](native-b-sidebar.png) · [native sidebar, TrafficLens](native-b-trafficlens.png) · [native Peek](native-c-peek.png)
 
@@ -11,7 +11,7 @@ Each native image is the left 640×1430 physical pixels of a 1288-wide window at
 - A temporary `HERDR_APP_HOME`, `HOME` and XDG dirs, and a private `hc` core. The core was verified as separate, with 0 live terminals at start.
 - Owned status-reporter terminals, one per design root, kept as tabs named with the root's title.
 - The design's `SW` dataset from `state-refresh-v11/fixture.js` (V11 names, `kids` trees) was converted to a **feed v2** packet. Its root and agent templates come from `tests/fixtures/app-feed/swarm.json`.
-- One extra `herdr-tui` root has no app agent, which exercises the new Elsewhere section.
+- One extra `herdr-tui` root has no app agent, which exercises feed-only roots.
 - Only seeding is wrapped:
   - The sidebar wrapper publishes the private packet.
   - For C it opens the real `panorama-peek` view on the design's `fixer` agent.
@@ -21,7 +21,7 @@ Each native image is the left 640×1430 physical pixels of a 1288-wide window at
 ## Differences from the design, and why
 
 - **`Herdr multi-account` shows Idle under Idle**, not Done under Done. As in the V10 capture, the app reports a looked-at `done` agent as `idle`. Its line 2 `✓2` is the per-direct-subagent finished count, as designed.
-- **Elsewhere section** (not in the design). Feed roots that have no app agent, such as TUI-hosted roots, are now listed under their feed title (issue #161, feed v2 "Identity, tree and app joins"). They have no tab number, click target or space, and they stay out of the header totals.
+- **`Nightly dependency bumps` reads Stale** (not in the design's data). It is a root that has no app agent, such as a TUI-hosted root. These are now listed in the ordinary sections under their feed title (issue #161, feed v2 "Identity, tree and app joins"). They have no tab number, click target or space, and they stay out of the header totals. The seeded packet has no live writer, so the feed is stale. A feed-only root then shows as Stale, with no needs, tiles or counts, rather than as fresh evidence.
 - **No hover** on entry 2: nothing drove synthetic pointer input.
 - **Running glyphs** are captured mid-rotation. The header `◌` is the existing stale indicator: the seeded packet has no live writer.
 - **Peek position** follows the private window's pointer, not the design's anchor next to the row. The Transcript button is disabled because the seed has no transcript path.
