@@ -9,10 +9,11 @@ add the Swarm glyph/count and graph header while retaining stock terminal behavi
 The tabs clone keeps the agent-usage-tabs Usage toggle for the layout's `usage`
 panel, shown only while the separately installed `agent-usage` mod exists.
 The graph uses fixed depth columns, independent vertical scrolling, folding,
-keyboard navigation and selected-card details. A selected transcript thread
-shows its recorded spawn tree; a root without a transcript thread can show its
-proven same-space native-terminal tree. Pane-less detail rows open Peek with supplied
-status, error and last message; Enter opens a verified live owning orchestrator.
+keyboard navigation and selected-card details. Depth 0 holds the space's roots;
+deeper columns hold the selected root's whole agent tree, its transcript agents
+merged with its proven same-space native-terminal children, one card at every depth
+and finished siblings folded per parent. Pane-less detail rows open Peek with supplied
+status, error and last message; Enter focuses the verified live owning root pane.
 Transcript (t) opens a readonly native viewer using the current pinned installation
 and feed scope. It reads supplied absolute producer-local paths through existing
 local line paging, preferring the agent transcript then the root transcript.
@@ -53,9 +54,9 @@ cannot start transcript enrichment; oversized debug builds may also be unavailab
 - Click a space to create/select its Swarm tab; later clicks respect a tab you
   dragged elsewhere. Arrows or `hjkl` navigate the graph. Wheel scrolls a column;
   shift-wheel moves the column window.
-- In the graph, a root/thread click selects and drills down; Enter or double-click
-  opens its orchestrator. Clicking an agent opens its verified terminal or Peek.
-  Sidebar roots focus their terminal; chevrons fold. `g` opens the orchestrator.
+- In the graph, a root click selects and drills down; Enter or double-click
+  focuses its pane. Clicking an agent opens its verified terminal or Peek.
+  Sidebar roots focus their terminal; chevrons fold. `g` focuses the root pane.
 - Peek shows supplied status/error/last message. Transcript (`t`) opens a native
   read-only JSONL viewer; its arrows page 100 lines and `t` refreshes. Escape closes
   the popup/dialog. `a`/`i` navigate to an available existing Inbox bridge or verified
