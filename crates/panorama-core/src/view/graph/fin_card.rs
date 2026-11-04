@@ -3,7 +3,7 @@
 //! finished agents the window hid (`+n older`), and whether it is unfolded.
 
 use super::column::Place;
-use crate::model::{Agent, Orchestrator};
+use crate::model::{Agent, Root};
 use crate::view::agent_text::name;
 use crate::view::cards::Area;
 use crate::view::cards::boxes::{border, rbox};
@@ -19,12 +19,12 @@ use crate::view::text::trunc;
 use crate::view::unseen::mark_of;
 
 /// The card of entry `e` (a "n finished" entry of root `o`) at `p`.
-pub fn fin_card(cv: &mut Screen, p: Place, e: &TreeEntry, o: &Orchestrator, view: &View) {
+pub fn fin_card(cv: &mut Screen, p: Place, e: &TreeEntry, o: &Root, view: &View) {
     let Place { x, y, w, .. } = p;
     let fin: Vec<&Agent> = e
         .fin
         .iter()
-        .filter_map(|id| o.agents().find(|a| &a.id == id))
+        .filter_map(|id| o.agents.iter().find(|a| &a.id == id))
         .collect();
     let own = e.key == o.pane_id;
     let target = Target::Fin {

@@ -42,7 +42,7 @@ async fn the_home_view_publishes_each_refresh_and_takes_seen_back() {
     l.core = Some(c.clone());
     l.core_events = Some(rx);
     let mut s = UnixStream::connect(&sock).await.unwrap();
-    s.write_all(b"{\"hello\": {\"protocol\": \"1.3\"}}\n")
+    s.write_all(b"{\"hello\": {\"protocol\": \"2.0\"}}\n")
         .await
         .unwrap();
     let mut v = BufReader::new(s);
@@ -52,7 +52,8 @@ async fn the_home_view_publishes_each_refresh_and_takes_seen_back() {
         env!("CARGO_MANIFEST_DIR")
     );
     let fx: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-    let sw: panorama_core::model::Swarm = serde_json::from_value(fx["swarm"].clone()).unwrap();
+    let sw: panorama_core::model::Swarm =
+        serde_json::from_value(crate::v1_wire::swarm(fx["swarm"].clone())).unwrap();
     let marks = [("a5".to_owned(), Unseen::Done)].into();
     l.refreshed(&sw, &marks, Filter::All);
     let state = loop {
@@ -63,8 +64,8 @@ async fn the_home_view_publishes_each_refresh_and_takes_seen_back() {
     };
     assert_eq!(state["unseen"], json!({"a5": "done"}));
     assert_eq!(
-        state["swarm"]["orchestrators"].as_array().unwrap().len(),
-        sw.orchestrators.len()
+        state["swarm"]["roots"].as_array().unwrap().len(),
+        sw.roots.len()
     );
     v.get_mut()
         .write_all(b"{\"seen\": [\"a5\"]}\n")

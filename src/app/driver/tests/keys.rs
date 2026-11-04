@@ -137,9 +137,7 @@ fn parked_cursor_keys_act_on_nothing() {
     keys(&mut r, &[Key::Right], now);
     let gone = r.d.app.view.agent.clone().unwrap();
     let mut sw = wire("demo").0;
-    sw.orchestrators[0].threads[0]
-        .agents
-        .retain(|a| a.id != gone);
+    sw.roots[0].agents.retain(|a| a.id != gone);
     r.refresh(sw, now);
     assert_eq!(r.d.app.view.agent, None);
     r.d.app.armed_at = r.t0;

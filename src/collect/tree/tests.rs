@@ -1,4 +1,5 @@
 use super::*;
+use panorama_core::model::Status;
 
 fn agent(id: &str, parent: Option<&str>, status: Status, started: f64) -> Agent {
     Agent {
@@ -70,35 +71,22 @@ fn a_dangling_self_or_cyclic_parent_makes_a_root_child_and_hides_nobody() {
 }
 
 #[test]
-fn every_root_carries_one_thread_of_all_its_agents() {
-    let mut o = Orchestrator {
-        title: "Ship it".into(),
-        hidden_done: 4,
-        flavour: "workflow".into(),
-        ..serde_json::from_value(serde_json::json!({"pane_id": "p", "tab_id": null,
-            "tab_label": "t", "session_id": null}))
-        .unwrap()
-    };
-    let mut done = agent("a", None, Status::Done, 1.0);
-    done.ended = Some(8.0);
-    let mut failed = agent("b", Some("a"), Status::Failed, 2.0);
-    failed.last_at = Some(9.0);
-    adapt(&mut o, Tree::new([done, failed], 2));
-    let [t] = o.threads.as_slice() else {
-        panic!("one thread: {:?}", o.threads)
-    };
-    assert!(t.is_tree());
-    assert_eq!((t.name.as_str(), t.phases.len()), ("Ship it", 0));
-    assert_eq!(t.agents.len(), 2);
-    // the newest (by its last record) failed
-    assert_eq!(t.status, ThreadStatus::Failed);
-    assert_eq!((t.started, t.ended), (Some(1.0), Some(9.0)));
-    assert_eq!((o.hidden_finished, o.hidden_done), (2, 0));
-    assert_eq!(o.flavour, "agents");
-    // a root with no agents still has its one thread, empty and done
-    adapt(&mut o, Tree::default());
-    assert_eq!(o.threads.len(), 1);
-    assert!(o.threads[0].agents.is_empty());
-    assert_eq!(o.threads[0].status, ThreadStatus::Done);
+fn the_tree_and_its_hidden_count_go_on_the_root() {
+    let mut o: Root = serde_json::from_value(serde_json::json!({"pane_id": "p", "tab_id": null,
+        "tab_label": "t", "session_id": null}))
+    .unwrap();
+    let done = agent("a", None, Status::Done, 1.0);
+    let failed = agent("b", Some("a"), Status::Failed, 2.0);
+    plant(&mut o, Tree::new([done, failed], 2));
+    assert_eq!(
+        shape(&Tree {
+            agents: o.agents.clone(),
+            hidden: 0
+        }),
+        [("a", None, 1), ("b", Some("a"), 2)]
+    );
+    assert_eq!(o.hidden_finished, 2);
+    plant(&mut o, Tree::default());
+    assert!(o.agents.is_empty());
     assert_eq!(o.hidden_finished, 0);
 }

@@ -5,7 +5,7 @@ use panorama_core::view::{Filter, Target, View, render_dock, render_graph};
 use serde_json::json;
 
 fn swarm() -> Swarm {
-    serde_json::from_value(json!({"orchestrators":[
+    serde_json::from_value(json!({"roots":[
         {"pane_id":"claude-pane","tab_id":"c","tab_label":"same title","session_id":null,
          "harness":"claude", "herdr_status":"working", "tab_no":1},
         {"pane_id":"codex-pane","tab_id":"x","tab_label":"same title","session_id":null,
@@ -64,20 +64,16 @@ fn mixed_navigation_and_filters_use_pane_ids() {
 
 fn codex(runtime: &str, history: Option<&str>) -> Swarm {
     let mut sw = swarm();
-    sw.orchestrators.remove(0);
-    let o = &mut sw.orchestrators[0];
+    sw.roots.remove(0);
+    let o = &mut sw.roots[0];
     o.herdr_status = panorama_core::model::HerdrStatus::from_code(runtime);
-    if let Some(status) = history {
+    if history.is_some() {
         o.session_id = Some("exact-root".into());
-        // the uniform tree (U3): the root's runtime is herdr's; its one thread holds the agents
-        o.threads.push(
-            serde_json::from_value(json!({
-                "id":panorama_core::model::TREE_THREAD, "name":"agents", "source":"session",
-                "status":status,
-                "agents":[
-                    {"id":"verified-child", "description":"main", "role":"main", "status":"unknown"}
-                ]
-            }))
+        // the uniform tree: the root's runtime is herdr's; its agents are its own
+        o.agents.push(
+            serde_json::from_value(json!(
+                {"id":"verified-child", "description":"main", "role":"main", "status":"unknown"}
+            ))
             .unwrap(),
         );
     }
@@ -145,36 +141,28 @@ fn codex_runtime_survives_history_arrival_in_every_layout() {
 #[test]
 fn codex_child_and_report_attention_survives_root_state_and_main_names() {
     for runtime in ["done", "unknown", "idle"] {
-        for source in ["session", "explicit"] {
-            for (status, label) in [
-                ("run", "working"),
-                ("blk", "blocked"),
-                ("wait", "needs you"),
-                ("fail", "failed"),
-                ("bg", "waiting"),
-            ] {
-                let mut sw = codex(runtime, Some("done"));
-                let thread = &mut sw.orchestrators[0].threads[0];
-                thread.source = panorama_core::model::ThreadSource::from_code(source);
-                // A distinct child can have the root's name/role and even a main prefix.
-                let child = &mut thread.agents[0];
-                child.id = "main:distinct-child".into();
-                child.status = panorama_core::model::Status::from_code(status);
-                assert_layout_state(&sw, label, false);
-            }
+        for (status, label) in [
+            ("run", "working"),
+            ("blk", "blocked"),
+            ("wait", "needs you"),
+            ("fail", "failed"),
+            ("bg", "waiting"),
+        ] {
+            let mut sw = codex(runtime, Some("done"));
+            // A distinct child can have the root's name/role and even a main prefix.
+            let child = &mut sw.roots[0].agents[0];
+            child.id = "main:distinct-child".into();
+            child.status = panorama_core::model::Status::from_code(status);
+            assert_layout_state(&sw, label, false);
         }
         let mut sw = codex(runtime, Some("active"));
-        sw.orchestrators[0].inbox.push(1);
+        sw.roots[0].inbox.push(1);
         assert_layout_state(&sw, "needs you", false);
-        sw.orchestrators[0].inbox.clear();
-        sw.orchestrators[0].threads[0].agents[0]
-            .question_ids
-            .push(2);
+        sw.roots[0].inbox.clear();
+        sw.roots[0].agents[0].question_ids.push(2);
         assert_layout_state(&sw, "needs you", false);
-        sw.orchestrators[0].threads[0].agents[0]
-            .question_ids
-            .clear();
-        sw.orchestrators[0].bg.push(
+        sw.roots[0].agents[0].question_ids.clear();
+        sw.roots[0].bg.push(
             serde_json::from_value(json!({
                 "id":"task", "kind":"task", "description":"Synthetic", "started":null
             }))

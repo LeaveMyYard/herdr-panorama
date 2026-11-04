@@ -12,7 +12,7 @@ pub fn state(extra: Value) -> State {
         "/tests/fixtures/inputs/swarm-design9.json"
     );
     let fixture: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-    let mut st = json!({ "swarm": fixture["swarm"] });
+    let mut st = json!({ "swarm": crate::v1_wire::swarm(fixture["swarm"].clone()) });
     st.as_object_mut()
         .unwrap()
         .extend(extra.as_object().unwrap().clone());

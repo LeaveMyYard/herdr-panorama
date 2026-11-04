@@ -1,6 +1,8 @@
 //! Remote machines in the views (Python tests/test_machines.py): a remote group has one
 //! divider with its machine's label, never clickable; the same local ids on two machines are
 //! two identities; two machines with one label stay apart.
+#[path = "v1_wire/mod.rs"]
+mod v1_wire;
 
 use panorama::machines::{Machine, local_id, namespace};
 use panorama_core::model::Swarm;
@@ -17,7 +19,7 @@ fn wire(name: &str) -> Swarm {
         env!("CARGO_MANIFEST_DIR")
     );
     let v: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-    serde_json::from_value(v["swarm"].clone()).unwrap()
+    serde_json::from_value(v1_wire::swarm(v["swarm"].clone())).unwrap()
 }
 
 fn rows(s: &panorama_core::view::Screen) -> Vec<String> {
@@ -91,20 +93,20 @@ fn two_machines_with_the_same_local_ids_are_two_identities() {
 #[test]
 fn two_machines_with_one_label_stay_apart_and_colons_are_fine() {
     let mut sw = wire("demo");
-    let local = sw.orchestrators[0].clone();
+    let local = sw.roots[0].clone();
     for mid in ["aaa", "bbb"] {
         let mut o = local.clone();
         o.pane_id = "w1:p1".into();
         o.tab_id = Some("w1:t1".into());
         o.tab_label = format!("work on {mid}");
         let part = Swarm {
-            orchestrators: vec![o],
+            roots: vec![o],
             ..Swarm::default()
         };
-        sw.orchestrators
-            .extend(namespace(part, &Machine::new(mid, "lab:1", "host")).orchestrators);
+        sw.roots
+            .extend(namespace(part, &Machine::new(mid, "lab:1", "host")).roots);
     }
-    let ids: Vec<&str> = sw.orchestrators[sw.orchestrators.len() - 2..]
+    let ids: Vec<&str> = sw.roots[sw.roots.len() - 2..]
         .iter()
         .map(|o| o.pane_id.as_str())
         .collect();

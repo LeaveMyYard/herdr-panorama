@@ -1,7 +1,7 @@
-//! The narrow layout (Python `render._narrow`, below 120 columns): one column of
-//! orchestrators; the selected one opens its thread cards below it, the selected thread its
-//! phases and its selected agent's details, joined to the orchestrator by a tree of lines.
-//! A per-tab panel shows it when its tab has no orchestrator (nothing to dock next to).
+//! The narrow layout (Python `render._narrow`, below 120 columns): one column of roots; the
+//! selected one opens a card per direct subagent below it (plan `uniform-agent-tree.md` §4),
+//! the card holding the selected agent its details, joined to the root by a tree of lines.
+//! A per-tab panel shows it when its tab has no root (nothing to dock next to).
 
 mod card;
 mod links;

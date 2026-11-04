@@ -9,19 +9,19 @@ pub use tree::{TreeEntry, agent_depth, parent_key, path_ids, tree_entries};
 
 use super::filter::visible_orchs;
 use super::state::{NEW_ROW, View};
-use crate::model::{Agent, Orchestrator, Swarm};
+use crate::model::{Agent, Root, Swarm};
 
 /// The orchestrator with pane `pane`.
-pub fn find_orch<'a>(swarm: &'a Swarm, pane: Option<&str>) -> Option<&'a Orchestrator> {
+pub fn find_orch<'a>(swarm: &'a Swarm, pane: Option<&str>) -> Option<&'a Root> {
     swarm
-        .orchestrators
+        .roots
         .iter()
         .find(|o| Some(o.pane_id.as_str()) == pane)
 }
 
 /// `o`'s agent `id`, at any depth.
-pub fn find_agent<'a>(o: Option<&'a Orchestrator>, id: Option<&str>) -> Option<&'a Agent> {
-    o?.agents().find(|a| Some(a.id.as_str()) == id)
+pub fn find_agent<'a>(o: Option<&'a Root>, id: Option<&str>) -> Option<&'a Agent> {
+    o?.agents.iter().find(|a| Some(a.id.as_str()) == id)
 }
 
 /// The selectable ids per column, in screen order: the roots (then `+ New agent`), then the

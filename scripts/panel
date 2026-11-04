@@ -24,7 +24,7 @@
 # reaches the pane's terminal (no setsid: not on macOS); a binary that passes gets it anyway.
 # While it runs (about 10 ms; at most 3 s) the pane answers "not a panel" to `process-info`
 # (the core places its own panels by id, so only a + New agent tab's panel is in that window).
-CONTRACT=1
+CONTRACT=2
 
 R=${HERDR_PLUGIN_ROOT:-.}
 B="$R/target/release/panorama"

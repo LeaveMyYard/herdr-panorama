@@ -3,7 +3,7 @@
 //! stale | idle, over the root's own state and every agent of its tree.
 
 use super::tree_rows::Tree;
-use crate::model::{Agent, HerdrStatus, Orchestrator, Status};
+use crate::model::{Agent, HerdrStatus, Root, Status};
 use crate::view::anim::{clock, glyph, spin};
 use crate::view::colour::Rgb;
 use crate::view::orch_state::{Ages, orch_state};
@@ -47,9 +47,9 @@ fn label(st: &Status) -> &'static str {
 
 /// The entry's state. herdr reporting the session working counts as working, blocked as
 /// blocked, and the session's open questions are its `?N`.
-pub fn dock_state<'a>(o: &'a Orchestrator, frame: f64, ages: Ages) -> DockState<'a> {
+pub fn dock_state<'a>(o: &'a Root, frame: f64, ages: Ages) -> DockState<'a> {
     let codex = o.harness == "codex";
-    let agents: Vec<&Agent> = o.agents().collect();
+    let agents: Vec<&Agent> = o.agents.iter().collect();
     let has = |st: Status| agents.iter().any(|a| a.status == st);
     let runner = agents.iter().copied().find(|a| a.status == Status::Running);
     let q = if o.inbox.is_empty() {

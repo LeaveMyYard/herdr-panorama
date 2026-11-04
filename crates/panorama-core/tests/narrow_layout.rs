@@ -174,8 +174,8 @@ fn a_deep_selection_opens_its_depth_1_card_with_its_details() {
 fn a_waiting_deep_agents_status_reaches_the_orchestrator() {
     // test_deep.py::test_status_glyph_of_a_waiting_deep_agent_reaches_the_orchestrator
     let sw = wire_swarm("inputs/swarm-deep.json", None);
-    let o = &sw.orchestrators[0];
-    assert!(o.agents().any(|a| a.status == Status::Waiting));
+    let o = &sw.roots[0];
+    assert!(o.agents.iter().any(|a| a.status == Status::Waiting));
     assert!(matches!(
         orch_state(o, 0.0, None).st,
         Status::Failed | Status::Waiting
@@ -190,7 +190,7 @@ const AGES: Ages = Ages {
     stale_after: 12.0 * 3600.0,
 };
 
-fn orch(extra: serde_json::Value) -> panorama_core::model::Orchestrator {
+fn orch(extra: serde_json::Value) -> panorama_core::model::Root {
     let mut v = json!({"pane_id": "p", "tab_id": "t", "tab_label": "o", "session_id": "s",
         "herdr_status": "idle"});
     v.as_object_mut()
@@ -248,17 +248,16 @@ fn working_and_attention_win_over_waiting() {
 
 #[test]
 fn all_done_threads_go_stale_too() {
-    let t = json!([{"id": "t", "name": "t", "source": "turn", "status": "done",
-        "agents": [{"id": "a", "status": "done"}]}]);
-    let fresh = orch(json!({"threads": t, "last_activity": NOW - 60.0}));
+    let t = json!([{"id": "a", "status": "done"}]);
+    let fresh = orch(json!({"agents": t, "last_activity": NOW - 60.0}));
     assert_eq!(orch_state(&fresh, 0.0, Some(AGES)).st, Status::Done);
-    let old = orch(json!({"threads": t, "last_activity": NOW - 13.0 * 3600.0}));
+    let old = orch(json!({"agents": t, "last_activity": NOW - 13.0 * 3600.0}));
     assert_eq!(orch_state(&old, 0.0, Some(AGES)).st, Status::Stale);
 }
 
 #[test]
 fn needs_me_shows_neither_waiting_nor_stale() {
-    let sw: panorama_core::model::Swarm = serde_json::from_value(json!({"orchestrators": [
+    let sw: panorama_core::model::Swarm = serde_json::from_value(json!({"roots": [
         serde_json::to_value(orch(json!({"bg": bg(NOW)}))).unwrap(),
         serde_json::to_value(orch(json!({"last_activity": NOW - 20.0 * 3600.0}))).unwrap(),
     ], "stale_after": 12.0 * 3600.0}))

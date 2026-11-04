@@ -72,9 +72,7 @@ impl Remotes {
             let error = res.error.as_deref();
             match &res.swarm {
                 Some(swarm) => {
-                    local
-                        .orchestrators
-                        .extend(swarm.orchestrators.iter().cloned());
+                    local.roots.extend(swarm.roots.iter().cloned());
                     local.errors.extend(swarm.errors.iter().cloned());
                     let old = res
                         .at

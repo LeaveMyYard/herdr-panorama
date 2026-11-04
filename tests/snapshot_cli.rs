@@ -46,7 +46,7 @@ fn the_json_snapshot_reads_herdr_and_the_transcripts() {
         (got["herdr_ok"].clone(), got["inbox_ok"].clone()),
         (json!(true), json!(false))
     );
-    let labels: Vec<&str> = got["orchestrators"]
+    let labels: Vec<&str> = got["roots"]
         .as_array()
         .unwrap()
         .iter()
@@ -78,19 +78,29 @@ fn herdr_down_still_prints_a_model_and_counts_print_their_totals() {
     assert_eq!(code, 0);
     let got: Value = serde_json::from_str(&out).unwrap();
     assert_eq!(got["herdr_ok"], json!(false));
-    assert_eq!(got["orchestrators"], json!([]));
+    assert_eq!(got["roots"], json!([]));
+    assert!(got.get("orchestrators").is_none());
     let (_, counts) = snapshot(&["--counts"], &sc.root().join("no.sock"), &sc);
     let c: Value = serde_json::from_str(&counts).unwrap();
     let keys: Vec<&str> = c.as_object().unwrap().keys().map(String::as_str).collect();
     for k in [
-        "orchestrators",
+        "roots",
+        "agents",
         "herdr_ok",
-        "by_source",
         "agent_status",
-        "hidden_done_threads",
+        "hidden_finished",
         "seconds",
     ] {
         assert!(keys.contains(&k), "{k} in {keys:?}");
+    }
+    for gone in [
+        "orchestrators",
+        "threads",
+        "active_threads",
+        "by_source",
+        "hidden_done_threads",
+    ] {
+        assert!(!keys.contains(&gone), "{gone} in {keys:?}");
     }
     let (code, _) = snapshot(&["--yaml"], &sc.root().join("no.sock"), &sc);
     assert_eq!(code, 2);
@@ -112,13 +122,9 @@ fn the_text_listing_names_each_orchestrator() {
         "{}",
         heads[0]
     );
-    // the scenario is days old by the real clock: each root's one tree reads as finished or
-    // failed, its own blocked state on its head line, not in a card of its own
-    assert!(
-        out.lines()
-            .any(|l| l.starts_with("  • Billing API  (session, failed, 7 agents)")),
-        "{out}"
-    );
+    // the scenario is days old by the real clock: each root's tree is listed under it, its
+    // own blocked state on its head line, not in a card of its own
+    assert!(!out.contains("(session, "), "{out}");
     assert!(
         heads[2].starts_with("Docs site  [blocked] blocked "),
         "{}",
@@ -126,7 +132,7 @@ fn the_text_listing_names_each_orchestrator() {
     );
     assert!(
         out.lines()
-            .any(|l| l.starts_with("      ") && l.contains(" fixer ")),
+            .any(|l| l.starts_with("    ") && l.contains(" fixer ")),
         "{out}"
     );
 }

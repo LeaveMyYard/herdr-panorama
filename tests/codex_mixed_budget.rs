@@ -96,11 +96,7 @@ fn a_valid_codex_association_survives_earlier_claude_work_over_100ms() {
         1,
         "real Claude background path must execute first"
     );
-    let codex = swarm
-        .orchestrators
-        .iter()
-        .find(|o| o.pane_id == "codex")
-        .unwrap();
+    let codex = swarm.roots.iter().find(|o| o.pane_id == "codex").unwrap();
     assert_eq!(codex.session_id.as_deref(), Some(root));
     assert_eq!(
         fake.calls().len(),

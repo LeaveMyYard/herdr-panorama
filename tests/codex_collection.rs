@@ -14,15 +14,9 @@ fn mixed_collection_enriches_exact_ids_and_preserves_panes_and_hierarchy() {
     let mut collector = fixture.collector(true);
     collector.self_pane = Some("panel".into());
     let swarm = ready(&mut collector, &snapshot());
-    assert_eq!(swarm.orchestrators.len(), 4);
+    assert_eq!(swarm.roots.len(), 4);
     assert_eq!(swarm.docked.as_deref(), Some("codex-a"));
-    let find = |pane: &str| {
-        swarm
-            .orchestrators
-            .iter()
-            .find(|o| o.pane_id == pane)
-            .unwrap()
-    };
+    let find = |pane: &str| swarm.roots.iter().find(|o| o.pane_id == pane).unwrap();
     assert_eq!(find("claude").harness, "claude");
     let a = find("codex-a");
     assert_eq!(a.harness, "codex");
@@ -30,25 +24,27 @@ fn mixed_collection_enriches_exact_ids_and_preserves_panes_and_hierarchy() {
     assert!(observed(a));
     // the root's runtime stays the root's: no agent stands for its thread
     assert_eq!(a.herdr_status, HerdrStatus::Working);
-    assert!(a.agents().all(|agent| !agent.id.starts_with("main:")));
-    let child = a.agents().find(|agent| agent.id == CHILD).unwrap();
+    assert!(a.agents.iter().all(|agent| !agent.id.starts_with("main:")));
+    let child = a.agents.iter().find(|agent| agent.id == CHILD).unwrap();
     assert_eq!((child.parent.as_deref(), child.depth), (None, 1));
-    let grandchild = a.agents().find(|agent| agent.id == GRANDCHILD).unwrap();
+    let grandchild = a
+        .agents
+        .iter()
+        .find(|agent| agent.id == GRANDCHILD)
+        .unwrap();
     assert_eq!(grandchild.parent.as_deref(), Some(CHILD));
     assert_eq!(grandchild.depth, 2);
     assert_eq!(grandchild.status, Status::from_code("unknown"));
-    assert!(!a.agents().any(|agent| agent.id == FOREIGN));
+    assert!(!a.agents.iter().any(|agent| agent.id == FOREIGN));
     let b = find("codex-b");
     assert!(observed(b));
     assert_eq!(b.session_id.as_deref(), Some(ROOT_B));
     assert_eq!(b.herdr_status, HerdrStatus::Blocked);
-    assert!(!b.agents().any(|agent| agent.id == CHILD));
+    assert!(!b.agents.iter().any(|agent| agent.id == CHILD));
     assert!(unobserved(find("unbound")));
-    // every root has its one thread on the wire
-    assert!(swarm.orchestrators.iter().all(|o| o.threads.len() == 1));
     let wire = serde_json::to_value(&swarm).unwrap();
     let decoded: panorama_core::model::Swarm = serde_json::from_value(wire.clone()).unwrap();
-    assert_eq!(decoded.orchestrators[1].harness, "codex");
+    assert_eq!(decoded.roots[1].harness, "codex");
     assert!(!wire.to_string().contains("SECRET NEVER RETURNED"));
     assert!(fixture.calls().iter().all(|call| matches!(
         call["method"].as_str(),
@@ -69,15 +65,15 @@ fn unresponsive_or_missing_codex_keeps_mixed_panes_and_returns_immediately() {
     let start = Instant::now();
     let swarm = collect(&mut collector, &snapshot());
     assert!(start.elapsed() < Duration::from_millis(500));
-    assert_eq!(swarm.orchestrators.len(), 4);
-    assert!(swarm.orchestrators.iter().all(unobserved));
+    assert_eq!(swarm.roots.len(), 4);
+    assert!(swarm.roots.iter().all(unobserved));
     drop(collector);
     let mut options = fixture.options();
     options.executable = fixture.root().join("missing-codex");
     let mut collector = fixture.collector(false).with_codex(options);
     let swarm = ready(&mut collector, &snapshot());
-    assert_eq!(swarm.orchestrators.len(), 4);
-    assert!(swarm.orchestrators.iter().all(unobserved));
+    assert_eq!(swarm.roots.len(), 4);
+    assert!(swarm.roots.iter().all(unobserved));
 }
 
 #[test]
@@ -86,23 +82,25 @@ fn changed_binding_never_uses_cached_same_cwd_or_shared_group_history() {
     let mut collector = fixture.collector(true);
     let mut snapshot = snapshot();
     let original = ready(&mut collector, &snapshot);
-    assert!(observed(&original.orchestrators[1]));
+    assert!(observed(&original.roots[1]));
     assert!(
-        original.orchestrators[1]
-            .agents()
+        original.roots[1]
+            .agents
+            .iter()
             .any(|agent| agent.id == CHILD)
     );
     snapshot["agents"][1]["agent_session"]["value"] = json!(REPLACEMENT);
     let immediate = collect(&mut collector, &snapshot);
-    let replaced = &immediate.orchestrators[1];
+    let replaced = &immediate.roots[1];
     assert_eq!(replaced.session_id.as_deref(), Some(REPLACEMENT));
     // never the old root's children, whether or not the new history is read yet
-    assert!(!replaced.agents().any(|agent| agent.id == CHILD));
+    assert!(!replaced.agents.iter().any(|agent| agent.id == CHILD));
     let updated = ready(&mut collector, &snapshot);
-    assert!(observed(&updated.orchestrators[1]));
+    assert!(observed(&updated.roots[1]));
     assert!(
-        !updated.orchestrators[1]
-            .agents()
+        !updated.roots[1]
+            .agents
+            .iter()
             .any(|agent| agent.id == CHILD)
     );
 }
@@ -119,8 +117,8 @@ fn mirror_collectors_leave_codex_visible_without_starting_local_history() {
     };
     let snapshot = serde_json::from_value(snapshot()).unwrap();
     let swarm = mirror.collect(&snapshot);
-    assert_eq!(swarm.orchestrators.len(), 4);
-    assert!(swarm.orchestrators.iter().all(unobserved));
+    assert_eq!(swarm.roots.len(), 4);
+    assert!(swarm.roots.iter().all(unobserved));
     assert!(fixture.calls().is_empty());
 }
 
@@ -144,9 +142,9 @@ fn foreign_or_missing_session_source_cannot_enrich_a_codex_pane() {
             }
         }
         let swarm = ready(&mut collector, &snapshot);
-        assert_eq!(swarm.orchestrators.len(), 1);
-        assert!(swarm.orchestrators[0].session_id.is_none());
-        assert!(unobserved(&swarm.orchestrators[0]));
+        assert_eq!(swarm.roots.len(), 1);
+        assert!(swarm.roots[0].session_id.is_none());
+        assert!(unobserved(&swarm.roots[0]));
     }
     assert!(fixture.calls().is_empty());
 }
@@ -165,13 +163,13 @@ fn missing_native_kind_defaults_to_id_but_explicit_other_kind_is_rejected() {
         .unwrap()
         .remove("kind");
     let swarm = ready(&mut collector, &snapshot);
-    assert_eq!(swarm.orchestrators[0].session_id.as_deref(), Some(ROOT_A));
-    assert!(observed(&swarm.orchestrators[0]));
+    assert_eq!(swarm.roots[0].session_id.as_deref(), Some(ROOT_A));
+    assert!(observed(&swarm.roots[0]));
     let before = fixture.calls().len();
     snapshot["agents"][0]["agent_session"]["kind"] = json!("path");
     let swarm = ready(&mut collector, &snapshot);
-    assert!(swarm.orchestrators[0].session_id.is_none());
-    assert!(unobserved(&swarm.orchestrators[0]));
+    assert!(swarm.roots[0].session_id.is_none());
+    assert!(unobserved(&swarm.roots[0]));
     assert_eq!(fixture.calls().len(), before);
 }
 
@@ -193,8 +191,9 @@ fn collected_history_renders_through_existing_navigation_and_graph() {
     let text = render_graph(&swarm, &view, 300, 70, None, "empty").text();
     assert!(text.contains("Claude Code"), "{text}");
     assert!(text.contains("Codex"), "{text}");
-    let child = swarm.orchestrators[1]
-        .agents()
+    let child = swarm.roots[1]
+        .agents
+        .iter()
         .find(|agent| agent.id == CHILD)
         .unwrap();
     assert_eq!(child.activity, "command");
@@ -209,7 +208,7 @@ fn codex_roots_and_subagents_are_titled_by_herdr_names_then_spawner_then_codex()
     let swarm = ready(&mut collector, &snapshot);
     let find = |swarm: &panorama_core::model::Swarm, pane: &str| {
         swarm
-            .orchestrators
+            .roots
             .iter()
             .find(|o| o.pane_id == pane)
             .cloned()
@@ -225,7 +224,7 @@ fn codex_roots_and_subagents_are_titled_by_herdr_names_then_spawner_then_codex()
     assert_eq!(unbound.title_source, "id");
     assert!(unbound.title.starts_with("Codex · "), "{}", unbound.title);
     let titled = |id: &str| {
-        let agent = a.agents().find(|agent| agent.id == id).unwrap();
+        let agent = a.agents.iter().find(|agent| agent.id == id).unwrap();
         (
             agent.title.clone(),
             agent.title_source.clone(),

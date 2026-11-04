@@ -1,6 +1,8 @@
 //! The panel's protocol client against a scripted core on a real Unix socket (in a temp
 //! dir): the hello, the welcome, states, queued seen marks, focusing and filter, shutdown,
 //! a refused hello, and reconnecting after the core goes.
+#[path = "v1_wire/mod.rs"]
+mod v1_wire;
 
 use panorama::proto::client::{Client, Config, Event};
 use serde_json::{Value, json};
@@ -87,7 +89,10 @@ fn swarm() -> Value {
         env!("CARGO_MANIFEST_DIR"),
         "/tests/fixtures/inputs/swarm-design9.json"
     );
-    serde_json::from_str::<Value>(&std::fs::read_to_string(path).unwrap()).unwrap()["swarm"].clone()
+    v1_wire::swarm(
+        serde_json::from_str::<Value>(&std::fs::read_to_string(path).unwrap()).unwrap()["swarm"]
+            .clone(),
+    )
 }
 
 #[tokio::test(flavor = "current_thread")]
@@ -97,14 +102,14 @@ async fn hello_welcome_state_and_the_viewers_messages() {
     let mut core = Peer::accept(&listener).await;
     assert_eq!(
         core.recv().await,
-        json!({"hello": {"protocol": "1.4", "role": "panel", "pane_id": "w1:p9", "tab_id": "w1:t2"}})
+        json!({"hello": {"protocol": "2.0", "role": "panel", "pane_id": "w1:p9", "tab_id": "w1:t2"}})
     );
     // before the welcome nothing goes out, and seen marks wait
     assert!(!client.focusing("w1:p3").await);
     client.seen(vec!["a1".into(), "a2".into()]);
     client.seen(vec!["a2".into()]);
     core.send(json!({"state": {"swarm": swarm()}})).await; // before the welcome: ignored
-    core.send(json!({"welcome": {"protocol": "1.3"}})).await;
+    core.send(json!({"welcome": {"protocol": "2.0"}})).await;
     assert_eq!(core.recv().await, json!({"seen": ["a1", "a2"]}));
     assert_eq!(event(&mut rx).await, Event::Connected(true));
     core.send(json!({"ping": 1})).await;
@@ -112,7 +117,7 @@ async fn hello_welcome_state_and_the_viewers_messages() {
         .await;
     match event(&mut rx).await {
         Event::State(st) => {
-            assert_eq!(st.swarm.orchestrators.len(), 5);
+            assert_eq!(st.swarm.roots.len(), 5);
             assert_eq!(st.focused_pane.as_deref(), Some("w1:p3"));
         }
         other => panic!("{other:?}"),
@@ -137,7 +142,7 @@ async fn a_state_that_does_not_read_is_dropped_and_the_next_one_comes_through() 
     core.send(json!({"welcome": {}})).await;
     assert_eq!(event(&mut rx).await, Event::Connected(true));
     let mut bad = swarm();
-    bad["orchestrators"][0]["pane_id"] = json!(7);
+    bad["roots"][0]["pane_id"] = json!(7);
     core.send(json!({"state": {"swarm": bad}})).await;
     core.send(json!({"state": {"swarm": swarm()}})).await;
     assert!(matches!(event(&mut rx).await, Event::State(_)));

@@ -6,7 +6,7 @@
 
 use super::state::DockState;
 use super::tiles::{agent_glyphs, glyph_colour, tile};
-use crate::model::{Agent, BgTask, Orchestrator, Status};
+use crate::model::{Agent, BgTask, Root, Status};
 use crate::view::agent_text::name;
 use crate::view::anim::{clock, glyph, pulse};
 use crate::view::palette::{BG, DIM, FAINT, FG, LINE};
@@ -38,7 +38,7 @@ impl Item<'_> {
 }
 
 /// The rows of the docked entry, in order.
-pub fn items_of<'a>(o: &'a Orchestrator, d: &DockState<'a>) -> Vec<Item<'a>> {
+pub fn items_of<'a>(o: &'a Root, d: &DockState<'a>) -> Vec<Item<'a>> {
     let mut out: Vec<Item> = o.bg.iter().map(Item::Bg).collect();
     for a in &d.active {
         let (going, fin) = d.tree.split(Some(&a.id));
@@ -56,7 +56,7 @@ pub fn items_of<'a>(o: &'a Orchestrator, d: &DockState<'a>) -> Vec<Item<'a>> {
 
 /// What every row of one entry's list shares.
 pub struct ItemCtx<'a> {
-    pub o: &'a Orchestrator,
+    pub o: &'a Root,
     pub view: &'a View,
     pub d: &'a DockState<'a>,
     /// Where right-aligned fields end.

@@ -2,7 +2,7 @@
 //! `path_ids`): each group of siblings shows its live (or failed) agents, and those with such
 //! a descendant; the finished rest fold into one "n finished" card.
 
-use crate::model::{Agent, Orchestrator, TreeKids};
+use crate::model::{Agent, Root, TreeKids};
 use crate::view::filter::Filter;
 use crate::view::state::{FIN_CARD, View};
 use std::collections::HashMap;
@@ -92,8 +92,8 @@ fn has<'a>(
 }
 
 /// The root's tree as cards, depth first.
-pub fn tree_entries(o: &Orchestrator, view: &View) -> Vec<TreeEntry> {
-    let kids = TreeKids::of_root(o);
+pub fn tree_entries(o: &Root, view: &View) -> Vec<TreeEntry> {
+    let kids = TreeKids::of(o);
     let mut out = vec![];
     group(&kids, None, &o.pane_id, 1, view, &mut out);
     out
@@ -139,13 +139,14 @@ fn group(
 }
 
 /// The selected agent and the agents that spawned it, outermost first.
-pub fn path_ids(o: Option<&Orchestrator>, aid: Option<&str>) -> Vec<String> {
+pub fn path_ids(o: Option<&Root>, aid: Option<&str>) -> Vec<String> {
     let (Some(o), Some(aid)) = (o, aid) else {
         return vec![];
     };
-    let kids = TreeKids::of_root(o);
+    let kids = TreeKids::of(o);
     let parent: HashMap<&str, &str> = o
-        .agents()
+        .agents
+        .iter()
         .flat_map(|p| {
             kids.children(Some(&p.id))
                 .iter()
@@ -153,7 +154,7 @@ pub fn path_ids(o: Option<&Orchestrator>, aid: Option<&str>) -> Vec<String> {
         })
         .collect();
     let mut out: Vec<String> = vec![];
-    let mut cur = o.agents().find(|a| a.id == aid).map(|a| a.id.as_str());
+    let mut cur = o.agents.iter().find(|a| a.id == aid).map(|a| a.id.as_str());
     while let Some(c) = cur.filter(|c| !out.iter().any(|o| o == c)) {
         out.push(c.to_owned());
         cur = parent.get(c).copied();
@@ -164,7 +165,7 @@ pub fn path_ids(o: Option<&Orchestrator>, aid: Option<&str>) -> Vec<String> {
 
 /// The group an agent (or a "n finished" card) is in: the id of the agent that spawned it,
 /// else the root's pane id (Python `parent_key`).
-pub fn parent_key(o: &Orchestrator, ident: &str) -> String {
+pub fn parent_key(o: &Root, ident: &str) -> String {
     if let Some(key) = ident.strip_prefix(FIN_CARD) {
         return key.to_owned();
     }
@@ -178,7 +179,7 @@ pub fn parent_key(o: &Orchestrator, ident: &str) -> String {
 
 /// The depth of an agent (or a "n finished" card) in the root's tree; 1 when unknown
 /// (Python `agent_depth`).
-pub fn agent_depth(o: Option<&Orchestrator>, ident: Option<&str>) -> usize {
+pub fn agent_depth(o: Option<&Root>, ident: Option<&str>) -> usize {
     let (Some(o), Some(ident)) = (o, ident) else {
         return 1;
     };

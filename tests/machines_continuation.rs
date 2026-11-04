@@ -107,7 +107,7 @@ fn a_remote_continuation_is_mirrored_and_followed_in_one_refresh() {
         }),
     };
     let out = r.refresh(&Outcome::default(), &|| false);
-    let o = &out.swarm.unwrap().orchestrators[0];
+    let o = &out.swarm.unwrap().roots[0];
     assert_eq!(o.session_id.as_deref(), Some(NEW));
     assert_eq!(o.tab_label, "work, continued");
     assert_eq!(o.pane_id, "abc123:w1:p1");

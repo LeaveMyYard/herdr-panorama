@@ -23,7 +23,7 @@ pub fn local_id(pane_id: &str, machine_id: &str) -> String {
 /// carry no inbox questions; panorama never docks into a remote server.
 pub fn namespace(mut swarm: Swarm, machine: &Machine) -> Swarm {
     let p = prefix(machine);
-    for o in &mut swarm.orchestrators {
+    for o in &mut swarm.roots {
         o.machine = Some(machine.label.clone());
         o.machine_id = Some(machine.id.clone());
         o.pane_id = format!("{p}{}", o.pane_id);

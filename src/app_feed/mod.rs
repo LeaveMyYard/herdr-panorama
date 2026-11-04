@@ -1,4 +1,4 @@
-//! App feed v1 keeps runtime provenance beside the unchanged legacy swarm model.
+//! App feed v1 keeps runtime provenance beside the swarm, written in its legacy shape ([`v1`]).
 pub mod cli;
 pub mod ensure;
 pub mod fs;
@@ -10,6 +10,7 @@ pub mod receipt;
 pub mod runtime;
 pub mod serialize;
 pub mod triggers;
+pub mod v1;
 
 use crate::host::{Host, collect::Collected};
 use panorama_core::model::Swarm;
@@ -33,7 +34,7 @@ impl From<Collected> for World {
     fn from(collected: Collected) -> Self {
         let roots = collected
             .swarm
-            .orchestrators
+            .roots
             .iter()
             .map(|root| {
                 // These readers know their own format; unsupported strings are never guessed.
@@ -46,7 +47,8 @@ impl From<Collected> for World {
                     host: collected.host,
                     terminal: collected.terminals.get(&root.pane_id).cloned(),
                     agent_harnesses: root
-                        .agents()
+                        .agents
+                        .iter()
                         .map(|a| (a.id.clone(), reader.into()))
                         .collect(),
                 }

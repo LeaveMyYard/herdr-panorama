@@ -122,7 +122,8 @@ async fn herdrs_focus_switches_the_docked_panels_look_too() {
     );
     let v: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-    let mut sw: panorama_core::model::Swarm = serde_json::from_value(v["swarm"].clone()).unwrap();
+    let mut sw: panorama_core::model::Swarm =
+        serde_json::from_value(crate::v1_wire::swarm(v["swarm"].clone())).unwrap();
     sw.docked = Some("w1:p3".into());
     let t0 = std::time::Instant::now();
     let mut app = App::new(Some("w1:p3".into()), true, t0);

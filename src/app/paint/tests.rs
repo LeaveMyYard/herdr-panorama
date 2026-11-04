@@ -88,7 +88,8 @@ fn app_of(file: &str) -> (App, Value) {
     let f = fixture(&format!("screens/{file}"));
     let run = f["runs"][0].clone();
     let input = fixture(run["input"].as_str().unwrap());
-    let mut swarm: Swarm = serde_json::from_value(input["swarm"].clone()).unwrap();
+    let mut swarm: Swarm =
+        serde_json::from_value(crate::v1_wire::swarm(input["swarm"].clone())).unwrap();
     swarm.docked = run["docked"].as_str().map(Into::into);
     let home = run["home_mode"].as_bool().unwrap();
     let mut app = App::new(
@@ -175,8 +176,7 @@ fn untrusted_text_is_stripped_of_control_characters() {
     // its collector's swarm before drawing it (the panel's comes cleaned in the state)
     let (mut app, f) = app_of("demo-wide.json");
     let mut swarm = app.swarm.clone();
-    swarm.orchestrators[0].threads[0].agents[0].activity =
-        "Bash(\u{1b}[31mred\u{1b}]0;title\u{7})".into();
+    swarm.roots[0].agents[0].activity = "Bash(\u{1b}[31mred\u{1b}]0;title\u{7})".into();
     app.apply(
         crate::proto::state::cleaned_swarm(swarm),
         Marks::new(),

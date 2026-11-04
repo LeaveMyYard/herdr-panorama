@@ -12,7 +12,7 @@ async fn a_peer_with_pid_0_is_never_checked() {
     let v = Viewer::new(Some(0), 4);
     let r = Rec(Default::default());
     let (tx, _rx) = mpsc::channel(4);
-    let msg = json!({"hello": {"protocol": "1.3", "pane_id": "w1:p1"}})
+    let msg = json!({"hello": {"protocol": "2.0", "pane_id": "w1:p1"}})
         .as_object()
         .unwrap()
         .clone();

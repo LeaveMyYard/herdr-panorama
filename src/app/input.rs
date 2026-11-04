@@ -38,7 +38,7 @@ impl Host for App {
         let Some(o) = self.selection().0.cloned() else {
             return out;
         };
-        self.seen(o.agents().map(|a| a.id.clone()).collect(), &mut out);
+        self.seen(o.agents.iter().map(|a| a.id.clone()).collect(), &mut out);
         if let Some(machine) = o.machine.clone() {
             let machine_id = o.machine_id.clone().unwrap_or_else(|| machine.clone());
             out.push(Effect::GotoRemote {
@@ -63,7 +63,7 @@ impl Host for App {
     fn new_agent(&mut self) -> Vec<Effect> {
         let cwd = self
             .selection_orch_cwd()
-            .or_else(|| self.swarm.orchestrators.iter().find_map(|o| o.cwd.clone()));
+            .or_else(|| self.swarm.roots.iter().find_map(|o| o.cwd.clone()));
         vec![Effect::NewAgent { cwd }]
     }
 

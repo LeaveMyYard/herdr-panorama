@@ -3,9 +3,11 @@ use panorama_core::view::Unseen;
 use panorama_core::view::palette::FG;
 
 fn swarm(status: &str) -> Swarm {
-    serde_json::from_value(serde_json::json!({"orchestrators": [{"pane_id": "p", "tab_id": null,
+    serde_json::from_value(
+        serde_json::json!({"roots": [{"pane_id": "p", "tab_id": null,
         "tab_label": "x", "session_id": null,
-        "threads": [{"id": "t", "name": "n", "source": "turn", "agents": [{"id": "a", "status": status}]}]}]}))
+        "agents": [{"id": "a", "status": status}]}]}),
+    )
     .unwrap()
 }
 

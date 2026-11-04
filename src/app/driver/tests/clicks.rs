@@ -165,11 +165,7 @@ fn a_vanished_identity_is_not_acted_on() {
     let now = r.settled();
     let before = format!("{:?}", r.sel());
     // the model swapped, the screen not yet repainted: the stale card must not act
-    r.d.app
-        .graph
-        .swarm
-        .orchestrators
-        .retain(|o| o.pane_id != "w1:p2");
+    r.d.app.graph.swarm.roots.retain(|o| o.pane_id != "w1:p2");
     let gone = agent("w1:p1", "gone");
     let mut out = vec![];
     for t in [

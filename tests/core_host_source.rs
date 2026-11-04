@@ -123,18 +123,18 @@ print(json.dumps(value))
     let observation = source.read();
     assert!(observation.errors.is_empty());
     let swarm = collector.collect(observation.snapshot.as_ref(), None, sc.now(), WINDOW, STALE);
-    assert_eq!(swarm.orchestrators[0].session_id.as_deref(), Some(S1));
-    assert!(swarm.orchestrators[0].agents().next().is_some());
-    assert_eq!(swarm.orchestrators[0].pane_id, "core:t2");
-    assert!(swarm.orchestrators[0].tab_id.is_none());
+    assert_eq!(swarm.roots[0].session_id.as_deref(), Some(S1));
+    assert!(!swarm.roots[0].agents.is_empty());
+    assert_eq!(swarm.roots[0].pane_id, "core:t2");
+    assert!(swarm.roots[0].tab_id.is_none());
     // Same cwd and existing transcripts do not substitute for an exact address record.
     let mut wrong = record.clone();
     wrong["terminal"] = json!("t3");
     std::fs::write(&hook, wrong.to_string()).unwrap();
     let observation = source.read();
     let swarm = collector.collect(observation.snapshot.as_ref(), None, sc.now(), WINDOW, STALE);
-    assert!(swarm.orchestrators[0].session_id.is_none());
-    assert!(swarm.orchestrators[0].agents().next().is_none());
+    assert!(swarm.roots[0].session_id.is_none());
+    assert!(swarm.roots[0].agents.is_empty());
     let mut legacy = record.clone();
     legacy.as_object_mut().unwrap().remove("terminal");
     std::fs::write(&hook, legacy.to_string()).unwrap();
@@ -216,14 +216,14 @@ fn snapshot_cli_uses_core_before_tui_and_source_failures_are_data() {
         assert_eq!(calls.lines().next(), Some("ls --json"));
         assert!(!feed["errors"].as_array().unwrap().is_empty());
         assert_eq!(
-            feed["orchestrators"].as_array().unwrap().len(),
+            feed["roots"].as_array().unwrap().len(),
             usize::from(success)
         );
         if success {
             assert!(calls.lines().any(|line| line == "get --json t2"));
-            assert_eq!(feed["orchestrators"][0]["pane_id"], "core:t2");
-            assert_eq!(feed["orchestrators"][0]["herdr_status"], "blocked");
-            assert!(feed["orchestrators"][0]["session_id"].is_null());
+            assert_eq!(feed["roots"][0]["pane_id"], "core:t2");
+            assert_eq!(feed["roots"][0]["herdr_status"], "blocked");
+            assert!(feed["roots"][0]["session_id"].is_null());
         } else {
             assert!(
                 feed["errors"]
@@ -276,8 +276,8 @@ print(json.dumps(value))
         String::from_utf8_lossy(&out.stderr)
     );
     let model: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
-    let root = &model["orchestrators"][0];
+    let root = &model["roots"][0];
     assert_eq!(root["session_id"], codex_support::ROOT_A);
     assert!(root["last_activity"].is_number());
-    assert!(!root["threads"][0]["agents"].as_array().unwrap().is_empty());
+    assert!(!root["agents"].as_array().unwrap().is_empty());
 }

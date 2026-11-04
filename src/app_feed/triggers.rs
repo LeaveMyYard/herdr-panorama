@@ -103,12 +103,12 @@ impl Triggers {
     pub fn observe(&mut self, world: &World) {
         self.paths = world
             .swarm
-            .orchestrators
+            .roots
             .iter()
             .flat_map(|o| {
                 o.transcript
                     .iter()
-                    .chain(o.agents().filter_map(|a| a.transcript.as_ref()))
+                    .chain(o.agents.iter().filter_map(|a| a.transcript.as_ref()))
             })
             .map(PathBuf::from)
             .collect();

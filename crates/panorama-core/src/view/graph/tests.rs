@@ -2,18 +2,18 @@
 
 use super::column::Place;
 use super::fin_card::fin_card;
-use crate::model::Orchestrator;
+use crate::model::Root;
 use crate::view::nav::tree_entries;
 use crate::view::screen::Screen;
 use crate::view::state::View;
 use crate::view::target::Target;
 use serde_json::{Value, json};
 
-fn root(agents: Value, hidden: i64) -> Orchestrator {
+fn root(agents: Value, hidden: i64) -> Root {
     serde_json::from_value(json!({
         "pane_id": "p", "tab_id": null, "tab_label": "p", "session_id": null,
         "hidden_finished": hidden,
-        "threads": [{"id": "agents", "name": "p", "source": "session", "agents": agents}],
+        "agents": agents,
     }))
     .unwrap()
 }

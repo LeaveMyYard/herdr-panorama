@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
-RUST_OK = 'if [ "$1" = contract ]; then [ "$2" = tui ] && echo "tui 1"; exit 0; fi; echo rust "$@"'
+RUST_OK = 'if [ "$1" = contract ]; then [ "$2" = tui ] && echo "tui 2"; exit 0; fi; echo rust "$@"'
 
 
 def _stub(path, body):
@@ -51,17 +51,18 @@ def test_the_view_runs_the_rust_app_when_built_else_the_venv_else_uv(tmp_path, p
     # a binary from before the view contract: its panel-only `contract` answers a bare 1
     ("panel only", 'if [ "$1" = contract ]; then echo 1; exit 0; fi; echo rust "$@"'),
     ("no contract tui", 'if [ "$1" = contract ] && [ -z "$2" ]; then echo 1; fi; exit 0'),
-    ("another contract", 'if [ "$1" = contract ]; then echo "tui 2"; exit 0; fi; echo rust "$@"'),
-    ("contract 11", 'if [ "$1" = contract ]; then echo "tui 11"; exit 0; fi; echo rust "$@"'),
+    # a build from before protocol 2 (uniform-agent-tree U6): its core speaks 1.x
+    ("another contract", 'if [ "$1" = contract ]; then echo "tui 1"; exit 0; fi; echo rust "$@"'),
+    ("contract 22", 'if [ "$1" = contract ]; then echo "tui 22"; exit 0; fi; echo rust "$@"'),
     ("stale", 'echo "panorama 0.1.0"'),
     ("panics at start", 'echo "thread main panicked" >&2; exit 101'),
-], ids=["panel-only", "no-contract-tui", "another-contract", "contract-11", "stale", "panics"])
+], ids=["panel-only", "no-contract-tui", "another-contract", "contract-22", "stale", "panics"])
 def test_a_binary_that_does_not_speak_the_view_contract_falls_back(tmp_path, case, body):
     _stub(tmp_path / ".venv" / "bin" / "panorama", 'echo venv "$@"')
     _stub(tmp_path / "target" / "release" / "panorama", body)
     out, err = _launch(tmp_path, "panorama")
     assert out == "venv tui", case
-    assert "using the Python app" in err and "needs tui 1" in err
+    assert "using the Python app" in err and "needs tui 2" in err
     assert "using the Python app" in (tmp_path / "state" / "tui-launch.log").read_text()
     _stub(tmp_path / "target" / "release" / "panorama", RUST_OK)  # rebuilt: the log goes
     assert _launch(tmp_path, "panorama")[0] == "rust tui"

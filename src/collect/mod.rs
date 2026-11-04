@@ -149,7 +149,7 @@ impl Collector {
     pub fn codex_pending(&self, swarm: &Swarm) -> bool {
         self.codex.as_ref().is_some_and(|details| {
             swarm
-                .orchestrators
+                .roots
                 .iter()
                 .any(|orchestrator| details.pending(orchestrator))
         })
@@ -237,8 +237,8 @@ impl Collector {
                         let (t, src) = title::root_fallback(&o.harness, o.tab_no, &o.pane_id);
                         (o.title, o.title_source) = (t, src.to_owned());
                     }
-                    tree::adapt(&mut o, agents);
-                    swarm.orchestrators.push(o);
+                    tree::plant(&mut o, agents);
+                    swarm.roots.push(o);
                 }
                 Err(e) => swarm.errors.push(e),
             }

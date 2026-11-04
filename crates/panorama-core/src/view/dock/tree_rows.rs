@@ -3,7 +3,7 @@
 //! descendant. The root's direct children are layer 1, theirs layer 2.
 
 use crate::model::tree::MAX_DEPTH;
-use crate::model::{Agent, Orchestrator, Status, TreeKids};
+use crate::model::{Agent, Root, Status, TreeKids};
 use crate::view::anim::glyph;
 use std::collections::HashSet;
 
@@ -16,8 +16,8 @@ pub struct Tree<'a> {
 
 impl<'a> Tree<'a> {
     /// The tree of `o`'s agents.
-    pub fn of(o: &'a Orchestrator) -> Self {
-        let kids = TreeKids::of_root(o);
+    pub fn of(o: &'a Root) -> Self {
+        let kids = TreeKids::of(o);
         let mut busy = HashSet::new();
         for a in kids.children(None) {
             mark_busy(a, &kids, 0, &mut busy);

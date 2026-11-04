@@ -1844,8 +1844,9 @@ per-tab had proven itself).
   venv's app, else `uv run`. A binary from before the contract answers nothing (or the panel's
   bare number) and is passed over, said on stderr and in `<state dir>/tui-launch.log`. The
   `open`/`open-popup`/`open-split` actions and the `home --startup` hook stay Python for now;
-  they open the `panorama` pane and talk to the core over protocol 1.3, which the Rust app's
-  core serves, so a Python `open` drives a Rust home view. Removing the binary rolls back.
+  they open the `panorama` pane and talk to the core over protocol 1.3 as an open key, which
+  the Rust app's 2.x core still answers (`docs/protocol/panel-v2.md`, "Versions"), so a Python
+  `open` drives a Rust home view. Removing the binary rolls back.
 - **Open key.** In per-tab mode the open key asks the core over its socket (`role: "key"`,
   `{"open": {}}`, answered with `{"opened": {"result": …}}`):
   - a panel in the operator's tab: it is focused;

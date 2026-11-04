@@ -19,7 +19,7 @@ fn a_watcher_refreshes_on_its_own_thread_until_stopped() {
     let w = Watcher::spawn(refresher(api, Arc::default()));
     assert!(wait_for(|| w.outcome().tried));
     let swarm = w.outcome().swarm.unwrap();
-    assert_eq!(swarm.orchestrators[0].pane_id, "abc123:w1:p1");
+    assert_eq!(swarm.roots[0].pane_id, "abc123:w1:p1");
     assert!(w.is_running());
     let started = Instant::now();
     w.stop();

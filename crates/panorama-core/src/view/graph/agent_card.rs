@@ -3,7 +3,7 @@
 
 use super::card::{Line, Look, draw_frame, line, subtree_marks};
 use super::column::Place;
-use crate::model::{Agent, Orchestrator, Status, TreeKids};
+use crate::model::{Agent, Root, Status, TreeKids};
 use crate::view::agent_text::{about, age_of, role_label, short_id};
 use crate::view::cards::Area;
 use crate::view::cards::actions::actions;
@@ -24,7 +24,7 @@ use crate::view::unseen::mark_of;
 /// subtree's marks), whether the inbox answers, and how it sits in the tree.
 #[derive(Clone, Copy)]
 pub struct AgentCtx<'a> {
-    pub o: &'a Orchestrator,
+    pub o: &'a Root,
     pub kids: &'a TreeKids<'a>,
     pub inbox_ok: bool,
     /// On the selected agent's path (an agent that spawned it): drawn as selected.

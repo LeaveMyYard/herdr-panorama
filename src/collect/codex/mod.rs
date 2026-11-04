@@ -10,7 +10,7 @@ mod tree;
 use crate::codex::{Observation, Observer, Options};
 use crate::collect::agents::Arena;
 use crate::collect::tree::Tree;
-use panorama_core::model::Orchestrator;
+use panorama_core::model::Root;
 
 /// Only herdr's native Codex identity is authoritative; another harness's
 /// session or a custom source cannot become a Codex history lookup key.
@@ -43,7 +43,7 @@ impl Details {
         }
     }
 
-    pub(super) fn pending(&self, orchestrator: &Orchestrator) -> bool {
+    pub(super) fn pending(&self, orchestrator: &Root) -> bool {
         orchestrator.harness == "codex"
             && orchestrator
                 .session_id
@@ -51,7 +51,7 @@ impl Details {
                 .is_some_and(|id| self.observer.is_pending(id))
     }
 
-    pub(super) fn enrich(&mut self, orchestrator: &mut Orchestrator) -> (RootSeen, Tree) {
+    pub(super) fn enrich(&mut self, orchestrator: &mut Root) -> (RootSeen, Tree) {
         let Some(id) = orchestrator.session_id.clone() else {
             return Default::default();
         };
@@ -60,7 +60,7 @@ impl Details {
     }
 }
 
-fn enrich(orchestrator: &mut Orchestrator, observation: Option<&Observation>) -> (RootSeen, Tree) {
+fn enrich(orchestrator: &mut Root, observation: Option<&Observation>) -> (RootSeen, Tree) {
     orchestrator.last_activity = None;
     let Some(observation) = observation.filter(|value| {
         Some(value.root.thread_id.as_str()) == orchestrator.session_id.as_deref()

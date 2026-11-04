@@ -4,7 +4,7 @@
 
 use super::card::{CardCtx, agent_card, fin_card};
 use super::links::join;
-use crate::model::{Agent, HerdrStatus, Orchestrator, Status, Swarm, TreeKids};
+use crate::model::{Agent, HerdrStatus, Root, Status, Swarm, TreeKids};
 use crate::view::cards::boxes::HOVER;
 use crate::view::cards::marks::{marks_of, marks_right};
 use crate::view::colour::Rgb;
@@ -31,7 +31,7 @@ fn state_colour(st: &OrchState) -> Rgb {
 }
 
 /// An unselected orchestrator at row `y`: pod, name and state, marks on the right.
-pub fn orch_row(cv: &mut Screen, y: i32, o: &Orchestrator, view: &View, ages: Ages) {
+pub fn orch_row(cv: &mut Screen, y: i32, o: &Root, view: &View, ages: Ages) {
     let w = cv.w();
     let st = orch_state(o, view.frame, Some(ages));
     let target = Target::Orch(o.pane_id.clone());
@@ -40,7 +40,7 @@ pub fn orch_row(cv: &mut Screen, y: i32, o: &Orchestrator, view: &View, ages: Ag
         cv.put(0, y, "▏", HOVER, None, false);
     }
     pod(cv, 1, y, &st.st, &st.glyph, false);
-    let agents: Vec<_> = o.agents().collect();
+    let agents: Vec<_> = o.agents.iter().collect();
     let mk = marks_of(&agents, o.herdr_status == HerdrStatus::Blocked, 0);
     let mw = marks_right(cv, w - 2, y, &mk, Some(&o.pane_id));
     let name = trunc(
@@ -72,7 +72,7 @@ pub struct Opened {
 pub fn open_orch(
     cv: &mut Screen,
     y: i32,
-    o: &Orchestrator,
+    o: &Root,
     swarm: &Swarm,
     view: &View,
     ages: Ages,
@@ -95,7 +95,7 @@ pub fn open_orch(
         cv.put(0, y, "▌", HI, None, false);
         sel = Some((y, y + 1));
     }
-    let kids = TreeKids::of_root(o);
+    let kids = TreeKids::of(o);
     // the depth-1 agent holding the selection (its fold card: the root's own)
     let picked = view.agent.as_deref().map(|id| {
         let id = id.strip_prefix(FIN_CARD).unwrap_or(id);

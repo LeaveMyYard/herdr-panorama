@@ -78,7 +78,7 @@ impl<O: Ops> Manager<O> {
         let workspace = home
             .and_then(|h| snap.pane(&h.pane_id))
             .and_then(|p| p.workspace_id.clone());
-        for o in swarm.orchestrators.iter().filter(|o| o.machine.is_none()) {
+        for o in swarm.roots.iter().filter(|o| o.machine.is_none()) {
             let Some(p) = snap.pane(&o.pane_id) else {
                 continue;
             };

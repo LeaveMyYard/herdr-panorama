@@ -5,7 +5,8 @@ mod collect_support;
 
 use collect_support::{S1, STALE, Scenario};
 use panorama::collect::Collector;
-use panorama_core::model::{Agent, Orchestrator, Status, Swarm, ThreadStatus};
+use panorama_core::model::{Agent, Root, Status, Swarm};
+use panorama_core::view::orch_state::tree_done;
 use serde_json::Value;
 use std::io::Write;
 use std::path::PathBuf;
@@ -34,15 +35,15 @@ fn demo(now_offset: f64, window: f64) -> Swarm {
     )
 }
 
-fn by_label<'a>(sw: &'a Swarm, label: &str) -> &'a Orchestrator {
-    sw.orchestrators
+fn by_label<'a>(sw: &'a Swarm, label: &str) -> &'a Root {
+    sw.roots
         .iter()
         .find(|o| o.tab_label == label)
         .unwrap_or_else(|| panic!("no {label}"))
 }
 
-fn agents(o: &Orchestrator) -> Vec<&Agent> {
-    o.agents().collect()
+fn agents(o: &Root) -> Vec<&Agent> {
+    o.agents.iter().collect()
 }
 
 /// The demo's first session transcript.
@@ -65,11 +66,7 @@ fn append(path: &PathBuf, text: &str) {
 #[test]
 fn demo_swarm_shape() {
     let sw = demo(0.0, 6.0 * H);
-    let labels: Vec<_> = sw
-        .orchestrators
-        .iter()
-        .map(|o| o.tab_label.as_str())
-        .collect();
+    let labels: Vec<_> = sw.roots.iter().map(|o| o.tab_label.as_str()).collect();
     assert_eq!(
         labels,
         [
@@ -81,19 +78,14 @@ fn demo_swarm_shape() {
     ); // the shell pane is skipped
     let billing = by_label(&sw, "Billing API");
     assert_eq!(billing.inbox, [1, 2]);
-    // one uniform tree per root, carried as one thread on the 1.x wires
-    for o in &sw.orchestrators {
-        let [t] = o.threads.as_slice() else {
-            panic!("{}: {:?}", o.tab_label, o.threads)
-        };
-        assert!(t.is_tree() && t.phases.is_empty() && t.name == o.name());
-        assert_eq!(o.flavour, "agents");
+    // one uniform tree per root
+    for o in &sw.roots {
         // no agent stands for the session: its own state is on the root
-        assert!(o.agents().all(|a| !a.id.starts_with("main:")));
-        assert!(o.agents().all(|a| a.phases.is_empty()));
+        assert!(o.agents.iter().all(|a| !a.id.starts_with("main:")));
     }
     let status: Vec<(String, Status)> = billing
-        .agents()
+        .agents
+        .iter()
         .map(|a| (a.id[..8].to_owned(), a.status.clone()))
         .collect();
     for (id, st) in [
@@ -110,23 +102,29 @@ fn demo_swarm_shape() {
         );
     }
     assert_eq!(status.len(), 7);
-    let nested = billing.agents().find(|a| a.id.starts_with("a3")).unwrap();
+    let nested = billing
+        .agents
+        .iter()
+        .find(|a| a.id.starts_with("a3"))
+        .unwrap();
     assert_eq!(
         (nested.parent.as_deref(), nested.depth),
         (Some("a1author0000000001"), 2)
     );
     let a1 = billing
-        .agents()
+        .agents
+        .iter()
         .find(|a| a.id.starts_with("a1author"))
         .unwrap();
     assert_eq!((a1.resumes, a1.tool_calls), (1, 44)); // the notice's count wins over the file's
-    assert_eq!(billing.threads[0].status, ThreadStatus::Active);
+    assert!(!tree_done(billing));
     // Q1 is no agent's: it stays the root's own question
-    assert!(billing.agents().all(|a| !a.question_ids.contains(&1)));
+    assert!(billing.agents.iter().all(|a| !a.question_ids.contains(&1)));
     // a Workflow run's agents are the root's children, its label their role (D8)
     let search = by_label(&sw, "Search refactor");
     let roles: Vec<(&str, Option<&str>, &str)> = search
-        .agents()
+        .agents
+        .iter()
         .map(|a| (&a.id[..8], a.parent.as_deref(), a.role.as_str()))
         .collect();
     assert_eq!(
@@ -143,12 +141,9 @@ fn demo_swarm_shape() {
         ["Publish the v2 docs now or after the release?"]
     );
     // the explicit channel is no longer read: its role and progress are gone
-    let guide: Vec<&str> = docs.agents().map(|a| a.role.as_str()).collect();
+    let guide: Vec<&str> = docs.agents.iter().map(|a| a.role.as_str()).collect();
     assert_eq!(guide, ["author"]);
-    assert_eq!(
-        by_label(&sw, "Release notes").threads[0].status,
-        ThreadStatus::Done
-    );
+    assert!(tree_done(by_label(&sw, "Release notes")));
 }
 
 #[test]
@@ -157,21 +152,15 @@ fn done_window_hides_old_finished_agents_and_counts_them() {
     // the failed fixer ended a minute before now
     let sw = demo(0.0, 30.0);
     let notes = by_label(&sw, "Release notes");
-    // its agent is outside the window: the root keeps its one, empty thread
-    assert!(notes.agents().next().is_none());
-    assert_eq!(
-        (
-            notes.threads.len(),
-            notes.hidden_finished,
-            notes.hidden_done
-        ),
-        (1, 1, 0)
-    );
+    // its agent is outside the window: the root stays, its tree empty
+    assert!(notes.agents.is_empty());
+    assert_eq!(notes.hidden_finished, 1);
     assert_eq!(by_label(&wide, "Release notes").hidden_finished, 0);
     // a failed agent ages out like a done one (D4); a live one stays however old
     let billing = |sw: &Swarm| -> Vec<(String, Status)> {
         by_label(sw, "Billing API")
-            .agents()
+            .agents
+            .iter()
             .map(|a| (a.id[..8].to_owned(), a.status.clone()))
             .collect()
     };
@@ -217,14 +206,14 @@ fn later_ticks_read_only_what_was_appended() {
         .unwrap();
     let second = collect(&sc, &mut c, sc.now(), 6.0 * H, true);
     assert_eq!(second, first);
-    assert_eq!(second.orchestrators[0].tab_label, "Billing API");
+    assert_eq!(second.roots[0].tab_label, "Billing API");
 }
 
 #[test]
 fn lost_agents_end_silently() {
     let sw = demo(7.0 * H, 24.0 * H);
     let ags: Vec<&Agent> = sw
-        .orchestrators
+        .roots
         .iter()
         .flat_map(agents)
         .filter(|a| !a.id.starts_with("main:"))
@@ -253,7 +242,7 @@ fn inbox_tab_prefix_is_stripped() {
     let sw = sc
         .collector()
         .collect(Some(sc.snapshot()), None, sc.now(), 6.0 * H, STALE);
-    assert_eq!(sw.orchestrators[0].tab_label, "Billing API");
+    assert_eq!(sw.roots[0].tab_label, "Billing API");
 }
 
 #[test]
@@ -282,8 +271,7 @@ fn a_session_continued_in_a_new_transcript_is_followed() {
     let got = by_label(&sw, "Billing API");
     assert_eq!(got.session_id.as_deref(), Some(new));
     assert_eq!(got.transcript.as_deref(), Some(new_root.to_str().unwrap()));
-    let names = |o: &Orchestrator| o.threads.iter().map(|t| t.name.clone()).collect::<Vec<_>>();
-    assert_eq!(names(got), names(want));
+    assert_eq!(got.name(), want.name());
     assert!(agents(got).len() == agents(want).len() && agents(got).len() > 1);
     assert_eq!(got.inbox, [1, 2]); // questions asked under the old id still belong to it
 }
@@ -306,11 +294,7 @@ fn a_continuation_loop_is_not_followed_forever() {
         ),
     );
     let sw = collect(&sc, &mut sc.collector(), sc.now(), 6.0 * H, false);
-    let billing = sw
-        .orchestrators
-        .iter()
-        .find(|o| o.pane_id == "w1:p1")
-        .unwrap();
+    let billing = sw.roots.iter().find(|o| o.pane_id == "w1:p1").unwrap();
     assert_eq!(billing.tab_label, "Billing API");
     assert_eq!(billing.session_id.as_deref(), Some(other)); // the first repeat ends the walk
     assert!(
@@ -341,7 +325,7 @@ fn a_resumed_old_session_is_no_longer_followed() {
     );
     let mut c = sc.collector();
     let billing = |sw: &Swarm| {
-        sw.orchestrators
+        sw.roots
             .iter()
             .find(|o| o.pane_id == "w1:p1")
             .unwrap()
@@ -385,11 +369,7 @@ fn a_continuation_that_is_not_a_session_id_is_ignored() {
         append(&s1_root(&sc), &format!("{rec}\n"));
         let mut c = sc.collector();
         let sw = collect(&sc, &mut c, sc.now(), 6.0 * H, false);
-        let billing = sw
-            .orchestrators
-            .iter()
-            .find(|o| o.pane_id == "w1:p1")
-            .unwrap();
+        let billing = sw.roots.iter().find(|o| o.pane_id == "w1:p1").unwrap();
         assert_eq!(billing.session_id.as_deref(), Some(S1), "{bad}");
         assert!(c.continuations(&[S1.to_owned()]).is_empty(), "{bad}");
         assert!(outside.is_file());
@@ -416,11 +396,7 @@ fn a_question_without_a_session_belongs_to_its_pane() {
     let sw = sc
         .collector()
         .collect(Some(sc.snapshot()), Some(&qs), sc.now(), 6.0 * H, STALE);
-    let search = sw
-        .orchestrators
-        .iter()
-        .find(|o| o.pane_id == "w1:p2")
-        .unwrap();
+    let search = sw.roots.iter().find(|o| o.pane_id == "w1:p2").unwrap();
     assert_eq!(search.inbox, [7, 8]); // a session id, when there is one, decides
     assert_eq!(search.inbox_texts, ["Q7?", "Q8?"]);
     assert_eq!(by_label(&sw, "Billing API").inbox, [9]);
@@ -450,11 +426,7 @@ fn a_continuation_chain_is_followed_at_most_eight_hops() {
         "{\"type\":\"ai-title\",\"aiTitle\":\"x\"}\n",
     );
     let sw = collect(&sc, &mut sc.collector(), sc.now(), 6.0 * H, false);
-    let billing = sw
-        .orchestrators
-        .iter()
-        .find(|o| o.pane_id == "w1:p1")
-        .unwrap();
+    let billing = sw.roots.iter().find(|o| o.pane_id == "w1:p1").unwrap();
     assert_eq!(billing.session_id.as_deref(), Some(ids[7].as_str())); // S1 + 8 hops
 }
 
@@ -474,7 +446,7 @@ fn a_non_ascii_model_in_a_meta_file_is_read_as_python_reads_it() {
     let sw = collect(&sc, &mut sc.collector(), sc.now(), 6.0 * H, true);
     assert!(sw.errors.is_empty(), "{:?}", sw.errors);
     let a3 = sw
-        .orchestrators
+        .roots
         .iter()
         .flat_map(agents)
         .find(|a| a.id.starts_with("a3explore"))
@@ -505,7 +477,7 @@ fn explore_after(edit: impl FnOnce(&Scenario)) -> Agent {
     let sc = Scenario::new("demo");
     edit(&sc);
     let sw = collect(&sc, &mut sc.collector(), sc.now(), 6.0 * H, true);
-    sw.orchestrators
+    sw.roots
         .iter()
         .flat_map(agents)
         .find(|a| a.id.starts_with("a3explore"))
@@ -582,11 +554,7 @@ fn a_neutral_tab_label_leaves_the_root_to_its_session_and_a_pane_name_wins() {
         let sw = sc
             .collector()
             .collect(Some(snap), Some(qs.as_slice()), sc.now(), 6.0 * H, STALE);
-        let o = sw
-            .orchestrators
-            .iter()
-            .find(|o| o.pane_id == "w1:p1")
-            .unwrap();
+        let o = sw.roots.iter().find(|o| o.pane_id == "w1:p1").unwrap();
         (o.title.clone(), o.title_source.clone())
     };
     let prompt = "Take PR #42 and PR #44 through review";

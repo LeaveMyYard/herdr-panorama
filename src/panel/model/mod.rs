@@ -74,7 +74,7 @@ impl Panel {
     pub fn on_state(&mut self, st: State, now: Instant) {
         let mut swarm = st.swarm;
         let mine = swarm
-            .orchestrators
+            .roots
             .iter()
             .find(|o| o.tab_id.is_some() && o.tab_id == self.my_tab)
             .map(|o| o.pane_id.clone());

@@ -1,4 +1,4 @@
-//! Where the core listens, and that it is ours (`docs/protocol/panel-v1.md`, "Transport").
+//! Where the core listens, and that it is ours (`docs/protocol/panel-v2.md`, "Transport").
 //!
 //! The path is the kit's (`internal::plugin_paths::panorama`, the same bytes as Python's
 //! `protocol.socket_path`). A viewer talks only to a socket served by its own uid: anything

@@ -11,7 +11,7 @@ fn demo() -> Swarm {
         env!("CARGO_MANIFEST_DIR")
     );
     let v: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-    serde_json::from_value(v["swarm"].clone()).unwrap()
+    serde_json::from_value(crate::v1_wire::swarm(v["swarm"].clone())).unwrap()
 }
 
 /// The demo with its first root and its first depth-1 agent selected.
@@ -25,13 +25,12 @@ fn selected() -> (Swarm, View) {
 /// The selected agent of `sw` under `v`, to change.
 fn agent<'a>(sw: &'a mut Swarm, v: &View) -> &'a mut Agent {
     let o = sw
-        .orchestrators
+        .roots
         .iter_mut()
         .find(|o| Some(&o.pane_id) == v.orch.as_ref())
         .unwrap();
-    o.threads
+    o.agents
         .iter_mut()
-        .flat_map(|t| t.agents.iter_mut())
         .find(|a| Some(&a.id) == v.agent.as_ref())
         .unwrap()
 }
@@ -53,14 +52,10 @@ fn every_part_of_the_selected_card_changes_it() {
     };
     assert_ne!(
         base,
-        changed(&|s| s.orchestrators[0].herdr_status = HerdrStatus::Idle),
+        changed(&|s| s.roots[0].herdr_status = HerdrStatus::Idle),
         "orch status"
     );
-    assert_ne!(
-        base,
-        changed(&|s| s.orchestrators[0].inbox.push(99)),
-        "orch inbox"
-    );
+    assert_ne!(base, changed(&|s| s.roots[0].inbox.push(99)), "orch inbox");
     assert_ne!(base, changed(&|s| s.inbox_ok = !s.inbox_ok), "inbox_ok");
     assert_ne!(
         base,
@@ -90,7 +85,7 @@ fn the_rows_end_with_new_agent_even_with_no_orchestrator() {
     let (sw, v) = selected();
     let ids = shown_ids(&sw, &v);
     assert_eq!(ids.last().map(String::as_str), Some(NEW_ROW));
-    assert_eq!(ids.len(), sw.orchestrators.len() + 1);
+    assert_eq!(ids.len(), sw.roots.len() + 1);
     assert_eq!(shown_ids(&Swarm::default(), &View::default()), [NEW_ROW]);
 }
 
@@ -122,13 +117,11 @@ fn resolve_parks_a_vanished_orchestrator_and_clears_what_vanished_below() {
     assert!(v.orch.is_some() && v.agent.is_some());
     let mut gone = sw.clone();
     let a = v.agent.clone().unwrap();
-    for t in &mut gone.orchestrators[0].threads {
-        t.agents.retain(|x| x.id != a);
-    }
+    gone.roots[0].agents.retain(|x| x.id != a);
     assert_eq!(resolve(&gone, &mut v), None);
     assert!(v.orch.is_some() && v.agent.is_none()); // the agent vanished
     let mut gone = sw.clone();
-    gone.orchestrators.remove(0);
+    gone.roots.remove(0);
     let (_, mut v) = selected();
     assert_eq!(resolve(&gone, &mut v).as_deref(), Some("w1:p1"));
     assert!(v.orch.is_none() && v.agent.is_none());

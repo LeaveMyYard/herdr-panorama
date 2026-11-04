@@ -2,6 +2,9 @@
 //! the socket.
 #![allow(dead_code)]
 
+#[path = "../v1_wire/mod.rs"]
+pub mod v1_wire;
+
 use panorama::core::{Config, Core, Event, Limits, NotStarted, Verify, events, start};
 use serde_json::{Value, json};
 use std::os::unix::fs::MetadataExt;
@@ -64,7 +67,7 @@ pub fn line(v: Value) -> Vec<u8> {
 }
 
 pub async fn hello(s: &mut UnixStream, extra: Value) {
-    let mut h = json!({"protocol": "1.3"});
+    let mut h = json!({"protocol": "2.0"});
     h.as_object_mut()
         .unwrap()
         .extend(extra.as_object().unwrap().clone());
@@ -135,7 +138,7 @@ pub fn swarm_state() -> Value {
         "/tests/fixtures/inputs/swarm-design9.json"
     );
     let fixture: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-    json!({"state": {"protocol": "1.3", "swarm": fixture["swarm"], "unseen": {"a5": "done"},
+    json!({"state": {"protocol": "2.0", "swarm": v1_wire::swarm(fixture["swarm"].clone()), "unseen": {"a5": "done"},
         "focused_pane": "w1:p3", "visible_tabs": ["w1:t3"], "panels": {}}})
 }
 

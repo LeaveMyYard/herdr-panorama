@@ -22,7 +22,7 @@ impl Panel {
         let Some(o) = self.selection().0.cloned() else {
             return out;
         };
-        let ids: Vec<String> = o.agents().map(|a| a.id.clone()).collect();
+        let ids: Vec<String> = o.agents.iter().map(|a| a.id.clone()).collect();
         if let Some(machine) = o.machine.clone() {
             self.seen(ids, &mut out);
             let machine_id = o.machine_id.clone().unwrap_or_else(|| machine.clone());
@@ -57,13 +57,9 @@ impl Panel {
             return out;
         }
         let o = find_orch(&self.graph.swarm, self.graph.view.orch.as_deref());
-        let cwd = o.and_then(|o| o.cwd.clone()).or_else(|| {
-            self.graph
-                .swarm
-                .orchestrators
-                .iter()
-                .find_map(|o| o.cwd.clone())
-        });
+        let cwd = o
+            .and_then(|o| o.cwd.clone())
+            .or_else(|| self.graph.swarm.roots.iter().find_map(|o| o.cwd.clone()));
         out.push(Effect::NewAgent { cwd });
         out
     }

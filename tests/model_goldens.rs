@@ -59,13 +59,13 @@ fn snapshot(sc: &Scenario, now: f64, env: Option<&Value>) -> J {
         pyjson::dumps(&json::swarm(&swarm), 2) + "\n"
     );
     // `snapshot --json` names every orchestrator and agent
-    for o in &swarm.orchestrators {
+    for o in &swarm.roots {
         assert!(
             !o.title.is_empty() && !o.title_source.is_empty(),
             "{}",
             o.pane_id
         );
-        for a in o.agents() {
+        for a in o.agents.iter() {
             assert!(
                 !a.title.is_empty() && !a.title_source.is_empty(),
                 "{}",

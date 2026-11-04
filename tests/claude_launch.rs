@@ -343,7 +343,7 @@ fn the_binary_answers_only_what_it_knows() {
             .unwrap();
         (out.status.code(), String::from_utf8(out.stdout).unwrap())
     };
-    assert_eq!(ask(&["contract"]), (Some(0), "1\n".into()));
+    assert_eq!(ask(&["contract"]), (Some(0), "2\n".into()));
     assert_eq!(ask(&["contract", "claude"]), (Some(0), "claude 2\n".into()));
     assert_eq!(ask(&["contract", "bogus"]), (Some(2), String::new()));
     assert_eq!(ask(&["bogus"]), (Some(2), String::new()));

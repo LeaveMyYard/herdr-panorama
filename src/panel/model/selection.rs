@@ -15,7 +15,7 @@ pub(super) fn herdr_shows(
     visible: Option<&[String]>,
     focused: Option<&str>,
 ) -> Option<String> {
-    let local = || swarm.orchestrators.iter().filter(|o| o.machine.is_none());
+    let local = || swarm.roots.iter().filter(|o| o.machine.is_none());
     if let Some(vis) = visible {
         let hit = local().find(|o| o.tab_id.as_ref().is_some_and(|t| vis.contains(t)));
         if let Some(o) = hit {

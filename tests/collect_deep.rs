@@ -17,19 +17,19 @@ fn collector_nests_any_depth_in_one_tree_and_keeps_finished_ancestors() {
     let sw = sc
         .collector()
         .collect(Some(sc.snapshot()), None, sc.now(), window, STALE);
-    let o = &sw.orchestrators[0];
+    let o = &sw.roots[0];
     let chain: Vec<String> = ["a1".to_owned()]
         .into_iter()
         .chain((2..=10).map(|i| format!("d{i}")))
         .collect();
-    assert_eq!(o.threads.len(), 1);
     let by = |id: &str| {
-        o.agents()
+        o.agents
+            .iter()
             .find(|a| a.id == id)
             .unwrap_or_else(|| panic!("{id} in the tree"))
     };
     // parents before children: the chain in order, its top a root child
-    let order: Vec<&str> = o.agents().map(|a| a.id.as_str()).collect();
+    let order: Vec<&str> = o.agents.iter().map(|a| a.id.as_str()).collect();
     let at = |id: &str| order.iter().position(|x| *x == id).unwrap();
     assert!(chain.windows(2).all(|w| at(&w[0]) < at(&w[1])), "{order:?}");
     assert_eq!(by("a1").parent, None);

@@ -6,7 +6,7 @@
 use super::items::{Item, ItemCtx, draw_item, items_of};
 use super::state::{DockState, dock_state, state_colour};
 use super::tiles::{child_tiles, fit_tiles, tile};
-use crate::model::{Orchestrator, Status};
+use crate::model::{Root, Status};
 use crate::view::anim::tint;
 use crate::view::orch_state::Ages;
 use crate::view::palette::{BG, DIM, DOCK_HOV, FAINT, FG, HI, KEY, SEL, status};
@@ -29,7 +29,7 @@ const NAME_MAX: i32 = 22;
 
 /// One entry being drawn at row `y`, `w` cells wide.
 struct Entry<'a> {
-    o: &'a Orchestrator,
+    o: &'a Root,
     d: DockState<'a>,
     items: Vec<Item<'a>>,
     docked: bool,
@@ -54,7 +54,7 @@ impl Entry<'_> {
 pub fn dock_row(
     cv: &mut Screen,
     y: i32,
-    o: &Orchestrator,
+    o: &Root,
     view: &View,
     ages: Ages,
     look: RowLook,
@@ -94,7 +94,7 @@ pub fn dock_row(
 /// The entry's look: the docked or hover background on its two lines (an unseen mark pulses
 /// there as a tint), and the docked bar down its whole height or the hover mark.
 fn background(cv: &mut Screen, e: &Entry, view: &View) {
-    let m = mark_of(e.o.agents(), &view.unseen, true);
+    let m = mark_of(e.o.agents.iter(), &view.unseen, true);
     let base = if e.docked {
         SEL
     } else if e.hov {

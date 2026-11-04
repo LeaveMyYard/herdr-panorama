@@ -32,7 +32,7 @@ impl Graph {
     fn resume(&self, col: usize, items: &[String], delta: i32) -> usize {
         let order: Vec<&str> = self
             .swarm
-            .orchestrators
+            .roots
             .iter()
             .map(|o| o.pane_id.as_str())
             .collect();

@@ -1,5 +1,8 @@
 //! Executable field tables and identity invariants for the app feed; no live IO.
 
+#[path = "v1_wire/mod.rs"]
+mod v1_wire;
+
 use panorama_core::model::Swarm;
 use serde_json::{Value, json};
 use std::collections::{BTreeMap, HashSet};
@@ -101,8 +104,7 @@ fn validate(feed: &Value) -> Result<(), String> {
     // serde model integers are lexical; the JS wire contract is numeric.
     let normalized = normalize(feed.clone());
     let feed = &normalized;
-    let swarm: Swarm = serde_json::from_value(feed.clone()).map_err(|e| e.to_string())?;
-    let counts = serde_json::to_value(swarm.counts()).unwrap();
+    let counts = legacy_counts(feed)?;
     for (field, _) in &schema()["Counts"] {
         if counts[*field] != feed["counts"][*field] {
             return Err(format!("legacy count {field} differs"));
@@ -192,6 +194,32 @@ fn fixture() -> Value {
     serde_json::from_str(SWARM).unwrap()
 }
 
+/// The feed's swarm as the model reads it: its threads' agents as each root's tree.
+fn model(feed: &Value) -> Result<Swarm, String> {
+    serde_json::from_value(v1_wire::swarm(feed.clone())).map_err(|e| e.to_string())
+}
+
+/// Feed v1's counts: the model's over every root's tree, plus the 1.x thread totals (a
+/// thread is active unless done or cancelled).
+fn legacy_counts(feed: &Value) -> Result<Value, String> {
+    let c = model(feed)?.counts();
+    let threads: Vec<&Value> = feed["orchestrators"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .flat_map(|o| o["threads"].as_array().unwrap())
+        .collect();
+    let active = threads
+        .iter()
+        .filter(|t| !matches!(t["status"].as_str(), Some("done" | "cancelled")))
+        .count();
+    Ok(json!({
+        "orchestrators": c.roots, "threads": threads.len(), "active_threads": active,
+        "agents": c.agents, "running": c.running, "waiting": c.waiting,
+        "questions": c.questions, "blocked": c.blocked, "failed": c.failed,
+    }))
+}
+
 #[test]
 fn fixtures_validate_against_the_documented_field_tables_and_model_counts() {
     let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/app-feed");
@@ -216,7 +244,7 @@ fn fixtures_validate_against_the_documented_field_tables_and_model_counts() {
 #[test]
 fn fixture_exercises_deep_mixed_harness_statuses_and_question_ownership() {
     let feed = fixture();
-    let swarm: Swarm = serde_json::from_value(feed.clone()).unwrap();
+    let swarm = model(&feed).unwrap();
     let root = &feed["orchestrators"][0];
     let agents = root["threads"][0]["agents"].as_array().unwrap();
     let statuses: HashSet<_> = agents
@@ -248,8 +276,7 @@ fn fixture_exercises_deep_mixed_harness_statuses_and_question_ownership() {
             .len()
             >= 4
     );
-    let thread = &swarm.orchestrators[0].threads[0];
-    let tree = panorama_core::model::TreeKids::of(thread);
+    let tree = panorama_core::model::TreeKids::of(&swarm.roots[0]);
     let mut parent = None;
     for depth in 1..=4 {
         let child = tree.children(parent).first().unwrap();
@@ -267,17 +294,23 @@ fn fixture_exercises_deep_mixed_harness_statuses_and_question_ownership() {
     assert_eq!(mentions, 2);
     assert_eq!(root["inbox"], json!([14, 15])); // Q14 is attributed twice; Q15 is root-only.
     assert!(
-        swarm
-            .orchestrators
+        feed["orchestrators"]
+            .as_array()
+            .unwrap()
             .iter()
-            .any(|o| o.transcript.is_none() && o.threads.is_empty())
+            .any(|o| o["transcript"].is_null() && o["threads"] == json!([]))
     );
 }
 
 #[test]
-fn only_the_agreed_additions_differ_from_existing_snapshot_json() {
+fn only_the_agreed_additions_differ_from_the_legacy_swarm_shape() {
+    // the writer's legacy shape (`app_feed::v1`, the 1.x snapshot fields over the uniform
+    // tree, plan `uniform-agent-tree.md` U6) has every field of the normative fixture, at every
+    // level, and nothing else but feed v1's own additions
     let mut feed = fixture();
-    let swarm: Swarm = serde_json::from_value(feed.clone()).unwrap();
+    let swarm = model(&feed).unwrap();
+    let legacy = panorama::snapshot::pyjson::dumps(&panorama::app_feed::v1::swarm(&swarm), 0);
+    let legacy: Value = serde_json::from_str(&legacy).unwrap();
     feed.as_object_mut().unwrap().remove("v");
     for root in feed["orchestrators"].as_array_mut().unwrap() {
         root.as_object_mut().unwrap().remove("host");
@@ -288,9 +321,35 @@ fn only_the_agreed_additions_differ_from_existing_snapshot_json() {
             }
         }
     }
-    let rendered = panorama::snapshot::render(&swarm, panorama::snapshot::Format::Json, 0.0);
-    let snapshot: Value = serde_json::from_str(&rendered).unwrap();
-    assert_eq!(feed, snapshot);
+    let keys = |v: &Value| v.as_object().unwrap().keys().cloned().collect::<Vec<_>>();
+    let (want, got) = (&feed["orchestrators"][0], &legacy["orchestrators"][0]);
+    for (w, g) in [
+        (&feed, &legacy),
+        (&feed["counts"], &legacy["counts"]),
+        (want, got),
+        (&want["threads"][0], &got["threads"][0]),
+        (
+            &want["threads"][0]["agents"][0],
+            &got["threads"][0]["agents"][0],
+        ),
+    ] {
+        assert_eq!(keys(w), keys(g));
+    }
+    assert_eq!(legacy["counts"], legacy_counts(&legacy).unwrap());
+    // every agent, field for field, now in its root's one thread (without phases)
+    let agents = |root: &Value| -> Vec<Value> {
+        let mut out: Vec<Value> = root["threads"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .flat_map(|t| t["agents"].as_array().unwrap().clone())
+            .collect();
+        for a in &mut out {
+            a.as_object_mut().unwrap().remove("phases");
+        }
+        out
+    };
+    assert_eq!(agents(got), agents(want));
 }
 
 #[test]
@@ -368,8 +427,7 @@ fn additive_fields_unknown_vocabulary_and_scoped_ids_remain_compatible() {
     feed["orchestrators"][1]["threads"] = feed["orchestrators"][0]["threads"].clone();
     feed["orchestrators"][1]["inbox"] = feed["orchestrators"][0]["inbox"].clone();
     feed["orchestrators"][1]["inbox_texts"] = feed["orchestrators"][0]["inbox_texts"].clone();
-    let swarm: Swarm = serde_json::from_value(feed.clone()).unwrap();
-    feed["counts"] = serde_json::to_value(swarm.counts()).unwrap();
+    feed["counts"] = legacy_counts(&feed).unwrap();
     validate(&feed).unwrap();
 }
 

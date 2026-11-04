@@ -1,31 +1,26 @@
-//! The agent tree inside one thread (Python `render.tree_kids`): who spawned whom.
+//! A root's agent tree (Python `render.tree_kids`, over the whole root): who spawned whom.
 
-use super::{Agent, Orchestrator, Thread};
+use super::{Agent, Root};
 use std::collections::{HashMap, HashSet};
 
-/// A thread's agents grouped by the agent that spawned them, in the thread's order.
+/// A root's agents grouped by the agent that spawned them, in the root's order (plan
+/// `uniform-agent-tree.md` §2.1).
 ///
-/// The thread's own agents are the group of `None`. An agent whose parent is not in the
-/// thread, or is itself, or that only a parent loop reaches, counts as the thread's own, so
+/// The root's direct children are the group of `None`. An agent whose parent is not one of
+/// the agents, or is itself, or that only a parent loop reaches, counts as a root child, so
 /// no agent is ever hidden.
 #[derive(Debug, Default)]
 pub struct TreeKids<'a> {
-    /// The thread's own agents.
+    /// The root's direct children.
     own: Vec<&'a Agent>,
     /// The others, by the id of the agent that spawned them.
     spawned: HashMap<&'a str, Vec<&'a Agent>>,
 }
 
 impl<'a> TreeKids<'a> {
-    /// The tree of `thread`'s agents.
-    pub fn of(thread: &'a Thread) -> Self {
-        Self::from_agents(&thread.agents)
-    }
-
-    /// The tree of a root's agents across all its threads (plan `uniform-agent-tree.md`
-    /// §2.1): its own agents are the root's direct children.
-    pub fn of_root(o: &'a Orchestrator) -> Self {
-        Self::from_agents(o.agents())
+    /// The tree of `root`'s agents.
+    pub fn of(root: &'a Root) -> Self {
+        Self::from_agents(&root.agents)
     }
 
     /// The tree of `agents`, in their order.
@@ -40,7 +35,7 @@ impl<'a> TreeKids<'a> {
                 .filter(|p| ids.contains(p) && *p != a.id);
             groups.entry(parent).or_default().push(a);
         }
-        // Walk from the thread's own agents: whatever the walk misses sits in a loop.
+        // Walk from the root's children: whatever the walk misses sits in a loop.
         let mut seen: HashSet<&str> = HashSet::new();
         let mut stack: Vec<Option<&str>> = vec![None];
         while let Some(p) = stack.pop() {
@@ -69,7 +64,7 @@ impl<'a> TreeKids<'a> {
         Self { own, spawned }
     }
 
-    /// The agents `parent` spawned (`None`: the thread's own), in the thread's order.
+    /// The agents `parent` spawned (`None`: the root's children), in the root's order.
     pub fn children(&self, parent: Option<&str>) -> &[&'a Agent] {
         match parent {
             None => &self.own,

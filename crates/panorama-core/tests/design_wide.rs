@@ -78,8 +78,9 @@ fn design_5d_views() {
 
 /// The depth-2 agent tracing the manifest cache (test_wide.py `r1_id`).
 fn r1(sw: &Swarm) -> String {
-    sw.orchestrators[0]
-        .agents()
+    sw.roots[0]
+        .agents
+        .iter()
         .find(|a| a.depth == 2 && a.activity.starts_with("tracing"))
         .unwrap()
         .id

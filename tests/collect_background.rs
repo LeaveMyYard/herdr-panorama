@@ -6,7 +6,7 @@ mod collect_support;
 
 use collect_support::{STALE, Scenario};
 use panorama::collect::{Collector, Options};
-use panorama_core::model::{Orchestrator, Status, Swarm};
+use panorama_core::model::{Root, Status, Swarm};
 use std::sync::{Arc, Mutex};
 
 const WINDOW: f64 = 3600.0;
@@ -28,14 +28,11 @@ fn collector(
     })
 }
 
-fn release(sw: &Swarm) -> &Orchestrator {
-    sw.orchestrators
-        .iter()
-        .find(|o| o.pane_id == "w1:p1")
-        .unwrap()
+fn release(sw: &Swarm) -> &Root {
+    sw.roots.iter().find(|o| o.pane_id == "w1:p1").unwrap()
 }
 
-fn bg_ids(o: &Orchestrator) -> Vec<&str> {
+fn bg_ids(o: &Root) -> Vec<&str> {
     o.bg.iter().map(|b| b.id.as_str()).collect()
 }
 
@@ -99,7 +96,8 @@ fn a_waiting_agent_says_so_in_the_model() {
     let mut c = collector(&sc, false, Arc::default(), None);
     let sw = c.collect(Some(sc.snapshot()), None, sc.now(), WINDOW, STALE);
     let ag = release(&sw)
-        .agents()
+        .agents
+        .iter()
         .find(|a| a.id.starts_with("g1canary"))
         .unwrap();
     assert_eq!(ag.status, Status::Background);
@@ -122,13 +120,9 @@ fn one_broken_session_never_hides_the_others() {
     });
     let sw = c.collect(Some(sc.snapshot()), None, sc.now(), WINDOW, STALE);
     assert_eq!(sw.errors, ["w1:p1: panic: no process table for w1:p1"]);
-    let panes: Vec<_> = sw
-        .orchestrators
-        .iter()
-        .map(|o| o.pane_id.as_str())
-        .collect();
+    let panes: Vec<_> = sw.roots.iter().map(|o| o.pane_id.as_str()).collect();
     assert_eq!(panes, ["w1:p2"]); // the other session is still collected
     // and the collector still works on the next collect
     let again = c.collect(Some(sc.snapshot()), None, sc.now() + 1.0, WINDOW, STALE);
-    assert_eq!(again.orchestrators.len(), 1);
+    assert_eq!(again.roots.len(), 1);
 }

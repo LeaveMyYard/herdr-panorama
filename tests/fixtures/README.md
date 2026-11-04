@@ -62,7 +62,11 @@ inputs, so another implementation can replay it without Python:
   Record uuids and tool ids are derived from the record's position, so they are the same on
   every run.
 - `inputs/swarm-*.json`: the model-built swarms (`tests/demo.py`, the design datasets) in their
-  wire form (`protocol.swarm_to_wire`), with the clock their tests use.
+  wire form (`protocol.swarm_to_wire`), with the clock their tests use. That is panel protocol
+  1.x (`orchestrators` → `threads` → `agents`); the Rust tests read these, `graph_rules.json`'s
+  swarm and the `model/*.json` snapshots through `tests/v1_wire/mod.rs`, which makes each root's
+  threads one flat `agents` list and drops the session card's `main:` agent (plan
+  `docs/plans/uniform-agent-tree.md` U6).
 - `model/*.json` (model goldens): `panorama snapshot --json`, run as the real command in its own
   process with `time.time` held.
   - Inputs: the scenario materialised under `<root>`: `CLAUDE_CONFIG_DIR=<root>`, the inbox
@@ -118,6 +122,9 @@ by hand, and reviewed as a diff:
     PANORAMA_BLESS=1 cargo test --test model_goldens --test app_screens
 
 - `rust/model/*.json`: `panorama snapshot --json` at the times and conditions of `model/*.json`.
+  Since U6 in the model's own shape: `roots`, each with one flat `agents` list and
+  `hidden_finished`, and the counts `roots`, `agents`, `running`, `waiting`, `questions`,
+  `blocked`, `failed`.
 - `rust/screens/scenario-*.json`: the screens of the `screens/scenario-*.json` runs (the runs
   and their `unseen` marks are still read from the capture).
 - The docked panel's screens since U5 (D5): its list is the root's agent tree in two layers,
@@ -143,9 +150,10 @@ by hand, and reviewed as a diff:
     `rust/screens/uniform-wide.json`: the U4 review renders at 160 and 240 columns. Written by
     `PANORAMA_BLESS=1 cargo test -p panorama-core --test design_wide --test design_unseen
     --test design_states --test graph_columns --test wide_screens`.
-  - `rust/inputs/swarm-uniform.json`: a synthetic swarm in the uniform shape (one `agents` thread per
+  - `rust/inputs/swarm-uniform.json`: a synthetic swarm in the uniform shape (one agent tree per
     root, titles, a root's own questions, prompt and background work, a tree five deep) for
-    those renders, written once by a script and kept as data.
+    those renders, written once by a script and kept as data. Since U6 it is in the panel
+    protocol's 2.x wire form (`roots`, flat `agents`).
 - `collect/agent-ids-pre-u3.json`: every root's agents (id, status, end, parent) as the collector
   built them before U3, over every scenario at the model times, a wide window and no inbox. It is
   the baseline of `tests/collect_agent_ids.rs`; it is not regenerated.

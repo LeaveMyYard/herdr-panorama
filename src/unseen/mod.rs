@@ -57,7 +57,7 @@ struct Inner {
     marks: Marks,
     /// Seen here, not written yet (the lock was busy).
     pending: BTreeSet<String>,
-    /// Orchestrator panes herdr had focused at the last update (`None`: no update yet).
+    /// Root panes herdr had focused at the last update (`None`: no update yet).
     prev_focused: Option<BTreeSet<String>>,
     /// Agent id → its state file key (machine-prefixed if remote).
     keymap: BTreeMap<String, String>,

@@ -1,5 +1,5 @@
-//! `panorama snapshot` without `--json` (Python `cli.cmd_snapshot`): one line per
-//! orchestrator with its background work, threads and agents; `--counts` prints the totals.
+//! `panorama snapshot` without `--json` (Python `cli.cmd_snapshot`): one line per root with
+//! its background work, then its agent tree, indented by depth; `--counts` prints the totals.
 
 use super::json;
 use super::pyjson::{J, dumps};
@@ -20,7 +20,7 @@ pub fn listing(swarm: &Swarm) -> String {
         stale_after: swarm.stale_after,
     };
     let mut out = String::new();
-    for o in &swarm.orchestrators {
+    for o in &swarm.roots {
         let blocked = if o.herdr_status.code() == "blocked" {
             "!".to_owned()
         } else {
@@ -45,11 +45,10 @@ pub fn listing(swarm: &Swarm) -> String {
             });
         let _ = writeln!(
             out,
-            "{}  [{}] {}{idle} {} {marks}",
+            "{}  [{}] {}{idle} {marks}",
             o.tab_label,
             o.herdr_status.code(),
             st.label,
-            o.flavour
         );
         for b in &o.bg {
             let _ = writeln!(
@@ -60,64 +59,50 @@ pub fn listing(swarm: &Swarm) -> String {
                 cut(&b.description, 60)
             );
         }
-        for t in &o.threads {
-            let mark = if t.is_done() { "✓" } else { "•" };
-            let (src, status) = (t.source.code(), t.status.code());
+        for a in &o.agents {
+            let pad = "  ".repeat(a.depth.clamp(1, 32) as usize);
+            let model = a.model.as_deref().unwrap_or("");
+            let id = cut(&a.id, 10);
             let _ = writeln!(
                 out,
-                "  {mark} {}  ({src}, {status}, {} agents)",
-                t.name,
-                t.agents.len()
+                "  {pad}{} {:<9} {id} {model:<6} {}",
+                a.status.glyph(),
+                a.role,
+                cut(&a.activity, 60)
             );
-            for a in &t.agents {
-                let model = a.model.as_deref().unwrap_or("");
-                let id = cut(&a.id, 10);
+            for b in &a.bg {
                 let _ = writeln!(
                     out,
-                    "      {} {:<9} {id} {model:<6} {}",
-                    a.status.glyph(),
-                    a.role,
-                    cut(&a.activity, 60)
+                    "  {pad}    {bg_glyph} {:<8} {} {}",
+                    b.kind,
+                    b.id,
+                    cut(&b.description, 50)
                 );
-                for b in &a.bg {
-                    let _ = writeln!(
-                        out,
-                        "          {bg_glyph} {:<8} {} {}",
-                        b.kind,
-                        b.id,
-                        cut(&b.description, 50)
-                    );
-                }
             }
         }
     }
     out
 }
 
-/// `--counts`: the totals, herdr and inbox state, threads by source, agents by status, hidden
-/// threads and how long the collect took.
+/// `--counts`: the totals, herdr and inbox state, agents by status, the finished agents the
+/// done window left out and how long the collect took.
 pub fn counts(swarm: &Swarm, seconds: f64) -> String {
     let mut out = json::counts(&swarm.counts());
-    let mut by_source: Vec<(String, J)> = Vec::new();
     let mut by_status: Vec<(String, J)> = Vec::new();
     let bump =
         |items: &mut Vec<(String, J)>, key: &str| match items.iter_mut().find(|(k, _)| k == key) {
             Some((_, J::Int(n))) => *n += 1,
             _ => items.push((key.to_owned(), J::Int(1))),
         };
-    for t in swarm.orchestrators.iter().flat_map(|o| &o.threads) {
-        bump(&mut by_source, t.source.code());
-        for a in &t.agents {
-            bump(&mut by_status, a.status.code());
-        }
+    for a in swarm.roots.iter().flat_map(|o| &o.agents) {
+        bump(&mut by_status, a.status.code());
     }
-    let hidden: i64 = swarm.orchestrators.iter().map(|o| o.hidden_done).sum();
+    let hidden: i64 = swarm.roots.iter().map(|o| o.hidden_finished).sum();
     out.extend([
         ("herdr_ok".to_owned(), J::Bool(swarm.herdr_ok)),
         ("inbox_ok".to_owned(), J::Bool(swarm.inbox_ok)),
-        ("by_source".to_owned(), J::Obj(by_source)),
         ("agent_status".to_owned(), J::Obj(by_status)),
-        ("hidden_done_threads".to_owned(), J::Int(hidden)),
+        ("hidden_finished".to_owned(), J::Int(hidden)),
         (
             "seconds".to_owned(),
             J::Float((seconds * 1000.0).round() / 1000.0),

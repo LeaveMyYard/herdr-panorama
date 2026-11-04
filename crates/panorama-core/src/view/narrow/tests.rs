@@ -25,14 +25,10 @@ fn tree() -> Swarm {
         json!({"id": id, "title": format!("task {id}"), "status": st, "parent": parent,
                "started": n, "seq": n, "model": "opus"})
     };
-    serde_json::from_value(json!({"orchestrators": [
-        orch("p1", json!({"hidden_finished": 2, "threads": [
-            {"id": crate::model::TREE_THREAD, "name": "agents", "source": "session", "agents": [
-                ag("a", "run", None, 1), ag("a1", "run", Some("a"), 2),
+    serde_json::from_value(json!({"roots": [
+        orch("p1", json!({"hidden_finished": 2, "agents": [ag("a", "run", None, 1), ag("a1", "run", Some("a"), 2),
                 ag("a2", "done", Some("a"), 3), ag("d1", "done", None, 4),
-                ag("d2", "done", None, 5),
-            ]},
-        ]})),
+                ag("d2", "done", None, 5)]})),
         orch("p2", json!({"machine": "box", "machine_id": "m1"})),
     ]}))
     .unwrap()
@@ -98,7 +94,7 @@ fn the_fold_selected_and_unfolded() {
 #[test]
 fn the_window_dropping_every_finished_one_still_counts_them_unless_filtered() {
     let mut sw = tree();
-    for a in &mut sw.orchestrators[0].threads[0].agents {
+    for a in &mut sw.roots[0].agents {
         if a.status == crate::model::Status::Done && a.parent.is_none() {
             a.status = crate::model::Status::Running;
         }
@@ -129,7 +125,7 @@ fn the_window_dropping_every_finished_one_still_counts_them_unless_filtered() {
 #[test]
 fn a_long_list_scrolls_to_the_selection() {
     let orchs: Vec<Value> = (0..30).map(|i| orch(&format!("q{i}"), json!({}))).collect();
-    let swarm: Swarm = serde_json::from_value(json!({ "orchestrators": orchs })).unwrap();
+    let swarm: Swarm = serde_json::from_value(json!({ "roots": orchs })).unwrap();
     let (s, r) = rows(
         &swarm,
         &View {
@@ -149,8 +145,7 @@ fn a_long_list_scrolls_to_the_selection() {
 
 #[test]
 fn a_wide_pane_keeps_the_narrow_chrome() {
-    let swarm: Swarm =
-        serde_json::from_value(json!({"orchestrators": [orch("p1", json!({}))]})).unwrap();
+    let swarm: Swarm = serde_json::from_value(json!({"roots": [orch("p1", json!({}))]})).unwrap();
     let s = page(&swarm, &View::default(), 130, 45, None);
     let text = s.text();
     let keys = text.lines().last().unwrap();

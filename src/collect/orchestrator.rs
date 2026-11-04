@@ -17,7 +17,7 @@ use herdr_agent_kit::agent_session::Ts;
 use herdr_agent_kit::agent_session::claude::wire::{self, ToolCall};
 use herdr_agent_kit::agent_session::claude::{Owner, Session};
 use herdr_agent_kit::internal::inbox_contract::sqlite::OpenQuestion;
-use panorama_core::model::{HerdrStatus, Orchestrator};
+use panorama_core::model::{HerdrStatus, Root};
 use serde_json::{Map, Value};
 use std::collections::HashMap;
 
@@ -49,8 +49,8 @@ fn opt_id(v: Option<&Value>) -> Option<String> {
 }
 
 /// The orchestrator with no session read yet.
-fn bare(a: &Map<String, Value>, sid: Option<&Value>) -> Orchestrator {
-    Orchestrator {
+fn bare(a: &Map<String, Value>, sid: Option<&Value>) -> Root {
+    Root {
         harness: str_of(a, "agent").unwrap_or("claude").to_owned(),
         pane_id: truthy_str(a, "pane_id").unwrap_or_default(),
         tab_id: opt_id(a.get("tab_id")),
@@ -64,13 +64,11 @@ fn bare(a: &Map<String, Value>, sid: Option<&Value>) -> Orchestrator {
         workspace_id: opt_id(a.get("workspace_id")),
         focused: a.get("focused").is_some_and(truthy),
         cwd: str_of(a, "cwd").map(str::to_owned),
-        flavour: "agents".into(),
         transcript: None,
         pending: Vec::new(),
         inbox: Vec::new(),
         inbox_texts: Vec::new(),
-        threads: Vec::new(),
-        hidden_done: 0,
+        agents: Vec::new(),
         hidden_finished: 0,
         tab_no: None,
         machine: None,
@@ -142,7 +140,7 @@ impl Collector {
         per_tab: usize,
         open_qs: &[OpenQuestion],
         now: f64,
-    ) -> (Orchestrator, Tree) {
+    ) -> (Root, Tree) {
         let empty = Map::new();
         let info = a
             .get("agent_session")

@@ -6,7 +6,7 @@ use serde_json::json;
 mod history;
 mod identity;
 
-fn pane(id: &str) -> Orchestrator {
+fn pane(id: &str) -> Root {
     serde_json::from_value(json!({
         "pane_id":"w1:p1", "tab_id":"w1:t1", "tab_label":"Synthetic work",
         "session_id":id, "harness":"codex", "herdr_status":"working"
@@ -54,7 +54,7 @@ fn observed() -> Observation {
 }
 
 /// The tree the observation gives the pane.
-fn apply(pane: &mut Orchestrator, observation: Option<&Observation>) -> Tree {
+fn apply(pane: &mut Root, observation: Option<&Observation>) -> Tree {
     enrich(pane, observation).1
 }
 

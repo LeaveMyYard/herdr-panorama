@@ -10,9 +10,7 @@
    "inbox_ok": true,
    "errors": [],
    "counts": {
-    "orchestrators": 2,
-    "threads": 2,
-    "active_threads": 1,
+    "roots": 2,
     "agents": 1,
     "running": 0,
     "waiting": 2,
@@ -20,7 +18,7 @@
     "blocked": 0,
     "failed": 0
    },
-   "orchestrators": [
+   "roots": [
     {
      "pane_id": "w1:p1",
      "harness": "claude",
@@ -33,64 +31,48 @@
      "workspace_id": "w1",
      "focused": false,
      "cwd": "/home/user/project",
-     "flavour": "agents",
      "transcript": "<root>/projects/-home-user-project/55555555-5555-4555-8555-555555555555.jsonl",
      "pending": [],
      "inbox": [],
      "inbox_texts": [],
-     "threads": [
+     "agents": [
       {
-       "id": "agents",
-       "name": "Release",
-       "source": "session",
-       "phases": [],
-       "agents": [
-        {
-         "id": "g1canary0000000001",
-         "title": "Check the canary metrics",
-         "title_source": "spawner",
-         "description": "Check the canary metrics",
-         "role": "general-purpose",
-         "agent_type": "general-purpose",
-         "model": "sonnet",
-         "status": "bg",
-         "tool_use_id": "toolu_5481269883009233487816",
-         "started": 1791968820.0,
-         "ended": null,
-         "last_at": 1791968940.0,
-         "tool_calls": 1,
-         "activity": "turn ended · 1 task in background",
-         "last_message": "Waiting for the canary window.",
-         "questions": [],
-         "pending": [],
-         "question_ids": [],
-         "error": null,
-         "phases": [],
-         "parent": null,
-         "depth": 1,
-         "resumes": 0,
-         "inferred": false,
-         "transcript": "<root>/projects/-home-user-project/55555555-5555-4555-8555-555555555555/subagents/agent-g1canary0000000001.jsonl",
-         "seq": 0,
-         "bg": [
-          {
-           "id": "gb1canary",
-           "kind": "Bash",
-           "description": "Wait for the canary window",
-           "started": 1791968881.0
-          }
-         ]
-        }
-       ],
-       "status": "active",
+       "id": "g1canary0000000001",
+       "title": "Check the canary metrics",
+       "title_source": "spawner",
+       "description": "Check the canary metrics",
+       "role": "general-purpose",
+       "agent_type": "general-purpose",
+       "model": "sonnet",
+       "status": "bg",
+       "tool_use_id": "toolu_5481269883009233487816",
        "started": 1791968820.0,
        "ended": null,
-       "worktree": null,
-       "pct": null,
-       "flavour": null
+       "last_at": 1791968940.0,
+       "tool_calls": 1,
+       "activity": "turn ended · 1 task in background",
+       "last_message": "Waiting for the canary window.",
+       "questions": [],
+       "pending": [],
+       "question_ids": [],
+       "error": null,
+       "parent": null,
+       "depth": 1,
+       "resumes": 0,
+       "inferred": false,
+       "transcript": "<root>/projects/-home-user-project/55555555-5555-4555-8555-555555555555/subagents/agent-g1canary0000000001.jsonl",
+       "seq": 0,
+       "bg": [
+        {
+         "id": "gb1canary",
+         "kind": "Bash",
+         "description": "Wait for the canary window",
+         "started": 1791968881.0
+        }
+       ]
       }
      ],
-     "hidden_done": 0,
+     "hidden_finished": 0,
      "tab_no": 1,
      "machine": null,
      "machine_id": null,
@@ -128,27 +110,12 @@
      "workspace_id": "w1",
      "focused": false,
      "cwd": "/home/user/project",
-     "flavour": "agents",
      "transcript": "<root>/projects/-home-user-project/66666666-6666-4666-8666-666666666666.jsonl",
      "pending": [],
      "inbox": [],
      "inbox_texts": [],
-     "threads": [
-      {
-       "id": "agents",
-       "name": "Cache",
-       "source": "session",
-       "phases": [],
-       "agents": [],
-       "status": "done",
-       "started": null,
-       "ended": null,
-       "worktree": null,
-       "pct": null,
-       "flavour": null
-      }
-     ],
-     "hidden_done": 0,
+     "agents": [],
+     "hidden_finished": 0,
      "tab_no": 2,
      "machine": null,
      "machine_id": null,
@@ -163,9 +130,7 @@
    "inbox_ok": true,
    "errors": [],
    "counts": {
-    "orchestrators": 2,
-    "threads": 2,
-    "active_threads": 1,
+    "roots": 2,
     "agents": 1,
     "running": 0,
     "waiting": 2,
@@ -173,7 +138,7 @@
     "blocked": 0,
     "failed": 0
    },
-   "orchestrators": [
+   "roots": [
     {
      "pane_id": "w1:p1",
      "harness": "claude",
@@ -186,64 +151,48 @@
      "workspace_id": "w1",
      "focused": false,
      "cwd": "/home/user/project",
-     "flavour": "agents",
      "transcript": "<root>/projects/-home-user-project/55555555-5555-4555-8555-555555555555.jsonl",
      "pending": [],
      "inbox": [],
      "inbox_texts": [],
-     "threads": [
+     "agents": [
       {
-       "id": "agents",
-       "name": "Release",
-       "source": "session",
-       "phases": [],
-       "agents": [
-        {
-         "id": "g1canary0000000001",
-         "title": "Check the canary metrics",
-         "title_source": "spawner",
-         "description": "Check the canary metrics",
-         "role": "general-purpose",
-         "agent_type": "general-purpose",
-         "model": "sonnet",
-         "status": "bg",
-         "tool_use_id": "toolu_5481269883009233487816",
-         "started": 1791968820.0,
-         "ended": null,
-         "last_at": 1791968940.0,
-         "tool_calls": 1,
-         "activity": "turn ended · 1 task in background",
-         "last_message": "Waiting for the canary window.",
-         "questions": [],
-         "pending": [],
-         "question_ids": [],
-         "error": null,
-         "phases": [],
-         "parent": null,
-         "depth": 1,
-         "resumes": 0,
-         "inferred": false,
-         "transcript": "<root>/projects/-home-user-project/55555555-5555-4555-8555-555555555555/subagents/agent-g1canary0000000001.jsonl",
-         "seq": 0,
-         "bg": [
-          {
-           "id": "gb1canary",
-           "kind": "Bash",
-           "description": "Wait for the canary window",
-           "started": 1791968881.0
-          }
-         ]
-        }
-       ],
-       "status": "active",
+       "id": "g1canary0000000001",
+       "title": "Check the canary metrics",
+       "title_source": "spawner",
+       "description": "Check the canary metrics",
+       "role": "general-purpose",
+       "agent_type": "general-purpose",
+       "model": "sonnet",
+       "status": "bg",
+       "tool_use_id": "toolu_5481269883009233487816",
        "started": 1791968820.0,
        "ended": null,
-       "worktree": null,
-       "pct": null,
-       "flavour": null
+       "last_at": 1791968940.0,
+       "tool_calls": 1,
+       "activity": "turn ended · 1 task in background",
+       "last_message": "Waiting for the canary window.",
+       "questions": [],
+       "pending": [],
+       "question_ids": [],
+       "error": null,
+       "parent": null,
+       "depth": 1,
+       "resumes": 0,
+       "inferred": false,
+       "transcript": "<root>/projects/-home-user-project/55555555-5555-4555-8555-555555555555/subagents/agent-g1canary0000000001.jsonl",
+       "seq": 0,
+       "bg": [
+        {
+         "id": "gb1canary",
+         "kind": "Bash",
+         "description": "Wait for the canary window",
+         "started": 1791968881.0
+        }
+       ]
       }
      ],
-     "hidden_done": 0,
+     "hidden_finished": 0,
      "tab_no": 1,
      "machine": null,
      "machine_id": null,
@@ -275,27 +224,12 @@
      "workspace_id": "w1",
      "focused": false,
      "cwd": "/home/user/project",
-     "flavour": "agents",
      "transcript": "<root>/projects/-home-user-project/66666666-6666-4666-8666-666666666666.jsonl",
      "pending": [],
      "inbox": [],
      "inbox_texts": [],
-     "threads": [
-      {
-       "id": "agents",
-       "name": "Cache",
-       "source": "session",
-       "phases": [],
-       "agents": [],
-       "status": "done",
-       "started": null,
-       "ended": null,
-       "worktree": null,
-       "pct": null,
-       "flavour": null
-      }
-     ],
-     "hidden_done": 0,
+     "agents": [],
+     "hidden_finished": 0,
      "tab_no": 2,
      "machine": null,
      "machine_id": null,

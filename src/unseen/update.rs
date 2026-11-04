@@ -3,11 +3,11 @@
 use super::rules::{event, float, mark, qids, record, urgent};
 use super::{Event, KEEP_SECONDS, Marks, Tracker, store};
 use crate::snapshot::pyjson::J;
-use panorama_core::model::{Agent, Orchestrator, Status, Swarm};
+use panorama_core::model::{Agent, Root, Status, Swarm};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// The state file's key: an agent on another herdr machine carries that machine's id.
-pub fn key(o: &Orchestrator, a: &Agent) -> String {
+pub fn key(o: &Root, a: &Agent) -> String {
     let set = |s: &Option<String>| s.clone().filter(|s| !s.is_empty());
     match set(&o.machine_id).or_else(|| set(&o.machine)) {
         Some(mid) => format!("{mid}:{}", a.id),
@@ -57,7 +57,7 @@ impl Tracker {
         // focus clears an orchestrator's marks only when it MOVES onto that pane: focus resting
         // on a pane is not looking, and the first refresh after start has nothing to compare with
         let focused: BTreeSet<String> = swarm
-            .orchestrators
+            .roots
             .iter()
             .filter(|o| o.focused && o.machine.is_none())
             .map(|o| o.pane_id.clone())
@@ -76,8 +76,8 @@ impl Tracker {
             _ => Vec::new(),
         };
         let mut keymap = BTreeMap::new();
-        for o in &swarm.orchestrators {
-            for a in o.agents().filter(|a| !a.id.starts_with("main:")) {
+        for o in &swarm.roots {
+            for a in &o.agents {
                 let k = key(o, a);
                 keymap.insert(a.id.clone(), k.clone());
                 let at = agents

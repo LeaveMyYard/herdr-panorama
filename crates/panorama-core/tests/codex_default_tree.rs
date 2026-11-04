@@ -9,17 +9,13 @@ use panorama_core::view::{Target, View, render_dock, render_graph};
 use serde_json::json;
 
 fn swarm(harness: &str) -> Swarm {
-    let mut sw: Swarm = serde_json::from_value(json!({"orchestrators":[{
+    let mut sw: Swarm = serde_json::from_value(json!({"roots":[{
         "pane_id":"pane", "tab_label":"project", "title":"project", "title_source":"tab", "harness":harness,
         "session_id":"root", "herdr_status":"working",
-        "threads":[{"id":"agents", "name":"Session work", "source":"session", "status":"active",
-            "agents":[
-                {"id":"older01-child", "role":"worker", "description":"Older child", "title":"review auth", "title_source":"spawner", "status":"unknown", "depth":1, "started":10, "seq":1},
+        "agents": [{"id":"older01-child", "role":"worker", "description":"Older child", "title":"review auth", "title_source":"spawner", "status":"unknown", "depth":1, "started":10, "seq":1},
                 {"id":"younger-child", "role":"worker", "description":"Younger child", "title":"Euclid", "title_source":"session", "status":"unknown", "depth":1, "started":20, "seq":2},
                 {"id":"grand01-child", "role":"worker", "description":"Grandchild one", "title":"Fix the flaky test", "title_source":"prompt", "status":"unknown", "parent":"older01-child", "depth":2, "seq":3},
-                {"id":"grand02-child", "role":"worker", "description":"Grandchild two", "title":"worker grand02", "title_source":"type", "status":"unknown", "parent":"younger-child", "depth":2, "seq":4}
-            ]
-        }]
+                {"id":"grand02-child", "role":"worker", "description":"Grandchild two", "title":"worker grand02", "title_source":"type", "status":"unknown", "parent":"younger-child", "depth":2, "seq":4}]
     }]})).unwrap();
     sw.docked = Some("pane".into());
     sw
@@ -69,7 +65,7 @@ fn compact_codex_shows_two_layers_of_the_roots_agents_and_unknown_leaf_glyphs_on
     );
     // a status change never reorders rows
     let mut changed = sw.clone();
-    changed.orchestrators[0].threads[0].agents[1].status = Status::Blocked;
+    changed.roots[0].agents[1].status = Status::Blocked;
     let changed = render_dock(&changed, &view(), 46, 32, None, "empty").text();
     assert!(
         changed.find("review auth").unwrap() < changed.find("Euclid").unwrap(),
@@ -129,7 +125,7 @@ fn narrow_and_wide_graphs_retain_full_default_hierarchy_and_identity() {
         }
     }
     assert!(
-        sw.orchestrators[0].threads[0]
+        sw.roots[0]
             .agents
             .iter()
             .all(|a| matches!(a.status, Status::Unknown(_)) && a.status.is_live())
@@ -139,17 +135,17 @@ fn narrow_and_wide_graphs_retain_full_default_hierarchy_and_identity() {
 #[test]
 fn compact_done_fold_and_history_unknown_status_keep_existing_semantics() {
     let mut sw = swarm("codex");
-    sw.orchestrators[0].herdr_status = panorama_core::model::HerdrStatus::Done;
+    sw.roots[0].herdr_status = panorama_core::model::HerdrStatus::Done;
     // History-only descendants still appear while they are live; root done is runtime.
     let text = render_dock(&sw, &view(), 46, 32, None, "empty").text();
     assert!(
         text.contains("review auth") && text.contains("done"),
         "{text}"
     );
-    for a in &mut sw.orchestrators[0].threads[0].agents {
+    for a in &mut sw.roots[0].agents {
         a.status = Status::Done;
     }
-    sw.orchestrators[0].hidden_finished = 3;
+    sw.roots[0].hidden_finished = 3;
     let text = render_dock(&sw, &view(), 46, 32, None, "empty").text();
     // the root's finished subagents fold into one row; theirs get none
     assert!(text.contains("2 finished · review auth"), "{text}");

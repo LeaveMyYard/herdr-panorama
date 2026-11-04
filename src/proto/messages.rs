@@ -1,4 +1,4 @@
-//! The messages (`docs/protocol/panel-v1.md`, "Messages"): what a panel says to the core,
+//! The messages (`docs/protocol/panel-v2.md`, "Messages"): what a panel says to the core,
 //! and how it reads the core's answers.
 
 use super::PROTOCOL;

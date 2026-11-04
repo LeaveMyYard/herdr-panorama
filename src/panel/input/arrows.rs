@@ -70,7 +70,7 @@ impl Panel {
         };
         let (pane, ids): (String, Vec<String>) = (
             o.pane_id.clone(),
-            o.agents().map(|a| a.id.clone()).collect(),
+            o.agents.iter().map(|a| a.id.clone()).collect(),
         );
         let mut out = vec![];
         self.seen(ids, &mut out); // switched next to it: all of it is in view

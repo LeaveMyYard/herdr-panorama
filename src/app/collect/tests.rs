@@ -260,14 +260,13 @@ fn the_state_file_is_read_and_written_off_the_ui_thread() {
         Box::new(|| true),
     ));
     let sw: Swarm = serde_json::from_value(
-        serde_json::json!({"orchestrators": [{"pane_id": "w1:p1", "tab_id": "t",
-        "tab_label": "o", "session_id": "s", "threads": [{"id": "t1", "name": "t", "source": "turn",
-        "agents": [{"id": "a1", "status": "run"}]}]}]}),
+        serde_json::json!({"roots": [{"pane_id": "w1:p1", "tab_id": "t",
+        "tab_label": "o", "session_id": "s", "agents": [{"id": "a1", "status": "run"}]}]}),
     )
     .unwrap();
     marked.update(&sw, 1.0);
     let mut done = sw.clone();
-    done.orchestrators[0].threads[0].agents[0].status = panorama_core::model::Status::Done;
+    done.roots[0].agents[0].status = panorama_core::model::Status::Done;
     marked.update(&done, 2.0);
     // the save runs off this thread: it waits for the state file's lock this thread holds
     // (a save on this thread gives up while the lock is held, leaving the mark pending)

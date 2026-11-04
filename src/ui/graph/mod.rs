@@ -13,7 +13,7 @@ mod pointer;
 mod vertical;
 
 use crate::ui::selection;
-use panorama_core::model::{Agent, Orchestrator, Swarm};
+use panorama_core::model::{Agent, Root, Swarm};
 use panorama_core::view::nav::{find_agent, find_orch, tree_entries};
 use panorama_core::view::state::FIN_CARD;
 use panorama_core::view::{NEW_ROW, View};
@@ -58,7 +58,7 @@ impl Graph {
     /// What the action keys act on: (root, agent), the agent only with the keyboard in the
     /// tree (on a root its own card's keys act on it); nothing while the focused column's
     /// cursor is parked, or on + New agent (Python `_selection`).
-    pub(crate) fn selection(&self) -> (Option<&Orchestrator>, Option<&Agent>) {
+    pub(crate) fn selection(&self) -> (Option<&Root>, Option<&Agent>) {
         if self.cur(self.view.focus).is_none() || self.view.orch.as_deref() == Some(NEW_ROW) {
             return (None, None);
         }

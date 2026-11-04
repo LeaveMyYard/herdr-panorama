@@ -7,7 +7,7 @@ fn captured_swarm() -> Value {
         "/tests/fixtures/inputs/swarm-design9.json"
     );
     let v: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-    v["swarm"].clone()
+    crate::v1_wire::swarm(v["swarm"].clone())
 }
 
 fn read(v: Value) -> Result<State, serde_json::Error> {
@@ -23,7 +23,7 @@ fn a_full_snapshot_reads() {
         "panels": {"w1:t3": "w1:p30"}, "filter": "needs",
     }))
     .unwrap();
-    assert_eq!(st.swarm.orchestrators.len(), 5);
+    assert_eq!(st.swarm.roots.len(), 5);
     assert_eq!(st.unseen.get("b3"), Some(&Unseen::Fail));
     assert_eq!(st.focused_pane.as_deref(), Some("w1:p3"));
     assert_eq!(st.visible_tabs, Some(vec!["w1:t3".to_owned()]));
@@ -54,15 +54,15 @@ fn fields_of_the_wrong_shape_read_as_absent() {
 #[test]
 fn a_swarm_that_does_not_read_rejects_the_state() {
     let mut swarm = captured_swarm();
-    swarm["orchestrators"][0]["threads"][0]["agents"][0]["id"] = Value::Null;
+    swarm["roots"][0]["agents"][0]["id"] = Value::Null;
     assert!(read(json!({"swarm": swarm})).is_err());
 }
 
 #[test]
 fn every_string_is_cleaned_once_as_it_is_read() {
     let mut swarm = captured_swarm();
-    swarm["orchestrators"][0]["tab_label"] = json!("evil\u{1b}]0;title\u{7}\ttab");
-    swarm["orchestrators"][0]["threads"][0]["agents"][0]["id"] = json!("a\u{1b}1");
+    swarm["roots"][0]["tab_label"] = json!("evil\u{1b}]0;title\u{7}\ttab");
+    swarm["roots"][0]["agents"][0]["id"] = json!("a\u{1b}1");
     swarm["errors"] = json!(["bad\nline"]);
     let st = read(json!({"swarm": swarm, "unseen": {"a\u{1b}1": "fail"},
         "panels": {"w1:t\u{7}2": "w1:p\u{1b}9"}, "focused_pane": "w1:p\u{1b}3", "visible_tabs": ["w1:t\n2"]}))
@@ -70,9 +70,9 @@ fn every_string_is_cleaned_once_as_it_is_read() {
     assert_eq!(st.panels.get("w1:t2").map(String::as_str), Some("w1:p9"));
     assert_eq!(st.focused_pane.as_deref(), Some("w1:p3"));
     assert_eq!(st.visible_tabs, Some(vec!["w1:t 2".to_owned()]));
-    let o = &st.swarm.orchestrators[0];
+    let o = &st.swarm.roots[0];
     assert_eq!(o.tab_label, "evil]0;title tab");
-    assert_eq!(o.threads[0].agents[0].id, "a1");
+    assert_eq!(o.agents[0].id, "a1");
     assert_eq!(st.swarm.errors, ["bad line"]);
     // the marks are cleaned the same way, so they still name the agent
     assert!(st.unseen.contains_key("a1"));
