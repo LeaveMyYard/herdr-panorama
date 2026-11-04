@@ -30,7 +30,7 @@ fn state_colour(st: &OrchState) -> Rgb {
     }
 }
 
-/// An unselected orchestrator at row `y`: pod, name and state, marks on the right.
+/// An unselected root at row `y`: pod, name and state, marks on the right.
 pub fn orch_row(cv: &mut Screen, y: i32, o: &Root, view: &View, ages: Ages) {
     let w = cv.w();
     let st = orch_state(o, view.frame, Some(ages));
@@ -61,7 +61,7 @@ pub fn orch_row(cv: &mut Screen, y: i32, o: &Root, view: &View, ages: Ages) {
     );
 }
 
-/// Where an opened orchestrator ended, and the rows of the selection in it.
+/// Where an opened root ended, and the rows of the selection in it.
 pub struct Opened {
     pub end: i32,
     pub sel: Option<(i32, i32)>,

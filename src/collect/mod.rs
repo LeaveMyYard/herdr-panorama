@@ -11,9 +11,9 @@
 //! - the kit's fold never fails a record, so there is no "N unreadable records" error;
 //! - an agent's `agent_type` or `tool_use_id`, or herdr's `agent_session.value`, that is not a
 //!   string reads as its text (Python passes the JSON value through);
-//! - where Python raises inside one orchestrator and reports it in `errors` (a list as an
-//!   agent's `agentType`: unhashable; a non-string `cwd`), Rust shows the orchestrator: those
-//!   values are read as text or as absent. A panic is still contained per orchestrator
+//! - where Python raises inside one root and reports it in `errors` (a list as an
+//!   agent's `agentType`: unhashable; a non-string `cwd`), Rust shows the root: those
+//!   values are read as text or as absent. A panic is still contained per root
 //!   ([`contain`]).
 //!
 //! [`Scanner`]: herdr_agent_kit::agent_session::claude::Scanner
@@ -91,9 +91,9 @@ fn tab_of(a: &Map<String, Value>) -> Value {
     a.get("tab_id").cloned().unwrap_or(Value::Null)
 }
 
-/// One orchestrator's collect, contained: a panic in it (untrusted transcript text) becomes
+/// One root's collect, contained: a panic in it (untrusted transcript text) becomes
 /// an entry in `errors`, `<pane>: panic: <message>` (at most 300 characters), and the other
-/// orchestrators are still collected (Python's `try/except` around `_orchestrator`).
+/// roots are still collected (Python's `try/except` around `_orchestrator`).
 pub fn contain<T>(pane: &str, f: impl FnOnce() -> T) -> Result<T, String> {
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).map_err(|p| {
         let msg = p
@@ -162,7 +162,7 @@ impl Collector {
 
     /// The swarm at `now`: herdr's `snapshot` (`None`: herdr is down), the inbox's open
     /// questions (`None`: no inbox), finished agents shown for `window` seconds, idle
-    /// orchestrators stale after `stale_after`.
+    /// roots stale after `stale_after`.
     pub fn collect(
         &mut self,
         snapshot: Option<&Value>,

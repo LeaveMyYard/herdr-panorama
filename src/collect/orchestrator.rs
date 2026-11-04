@@ -1,4 +1,4 @@
-//! One orchestrator from one herdr agent (Python `Collector._orchestrator`): its ids and
+//! One root from one herdr agent (Python `Collector._orchestrator`): its ids and
 //! herdr's word on it, the session it lives in now, its inbox questions, its label, and,
 //! when its transcript is found, its background work, pending prompt and agent tree. Its own
 //! state (herdr's status, the pending prompt, inbox questions, background work) stays on the
@@ -48,7 +48,7 @@ fn opt_id(v: Option<&Value>) -> Option<String> {
     v.filter(|v| !v.is_null()).map(py_str)
 }
 
-/// The orchestrator with no session read yet.
+/// The root with no session read yet.
 fn bare(a: &Map<String, Value>, sid: Option<&Value>) -> Root {
     Root {
         harness: str_of(a, "agent").unwrap_or("claude").to_owned(),
@@ -132,7 +132,7 @@ fn root_title(
 }
 
 impl Collector {
-    /// The orchestrator of herdr agent `a` in `tab`, and its agents.
+    /// The root of herdr agent `a` in `tab`, and its agents.
     pub(super) fn orchestrator(
         &mut self,
         a: &Map<String, Value>,

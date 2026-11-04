@@ -45,7 +45,7 @@ pub fn arrows(cfg: &Map<String, Value>) -> bool {
     on_unless_off(cfg, "dock_on_arrows") && keep_focus(cfg)
 }
 
-/// `cockpit_follow_tabs = "single"`: panels only in tabs where the orchestrator is the only
+/// `cockpit_follow_tabs = "single"`: panels only in tabs where the root is the only
 /// pane ("any", the default, otherwise).
 pub fn follow_tabs_single(cfg: &Map<String, Value>) -> bool {
     cfg.get("cockpit_follow_tabs")

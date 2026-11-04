@@ -37,7 +37,7 @@ impl Panel {
     }
 
     /// The arrows' rest came due at `now` (a later arrow set a later one: nothing yet). Switch
-    /// to the orchestrator they rest on, the keyboard staying on the panels: not the docked
+    /// to the root they rest on, the keyboard staying on the panels: not the docked
     /// one, not + New agent, not one on another machine, and only while the keyboard is
     /// still here.
     pub fn arrows_rested(&mut self, now: Instant) -> Vec<Effect> {

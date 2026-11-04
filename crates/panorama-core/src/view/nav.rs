@@ -11,7 +11,7 @@ use super::filter::visible_orchs;
 use super::state::{NEW_ROW, View};
 use crate::model::{Agent, Root, Swarm};
 
-/// The orchestrator with pane `pane`.
+/// The root with pane `pane`.
 pub fn find_orch<'a>(swarm: &'a Swarm, pane: Option<&str>) -> Option<&'a Root> {
     swarm
         .roots

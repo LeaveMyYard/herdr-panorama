@@ -36,7 +36,7 @@ pub fn page(swarm: &Swarm, view: &View, w: i32, h: i32, stale: Option<&str>) -> 
     s
 }
 
-/// The orchestrators (the selected one opened), `+ New agent`, scrolled to the selection.
+/// The roots (the selected one opened), `+ New agent`, scrolled to the selection.
 fn list(s: &mut Screen, swarm: &Swarm, view: &View) {
     let (w, h) = (s.w(), s.h());
     let mut cv = Screen::new(w, TALL);

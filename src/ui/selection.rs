@@ -7,7 +7,7 @@ use panorama_core::view::nav::{default_children, find_agent, find_orch, nav};
 use panorama_core::view::{NEW_ROW, View};
 use std::time::Duration;
 
-/// The selectable rows, in order: the orchestrators the filter shows, then `+ New agent`
+/// The selectable rows, in order: the roots the filter shows, then `+ New agent`
 /// (Python `render.nav(...)[0]`).
 pub fn shown_ids(swarm: &Swarm, view: &View) -> Vec<String> {
     let mut ids: Vec<String> = visible_orchs(swarm, view)
@@ -31,7 +31,7 @@ pub fn initial(swarm: &Swarm, view: &mut View, focus_pane: Option<&str>) {
 }
 
 /// After a refresh or a filter change: every selection that still exists stays; one that
-/// vanished is cleared. The orchestrator no longer shown, if any: where the arrows resume.
+/// vanished is cleared. The root no longer shown, if any: where the arrows resume.
 pub fn resolve(swarm: &Swarm, view: &mut View) -> Option<String> {
     let mut parked = None;
     if let Some(o) = &view.orch

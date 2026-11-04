@@ -7,7 +7,7 @@ use panorama_core::view::nav::nav;
 
 impl Graph {
     /// ↑/↓ by `delta` in the focused column; from a parked cursor, the next shown row in that
-    /// direction. Whether the cursor moved over orchestrators (the arrows' switch then waits
+    /// direction. Whether the cursor moved over roots (the arrows' switch then waits
     /// for them to rest).
     pub(crate) fn move_cursor(&mut self, delta: i32) -> bool {
         let col = self.view.focus;
@@ -27,7 +27,7 @@ impl Graph {
         col == 0
     }
 
-    /// Where a parked cursor resumes: from the orchestrator it sits on (or was parked off) in
+    /// Where a parked cursor resumes: from the root it sits on (or was parked off) in
     /// the full list, to the next shown one in the arrow's direction; else the top.
     fn resume(&self, col: usize, items: &[String], delta: i32) -> usize {
         let order: Vec<&str> = self

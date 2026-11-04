@@ -1,4 +1,4 @@
-//! Orchestrators on another herdr machine, grouped under a divider with the machine's label
+//! Roots on another herdr machine, grouped under a divider with the machine's label
 //! (Python `render._group_start`, `machine_divider`; the operator's choice).
 
 use super::palette::{FAINT, LINE};

@@ -1,4 +1,4 @@
-//! The view filter (all, running, needs me) and which orchestrators it shows (Python
+//! The view filter (all, running, needs me) and which roots it shows (Python
 //! `render.FILTERS`, `visible_orchs`, `orch_needs`).
 
 use super::orch_state::{Ages, orch_state, tree_done};
@@ -47,7 +47,7 @@ impl Filter {
     }
 }
 
-/// The orchestrator needs the operator: herdr reports it blocked, it has open questions, or
+/// The root needs the operator: herdr reports it blocked, it has open questions, or
 /// an agent failed.
 pub fn orch_needs(o: &Root) -> bool {
     o.herdr_status == HerdrStatus::Blocked
@@ -55,7 +55,7 @@ pub fn orch_needs(o: &Root) -> bool {
         || o.agents.iter().any(|a| a.status == Status::Failed)
 }
 
-/// The orchestrators the view's filter shows, in order.
+/// The roots the view's filter shows, in order.
 pub fn visible_orchs<'a>(swarm: &'a Swarm, view: &View) -> Vec<&'a Root> {
     let running = |o: &Root| {
         orch_state(o, 0.0, Some(Ages::of(view, swarm))).st != Status::Stale

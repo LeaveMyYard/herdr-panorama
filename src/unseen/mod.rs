@@ -1,6 +1,6 @@
 //! What the operator has not seen yet (Python `unseen.py`, design turn 6): a new failure, a new
 //! question or a finished agent marks that agent unseen until the operator clicks it, presses
-//! Enter on it, docks next to its orchestrator, or moves herdr's focus onto the orchestrator's
+//! Enter on it, docks next to its root, or moves herdr's focus onto the root's
 //! pane. The views pulse unseen cards.
 //!
 //! The state lives in one JSON file under panorama's state directory ([`store`]), shared by

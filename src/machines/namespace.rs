@@ -18,8 +18,8 @@ pub fn local_id(pane_id: &str, machine_id: &str) -> String {
         .to_owned()
 }
 
-/// Every orchestrator gets its machine (`machine_id` for identity and commands, `machine` the
-/// label for display) and `<machine id>:` ids. The inbox is local, so remote orchestrators
+/// Every root gets its machine (`machine_id` for identity and commands, `machine` the
+/// label for display) and `<machine id>:` ids. The inbox is local, so remote roots
 /// carry no inbox questions; panorama never docks into a remote server.
 pub fn namespace(mut swarm: Swarm, machine: &Machine) -> Swarm {
     let p = prefix(machine);

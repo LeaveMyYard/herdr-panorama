@@ -1,6 +1,6 @@
 //! The docked panel (designs 3a and 9e, turn 10's focus look; Python `render.dock_panel`):
-//! a header line, one entry per orchestrator the filter shows, `+ New agent`, and the
-//! footer. Every entry is a click target for its orchestrator; its `?N` answers it.
+//! a header line, one entry per root the filter shows, `+ New agent`, and the
+//! footer. Every entry is a click target for its root; its `?N` answers it.
 
 mod chrome;
 mod items;

@@ -1,4 +1,4 @@
-//! One orchestrator's entry in the docked list (swarm-dock.js `vA` with 9e's tiles, turn 8's
+//! One root's entry in the docked list (swarm-dock.js `vA` with 9e's tiles, turn 8's
 //! waiting and stale; Python `render.dock_row`): its background, line 1 (tab number, state
 //! tile, name, `?N` and its state), line 2 (its direct subagents' tiles and counts, or for
 //! the docked entry only the counts), and the docked entry's list below (`items`).

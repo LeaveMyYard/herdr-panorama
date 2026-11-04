@@ -10,7 +10,7 @@ use crate::view::orch_state::{Ages, orch_state};
 use crate::view::palette::{DIM, status};
 use crate::view::text::ago;
 
-/// One orchestrator as its docked entry shows it.
+/// One root as its docked entry shows it.
 #[derive(Debug)]
 pub struct DockState<'a> {
     pub st: Status,

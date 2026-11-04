@@ -16,7 +16,7 @@ pub struct Pods<'a> {
     pub max_n: usize,
     /// The agent whose pod is bracketed.
     pub sel_agent: Option<&'a str>,
-    /// The orchestrator's pane: each pod is then a click target selecting its agent.
+    /// The root's pane: each pod is then a click target selecting its agent.
     pub orch: Option<&'a str>,
 }
 

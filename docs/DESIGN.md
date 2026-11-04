@@ -1810,8 +1810,9 @@ per-tab had proven itself).
   start that runs the Rust viewer removes it. While the probe runs (about 10 ms, at most 3 s) the pane is
   not yet `panorama panel` to `process-info`; the core's own panels count by id, so only a +
   New agent tab's panel (started by `layout.apply`) is in that window, and the duplicate rule
-  covers it. Removing the binary rolls back, panel by panel (old and new
-  viewers share one core). The core knows the Rust process as a panel as before: `pane
+  covers it. Removing the binary rolls back once the home view restarts: since protocol 2.0
+  a Rust core and a Python panel no longer share a major, so the core and its panels must come
+  from the same binary (`docs/protocol/panel-v2.md`, "Version 1"). The core knows the Rust process as a panel as before: `pane
   process-info` shows `…/panorama panel`. Checked on an isolated herdr
   0.9.3 (own HOME and socket), with two then eight orchestrator tabs:
   - placement (left of the agent, 46 columns plus the frame), the record, no doubling;

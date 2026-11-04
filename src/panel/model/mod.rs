@@ -2,7 +2,7 @@
 //! `_status`, `herdr_focus`, and the parts of `SwarmApp.apply` a panel uses). No IO: the
 //! actor feeds it and paints it.
 //!
-//! The panel's one selected row is the orchestrator herdr shows (`state.visible_tabs`, else
+//! The panel's one selected row is the root herdr shows (`state.visible_tabs`, else
 //! the one whose pane has the focus), the same in every tab's panel. A filter that hides it
 //! leaves no row selected, and it is selected again as soon as the filter shows it.
 
@@ -39,7 +39,7 @@ pub struct Panel {
     /// Tab id -> its panel's pane, where a switch to that tab puts the keyboard.
     pub panes_of: HashMap<String, String>,
     pub(crate) herdr_focused_pane: Option<String>,
-    /// The orchestrator herdr shows, as last applied to the selection.
+    /// The root herdr shows, as last applied to the selection.
     pub(crate) active: Option<String>,
     /// What the panel's input keeps between events (arming, a pending switch, settings).
     pub(crate) input: InputState,

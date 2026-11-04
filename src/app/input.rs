@@ -1,5 +1,5 @@
 //! The app's input (Python `SwarmApp`'s bindings and actions): the shared keys and clicks
-//! ([`crate::ui::input`]) with what the app decides itself: Enter on an orchestrator goes to
+//! ([`crate::ui::input`]) with what the app decides itself: Enter on a root goes to
 //! its pane only in the home view, `g` goes there and closes a popup, a filter applies here,
 //! Esc closes only a popup, z zooms the home view, and the wheel scrolls the columns sideways.
 //! It returns the [`Effect`]s its actor carries out; nothing here does IO.
@@ -28,7 +28,7 @@ impl Host for App {
         self.home_mode
     }
 
-    /// g: the selected orchestrator's pane, its agents seen at once (Python `action_goto`
+    /// g: the selected root's pane, its agents seen at once (Python `action_goto`
     /// without the moving cockpit, Q187). The actor focuses it; a popup then closes.
     fn goto(&mut self, _switch: bool, now: Instant) -> Vec<Effect> {
         let mut out = vec![];
@@ -58,7 +58,7 @@ impl Host for App {
         out
     }
 
-    /// n: + New agent in the selected orchestrator's directory, else any orchestrator's
+    /// n: + New agent in the selected root's directory, else any root's
     /// (the actor falls back to the home directory).
     fn new_agent(&mut self) -> Vec<Effect> {
         let cwd = self
@@ -67,7 +67,7 @@ impl Host for App {
         vec![Effect::NewAgent { cwd }]
     }
 
-    /// A filter chosen here: the selection it hides is parked, and with no orchestrator
+    /// A filter chosen here: the selection it hides is parked, and with no root
     /// selected the first shown one is (Python `_apply_filter`).
     fn set_filter(&mut self, f: Filter, _now: Instant) -> Vec<Effect> {
         self.view.filter = f;
@@ -86,7 +86,7 @@ impl Host for App {
 }
 
 impl App {
-    /// The cursor's orchestrator's directory, if it has one.
+    /// The cursor's root's directory, if it has one.
     fn selection_orch_cwd(&self) -> Option<String> {
         let o = panorama_core::view::nav::find_orch(&self.swarm, self.view.orch.as_deref());
         o.and_then(|o| o.cwd.clone())

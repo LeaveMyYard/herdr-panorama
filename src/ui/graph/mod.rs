@@ -25,18 +25,18 @@ pub struct Graph {
     pub swarm: Swarm,
     /// What is drawn: the selection, the filter, the unseen marks, the scroll.
     pub view: View,
-    /// Where the arrows resume from while no orchestrator is selected.
+    /// Where the arrows resume from while no root is selected.
     pub(crate) parked: Option<String>,
 }
 
 impl Graph {
-    /// The selectable rows: the orchestrators the filter shows, then `+ New agent`.
+    /// The selectable rows: the roots the filter shows, then `+ New agent`.
     pub fn shown_ids(&self) -> Vec<String> {
         selection::shown_ids(&self.swarm, &self.view)
     }
 
     /// After a refresh or a filter change: every selection that still exists stays, an
-    /// orchestrator no longer shown is parked (Python `SwarmApp.resolve`).
+    /// root no longer shown is parked (Python `SwarmApp.resolve`).
     pub(crate) fn resolve(&mut self) {
         if let Some(p) = selection::resolve(&self.swarm, &mut self.view) {
             self.parked = Some(p);
@@ -50,7 +50,7 @@ impl Graph {
         self.view.hcol = None;
     }
 
-    /// Where the arrows resume from while no orchestrator is selected.
+    /// Where the arrows resume from while no root is selected.
     pub fn parked(&self) -> Option<&str> {
         self.parked.as_deref()
     }

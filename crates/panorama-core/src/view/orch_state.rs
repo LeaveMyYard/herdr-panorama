@@ -1,4 +1,4 @@
-//! An orchestrator's state as the graph's cards and the filters read it (Python
+//! A root's state as the graph's cards and the filters read it (Python
 //! `render.state_of`, `orch_state`, `is_stale`): attention > working > reviewing > waiting >
 //! stale | idle, and done when everything is.
 

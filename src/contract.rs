@@ -11,8 +11,9 @@
 /// The panel contract this binary implements.
 ///
 /// 2: the core protocol's major 2 (`docs/protocol/panel-v2.md`, the uniform agent tree). A
-/// binary on 1 speaks 1.x, which this checkout's core no longer answers, so it is passed over
-/// for the Python viewer, which speaks 1.x to its own core.
+/// binary on 1 speaks 1.x, which this checkout's Rust core no longer answers, so it is passed
+/// over for the Python viewer, which speaks 1.x to the Python core that `scripts/tui` starts
+/// for the same binary.
 pub const PANEL: u32 = 2;
 
 /// The Claude Code side's contract (`panorama contract claude`): what `hooks/run-hook.sh` and
@@ -40,8 +41,11 @@ pub const CLAUDE: u32 = 2;
 /// `claude <n>`.
 ///
 /// 2: the core serves protocol 2.x, the major of `panel` 2, so the view and the panels are
-/// both Rust or both Python. Python's `open` (herdr's open action, always the venv's) still
-/// says 1.x as an open key, which a 2.x core answers ([`crate::proto::key_compatible`]).
+/// both Rust or both Python while both probes give the same answer. A binary changed under a
+/// running core, or one probe timing out, mixes them: the core refuses the other major's
+/// panels (`docs/protocol/panel-v2.md`, "Version 1"; a restart of the home view fixes it).
+/// Python's `open` (herdr's open action, always the venv's) still says 1.x as an open key,
+/// which a 2.x core answers ([`crate::proto::key_compatible`]).
 pub const TUI: u32 = 2;
 
 /// The answer to `panorama contract [name]`: the panel's bare number without a name,

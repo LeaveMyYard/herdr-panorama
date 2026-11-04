@@ -116,7 +116,16 @@ only in `state.swarm`:
   `worktree`, `pct` and `flavour`, and each agent has `phases` (indices into its thread's);
 - 1.1 added `panels` and `open`, 1.2 `focusing`, 1.3 `filter`, 1.4 the titles.
 
-A 2.x viewer refuses a 1.x core and the other way round, except for the open key above. The
-launchers keep the two apart: `scripts/panel` and `scripts/tui` run the Rust binary only when
-it answers contract 2 (`panorama contract`, `panorama contract tui`), so the view and its panels
-are both Rust (2.x) or both Python (1.x).
+A core refuses the `hello` of a viewer with the other major (`{"error": {"message":
+"protocol"}}`), except for the open key above. The launchers keep the two apart only when their
+probes agree: `scripts/tui` (when the home view, and with it the core, starts) and
+`scripts/panel` (each time a panel starts, possibly hours later) run the Rust binary only when
+it answers contract 2 (`panorama contract`, `panorama contract tui`). They disagree when:
+- the plugin root's binary is built, replaced or removed while a core runs (an upgrade from a
+  build before 2.0, or `cargo build --release` under a running Python view);
+- one probe misses its 2 s limit on a loaded machine and falls back alone.
+
+A refused panel then shows the no-core notice and keeps reconnecting until its 10-minute limit.
+A Rust panel says why once in `<state dir>/panel-launch.log`; a Python one only records it.
+**After an upgrade across 2.0, restart the panorama home view** (quit it, or close its tab), so
+the core and the panels start from the same binary.
