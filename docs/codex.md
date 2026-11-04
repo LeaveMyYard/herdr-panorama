@@ -179,12 +179,13 @@ your Codex configuration, delete it there yourself; Panorama never edits Codex
 configuration. Until you do, `panorama mcp` keeps answering for the rest of this
 release: `report_thread` is still listed, records nothing and answers
 `{"status": "ignored", "reason": "threads were removed"}`, whatever caller
-`_meta.threadId` it carries. `panorama emit` likewise records nothing, says so on
-stderr and exits 0. A later release removes both.
+`_meta.threadId` it carries. The Rust `panorama emit` likewise records nothing,
+says so on stderr and exits 0. A later release removes both.
 
 Report files an earlier version wrote under the state directory's
-`herdr-panorama/events/` are left in place; nothing writes them any more, and
-you can delete them.
+`herdr-panorama/events/` are left in place; the Rust binary no longer writes
+them (only the frozen Python entrypoint's `emit` still does), and you can
+delete them.
 
 ## Compatibility and limits
 

@@ -301,9 +301,11 @@ The view works without it. The plugin adds, for the sessions where it is install
 instructions, to call an MCP tool, `report_thread`, and offered `panorama emit` to declare
 threads by hand. Panorama now shows every agent and subagent as one tree, named by its spawner,
 so both are gone: the instruction is no longer sent, `report_thread` is still listed but
-records nothing (it answers `ignored`), and `panorama emit` records nothing, says so on stderr
-and exits 0. A later release removes them. Report files earlier versions wrote under
-`${XDG_STATE_HOME:-~/.local/state}/herdr-panorama/events/` are left in place; you can delete them.
+records nothing (it answers `ignored`), and the Rust `panorama emit` records nothing, says so
+on stderr and exits 0. (The frozen Python entrypoint's `panorama emit` still writes, for its
+own legacy thread view.) A later release removes them. Report files under
+`${XDG_STATE_HOME:-~/.local/state}/herdr-panorama/events/` are left in place; the Rust view no
+longer needs them, and you can delete them.
 
 ```
 /plugin install herdr-panorama --marketplace LeaveMyYard/herdr-panorama

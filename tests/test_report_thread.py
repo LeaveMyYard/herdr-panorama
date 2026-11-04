@@ -1,7 +1,6 @@
 """report_thread, deprecated: listed but inert over stdio and in process; the explicit channel's
 merge and compaction (still written by the frozen Python ``panorama emit``)."""
 
-import json
 import os
 import sys
 
