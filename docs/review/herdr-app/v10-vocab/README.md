@@ -1,6 +1,6 @@
 # V10 PR1 evidence: shared state vocabulary
 
-Author capture of `app/shared/state.js` at source `b6eaf656c302603188dadee366f6fa15e9e85396`, drawn by the native herdr-app renderer. The fixture is synthetic: [gallery-fixture.js](gallery-fixture.js) is a scratch-only view that imports the generated `app/mods/panorama-graph/state.js` and its `state-*.svg` copies. It runs as `mods/panorama-graph` in a temporary `HERDR_APP_HOME`, with its own HOME/XDG dirs and a private `hc` core. There's no terminal or operator content, and no layout or config was touched. File hashes, isolation facts and app status (`errors: []`) are in [provenance.json](provenance.json).
+Author capture of `app/shared/state.js` at source `c61fd2bc0e224965ba74b2b7c5e73e79ae213783` (after review round 1 fixes), drawn by the native herdr-app renderer. The fixture is synthetic: [gallery-fixture.js](gallery-fixture.js) is a scratch-only view that imports the generated `app/mods/panorama-graph/state.js` and its `state-*.svg` copies. It runs as `mods/panorama-graph` in a temporary `HERDR_APP_HOME`, with its own HOME/XDG dirs and a private `hc` core. There's no terminal or operator content, and no layout or config was touched. File hashes, isolation facts and app status (`errors: []`) are in [provenance.json](provenance.json).
 
 ![Design vs native](compare-gallery.png)
 
@@ -30,3 +30,7 @@ Known limits:
 - This PR adds no consumers. The graph is restyled in PR2, and the sidebar and Spaces in PR3.
 
 Manual check (no new automated test): a receipt with the pre-V10 inventory (71 static files, the one installed live) still validates against the new installer manifest. The new full inventory also validates. A receipt missing an old required file, or listing an unknown file, is still refused.
+
+## Reviewer evidence
+
+Independent reviewer captures from round 1 (head `a900372`, reviewer's own isolated fixture), committed by the author on the reviewer's request: [reviewer-compare.png](reviewer/reviewer-compare.png), [reviewer-panorama-0.png](reviewer/reviewer-panorama-0.png), [reviewer-spin-frames.png](reviewer/reviewer-spin-frames.png).

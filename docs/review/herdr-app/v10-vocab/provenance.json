@@ -1,8 +1,8 @@
 {
-  "source_sha": "b6eaf656c302603188dadee366f6fa15e9e85396",
+  "source_sha": "c61fd2bc0e224965ba74b2b7c5e73e79ae213783",
   "capture": "native-gallery.png",
-  "sha256": "45b903076c775c4ee17b45eb78a18b4deec50498de607984d8d1f586fdae214c",
-  "fixture": "scratch-only synthetic gallery main.js (sha256 in sources) importing the generated app/mods/panorama-graph/state.js and state-*.svg copies; mod placed as mods/panorama-graph in a temporary HERDR_APP_HOME",
+  "sha256": "ca9b077390605d2ecadc2129eeb5333e9db9bec5a7f9ab53016cc868cd6673f7",
+  "fixture": "scratch-only synthetic gallery main.js (gallery-fixture.js; sha256 in sources) importing the generated app/mods/panorama-graph/state.js and state-*.svg copies; mod placed as mods/panorama-graph in a temporary HERDR_APP_HOME",
   "isolation": {
     "temporary_home_xdg_core": true,
     "private_core_env_verified": true,
@@ -29,6 +29,6 @@
     "mods/panorama-graph/state-spin.svg": "3458b9cda635e10e6c54946ab2f945b164a7d9523d1b6cf6314421a1ea3d8772",
     "mods/panorama-graph/state-tilde.svg": "30b737254e8d285fe0a0c120a69d649c31a09b19f73b9dbb16c623ae94c9b318",
     "mods/panorama-graph/state-x.svg": "632f7bd7089021ca02f39dd4871240a726b1e4d22126014a84d57ddb467f799b",
-    "mods/panorama-graph/state.js": "f3b127ebb570a6c6984027f351434aa225a8d2a6917d1171e7650ab7c1bb10ad"
+    "mods/panorama-graph/state.js": "478b1e1e00d2b8487a28d9acf8ce9337be9b62391e27471ad99182d9ba9acb9a"
   }
 }
