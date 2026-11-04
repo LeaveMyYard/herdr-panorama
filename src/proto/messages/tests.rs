@@ -13,7 +13,7 @@ fn the_viewers_messages_are_the_protocols() {
     .to_json();
     assert_eq!(
         hello,
-        json!({"hello": {"protocol": "1.3", "role": "panel", "pane_id": "w1:p9", "tab_id": null}})
+        json!({"hello": {"protocol": "1.4", "role": "panel", "pane_id": "w1:p9", "tab_id": null}})
     );
     assert_eq!(
         ToCore::Seen(vec!["a".into()]).to_json(),

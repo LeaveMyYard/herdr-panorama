@@ -20,6 +20,8 @@
       "pane_id": "core:t10",
       "tab_id": null,
       "tab_label": "Read-only check",
+      "title": "Read-only check",
+      "title_source": "tab",
       "session_id": null,
       "herdr_status": "working",
       "workspace_id": null,

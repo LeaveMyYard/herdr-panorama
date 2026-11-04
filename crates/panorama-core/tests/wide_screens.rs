@@ -23,7 +23,23 @@ fn swarm_of(run: &Value, cond: &str) -> Swarm {
     let name = input.trim_start_matches("inputs/scenario-");
     let mut snap = fixture(&format!("model/{name}"))["snapshots"][format!("+0m{cond}")].clone();
     snap.as_object_mut().unwrap().remove("counts");
-    serde_json::from_value(snap).unwrap()
+    let mut swarm: Swarm = serde_json::from_value(snap).unwrap();
+    titled(&mut swarm);
+    swarm
+}
+
+/// The titles the Rust collector gives this captured scenario (U1a; Python's model has none):
+/// every tab label is operator-set, and every subagent has its spawner's description (the
+/// collector's side is checked by `tests/collect_demo.rs` `roots_and_agents_carry_their_titles`).
+fn titled(swarm: &mut Swarm) {
+    for o in &mut swarm.orchestrators {
+        o.title = o.tab_label.clone();
+        for t in &mut o.threads {
+            for a in t.agents.iter_mut().filter(|a| !a.id.starts_with("main:")) {
+                a.title = a.description.clone();
+            }
+        }
+    }
 }
 
 /// What the keys left before a snap.

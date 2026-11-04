@@ -29,8 +29,8 @@ impl Panel {
             out.push(Effect::GotoRemote {
                 machine_id,
                 machine,
+                label: o.name().to_owned(),
                 pane: o.pane_id,
-                label: o.tab_label,
             });
             return out;
         }
@@ -41,8 +41,8 @@ impl Panel {
         // its agents are seen once herdr confirms the pane is still there (the actor); while a
         // switch runs, that is all it does (`switch` makes no second one), as in Python
         out.push(Effect::Goto {
+            label: o.name().to_owned(),
             pane: o.pane_id,
-            label: o.tab_label,
             keep_focus,
             seen: ids,
         });

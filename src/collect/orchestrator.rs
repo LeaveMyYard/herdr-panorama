@@ -11,6 +11,7 @@ use super::py::{py_str, str_of, truthy, truthy_str};
 use super::sessions::since;
 use super::text::strip_inbox_mark;
 use super::threads::{finish::flavour, main_card::main_session_thread, threads_of};
+use super::title;
 use herdr_agent_kit::agent_procs::{Liveness, NoProcs};
 use herdr_agent_kit::agent_session::Ts;
 use herdr_agent_kit::agent_session::claude::wire::{self, ToolCall};
@@ -54,6 +55,8 @@ fn bare(a: &Map<String, Value>, sid: Option<&Value>) -> Orchestrator {
         pane_id: truthy_str(a, "pane_id").unwrap_or_default(),
         tab_id: opt_id(a.get("tab_id")),
         tab_label: String::new(),
+        title: String::new(),
+        title_source: String::new(),
         session_id: opt_id(sid),
         herdr_status: HerdrStatus::from_code(
             &truthy_str(a, "agent_status").unwrap_or_else(|| "unknown".into()),
@@ -106,6 +109,29 @@ fn label(
     } else {
         label
     }
+}
+
+/// The Claude root's title from its herdr names and its session (§2.2); `None` leaves the
+/// last rung to the caller, which knows the tab's number.
+fn root_title(
+    a: &Map<String, Value>,
+    tab: &Map<String, Value>,
+    sess: Option<&Session>,
+    per_tab: usize,
+) -> Option<(String, &'static str)> {
+    let titles = sess.map(|s| s.conversation().titles());
+    let prompt = sess.and_then(|s| s.conversation().prompts().next().map(|p| p.text));
+    title::root(&title::RootInputs {
+        kind: str_of(a, "agent").unwrap_or("claude"),
+        pane_name: str_of(a, "name"),
+        tab_label: strip_inbox_mark(str_of(tab, "label").unwrap_or("")),
+        per_tab,
+        session: titles.map_or([None; 3], |t| {
+            [t.custom.as_deref(), t.agent.as_deref(), t.ai.as_deref()]
+        }),
+        first_prompt: prompt,
+        terminal_title: str_of(a, "terminal_title_stripped"),
+    })
 }
 
 impl Collector {
@@ -174,6 +200,9 @@ impl Collector {
         o.inbox_texts = mine.iter().map(|q| q.question.clone()).collect();
         let scanner = key.as_ref().and_then(|k| self.sessions.get(k));
         o.tab_label = label(a, tab, scanner.map(|s| s.session()), &o.pane_id, per_tab);
+        if let Some((t, src)) = root_title(a, tab, scanner.map(|s| s.session()), per_tab) {
+            (o.title, o.title_source) = (t, src.to_owned());
+        }
         let (Some(key), Some(scanner)) = (key.clone(), scanner) else {
             return o;
         };

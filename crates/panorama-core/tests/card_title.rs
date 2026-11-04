@@ -1,6 +1,6 @@
 //! An agent card's title (role, id, model) never runs into its right-aligned state label, at
 //! any card width: it is cut with "…" (Python tests/test_card_title.py; the operator saw
-//! `· opurunning`).
+//! `· opurunning`). A titled card (U1a) leads with its title; role, id and model go below.
 
 mod support;
 
@@ -141,4 +141,115 @@ fn a_title_that_fits_exactly_is_kept_whole() {
         cut.ends_with('…') && full.starts_with(cut.trim_end_matches('…')),
         "{cut:?}"
     );
+}
+
+/// Two titled agents (the second spawned by the first) under a titled orchestrator.
+fn titled() -> Swarm {
+    serde_json::from_value(json!({"orchestrators": [{
+        "pane_id": "w1:p1", "tab_id": "t1", "tab_label": "orch", "session_id": "s",
+        "title": "Billing API", "title_source": "tab", "tab_no": 1,
+        "threads": [{"id": "t", "name": "work", "source": "turn", "agents": [
+            {"id": "a6c8a7b1", "title": "Author the invoice export", "title_source": "spawner",
+             "role": "general-purpose", "model": "opus 4.5", "status": "run", "started": 0.0},
+            {"id": "b2c3d4e5", "title": "Review the diff", "title_source": "spawner",
+             "role": "reviewer", "model": "sonnet 4.5", "status": "run", "parent": "a6c8a7b1",
+             "depth": 2, "started": 0.0},
+        ]}],
+    }]}))
+    .unwrap()
+}
+
+fn titled_view(agent: &str) -> View {
+    View {
+        orch: Some("w1:p1".into()),
+        thread: Some("t".into()),
+        agent: Some(agent.into()),
+        focus: 2,
+        now: 3600.0,
+        ..View::default()
+    }
+}
+
+#[test]
+fn a_titled_card_leads_with_its_title_and_keeps_role_id_and_model_secondary() {
+    let rows = rows(&titled(), &titled_view("a6c8a7b1"), 200);
+    let text = rows.join("\n");
+    assert!(text.contains("Claude Code · Bill…"), "{text}"); // the title, not `orch`
+    let at = rows
+        .iter()
+        .position(|r| r.contains("Author the invoice export"))
+        .expect("the selected card's title row");
+    assert!(!rows[at].contains("general-purpose"), "{}", rows[at]);
+    assert!(
+        rows[at + 1..at + 4]
+            .iter()
+            .any(|r| r.contains("general-purpose a6c8a7b · opus 4.5")),
+        "{text}"
+    );
+    // unselected: its title on its row, its model among the tags on the border below
+    let kid = rows
+        .iter()
+        .position(|r| r.contains("Review the diff"))
+        .expect("the folded card's title row");
+    assert!(!rows[kid].contains("reviewer b2c3d4e"), "{}", rows[kid]);
+    assert!(rows[kid + 1].contains(" sonnet 4.5 "), "{}", rows[kid + 1]);
+}
+
+#[test]
+fn an_untitled_card_still_reads_role_and_id() {
+    // a 1.3 core or the Python core sends no titles: the cards read as before
+    let mut sw = titled();
+    for a in &mut sw.orchestrators[0].threads[0].agents {
+        a.title.clear();
+    }
+    sw.orchestrators[0].title.clear();
+    let text = rows(&sw, &titled_view("b2c3d4e5"), 200).join("\n");
+    assert!(text.contains("general-purpose a6c8a7b"), "{text}");
+    assert!(text.contains("Claude Code · orch "), "{text}");
+}
+
+#[test]
+fn narrow_and_dock_rows_show_titles() {
+    let mut sw = titled();
+    sw.docked = Some("w1:p1".into());
+    let v = titled_view("a6c8a7b1");
+    let narrow = panorama_core::view::render_narrow(&sw, &v, 70, 45, None, NO_SESSIONS).text();
+    let row = narrow
+        .lines()
+        .find(|r| r.contains("Author the invoice export"))
+        .unwrap_or_else(|| panic!("{narrow}"));
+    assert!(
+        row.contains("Author the invoice export general-purpose a6c8a7b"),
+        "{row}"
+    );
+    let dock = panorama_core::view::render_dock(&sw, &v, 46, 45, None, NO_SESSIONS).text();
+    assert!(dock.contains("Author the invoice"), "{dock}");
+    assert!(!dock.contains("general-purpose a6c"), "{dock}");
+}
+
+#[test]
+fn a_selected_titled_card_keeps_its_gap_to_the_card_below() {
+    // its `role id · model` line is counted in the layout: the next card moves down by one row
+    let sibling = |sw: &mut Swarm| {
+        let mut b = sw.orchestrators[0].threads[0].agents[1].clone();
+        b.parent = None;
+        b.depth = 1;
+        sw.orchestrators[0].threads[0].agents[1] = b;
+    };
+    let mut titled_sw = titled();
+    sibling(&mut titled_sw);
+    let mut plain = titled_sw.clone();
+    for a in &mut plain.orchestrators[0].threads[0].agents {
+        a.title.clear();
+    }
+    let v = titled_view("a6c8a7b1");
+    let at = |sw: &Swarm, text: &str| {
+        let rows = rows(sw, &v, 200);
+        let at = rows.iter().position(|r| r.contains(text)).expect(text);
+        (at, rows[at - 1].clone())
+    };
+    let (t_at, t_top) = at(&titled_sw, "Review the diff");
+    let (p_at, _) = at(&plain, "reviewer b2c3d4e");
+    assert_eq!(t_at, p_at + 1, "the gap row was eaten");
+    assert!(t_top.contains('╭'), "{t_top}");
 }

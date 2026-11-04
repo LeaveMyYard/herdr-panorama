@@ -3,7 +3,7 @@
 
 use super::column::Place;
 use crate::model::{Agent, Status, Thread};
-use crate::view::agent_text::{age_of, role_label, short_id};
+use crate::view::agent_text::{about, age_of, role_label, short_id};
 use crate::view::cards::Area;
 use crate::view::cards::actions::actions;
 use crate::view::cards::boxes::{border, rbox};
@@ -45,7 +45,7 @@ pub fn agent_card(cv: &mut Screen, p: Place, a: &Agent, c: AgentCtx, view: &View
         return folded(cv, p, a, c, view, Target::Agent(r));
     }
     let Place { x, y, w, .. } = p;
-    let lines = agent_detail_lines(a, w - 6, view.now, view.frame);
+    let lines = detail_lines(a, w - 6, view);
     let hh = 6 + lines.len() as i32;
     frame(
         cv,
@@ -72,6 +72,16 @@ pub fn agent_card(cv: &mut Screen, p: Place, a: &Agent, c: AgentCtx, view: &View
         &[age_of(a, view.now), calls(a), phase],
     );
     hh
+}
+
+/// The unfolded card's detail lines in `w` cells: a titled agent's `role id · model` first,
+/// then [`agent_detail_lines`]. The layout sizes the card from these too.
+pub fn detail_lines(a: &Agent, w: i32, view: &View) -> Vec<Vec<Seg>> {
+    let mut lines = agent_detail_lines(a, w, view.now, view.frame);
+    if let Some(about) = about(a) {
+        lines.insert(0, vec![Seg::new(trunc(&about, w), DIM)]);
+    }
+    lines
 }
 
 /// An unselected agent: its pod, title and activity on one line, its age and calls below.
@@ -111,7 +121,9 @@ fn folded(cv: &mut Screen, p: Place, a: &Agent, c: AgentCtx, view: &View, target
         let rx = x + w - 2 - right.chars().count() as i32;
         cv.segs(rx, y + 1, &[Seg::new(right, DIM).bold()]);
     }
-    tags(cv, x, y + 2, w, &[age_of(a, view.now), calls(a)]);
+    // titled: the model joins the tags (the role and id are in the unfolded card)
+    let model = a.model.clone().filter(|_| !a.title.is_empty());
+    tags(cv, x, y + 2, w, &[model, age_of(a, view.now), calls(a)]);
     3
 }
 
@@ -134,8 +146,11 @@ fn frame(cv: &mut Screen, card: Area, a: &Agent, view: &View, look: (Target, boo
     apod(cv, x + 2, y + 1, a, view.frame, false);
 }
 
-/// Role, short id and model.
+/// Its title; untitled (an older producer): role, short id and model.
 fn title(a: &Agent, fg: Rgb) -> Vec<Seg> {
+    if !a.title.is_empty() {
+        return vec![Seg::new(a.title.clone(), fg).bold()];
+    }
     let model = a
         .model
         .as_deref()

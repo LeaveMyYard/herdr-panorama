@@ -2,14 +2,13 @@
 //! for all depth columns, scrolled together, its cards joined by links within it, and to the
 //! thread card on the left.
 
-use super::agent_card::{AgentCtx, agent_card};
+use super::agent_card::{AgentCtx, agent_card, detail_lines};
 use super::column::Place;
 use super::column::TALL;
 use super::fin_card::fin_card;
 use super::layout::Columns;
 use super::place::{Tree, place_tree};
 use crate::model::{Thread, TreeKids};
-use crate::view::cards::details::agent_detail_lines;
 use crate::view::cards::link::{Link, link};
 use crate::view::nav::{TreeEntry, find_agent};
 use crate::view::palette::FAINT;
@@ -46,7 +45,7 @@ impl TreeCtx<'_> {
                 if self.view.agent.as_deref() == Some(e.ident.as_str()) && self.vis(e.depth) =>
             {
                 let w = self.cols.w(1 + e.depth) - 6;
-                6 + agent_detail_lines(a, w, self.view.now, self.view.frame).len() as i32
+                6 + detail_lines(a, w, self.view).len() as i32
             }
             _ => 3,
         }

@@ -9,6 +9,13 @@ use serde::{Deserialize, Serialize};
 pub struct Agent {
     /// Its id, unique in the swarm.
     pub id: String,
+    /// What the views call it (plan §2.2): its spawner's name for it, else its first prompt,
+    /// its type or its id. Empty from a producer that predates titles: views fall back.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub title: String,
+    /// Which rule gave the title (`spawner`, `prompt`, `type`, `id`); drives no logic.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub title_source: String,
     #[serde(default)]
     pub description: String,
     #[serde(default = "agent_role")]
@@ -81,6 +88,8 @@ impl Default for Agent {
     fn default() -> Self {
         Self {
             id: String::new(),
+            title: String::new(),
+            title_source: String::new(),
             description: String::new(),
             role: agent_role(),
             agent_type: None,

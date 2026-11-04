@@ -6,7 +6,7 @@ use super::state::{DockState, thread_glyph};
 use super::tiles::{agent_glyphs, glyph_colour, tile};
 use super::tree_rows::{SpawnRow, spawn_rows};
 use crate::model::{Agent, BgTask, Orchestrator, Status, Thread, TreeKids};
-use crate::view::agent_text::{role_label, short_id};
+use crate::view::agent_text::name;
 use crate::view::anim::{clock, glyph};
 use crate::view::palette::{DIM, FAINT, FG, LINE};
 use crate::view::screen::Screen;
@@ -102,7 +102,7 @@ fn draw_spawn(cv: &mut Screen, yy: i32, row: &SpawnRow, below: &[&Agent], frame:
     let a = row.agent;
     let g = glyph(a, frame);
     let room = (xr - width(&segs) - 1 - (x + g.chars().count() as i32 + 1)).max(1);
-    let name = trunc(&format!("{} {}", role_label(a), short_id(a)), room);
+    let name = trunc(&name(a), room);
     let att = a.status.needs_operator();
     let glyph_seg = Seg::new(g, glyph_colour(&a.status, frame))
         .bold_if(att)

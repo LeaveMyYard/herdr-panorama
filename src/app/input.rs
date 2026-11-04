@@ -44,13 +44,13 @@ impl Host for App {
             out.push(Effect::GotoRemote {
                 machine_id,
                 machine,
+                label: o.name().to_owned(),
                 pane: o.pane_id,
-                label: o.tab_label,
             });
         } else {
             out.push(Effect::Goto {
+                label: o.name().to_owned(),
                 pane: o.pane_id,
-                label: o.tab_label,
                 keep_focus: false,
                 seen: vec![],
             });

@@ -97,7 +97,7 @@ async fn hello_welcome_state_and_the_viewers_messages() {
     let mut core = Peer::accept(&listener).await;
     assert_eq!(
         core.recv().await,
-        json!({"hello": {"protocol": "1.3", "role": "panel", "pane_id": "w1:p9", "tab_id": "w1:t2"}})
+        json!({"hello": {"protocol": "1.4", "role": "panel", "pane_id": "w1:p9", "tab_id": "w1:t2"}})
     );
     // before the welcome nothing goes out, and seen marks wait
     assert!(!client.focusing("w1:p3").await);

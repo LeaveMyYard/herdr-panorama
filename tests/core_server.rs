@@ -92,7 +92,7 @@ async fn hello_welcome_state_seen_and_an_old_major_refused() {
     )
     .await;
     let got = lines(&mut v, 2).await;
-    assert_eq!(got[0], json!({"welcome": {"protocol": "1.3"}}));
+    assert_eq!(got[0], json!({"welcome": {"protocol": "1.4"}}));
     assert_eq!(got[1]["state"]["unseen"], json!({"a5": "done"}));
     assert_eq!(got[1]["state"]["visible_tabs"], json!(["w1:t3"]));
     assert!(
@@ -113,7 +113,7 @@ async fn hello_welcome_state_seen_and_an_old_major_refused() {
         .unwrap();
     assert_eq!(
         lines(&mut old, 1).await[0],
-        json!({"error": {"message": "protocol", "protocol": "1.3"}})
+        json!({"error": {"message": "protocol", "protocol": "1.4"}})
     );
     assert!(closed(&mut old).await);
     c.stop();
@@ -416,7 +416,7 @@ async fn the_open_key_is_answered_and_gets_no_state() {
     assert_eq!(
         lines(&mut key, 2).await,
         [
-            json!({"welcome": {"protocol": "1.3"}}),
+            json!({"welcome": {"protocol": "1.4"}}),
             json!({"opened": {"result": "panel"}})
         ]
     );
