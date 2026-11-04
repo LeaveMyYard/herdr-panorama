@@ -401,3 +401,223 @@ fn a_foreign_generation_staging_file_refuses_start_without_changing_bytes() {
     );
     assert!(!installed.data.join("calls").exists());
 }
+
+fn ensure_without_processes(install: &Installed) -> std::process::Output {
+    // A zero process limit makes the validated writer spawn fail like an overloaded host.
+    let command = install.command();
+    let mut shell = Command::new("bash");
+    shell
+        .env_clear()
+        .envs(command.get_envs().filter_map(|(k, v)| Some((k, v?))));
+    shell
+        .args(["-c", "ulimit -u 0 && exec \"$0\" \"$@\""])
+        .arg(command.get_program())
+        .args(["app-feed", "--ensure", "--app-home"])
+        .arg(&install.app);
+    shell.output().unwrap()
+}
+
+fn ledger_path(install: &Installed) -> std::path::PathBuf {
+    install.app.join(format!(
+        "data/panorama/runtime/{}/start.json",
+        app_feed_support::ID
+    ))
+}
+
+fn write_ledger(install: &Installed, failures: u64, retry_at_ms: u64) {
+    let path = ledger_path(install);
+    let value = json!({"v":1,"install_id":app_feed_support::ID,"failures":failures,"retry_at_ms":retry_at_ms});
+    std::fs::write(&path, serde_json::to_vec(&value).unwrap()).unwrap();
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+}
+
+fn disabled(install: &Installed) -> bool {
+    let home = Home::open(&install.app).unwrap();
+    let r = Receipt::read(&home).unwrap();
+    r.control(&home).unwrap().0.disabled
+}
+
+#[test]
+fn a_transient_spawn_failure_backs_off_then_retries_without_disabling() {
+    let install = Installed::new();
+    let failed = ensure_without_processes(&install);
+    let stderr = String::from_utf8_lossy(&failed.stderr);
+    assert_eq!(failed.status.code(), Some(1), "{stderr}");
+    assert!(stderr.contains("transient start failure 1/8"), "{stderr}");
+    assert!(!disabled(&install));
+    let ledger: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(ledger_path(&install)).unwrap()).unwrap();
+    assert_eq!(ledger["failures"], 1);
+    // Within the backoff a later ensure defers without spawning anything.
+    let deferred = install.ensure();
+    assert!(String::from_utf8_lossy(&deferred.stderr).contains("writer start deferred"));
+    assert!(!install.data.join("calls").exists());
+    assert!(!disabled(&install));
+    write_ledger(&install, 1, 0);
+    let retried = install.ensure();
+    assert!(
+        retried.status.success(),
+        "{}",
+        String::from_utf8_lossy(&retried.stderr)
+    );
+    assert!(!ledger_path(&install).exists());
+    install.wait_feed(|v| v["v"].is_u64());
+    let (_home, _r, _lock) = install.quiesce().unwrap();
+}
+
+#[test]
+fn the_bounded_transient_failure_count_disables_the_generation() {
+    let install = Installed::new();
+    write_ledger(&install, 7, 0);
+    let failed = ensure_without_processes(&install);
+    let stderr = String::from_utf8_lossy(&failed.stderr);
+    assert!(
+        stderr.contains("8 consecutive transient start failures"),
+        "{stderr}"
+    );
+    assert!(disabled(&install));
+    assert!(!install.ensure().status.success());
+}
+
+#[test]
+fn an_ambiguous_start_ledger_refuses_start_without_changing_control() {
+    for (name, bytes) in [
+        ("start.json", br#"{"v":1,"install_id":"0123456789abcdef0123456789abcdef","failures":0,"retry_at_ms":0}"#.as_slice()),
+        ("start.json", br#"{"v":1,"install_id":"0123456789abcdef0123456789abcdef","failures":1,"retry_at_ms":0,"x":1}"#.as_slice()),
+        (".start.tmp", b"{partial".as_slice()),
+    ] {
+        let install = Installed::new();
+        let path = install.app.join(format!(
+            "data/panorama/runtime/{}/{name}",
+            app_feed_support::ID
+        ));
+        std::fs::write(&path, bytes).unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let out = install.ensure();
+        assert_eq!(out.status.code(), Some(1));
+        assert_eq!(std::fs::read(&path).unwrap(), bytes);
+        assert!(!disabled(&install));
+        assert!(!install.data.join("calls").exists());
+    }
+}
+
+#[test]
+fn a_registered_writer_acknowledging_late_is_kept_not_disabled() {
+    let install = Installed::new();
+    let out = install
+        .command()
+        .env("PANORAMA_TEST_START", "ready:6500")
+        .args(["app-feed", "--ensure", "--app-home"])
+        .arg(&install.app)
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(!disabled(&install));
+    let owner = install.owner();
+    install.wait_feed(|v| v["v"].is_u64());
+    assert_eq!(install.owner().writer_pid, owner.writer_pid);
+    let (_home, _r, _lock) = install.quiesce().unwrap();
+}
+
+fn ensure_with_fault(install: &Installed, fault: &str) -> std::process::Output {
+    install
+        .command()
+        .env("PANORAMA_TEST_START", fault)
+        .args(["app-feed", "--ensure", "--app-home"])
+        .arg(&install.app)
+        .output()
+        .unwrap()
+}
+
+#[test]
+fn a_child_exiting_before_acknowledgement_with_a_free_lock_is_counted_not_disabled() {
+    let install = Installed::new();
+    let out = ensure_with_fault(&install, "ready:exit");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert_eq!(out.status.code(), Some(1), "{stderr}");
+    assert!(stderr.contains("writer exited"), "{stderr}");
+    assert!(stderr.contains("transient start failure 1/8"), "{stderr}");
+    assert!(!disabled(&install));
+    let ledger: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(ledger_path(&install)).unwrap()).unwrap();
+    assert_eq!(ledger["failures"], 1);
+}
+
+#[test]
+fn an_unregistered_slow_child_is_left_starting_and_a_busy_proof_clears_the_ledger() {
+    let install = Installed::new();
+    write_ledger(&install, 6, 0);
+    let out = ensure_with_fault(&install, "register:6000");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert_eq!(out.status.code(), Some(1), "{stderr}");
+    assert!(stderr.contains("still starting"), "{stderr}");
+    assert!(stderr.contains("transient start failure 7/8"), "{stderr}");
+    assert!(!disabled(&install));
+    // Counted provisionally, so an attempt that then exits unregistered stays bounded.
+    let ledger: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(ledger_path(&install)).unwrap()).unwrap();
+    assert_eq!(ledger["failures"], 7);
+    let registration = install.app.join(format!(
+        "data/panorama/runtime/{}/ownership.json",
+        app_feed_support::ID
+    ));
+    let deadline = std::time::Instant::now() + Duration::from_secs(20);
+    while !registration.exists() {
+        assert!(
+            std::time::Instant::now() < deadline,
+            "writer never registered"
+        );
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    let proven = install.ensure();
+    assert!(
+        proven.status.success(),
+        "{}",
+        String::from_utf8_lossy(&proven.stderr)
+    );
+    assert!(!ledger_path(&install).exists());
+    assert!(!disabled(&install));
+    let (_home, _r, _lock) = install.quiesce().unwrap();
+}
+
+fn wait_stopped(install: &Installed) {
+    let home = Home::open(&install.app).unwrap();
+    let r = Receipt::read(&home).unwrap();
+    fs::lock(&r.lock_file(&home).unwrap(), Duration::from_secs(15)).unwrap();
+}
+
+#[test]
+fn a_foreign_or_garbage_acknowledgement_disables_and_is_never_counted() {
+    for fault in ["ready:foreign", "ready:garbage"] {
+        let install = Installed::new();
+        let out = ensure_with_fault(&install, fault);
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert_eq!(out.status.code(), Some(1), "{fault}: {stderr}");
+        assert!(
+            stderr.contains("foreign writer acknowledgement"),
+            "{fault}: {stderr}"
+        );
+        assert!(disabled(&install), "{fault}");
+        assert!(!ledger_path(&install).exists(), "{fault}");
+        assert!(!install.ensure().status.success(), "{fault}");
+        wait_stopped(&install);
+    }
+}
+
+#[test]
+fn a_child_exiting_while_its_lock_is_still_held_disables_and_is_never_counted() {
+    let install = Installed::new();
+    write_ledger(&install, 3, 0);
+    let out = ensure_with_fault(&install, "register:hold-exit");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert_eq!(out.status.code(), Some(1), "{stderr}");
+    assert!(stderr.contains("stop timeout"), "{stderr}");
+    assert!(disabled(&install));
+    assert!(!ledger_path(&install).exists());
+    assert!(!install.ensure().status.success());
+    wait_stopped(&install);
+}

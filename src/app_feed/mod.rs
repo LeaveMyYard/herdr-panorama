@@ -9,6 +9,7 @@ pub mod liveness;
 pub mod receipt;
 pub mod runtime;
 pub mod serialize;
+pub mod start;
 pub mod triggers;
 
 use crate::host::{Host, collect::Collected};

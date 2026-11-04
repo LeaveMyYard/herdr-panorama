@@ -19,7 +19,52 @@ use std::{
     time::{Duration, Instant},
 };
 
+/// Test-only startup faults at `stage`, `PANORAMA_TEST_START=<stage>:<fault>`: `<ms>` delays,
+/// `exit` exits, `hold-exit` exits leaving a helper holding the lifetime lock, and (at
+/// `ready`) `foreign` / `garbage` acknowledge wrongly. Release builds have no such knob.
+#[cfg(debug_assertions)]
+fn test_fault(stage: &str) {
+    let Ok(value) = std::env::var("PANORAMA_TEST_START") else {
+        return;
+    };
+    match value.split_once(':') {
+        Some((at, "exit")) if at == stage => std::process::exit(3),
+        Some((at, "hold-exit")) if at == stage => {
+            // Stdin is the lifetime lock description; the helper keeps it locked.
+            let _ = std::process::Command::new("sleep")
+                .arg("4")
+                .stdin(std::process::Stdio::inherit())
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .spawn();
+            std::process::exit(3)
+        }
+        Some((at, ms)) if at == stage => {
+            if let Ok(ms) = ms.parse() {
+                std::thread::sleep(Duration::from_millis(ms));
+            }
+        }
+        _ => {}
+    }
+}
+#[cfg(not(debug_assertions))]
+fn test_fault(_: &str) {}
+
+#[cfg(debug_assertions)]
+fn acknowledgement(id: &str) -> String {
+    match std::env::var("PANORAMA_TEST_START").as_deref() {
+        Ok("ready:foreign") => "READY ffffffffffffffffffffffffffffffff\n".into(),
+        Ok("ready:garbage") => "garbage\n".into(),
+        _ => format!("READY {id}\n"),
+    }
+}
+#[cfg(not(debug_assertions))]
+fn acknowledgement(id: &str) -> String {
+    format!("READY {id}\n")
+}
+
 pub fn watch(home: Home, r: Receipt, _lifetime: std::fs::File) -> Result<()> {
+    test_fault("register");
     let mut journal = Journal::open(&home, &r)?;
     let stop = Arc::new(AtomicBool::new(false));
     let monitor_stop = stop.clone();
@@ -52,8 +97,12 @@ pub fn watch(home: Home, r: Receipt, _lifetime: std::fs::File) -> Result<()> {
                 env.xdg_state_home().join("herdr-panorama/codex-bindings"),
             ],
         );
-        println!("READY {}", r.id);
-        std::io::stdout().flush().map_err(|e| e.to_string())?;
+        test_fault("ready");
+        // A parent that stopped waiting has closed the pipe; that is not a writer failure.
+        let mut out = std::io::stdout();
+        let _ = out
+            .write_all(acknowledgement(&r.id).as_bytes())
+            .and_then(|()| out.flush());
         let start = Instant::now();
         let mut idle = Idle::default();
         let mut app = State::Unknown;
