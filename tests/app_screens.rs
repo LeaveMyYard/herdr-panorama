@@ -75,9 +75,8 @@ const RUST_DOCKS: [&str; 2] = ["dock.json", "remote-dock.json"];
 fn check(file: &str, skip: &[&str]) {
     let golden_file = fixture(&format!("screens/{file}"));
     let owned = format!("rust/screens/{file}");
-    let rust = file.starts_with("scenario-")
-        || RUST_GRAPHS.contains(&file)
-        || RUST_DOCKS.contains(&file);
+    let rust =
+        file.starts_with("scenario-") || RUST_GRAPHS.contains(&file) || RUST_DOCKS.contains(&file);
     if rust && blessing() {
         return bless(file, &golden_file, &owned, skip);
     }

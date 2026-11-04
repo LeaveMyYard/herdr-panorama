@@ -132,7 +132,7 @@ by hand, and reviewed as a diff:
   tree), not orchestrators and threads, so no design reference or Python capture matches it.
   - `rust/screens/{demo-wide,deep,remote-wide,demo-home,demo-narrow}.json`: the screens of those
     captures' runs (`app_screens`; `crates/panorama-core/tests/wide_screens.rs` reads them too).
-    The narrow capture is here while its layout walks the same depth columns (U5 replaces it).
+    The narrow capture is here too: its layout walks the same depth columns, with U5's cards.
   - `rust/screens/design-{5d-wide,7,6-wide,smooth-wide,8-wide}.json`: the graph at the frames and
     views of `design_5d.json`, `design_7.json`, `design_6.json`, `design_smooth.json` and
     `design_8.json`; `rust/screens/graph-columns.json`: the roots' column and cards drawn alone;
