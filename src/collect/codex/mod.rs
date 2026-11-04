@@ -27,6 +27,14 @@ pub(super) fn native_id(info: &serde_json::Map<String, serde_json::Value>) -> Op
     .flatten()
 }
 
+/// What a Codex root's title is chosen from beyond herdr's names: its thread's name and the
+/// first prompt (`preview`, else the earliest one read) (plan §2.2 "Root, Codex").
+#[derive(Default)]
+pub(super) struct RootSeen {
+    pub name: Option<String>,
+    pub prompt: Option<String>,
+}
+
 pub(super) struct Details {
     observer: Observer,
     channels: channels::Channels,
@@ -52,13 +60,18 @@ impl Details {
                 .is_some_and(|id| self.observer.is_pending(id))
     }
 
-    pub(super) fn enrich(&mut self, orchestrator: &mut Orchestrator, now: f64, window: f64) {
+    pub(super) fn enrich(
+        &mut self,
+        orchestrator: &mut Orchestrator,
+        now: f64,
+        window: f64,
+    ) -> RootSeen {
         let Some(id) = orchestrator.session_id.clone() else {
-            return;
+            return RootSeen::default();
         };
         let observation = self.observer.observe(&id);
         let reports = self.channels.read(&id, observation.as_ref(), now);
-        enrich(orchestrator, observation.as_ref(), &reports, now, window);
+        enrich(orchestrator, observation.as_ref(), &reports, now, window)
     }
 }
 
@@ -68,11 +81,15 @@ fn enrich(
     reports: &[Reports],
     now: f64,
     window: f64,
-) {
+) -> RootSeen {
     orchestrator.last_activity = None;
     let observation = observation.filter(|value| {
         Some(value.root.thread_id.as_str()) == orchestrator.session_id.as_deref()
             && value.root.parent_thread_id.is_none()
+    });
+    let seen = observation.map_or_else(RootSeen::default, |o| RootSeen {
+        name: o.root.name.clone(),
+        prompt: history::first_prompt(&o.root).map(str::to_owned),
     });
     let root_id = format!("main:codex:{}", orchestrator.pane_id);
     let mut arena = Arena::new();
@@ -92,6 +109,8 @@ fn enrich(
         let root = &observation.root;
         let mut agent = history::agent(root, 0);
         agent.id = root_id.clone();
+        // The root's own card is named by the orchestrator's title, as Claude's main card is.
+        (agent.title, agent.title_source) = (String::new(), String::new());
         agent.role = "orchestrator".into();
         agent.depth = 0;
         agent.status = history::runtime(&orchestrator.herdr_status);
@@ -126,6 +145,7 @@ fn enrich(
             }
         })
         .collect();
+    seen
 }
 
 fn session(orchestrator: &Orchestrator, observation: &Observation, root_id: &str) -> Draft {

@@ -40,6 +40,14 @@ for line in sys.stdin:
             'sessionId': 'shared-tree', 'parentThreadId': parent, 'historyMode': 'legacy' if (mode in ('legacy', 'no-items-legacy') or (mode == 'mixed' and tid == 'root-a')) else 'paginated',
             'cwd': '/same/cwd', 'status': {'type': 'active'}, 'model': 'synthetic-model',
             'createdAt': 100, 'updatedAt': 200, 'name': 'Synthetic', 'turns': []}}
+        # Spawned threads as codex-cli 0.166.0 describes them (spawn_shapes.json): the child
+        # has a spawner-given task name; the grandchild only Codex's nickname and role.
+        result['thread'].update({
+            'child-a': {'agentNickname': 'Euclid', 'agentRole': 'explorer', 'source': {'subAgent': {'thread_spawn': {
+                'parent_thread_id': 'root-a', 'depth': 1, 'agent_path': '/root/review_auth',
+                'agent_nickname': 'Euclid', 'agent_role': 'explorer'}}}},
+            'grand-a': {'name': None, 'agentNickname': 'Lovelace', 'agentRole': 'worker'},
+        }.get(tid, {}))
         if mode == 'bad-parent':
             result['thread']['parentThreadId'] = {'unexpected':'parent'}
         if params.get('includeTurns'):

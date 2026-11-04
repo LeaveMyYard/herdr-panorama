@@ -1,6 +1,7 @@
 //! Titles (plan `uniform-agent-tree.md` §2.2): what the views call an agent or a root, and
 //! which rule gave it. Every title is cleaned first ([`clean`]); a candidate that cleans to
-//! nothing is skipped. Claude's rules live here; Codex has its own (`collect::codex`).
+//! nothing is skipped. Claude's and Codex's rules both live here; a Codex root uses [`root`]
+//! with its thread's name as the session title.
 
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
@@ -64,6 +65,30 @@ pub fn claude_agent(
     let typed = agent_type.map(|t| format!("{t} {short}"));
     first([(prompt.as_deref(), "prompt"), (typed.as_deref(), "type")])
         .unwrap_or_else(|| (format!("agent {short}"), "id"))
+}
+
+/// A Codex subagent's title (D2): the spawner-given task name, the thread's name, Codex's
+/// nickname, the first line of its earliest seen prompt, its role and short id, else
+/// `agent <short id>`.
+pub fn codex_agent(
+    task_name: Option<&str>,
+    name: Option<&str>,
+    nickname: Option<&str>,
+    prompt: Option<&str>,
+    role: Option<&str>,
+    id: &str,
+) -> (String, &'static str) {
+    let short: String = id.chars().take(7).collect();
+    let prompt = prompt.and_then(first_line);
+    let typed = role.map(|r| format!("{r} {short}"));
+    first([
+        (task_name, "spawner"),
+        (name, "session"),
+        (nickname, "session"),
+        (prompt.as_deref(), "prompt"),
+        (typed.as_deref(), "type"),
+    ])
+    .unwrap_or_else(|| (format!("agent {short}"), "id"))
 }
 
 /// The first line of the prompt a subagent's transcript opens with (its first record, a

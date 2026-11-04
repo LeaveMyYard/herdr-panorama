@@ -285,6 +285,7 @@ Every title is cleaned before it is stored:
 1. The spawner-given task name, **if the spawn item carries one.**
    - Today `collabAgentToolCall` items are reduced to `tool` and `receiverThreadIds` (`src/codex/parse.rs:80, 129-140`). Their arguments are deliberately discarded (`parse.rs:1`).
    - Slice U1b adds this field after capturing a real item and pinning it as a fixture. **Unverified**: the repo contains no captured spawn arguments.
+   - **U1b finding:** the codex-cli 0.166.0 app-server schema shows the spawn item carries the spawner's whole `prompt`, not a name. The spawner-given `task_name` is on the child's own `thread/read` record, as the last segment of `source.subAgent.thread_spawn.agent_path`; U1b reads it there (`docs/codex.md`, "How Codex agents are named").
 2. `thread.name` (`parse.rs:42`), when non-empty.
 3. `thread.agentNickname` (`parse.rs:43`). This is Codex-assigned, not spawner-given; see §8, D2.
 4. The first line of the thread's first turn prompt, truncated. It is already parsed as `turn.prompt` (`parse.rs:108-119`).

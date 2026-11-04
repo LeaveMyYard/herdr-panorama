@@ -104,3 +104,34 @@ fn a_failed_child_turn_is_visible_without_inventing_lifecycle_state() {
     assert_eq!(child.last_message, "failed turn: Synthetic result");
     assert_eq!(child.ended, None);
 }
+
+#[test]
+fn an_unnamed_thread_is_titled_by_its_first_prompt_not_the_read_window() {
+    let mut observation = observed();
+    observation.root.name = None;
+    observation.children[0].name = None;
+    observation.children[1].name = None;
+    observation.root.preview = Some("Ship the billing export\nthen tidy up".into());
+    observation.children[0].preview = Some("Review the diff".into());
+    let reports = [channels::Reports {
+        source: "root".into(),
+        declarations: channel().threads.clone(),
+    }];
+    let mut pane = pane("root");
+    let seen = enrich(&mut pane, Some(&observation), &reports, 40.0, 3600.0);
+    assert_eq!(seen.name, None);
+    assert_eq!(
+        seen.prompt.as_deref(),
+        Some("Ship the billing export\nthen tidy up")
+    );
+    let title = |id: &str| {
+        let a = pane.agents().find(|a| a.id == id).unwrap();
+        (a.title.clone(), a.title_source.clone())
+    };
+    assert_eq!(title("child"), ("Review the diff".into(), "prompt".into()));
+    // Without a preview, the earliest prompt read names it.
+    assert_eq!(
+        title("grandchild"),
+        ("Synthetic task".into(), "prompt".into())
+    );
+}
