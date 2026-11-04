@@ -11,6 +11,7 @@ use crate::codex::{Observation, Observer, Options};
 use crate::collect::agents::Arena;
 use crate::collect::tree::Tree;
 use panorama_core::model::Orchestrator;
+
 /// Only herdr's native Codex identity is authoritative; another harness's
 /// session or a custom source cannot become a Codex history lookup key.
 pub(super) fn native_id(info: &serde_json::Map<String, serde_json::Value>) -> Option<&str> {

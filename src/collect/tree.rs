@@ -64,8 +64,8 @@ fn ordered(mut all: Vec<Agent>) -> Vec<Agent> {
     let mut order: Vec<(usize, Option<String>, i64)> = Vec::with_capacity(all.len());
     let mut placed = vec![false; all.len()];
     let roots: Vec<usize> = (0..all.len()).filter(|&i| parent[i].is_none()).collect();
-    // whatever is left after the root children hangs off a cycle: the cycle's first agent
-    // reached becomes a root child
+    // whatever is left after the root children hangs off a cycle: walking up from it, the
+    // agent whose parent closes the cycle becomes a root child
     for start in roots.into_iter().chain(0..all.len()) {
         if placed[start] {
             continue;

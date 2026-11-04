@@ -9,8 +9,11 @@
 //! Python's in the agent tree (one thread per root, no session card, no phases, D4's window),
 //! the titles and `harness` (`docs/plans/rust-rewrite.md`, "Divergence").
 
+#[path = "screen_support/bless.rs"]
+mod bless;
 mod collect_support;
 
+use bless::blessing;
 use collect_support::{MODELS, STALE, Scenario, WINDOW, read_json};
 
 const RUST_MODELS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/rust/model");
@@ -114,7 +117,7 @@ fn check(name: &str, minutes: &[i64]) {
     ]);
     let written = pyjson::dumps(&doc, 1) + "\n";
     let rust_path = Path::new(RUST_MODELS).join(format!("{name}.json"));
-    if std::env::var_os("PANORAMA_BLESS").is_some_and(|v| v == "1") {
+    if blessing() {
         std::fs::create_dir_all(RUST_MODELS).unwrap();
         std::fs::write(&rust_path, &written).unwrap();
         return;

@@ -18,8 +18,9 @@ mod screen_support;
 use collect_support::{STALE, Scenario, WINDOW};
 use panorama::proto::state::cleaned_swarm;
 use panorama_core::model::Swarm;
+use screen_support::bless::blessing;
 use screen_support::player::Player;
-use screen_support::{blessing, cells, fixture, golden, runs};
+use screen_support::{cells, fixture, golden, runs};
 use serde_json::Value;
 
 /// The swarm a run showed: a captured wire swarm, or its scenario collected at the run's now

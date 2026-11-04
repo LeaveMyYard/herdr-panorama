@@ -5,6 +5,10 @@
 //! - the session's own `main:` card is gone (its state is on the root);
 //! - a failed agent ages out of the done window like a done one (D4), unless an agent it
 //!   spawned is still shown.
+//!
+//! No captured root has a failed agent older than its window that was still shown before U3
+//! (the old thread window had hidden it too), so the second exception is the rule, not
+//! exercised here: `collect_demo` ages a failed agent out, `collect_deep` keeps an ancestor.
 
 mod collect_support;
 
