@@ -110,7 +110,16 @@ fn check(file: &str, snap: &str) {
     let s = app
         .paint(w, h, &frame(run["now"].as_f64().unwrap()))
         .unwrap();
-    let (want, got) = (golden(&f["screens"][snap]), cells(&s));
+    // a capture whose screens are Rust's own since the uniform tree (D5) is read from there
+    let owned = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/rust/screens")
+        .join(file);
+    let screens = if owned.exists() {
+        fixture(&format!("rust/screens/{file}"))["screens"].clone()
+    } else {
+        f["screens"].clone()
+    };
+    let (want, got) = (golden(&screens[snap]), cells(&s));
     let diffs: Vec<String> = (0..want.len())
         .flat_map(|y| (0..want[y].len()).map(move |x| (x, y)))
         .filter(|&(x, y)| want[y][x] != got[y][x])
@@ -121,7 +130,7 @@ fn check(file: &str, snap: &str) {
 }
 
 #[test]
-fn the_popups_first_frame_is_pythons() {
+fn the_popups_first_frame_is_the_captures() {
     check("demo-wide.json", "initial");
 }
 
@@ -153,12 +162,11 @@ fn a_failed_refresh_says_so_in_the_header_and_no_size_paints_nothing() {
 #[test]
 fn a_sideways_scroll_is_clamped_to_the_first_column_shown() {
     let (mut app, _) = app_of("deep.json");
-    app.view.thread = Some("x:deep".into());
     app.view.agent = Some("c1".into());
-    app.view.focus = 5;
+    app.view.focus = 4;
     app.view.hcol = Some(99);
     app.paint(160, 45, &frame(0.0)).unwrap();
-    assert_eq!(app.view.hcol, Some(6));
+    assert_eq!(app.view.hcol, Some(5));
 }
 
 #[test]
@@ -175,6 +183,7 @@ fn untrusted_text_is_stripped_of_control_characters() {
         Instant::now(),
     );
     app.view.agent = Some("a2f81c0".into()); // test_render.py's view: its details show it whole
+    app.view.focus = 1; // the keyboard in the tree: the chosen agent's card is open
     let run = &f["runs"][0];
     let text = app
         .paint(160, 45, &frame(run["now"].as_f64().unwrap()))

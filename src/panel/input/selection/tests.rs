@@ -67,15 +67,9 @@ fn armed_clicks_wait_like_their_keys() {
             orch: Some("w1:p1".into()),
             ..Default::default()
         };
-        let thread = panorama_core::view::nav::nav(&p.swarm, &v)[1][0].clone();
-        let v = panorama_core::view::View {
-            thread: Some(thread.clone()),
-            ..v
-        };
-        let agent = panorama_core::view::nav::nav(&p.swarm, &v)[2][0].clone();
+        let agent = panorama_core::view::nav::nav(&p.swarm, &v)[1][0].clone();
         AgentRef {
             pane: "w1:p1".into(),
-            thread,
             agent,
         }
     };
@@ -83,12 +77,7 @@ fn armed_clicks_wait_like_their_keys() {
         let (mut p, t0) = loaded_at("w1:t9", "w1:t1");
         let s = screen_with(t);
         let cursor = |p: &crate::panel::model::Panel| {
-            (
-                p.view.orch.clone(),
-                p.view.thread.clone(),
-                p.view.agent.clone(),
-                p.view.focus,
-            )
+            (p.view.orch.clone(), p.view.agent.clone(), p.view.focus)
         };
         let before = cursor(&p);
         let early = p.click(0, 0, &s, t0 + ARM - TICK);
@@ -113,13 +102,10 @@ fn armed_clicks_wait_like_their_keys() {
         o.iter()
             .any(|e| matches!(e, Effect::OpenInbox { .. } | Effect::Goto { .. }))
     });
-    // the done card: unfolding is what Enter does, armed like Enter
-    let (mut p, t0) = loaded_at("w1:t9", "w1:t1");
-    let s = screen_with(Target::Done("w1:p5".into()));
-    p.click(0, 0, &s, t0 + ARM - TICK);
-    assert!(!p.view.done_open.contains("w1:p5"));
-    p.click(0, 0, &s, t0 + ARM);
-    assert!(p.view.done_open.contains("w1:p5"));
+    // a root's own hints, armed like their keys
+    acts(Target::GotoOrch("w1:p1".into()), |o| {
+        o.iter().any(|e| matches!(e, Effect::Goto { .. }))
+    });
 }
 
 #[test]

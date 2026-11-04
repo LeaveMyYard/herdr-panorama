@@ -47,7 +47,7 @@ fn frames_never_rearm_or_move_the_cursor() {
     assert_eq!(r.d.app.swarm, swarm);
     assert!(r.d.app.armed(now)); // not a background change
     r.key(Key::Move(1), now); // keys keep working at once
-    assert_eq!(r.d.app.view.thread.as_deref(), Some("ref:#44"));
+    assert_eq!(r.d.app.view.agent.as_deref(), Some("a2f81c0"));
     assert!(goes_to(&r.key(Key::Goto, now), "w1:p1"));
 }
 

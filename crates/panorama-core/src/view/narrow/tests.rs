@@ -2,7 +2,6 @@
 //! `render.render` for the same input (70 × 45).
 
 use super::*;
-use crate::view::palette::HI;
 use serde_json::{Value, json};
 
 fn orch(pane: &str, extra: Value) -> Value {
@@ -20,7 +19,7 @@ fn rows(swarm: &Swarm, view: &View) -> (Screen, Vec<String>) {
 }
 
 #[test]
-fn the_done_card_selected_and_unfolded_and_a_machine_group() {
+fn the_done_card_and_a_machine_group() {
     let swarm: Swarm = serde_json::from_value(json!({"orchestrators": [
         orch("p1", json!({"threads": [
             {"id": "t1", "name": "live", "source": "turn", "agents": [{"id": "a", "status": "run"}]},
@@ -30,30 +29,22 @@ fn the_done_card_selected_and_unfolded_and_a_machine_group() {
         orch("p2", json!({"machine": "box", "machine_id": "m1"})),
     ]}))
     .unwrap();
-    let mut view = View {
+    // interim (plan `uniform-agent-tree.md` U4), until U5 replaces narrow: the done card no
+    // longer unfolds (no thread is selected)
+    let view = View {
         orch: Some("p1".into()),
-        thread: Some("done:p1".into()),
         focus: 1,
         ..View::default()
     };
-    view.done_open.insert("p1".into());
-    let (s, r) = rows(&swarm, &view);
-    assert_eq!(r[8], " ├─▸ ✓ 2 complete · old one, old two");
-    assert_eq!(s.cell(3, 8).fg, HI); // selected and focused
-    assert_eq!(
-        r[10],
-        " ├─┤ ✓ old one                                                      │"
+    let (_, r) = rows(&swarm, &view);
+    assert!(
+        r.iter()
+            .any(|l| l == " ╰─  ✓ 2 complete · old one, old two"),
+        "{r:#?}"
     );
-    assert_eq!(
-        r[14],
-        " ╰─┤ ✓ old two                                                      │"
-    );
-    assert_eq!(
-        r[18],
-        "─ box ────────────────────────────────────────────────────────────────"
-    );
-    assert_eq!(r[19], "  ✓  Claude Code · p2  all done");
-    assert_eq!(r[21], "  +   New agent  n");
+    let box_at = r.iter().position(|l| l.starts_with("─ box ─")).unwrap();
+    assert_eq!(r[box_at + 1], "  ✓  Claude Code · p2  all done");
+    assert_eq!(r[box_at + 3], "  +   New agent  n");
 }
 
 #[test]

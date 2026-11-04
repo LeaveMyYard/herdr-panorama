@@ -17,20 +17,15 @@ pub enum Target {
     AnswerOrch(String),
     /// A filter in the graph header (`filter`).
     Filter(Filter),
-    /// An orchestrator's "n complete" card (`done`), by its pane id.
-    Done(String),
-    /// A thread's card (`thread`).
-    Thread {
-        pane: String,
-        thread: String,
-    },
+    /// A root's `g open pane` and `t transcript` hints, by its pane id.
+    GotoOrch(String),
+    TranscriptOrch(String),
     /// An agent's card or pod (`agent`).
     Agent(AgentRef),
-    /// A "n finished" card in the wide graph (`fin`): the thread's own group (`group`
-    /// `None`) or the group of the agent `group` spawned.
+    /// A "n finished" card in the wide graph (`fin`): the root's own group (`group` `None`)
+    /// or the group of the agent `group` spawned.
     Fin {
         pane: String,
-        thread: String,
         group: Option<String>,
     },
     /// An agent's `g open pane` (`goto`), `t transcript` (`transcript`), `a answer` (`answer`).
@@ -39,11 +34,10 @@ pub enum Target {
     Answer(AgentRef),
 }
 
-/// An agent where the graph shows it: its orchestrator's pane, its thread, its id.
+/// An agent where the graph shows it: its root's pane and its id (unique in the root).
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct AgentRef {
     pub pane: String,
-    pub thread: String,
     pub agent: String,
 }
 
@@ -52,12 +46,7 @@ impl Target {
     pub fn is_card(&self) -> bool {
         matches!(
             self,
-            Self::Orch(_)
-                | Self::NewAgent
-                | Self::Done(_)
-                | Self::Thread { .. }
-                | Self::Agent(_)
-                | Self::Fin { .. }
+            Self::Orch(_) | Self::NewAgent | Self::Agent(_) | Self::Fin { .. }
         )
     }
 }

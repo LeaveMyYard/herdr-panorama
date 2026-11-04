@@ -2,7 +2,7 @@
 //! off on the left (the path to the columns shown) and how many columns are off on the right.
 
 use super::layout::{Columns, col_label};
-use crate::model::{Orchestrator, Thread};
+use crate::model::Orchestrator;
 use crate::view::agent_text::name;
 use crate::view::nav::find_agent;
 use crate::view::palette::{DIM, FAINT, FG};
@@ -12,23 +12,14 @@ use crate::view::text::trunc;
 
 /// Row `y`'s words for `cols` off either side; `path`: the selected agent and the agents
 /// that spawned it, outermost first.
-pub fn line(
-    s: &mut Screen,
-    y: i32,
-    cols: &Columns,
-    o: Option<&Orchestrator>,
-    t: Option<&Thread>,
-    path: &[String],
-) {
+pub fn line(s: &mut Screen, y: i32, cols: &Columns, o: Option<&Orchestrator>, path: &[String]) {
     let (lo, hi, n) = (cols.lo, cols.hi, cols.len());
     if lo > 0 {
-        let mut names = vec![
-            o.map_or(String::new(), |o| o.name().to_owned()),
-            t.map_or(String::new(), |t| t.name.clone()),
-        ];
+        // the breadcrumbs: the root, then the selected agent's path, a column each
+        let mut names = vec![o.map_or(String::new(), |o| o.name().to_owned())];
         names.extend(
             path.iter()
-                .filter_map(|id| find_agent(t, Some(id)))
+                .filter_map(|id| find_agent(o, Some(id)))
                 .map(name),
         );
         names.truncate(lo);
@@ -44,10 +35,10 @@ pub fn line(
     }
     if hi < n - 1 {
         let k = n - 1 - hi;
-        let what = if k == 1 || hi + 1 < 2 {
+        let what = if k == 1 {
             col_label(hi + 1)
         } else {
-            format!("depth {hi}–{}", n - 2)
+            format!("Depth {}–{}", hi + 1, n - 1)
         };
         let plural = if k > 1 { "s" } else { "" };
         let text = format!("{what}  {k} column{plural} right ");

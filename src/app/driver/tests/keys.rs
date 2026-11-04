@@ -4,7 +4,7 @@
 use super::*;
 use panorama_core::view::Filter;
 use panorama_core::view::nav::nav;
-use panorama_core::view::state::{DONE_CARD, FIN_CARD, NEW_ROW};
+use panorama_core::view::state::{FIN_CARD, NEW_ROW};
 
 const WIDE: (i32, i32) = (160, 45);
 
@@ -16,31 +16,18 @@ fn keys(r: &mut Run, ks: &[Key], now: Instant) -> Vec<Effect> {
 fn arrow_navigation_across_columns() {
     let mut r = Run::demo("w1:p1", WIDE);
     let now = r.t0; // moving is never armed
-    assert_eq!(
-        r.sel(),
-        (0, Some("w1:p1"), Some("ref:#42"), Some("a1c3d90"))
-    );
+    assert_eq!(r.sel(), (0, Some("w1:p1"), Some("a1c3d90")));
     keys(&mut r, &[Key::Move(1)], now);
-    assert_eq!(
-        r.sel(),
-        (0, Some("w1:p2"), Some("wf:wf_search"), Some("j1a2b3c"))
-    );
+    assert_eq!(r.sel(), (0, Some("w1:p2"), Some("j1a2b3c")));
     keys(&mut r, &[Key::Move(-1), Key::Right, Key::Move(1)], now);
-    assert_eq!(
-        r.sel(),
-        (1, Some("w1:p1"), Some("ref:#44"), Some("b3a9c41"))
-    );
-    keys(&mut r, &[Key::Right, Key::Move(1)], now);
-    let fin = format!("{FIN_CARD}ref:#44");
-    assert_eq!(
-        r.sel(),
-        (2, Some("w1:p1"), Some("ref:#44"), Some(fin.as_str()))
-    );
-    keys(&mut r, &[Key::Left, Key::Move(-1)], now); // back to #42: its remembered agent
-    assert_eq!(
-        r.sel(),
-        (1, Some("w1:p1"), Some("ref:#42"), Some("a1c3d90"))
-    );
+    assert_eq!(r.sel(), (1, Some("w1:p1"), Some("a2f81c0")));
+    keys(&mut r, &[Key::Right], now); // a leaf: nothing to the right
+    assert_eq!(r.sel(), (1, Some("w1:p1"), Some("a2f81c0")));
+    keys(&mut r, &[Key::Move(9)], now);
+    let fin = format!("{FIN_CARD}w1:p1");
+    assert_eq!(r.sel(), (1, Some("w1:p1"), Some(fin.as_str())));
+    keys(&mut r, &[Key::Left, Key::Right], now); // back to the root, then its remembered agent
+    assert_eq!(r.sel(), (1, Some("w1:p1"), Some(fin.as_str())));
 }
 
 #[test]
@@ -66,32 +53,26 @@ fn the_filter_cycles_and_reselects() {
 }
 
 #[test]
-fn enter_unfolds_the_complete_card() {
+fn enter_unfolds_the_roots_finished_card() {
     let mut r = Run::demo("w1:p1", WIDE);
     let now = r.settled();
-    keys(
-        &mut r,
-        &[Key::Right, Key::Move(1), Key::Move(1), Key::Move(1)],
-        now,
-    );
+    keys(&mut r, &[Key::Right, Key::Move(9)], now);
     assert_eq!(
-        r.d.app.view.thread.as_deref(),
-        Some(format!("{DONE_CARD}w1:p1").as_str())
+        r.d.app.view.agent.as_deref(),
+        Some(format!("{FIN_CARD}w1:p1").as_str())
     );
     r.key(Key::Enter, now);
-    assert!(r.d.app.view.done_open.contains("w1:p1"));
+    assert!(r.d.app.view.fin_open.contains("w1:p1"));
     r.key(Key::Move(1), now);
-    assert_eq!(r.d.app.view.thread.as_deref(), Some("ref:#40"));
+    // the first folded agent: most urgent, then oldest
+    assert_eq!(r.d.app.view.agent.as_deref(), Some("e1a2b3c"));
 }
 
 #[test]
 fn answer_on_a_blocked_session_goes_to_the_pane() {
     let mut r = Run::demo("w1:p3", WIDE);
-    assert_eq!(
-        r.sel(),
-        (0, Some("w1:p3"), Some("main:w1:p3"), Some("main:w1:p3"))
-    );
-    assert!(r.text().contains("! Publish the v2 docs now or after the"));
+    assert_eq!(r.sel(), (0, Some("w1:p3"), Some("d1e2f3a"))); // the keys act on the root
+    assert!(r.text().contains("! Publish the v2 docs now or after"));
     let now = r.settled();
     let out = r.key(Key::Answer, now);
     assert!(goes_to(&out, "w1:p3"));
@@ -106,7 +87,7 @@ fn the_answer_key_opens_the_asking_agents_question_group() {
     let now = r.settled();
     keys(
         &mut r,
-        &[Key::Right, Key::Move(1), Key::Move(1), Key::Right],
+        &[Key::Right, Key::Move(1), Key::Move(1), Key::Move(1)],
         now,
     );
     assert_eq!(r.d.app.view.agent.as_deref(), Some("c1d2e3f"));
@@ -137,7 +118,7 @@ fn no_inbox_means_no_inbox_actions() {
             Key::Right,
             Key::Move(1),
             Key::Move(1),
-            Key::Right,
+            Key::Move(1),
             Key::Answer,
         ],
         now,
@@ -153,7 +134,7 @@ fn no_inbox_means_no_inbox_actions() {
 fn parked_cursor_keys_act_on_nothing() {
     let mut r = Run::demo("w1:p1", WIDE);
     let now = r.settled();
-    keys(&mut r, &[Key::Right, Key::Right], now);
+    keys(&mut r, &[Key::Right], now);
     let gone = r.d.app.view.agent.clone().unwrap();
     let mut sw = wire("demo").0;
     sw.orchestrators[0].threads[0]
@@ -172,9 +153,9 @@ fn a_popup_goes_to_the_pane_and_esc_or_q_closes_it() {
     // actor focuses the pane and then closes the popup, P4 8c)
     let mut r = Run::demo("w1:p1", WIDE);
     let now = r.settled();
-    keys(&mut r, &[Key::Right, Key::Right], now);
+    keys(&mut r, &[Key::Right], now);
     assert!(goes_to(&r.key(Key::Goto, now), "w1:p1"));
-    // in a popup Enter on an orchestrator opens its threads; Esc and q close it
+    // in a popup Enter on a root opens its depth 1; Esc and q close it
     let mut r = Run::demo("w1:p1", WIDE);
     let now = r.settled();
     assert!(r.key(Key::Enter, now).is_empty() && r.sel().0 == 1);
@@ -191,7 +172,7 @@ fn the_home_view_stays_open() {
     let now = r.settled();
     let mut out = r.key(Key::Enter, now);
     assert!(r.key(Key::Escape, now).is_empty());
-    keys(&mut r, &[Key::Right, Key::Right], now);
+    keys(&mut r, &[Key::Right], now);
     out.extend(r.key(Key::Goto, now));
     let gotos = out
         .iter()
@@ -210,7 +191,7 @@ fn the_new_row_is_last_stable_and_opens_new_agent() {
     let now = r.settled();
     keys(&mut r, &[Key::Move(1); 4], now);
     assert_eq!(
-        (r.d.app.view.orch.as_deref(), r.d.app.view.thread.as_deref()),
+        (r.d.app.view.orch.as_deref(), r.d.app.view.agent.as_deref()),
         (Some(NEW_ROW), None)
     );
     assert!(r.text().contains("+  New agent"));

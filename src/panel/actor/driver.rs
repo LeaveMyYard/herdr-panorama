@@ -36,9 +36,9 @@ pub struct Driver {
 }
 
 /// What the operator's selection is, to see it move.
-fn selected(p: &Panel) -> (Option<String>, Option<String>, Option<String>, usize) {
+fn selected(p: &Panel) -> (Option<String>, Option<String>, usize) {
     let v = &p.view;
-    (v.orch.clone(), v.thread.clone(), v.agent.clone(), v.focus)
+    (v.orch.clone(), v.agent.clone(), v.focus)
 }
 
 impl Driver {

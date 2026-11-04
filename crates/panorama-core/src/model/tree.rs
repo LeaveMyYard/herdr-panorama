@@ -1,6 +1,6 @@
 //! The agent tree inside one thread (Python `render.tree_kids`): who spawned whom.
 
-use super::{Agent, Thread};
+use super::{Agent, Orchestrator, Thread};
 use std::collections::{HashMap, HashSet};
 
 /// A thread's agents grouped by the agent that spawned them, in the thread's order.
@@ -19,9 +19,21 @@ pub struct TreeKids<'a> {
 impl<'a> TreeKids<'a> {
     /// The tree of `thread`'s agents.
     pub fn of(thread: &'a Thread) -> Self {
-        let ids: HashSet<&str> = thread.agents.iter().map(|a| a.id.as_str()).collect();
+        Self::from_agents(&thread.agents)
+    }
+
+    /// The tree of a root's agents across all its threads (plan `uniform-agent-tree.md`
+    /// §2.1): its own agents are the root's direct children.
+    pub fn of_root(o: &'a Orchestrator) -> Self {
+        Self::from_agents(o.agents())
+    }
+
+    /// The tree of `agents`, in their order.
+    pub fn from_agents(agents: impl IntoIterator<Item = &'a Agent>) -> Self {
+        let agents: Vec<&'a Agent> = agents.into_iter().collect();
+        let ids: HashSet<&str> = agents.iter().map(|a| a.id.as_str()).collect();
         let mut groups: HashMap<Option<&'a str>, Vec<&'a Agent>> = HashMap::new();
-        for a in &thread.agents {
+        for &a in &agents {
             let parent = a
                 .parent
                 .as_deref()
@@ -38,9 +50,9 @@ impl<'a> TreeKids<'a> {
                 }
             }
         }
-        let lost: Vec<&Agent> = thread
-            .agents
+        let lost: Vec<&Agent> = agents
             .iter()
+            .copied()
             .filter(|a| !seen.contains(a.id.as_str()))
             .collect();
         if !lost.is_empty() {

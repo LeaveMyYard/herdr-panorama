@@ -1,9 +1,10 @@
 //! A group's "n finished" card (Python `render.fin_card`): up to five pods of the agents it
-//! folds, a count by role, and whether it is unfolded.
+//! folds, their names (`×n` for a repeated one), the root's own group also counting the
+//! finished agents the window hid (`+n older`), and whether it is unfolded.
 
 use super::column::Place;
-use crate::model::{Agent, Thread};
-use crate::view::agent_text::role_label;
+use crate::model::{Agent, Orchestrator};
+use crate::view::agent_text::name;
 use crate::view::cards::Area;
 use crate::view::cards::boxes::{border, rbox};
 use crate::view::cards::pulse::pulse_box;
@@ -17,19 +18,18 @@ use crate::view::target::Target;
 use crate::view::text::trunc;
 use crate::view::unseen::mark_of;
 
-/// The card of entry `e` (a "n finished" entry of thread `t`) at `p`.
-pub fn fin_card(cv: &mut Screen, p: Place, e: &TreeEntry, t: &Thread, view: &View) {
+/// The card of entry `e` (a "n finished" entry of root `o`) at `p`.
+pub fn fin_card(cv: &mut Screen, p: Place, e: &TreeEntry, o: &Orchestrator, view: &View) {
     let Place { x, y, w, .. } = p;
     let fin: Vec<&Agent> = e
         .fin
         .iter()
-        .filter_map(|id| t.agents.iter().find(|a| &a.id == id))
+        .filter_map(|id| o.agents().find(|a| &a.id == id))
         .collect();
-    // the thread's own group keeps its old identity
+    let own = e.key == o.pane_id;
     let target = Target::Fin {
-        pane: view.orch.clone().unwrap_or_default(),
-        thread: t.id.clone(),
-        group: (e.key != t.id).then(|| e.key.clone()),
+        pane: o.pane_id.clone(),
+        group: (!own).then(|| e.key.clone()),
     };
     cv.area(x, x + w, y, y + 3, target.clone());
     let bc = border(view, &target, p.focus, p.is_sel);
@@ -47,24 +47,24 @@ pub fn fin_card(cv: &mut Screen, p: Place, e: &TreeEntry, t: &Thread, view: &Vie
         apod(cv, xx, y + 1, a, view.frame, false);
         xx += 4;
     }
-    let mut roles: Vec<(&str, usize)> = vec![];
+    let mut names: Vec<(String, usize)> = vec![];
     for a in &fin {
-        match roles.iter_mut().find(|(r, _)| *r == role_label(a)) {
+        let nm = name(a);
+        match names.iter_mut().find(|(r, _)| *r == nm) {
             Some((_, n)) => *n += 1,
-            None => roles.push((role_label(a), 1)),
+            None => names.push((nm, 1)),
         }
     }
-    let by_role: Vec<String> = roles
-        .iter()
-        .map(|(r, n)| {
-            if *n > 1 {
-                format!("{r} ×{n}")
-            } else {
-                (*r).to_owned()
-            }
-        })
+    let names: Vec<String> = names
+        .into_iter()
+        .map(|(r, n)| if n > 1 { format!("{r} ×{n}") } else { r })
         .collect();
-    let summary = format!("{} finished · {}", fin.len(), by_role.join(", "));
+    let older = if own && o.hidden_finished > 0 {
+        format!(" · +{} older", o.hidden_finished)
+    } else {
+        String::new()
+    };
+    let summary = format!("{} finished{older} · {}", fin.len(), names.join(", "));
     cv.segs(
         xx + 1,
         y + 1,

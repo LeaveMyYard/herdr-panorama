@@ -28,7 +28,6 @@ fn swarm(harness: &str) -> Swarm {
 fn view() -> View {
     View {
         orch: Some("pane".into()),
-        thread: Some("codex:root".into()),
         agent: Some("older01-child".into()),
         ..View::default()
     }
@@ -85,16 +84,21 @@ fn compact_codex_shows_default_session_spawners_and_unknown_leaf_glyphs_once() {
 fn narrow_and_wide_graphs_retain_full_default_hierarchy_and_identity() {
     let sw = swarm("codex");
     let v = view();
+    // the graph's columns are depths (U4): this older fixture's root agent is a depth-1 card
     let tree = nav(&sw, &v);
-    assert_eq!(tree[1], ["codex:root"]);
+    assert_eq!(tree[1], ["main:codex:pane"]);
     for width in [90, 240] {
         let mut v = v.clone();
-        v.focus = 3;
+        v.focus = 2;
         let screen = render_graph(&sw, &v, width, 60, None, "empty");
         let text = screen.text();
-        assert_eq!(text.matches("Session work").count(), 1, "{width}: {text}");
         for id in ["main:codex:pane", "older01-child", "grand01-child"] {
-            assert!(screen.targets.iter().any(|t| matches!(&t.target, Target::Agent(a) if a.agent == id && a.pane == "pane" && a.thread == "codex:root")), "{width} missing {id}: {text}");
+            assert!(
+                screen.targets.iter().any(
+                    |t| matches!(&t.target, Target::Agent(a) if a.agent == id && a.pane == "pane")
+                ),
+                "{width} missing {id}: {text}"
+            );
         }
         if width >= 120 {
             for label in ["orchestrator main", "review auth", "Fix the flaky test"] {

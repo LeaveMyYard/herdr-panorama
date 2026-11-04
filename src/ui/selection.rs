@@ -3,7 +3,7 @@
 
 use panorama_core::model::{HerdrStatus, Status, Swarm};
 use panorama_core::view::filter::visible_orchs;
-use panorama_core::view::nav::{default_children, find_agent, find_orch, find_thread, nav};
+use panorama_core::view::nav::{default_children, find_agent, find_orch, nav};
 use panorama_core::view::{NEW_ROW, View};
 use std::time::Duration;
 
@@ -19,7 +19,7 @@ pub fn shown_ids(swarm: &Swarm, view: &View) -> Vec<String> {
 }
 
 /// The first selection: `focus_pane` when it is shown, else the first row; the keyboard in
-/// the orchestrators' column; its remembered (else first) thread and agent.
+/// the roots' column; its remembered (else first) depth-1 agent.
 pub fn initial(swarm: &Swarm, view: &mut View, focus_pane: Option<&str>) {
     let ids = shown_ids(swarm, view);
     view.orch = focus_pane
@@ -40,11 +40,7 @@ pub fn resolve(swarm: &Swarm, view: &mut View) -> Option<String> {
         parked = view.orch.take();
     }
     let cols = nav(swarm, view);
-    if view.thread.as_ref().is_some_and(|t| !cols[1].contains(t)) {
-        view.thread = None;
-    }
-    let cols = nav(swarm, view);
-    let in_tree = |a: &String| cols[2..].iter().any(|c| c.contains(a));
+    let in_tree = |a: &String| cols[1..].iter().any(|c| c.contains(a));
     if view.agent.as_ref().is_some_and(|a| !in_tree(a)) {
         view.agent = None;
     }
@@ -62,21 +58,18 @@ pub struct SelectedCard {
     focus: usize,
     orch: Option<(String, HerdrStatus, Vec<i64>)>,
     inbox_ok: bool,
-    thread: Option<String>,
     agent: Option<(String, Status, Vec<i64>, Option<String>)>,
 }
 
 /// The card `view` selects in `swarm`, in the docked panel (`dock`) or the graph.
 pub fn selected_card(swarm: &Swarm, view: &View, dock: bool) -> SelectedCard {
     let o = find_orch(swarm, view.orch.as_deref());
-    let t = find_thread(o, view.thread.as_deref());
-    let a = find_agent(t, view.agent.as_deref());
+    let a = find_agent(o, view.agent.as_deref());
     SelectedCard {
         dock,
         focus: view.focus,
         orch: o.map(|o| (o.pane_id.clone(), o.herdr_status.clone(), o.inbox.clone())),
         inbox_ok: swarm.inbox_ok,
-        thread: t.map(|t| t.id.clone()),
         agent: a.map(|a| {
             (
                 a.id.clone(),

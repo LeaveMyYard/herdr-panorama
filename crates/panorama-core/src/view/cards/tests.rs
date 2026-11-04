@@ -310,23 +310,19 @@ fn marks_count_the_questions_no_agent_filed() {
 }
 
 #[test]
-fn top_only_pods_are_the_threads_own_then_nested() {
-    // Python's pods_row(top_only=True) on the same thread (captured): the pod on the
-    // selected agent's path is bracketed
+fn pods_are_click_targets_selecting_their_agent() {
     use crate::view::target::Target;
     let t = thread(json!({"agents": [
         {"id": "a", "status": "run"}, {"id": "b", "status": "done"},
-        {"id": "c", "parent": "a", "status": "run"}, {"id": "d", "parent": "c", "status": "run"},
     ]}));
     let mut s = Screen::new(40, 1);
     let p = Pods {
         max_n: 6,
-        sel_agent: Some("d"),
+        sel_agent: Some("a"),
         orch: Some("p"),
-        top_only: true,
     };
     pods_row(&mut s, 1, 0, &t, &View::default(), p);
-    assert_eq!(s.text(), "[ ⠋ ] ✓  +2 nested");
+    assert_eq!(s.text(), "[ ⠋ ] ✓");
     let agents: Vec<(i32, i32, String)> = s
         .targets
         .iter()
@@ -336,14 +332,6 @@ fn top_only_pods_are_the_threads_own_then_nested() {
         })
         .collect();
     assert_eq!(agents, [(1, 4, "a".into()), (5, 8, "b".into())]);
-    let mut s = Screen::new(40, 1);
-    let p = Pods {
-        max_n: 1,
-        top_only: true,
-        ..Pods::default()
-    };
-    pods_row(&mut s, 1, 0, &t, &View::default(), p);
-    assert_eq!(s.text(), "  ⠋  +1 done +2 nested");
 }
 
 #[test]

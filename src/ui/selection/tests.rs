@@ -14,7 +14,7 @@ fn demo() -> Swarm {
     serde_json::from_value(v["swarm"].clone()).unwrap()
 }
 
-/// The demo with its first orchestrator, thread and agent selected.
+/// The demo with its first root and its first depth-1 agent selected.
 fn selected() -> (Swarm, View) {
     let sw = demo();
     let mut v = View::default();
@@ -29,13 +29,9 @@ fn agent<'a>(sw: &'a mut Swarm, v: &View) -> &'a mut Agent {
         .iter_mut()
         .find(|o| Some(&o.pane_id) == v.orch.as_ref())
         .unwrap();
-    let t = o
-        .threads
+    o.threads
         .iter_mut()
-        .find(|t| Some(&t.id) == v.thread.as_ref())
-        .unwrap();
-    t.agents
-        .iter_mut()
+        .flat_map(|t| t.agents.iter_mut())
         .find(|a| Some(&a.id) == v.agent.as_ref())
         .unwrap()
 }
@@ -82,9 +78,8 @@ fn every_part_of_the_selected_card_changes_it() {
         "transcript"
     );
     let mut v3 = v.clone();
-    v3.thread = Some("ref:#44".into());
     v3.agent = None;
-    assert_ne!(base, card(&sw, &v3, false), "thread");
+    assert_ne!(base, card(&sw, &v3, false), "no agent");
     let mut v4 = v.clone();
     v4.agent = Some("a2f81c0".into());
     assert_ne!(base, card(&sw, &v4, false), "agent");
@@ -108,10 +103,7 @@ fn the_first_selection_is_the_focus_pane_else_the_first_row_in_column_0() {
     };
     initial(&sw, &mut v, Some("w1:p2"));
     assert_eq!((v.focus, v.orch.as_deref()), (0, Some("w1:p2")));
-    assert_eq!(
-        (v.thread.as_deref(), v.agent.as_deref()),
-        (Some("wf:wf_search"), Some("j1a2b3c"))
-    );
+    assert_eq!(v.agent.as_deref(), Some("j1a2b3c"));
     let mut v = View {
         focus: 2,
         ..View::default()
@@ -127,24 +119,19 @@ fn the_first_selection_is_the_focus_pane_else_the_first_row_in_column_0() {
 fn resolve_parks_a_vanished_orchestrator_and_clears_what_vanished_below() {
     let (sw, mut v) = selected();
     assert_eq!(resolve(&sw, &mut v), None); // all still there
-    assert!(v.orch.is_some() && v.thread.is_some() && v.agent.is_some());
+    assert!(v.orch.is_some() && v.agent.is_some());
     let mut gone = sw.clone();
     let a = v.agent.clone().unwrap();
-    gone.orchestrators[0].threads[0]
-        .agents
-        .retain(|x| x.id != a);
+    for t in &mut gone.orchestrators[0].threads {
+        t.agents.retain(|x| x.id != a);
+    }
     assert_eq!(resolve(&gone, &mut v), None);
-    assert!(v.thread.is_some() && v.agent.is_none()); // the agent vanished
-    let mut gone = sw.clone();
-    gone.orchestrators[0].threads.remove(0);
-    let (_, mut v) = selected();
-    assert_eq!(resolve(&gone, &mut v), None);
-    assert!(v.orch.is_some() && v.thread.is_none() && v.agent.is_none()); // the thread vanished
+    assert!(v.orch.is_some() && v.agent.is_none()); // the agent vanished
     let mut gone = sw.clone();
     gone.orchestrators.remove(0);
     let (_, mut v) = selected();
     assert_eq!(resolve(&gone, &mut v).as_deref(), Some("w1:p1"));
-    assert!(v.orch.is_none() && v.thread.is_none() && v.agent.is_none());
+    assert!(v.orch.is_none() && v.agent.is_none());
 }
 
 #[test]

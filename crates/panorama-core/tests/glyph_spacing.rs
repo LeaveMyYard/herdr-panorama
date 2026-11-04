@@ -11,7 +11,6 @@ use support::{NO_SESSIONS, fixture, wire_swarm};
 
 /// tests/design_deep.py `NOW` and `TID`; tests/demo.py `NOW`.
 const DEEP_NOW: f64 = 1_800_000_000.0;
-const DEEP_TID: &str = "x:deep";
 
 fn now_of(rel: &str) -> f64 {
     fixture(rel)["now"].as_f64().unwrap()
@@ -53,9 +52,8 @@ fn screens() -> Vec<(String, Screen)> {
         ));
         let v = View {
             orch: Some("w1:p1".into()),
-            thread: Some("ref:#42".into()),
             agent: Some("a2f81c0".into()),
-            focus: 2,
+            focus: 1,
             now: demo_now,
             frame: f,
             ..View::default()
@@ -67,9 +65,8 @@ fn screens() -> Vec<(String, Screen)> {
         ));
         let v = View {
             orch: Some("w1:p3".into()),
-            thread: Some(DEEP_TID.into()),
             agent: Some("c1".into()),
-            focus: 5,
+            focus: 4,
             now: DEEP_NOW,
             frame: f,
             ..View::default()
@@ -83,9 +80,8 @@ fn screens() -> Vec<(String, Screen)> {
         for w in [120, 160, 240] {
             let demo = View {
                 orch: Some("w1:p1".into()),
-                thread: Some("ref:#42".into()),
                 agent: Some("a2f81c0".into()),
-                focus: 2,
+                focus: 1,
                 now: demo_now,
                 frame: f,
                 ..View::default()
@@ -97,9 +93,8 @@ fn screens() -> Vec<(String, Screen)> {
             ));
             let deep = View {
                 orch: Some("w1:p3".into()),
-                thread: Some(DEEP_TID.into()),
                 agent: Some("c1".into()),
-                focus: 5,
+                focus: 4,
                 now: DEEP_NOW,
                 frame: f,
                 ..View::default()

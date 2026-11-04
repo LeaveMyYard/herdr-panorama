@@ -5,6 +5,7 @@
 
 pub mod design;
 pub mod glyphs;
+pub mod owned;
 pub mod states;
 pub mod tree_design;
 

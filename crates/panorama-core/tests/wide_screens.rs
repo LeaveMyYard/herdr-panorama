@@ -1,46 +1,20 @@
 //! The wide graph against the app-screen goldens captured from Python's `SwarmApp` at 160
-//! columns (`screens/demo-wide.json`, `deep.json`, `remote-wide.json`,
-//! `scenario-*-wide.json`, and `scenario-demo-failures.json`'s "no inbox"), rendered from
-//! the View the app's keys left before each snap (its default thread and agent:
+//! columns (`screens/demo-wide.json`, `deep.json`, `remote-wide.json`), rendered from
+//! the View the app's keys left before each snap (its default agent:
 //! `nav::default_children`) with the unseen marks it drew (the file's `unseen`). The toasts
 //! are the app's, not the view's (P4 8a).
+//!
+//! Since the uniform tree (plan `uniform-agent-tree.md` U4, D5) the graph's columns are
+//! depths, so the screens are Rust's own, `tests/fixtures/rust/screens/<file>`, which the app
+//! writes playing the same runs (`tests/app_screens.rs`, `PANORAMA_BLESS=1`): the view a
+//! snap's keys leave is drawn the same here as there. The scenario captures are the app's
+//! alone (`app_screens`): their swarms are collected there, at the runs' own times.
 
 mod support;
 
-use panorama_core::model::Swarm;
-use panorama_core::view::nav::default_children;
+use panorama_core::view::nav::{agent_depth, default_children, find_orch};
 use panorama_core::view::{Filter, View, render_graph};
-use serde_json::Value;
 use support::{NO_SESSIONS, assert_same, cells, fixture, golden, wire_swarm};
-
-/// The swarm a run showed: a captured wire swarm, or the model golden of a scenario at its
-/// first instant (`panorama snapshot --json`; `cond`: one of its conditions).
-fn swarm_of(run: &Value, cond: &str) -> Swarm {
-    let input = run["input"].as_str().unwrap();
-    if input.starts_with("inputs/swarm-") {
-        return wire_swarm(input, None);
-    }
-    let name = input.trim_start_matches("inputs/scenario-");
-    let mut snap = fixture(&format!("model/{name}"))["snapshots"][format!("+0m{cond}")].clone();
-    snap.as_object_mut().unwrap().remove("counts");
-    let mut swarm: Swarm = serde_json::from_value(snap).unwrap();
-    titled(&mut swarm);
-    swarm
-}
-
-/// The titles the Rust collector gives this captured scenario (U1a; Python's model has none):
-/// every tab label is operator-set, and every subagent has its spawner's description (the
-/// collector's side is checked by `tests/collect_demo.rs` `roots_and_agents_carry_their_titles`).
-fn titled(swarm: &mut Swarm) {
-    for o in &mut swarm.orchestrators {
-        o.title = o.tab_label.clone();
-        for t in &mut o.threads {
-            for a in t.agents.iter_mut().filter(|a| !a.id.starts_with("main:")) {
-                a.title = a.description.clone();
-            }
-        }
-    }
-}
 
 /// What the keys left before a snap.
 #[derive(Clone, Copy, Default)]
@@ -49,15 +23,15 @@ struct Keys<'a> {
     focus: usize,
     frame: f64,
     filter: Option<Filter>,
-    /// A `select` step: the thread and agent it set.
-    select: Option<(&'a str, Option<&'a str>)>,
+    /// The agent the keys left selected, when not the default one.
+    select: Option<&'a str>,
 }
 
 /// The screen `snap` of `file`'s run `run` after `keys`.
-fn screen_with(file: &str, run: usize, snap: &str, cond: &str, keys: Keys) {
+fn screen_with(file: &str, run: usize, snap: &str, keys: Keys) {
     let golden_file = fixture(&format!("screens/{file}"));
     let run = &golden_file["runs"][run];
-    let swarm = swarm_of(run, cond);
+    let swarm = wire_swarm(run["input"].as_str().unwrap(), None);
     let mut view = View {
         orch: keys.orch.or(run["focus_pane"].as_str()).map(Into::into),
         now: run["now"].as_f64().unwrap(),
@@ -67,9 +41,8 @@ fn screen_with(file: &str, run: usize, snap: &str, cond: &str, keys: Keys) {
     };
     view.unseen = serde_json::from_value(golden_file["unseen"][snap].clone()).unwrap();
     default_children(&swarm, &mut view);
-    if let Some((thread, agent)) = keys.select {
-        view.thread = Some(thread.into());
-        view.agent = agent.map(Into::into);
+    if let Some(agent) = keys.select {
+        view.agent = Some(agent.into());
     }
     view.focus = keys.focus;
     let size = &run["size"];
@@ -78,13 +51,13 @@ fn screen_with(file: &str, run: usize, snap: &str, cond: &str, keys: Keys) {
         size[1].as_i64().unwrap() as i32,
     );
     let got = render_graph(&swarm, &view, w, h, None, NO_SESSIONS);
-    let want = golden(&golden_file["screens"][snap]);
+    let want = golden(&fixture(&format!("rust/screens/{file}"))["screens"][snap]);
     assert_same(&format!("{file} {snap}"), &want, &cells(&got));
 }
 
 #[test]
 fn demo_initial() {
-    screen_with("demo-wide.json", 0, "initial", "", Keys::default());
+    screen_with("demo-wide.json", 0, "initial", Keys::default());
 }
 
 #[test]
@@ -93,11 +66,11 @@ fn demo_initial_at_frame_4() {
         frame: 4.0,
         ..Keys::default()
     };
-    screen_with("demo-wide.json", 0, "initial@frame4", "", keys);
+    screen_with("demo-wide.json", 0, "initial@frame4", keys);
 }
 
-// down moves to Search refactor (w1:p2), right into its threads, and after a down (it has one
-// thread) right again into its agents
+// down moves to Search refactor (w1:p2), right into its depth-1 agents, and after a down to
+// the second one, right again does nothing (it spawned none)
 
 #[test]
 fn demo_key_1_down() {
@@ -105,7 +78,7 @@ fn demo_key_1_down() {
         orch: Some("w1:p2"),
         ..Keys::default()
     };
-    screen_with("demo-wide.json", 0, "key 1 down", "", keys);
+    screen_with("demo-wide.json", 0, "key 1 down", keys);
 }
 
 #[test]
@@ -115,28 +88,30 @@ fn demo_key_2_right() {
         focus: 1,
         ..Keys::default()
     };
-    screen_with("demo-wide.json", 0, "key 2 right", "", keys);
+    screen_with("demo-wide.json", 0, "key 2 right", keys);
 }
 
 #[test]
 fn demo_key_4_right() {
     let keys = Keys {
         orch: Some("w1:p2"),
-        focus: 2,
+        focus: 1,
+        select: Some("j4d5e6f"),
         ..Keys::default()
     };
-    screen_with("demo-wide.json", 0, "key 4 right", "", keys);
+    screen_with("demo-wide.json", 0, "key 4 right", keys);
 }
 
 #[test]
 fn demo_filter_running() {
     let keys = Keys {
         orch: Some("w1:p2"),
-        focus: 2,
+        focus: 1,
+        select: Some("j4d5e6f"),
         filter: Some(Filter::Running),
         ..Keys::default()
     };
-    screen_with("demo-wide.json", 0, "filter running", "", keys);
+    screen_with("demo-wide.json", 0, "filter running", keys);
 }
 
 #[test]
@@ -144,58 +119,64 @@ fn demo_filter_needs() {
     // Search refactor needs nothing: the selection falls back to the first orchestrator shown
     let keys = Keys {
         orch: Some("w1:p1"),
-        focus: 2,
+        focus: 1,
         filter: Some(Filter::Needs),
         ..Keys::default()
     };
-    screen_with("demo-wide.json", 0, "filter needs", "", keys);
+    screen_with("demo-wide.json", 0, "filter needs", keys);
 }
 
 #[test]
 fn deep_thread() {
-    let keys = Keys {
-        focus: 1,
-        select: Some(("x:deep", None)),
-        ..Keys::default()
-    };
-    screen_with("deep.json", 0, "thread", "", keys);
+    // Python's thread selected: its root here
+    let keys = Keys::default();
+    screen_with("deep.json", 0, "thread", keys);
 }
 
 #[test]
 fn deep_c1() {
     let keys = Keys {
-        focus: 5,
-        select: Some(("x:deep", Some("c1"))),
+        focus: 4,
+        select: Some("c1"),
         ..Keys::default()
     };
-    screen_with("deep.json", 0, "c1", "", keys);
+    screen_with("deep.json", 0, "c1", keys);
 }
 
 #[test]
 fn remote_initial() {
-    screen_with("remote-wide.json", 0, "initial", "", Keys::default());
+    screen_with("remote-wide.json", 0, "initial", Keys::default());
 }
 
+/// The U4 review renders (plan `uniform-agent-tree.md` U4: the operator's check at 160 and
+/// 240 columns) on a synthetic uniform swarm, `rust/inputs/swarm-uniform.json`: one tree per root,
+/// titled agents, a root's own questions, prompt and background work, the window's hidden
+/// finished agents, a tree five deep. Rust's own reviewed renders, `rust/screens/uniform-wide.json`.
 #[test]
-fn scenarios_initial_and_key_1_right() {
-    for name in ["demo", "background", "continued"] {
-        let file = format!("scenario-{name}-wide.json");
-        screen_with(&file, 0, "initial", "", Keys::default());
-        let keys = Keys {
-            focus: 1,
-            ..Keys::default()
+fn the_uniform_tree_at_160_and_240_columns() {
+    let rel = "rust/inputs/swarm-uniform.json";
+    let swarm = wire_swarm(rel, None);
+    let now = fixture(rel)["now"].as_f64().unwrap();
+    // the keyboard on the root, or on an agent at its own depth (as the keys leave it)
+    for (name, w, pane, agent) in [
+        ("160 Billing API, the root", 160, "w1:p1", None),
+        ("160 Billing API, depth 2", 160, "w1:p1", Some("a1c1")),
+        ("160 Release notes, all finished", 160, "w1:p4", None),
+        ("240 Search refactor, depth 2", 240, "w1:p2", Some("s110")),
+        ("240 Search refactor, depth 5", 240, "w1:p2", Some("s113")),
+        ("240 Docs site, the root", 240, "w1:p3", None),
+    ] {
+        let mut view = View {
+            orch: Some(pane.into()),
+            now,
+            ..View::default()
         };
-        screen_with(&file, 0, "key 1 right", "", keys);
+        default_children(&swarm, &mut view);
+        if let Some(a) = agent {
+            view.agent = Some(a.into());
+            view.focus = agent_depth(find_orch(&swarm, Some(pane)), Some(a));
+        }
+        let got = render_graph(&swarm, &view, w, 45, None, NO_SESSIONS);
+        support::owned::check_owned("uniform-wide.json", name, &got);
     }
-}
-
-#[test]
-fn scenario_demo_without_the_inbox() {
-    screen_with(
-        "scenario-demo-failures.json",
-        1,
-        "no inbox",
-        " no inbox",
-        Keys::default(),
-    );
 }
