@@ -1,5 +1,18 @@
-import { forest, finished, needs, threadMark } from './tree.js';
-import { threadKey, agentKey } from './contract.js';
+import { forest, finished, needs, urgency } from './tree.js';
+import { rootKey, agentKey } from './contract.js';
+// Interim until U8b's depth-column graph: feed v2 has no threads, so the V10 graph shows
+// a root's whole agent tree as one synthetic thread column entry. U8b deletes this block.
+export const threadKey = (root, thread) => JSON.stringify(['thread', rootKey(root), thread.id]);
+const projected = new WeakMap();
+export function threadsOf(root) {
+  if (!root?.agents?.length) return [];
+  if (!projected.has(root)) projected.set(root, [{ id: 'agents', name: 'Agents', source: 'session', phases: [], agents: root.agents,
+    status: root.agents.every(agent => finished(agent.status)) ? 'done' : 'active', started: null }]);
+  return projected.get(root);
+}
+export function threadMark(thread) {
+  return { status: thread.agents.reduce((top, a) => urgency(a.status) > urgency(top) ? a.status : top, ''), questions: new Set(thread.agents.flatMap(agent => agent.question_ids)).size };
+}
 export const GAP = 36;
 export const columnWidth = (column, nativeFallback = false) => column === 0 ? 236 : column === 1 && !nativeFallback ? 300 : 272;
 export const span = (lo, hi, nativeFallback = false) => {
@@ -99,7 +112,7 @@ export function nativeLayout(item, selected) {
 }
 export function graphModel(roots, state) {
   const item = roots.find(item => item.key === state.orch) ?? roots[0] ?? null;
-  const threads = item?.root.threads ?? [];
+  const threads = threadsOf(item?.root);
   const thread = threads.find(thread => threadKey(item.root, thread) === state.thread) ?? threads[0] ?? null;
   const selected = state.focus >= (thread ? 2 : 1) ? state.agent : null;
   const tree = item ? (thread ? treeLayout(item, thread, selected, state.expanded) : nativeLayout(item, selected)) : { nodes: [], groups: [], depth: 0 };

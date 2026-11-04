@@ -6,16 +6,17 @@ import { Pages } from '../mods/panorama-peek/paging.js';
 const G = '0123456789abcdef0123456789abcdef', NEW = 'fedcba9876543210fedcba9876543210';
 function fixture() {
   const feed = JSON.parse(readFileSync(new URL('../../tests/fixtures/app-feed/swarm.json', import.meta.url)));
-  const root = feed.orchestrators[0], thread = root.threads[0], agent = thread.agents[0];
-  return { packet: { feed, install_id: G, stale: false }, client: { install_id: G, stopped: false }, intent: { peekInstallId: G, root, thread, agent, terminal: root.terminal, terminalAction: 'focus' } };
+  const root = feed.roots[0], agent = root.agents[0];
+  return { packet: { feed, install_id: G, stale: false }, client: { install_id: G, stopped: false }, intent: { peekInstallId: G, root, agent, terminal: root.terminal, terminalAction: 'focus' } };
 }
 test('resolves data only from the current pinned feed, never raw props', () => {
   const { packet, client, intent } = fixture();
   const raw = structuredClone(intent); raw.agent.last_message = 'untrusted props'; raw.agent.transcript = '/untrusted';
   const value = subject(packet, client, raw);
-  assert.equal(value.agent, packet.feed.orchestrators[0].threads[0].agents[0]);
+  assert.equal(value.agent, packet.feed.roots[0].agents[0]);
   assert.notEqual(transcriptScope(value, 'linux').path, '/untrusted');
-  assert.equal(subject(packet, client, { ...intent, thread: { id: 'other' } }), null);
+  // A stale v1 `thread` prop is ignored: the agent resolves in its root's one tree.
+  assert.equal(subject(packet, client, { ...intent, thread: { id: 'other' } }).agent, packet.feed.roots[0].agents[0]);
   assert.equal(subject(packet, client, { ...intent, agent: { id: 'other' } }), null);
 });
 test('oldG/newG with identical root and agent IDs cannot read or focus', async () => {
@@ -32,8 +33,8 @@ test('oldG/newG with identical root and agent IDs cannot read or focus', async (
 });
 test('producer-local refs support TUI/unmatched/mirrors and literal paths without machine guesses', () => {
   const { packet, client, intent } = fixture();
-  const root = packet.feed.orchestrators[0]; root.host = 'herdr-tui'; root.terminal = null;
-  root.transcript = "/local mirror/' ; $(literal).jsonl"; root.threads[0].agents[0].transcript = null;
+  const root = packet.feed.roots[0]; root.host = 'herdr-tui'; root.terminal = null;
+  root.transcript = "/local mirror/' ; $(literal).jsonl"; root.agents[0].transcript = null;
   const value = subject(packet, client, intent);
   assert.equal(transcriptScope(value, 'linux').path, root.transcript);
   assert.equal(focusTarget(value, intent, { feed: packet.feed, agents: [], terminals: [], panes: [], spaces: [] }), null);
@@ -43,10 +44,10 @@ test('producer-local refs support TUI/unmatched/mirrors and literal paths withou
 });
 test('agent transcript wins; nonfilesystem ref has no hidden root fallback', () => {
   const { packet, client, intent } = fixture();
-  packet.feed.orchestrators[0].transcript = '/root.jsonl';
-  packet.feed.orchestrators[0].threads[0].agents[0].transcript = '/agent.jsonl';
+  packet.feed.roots[0].transcript = '/root.jsonl';
+  packet.feed.roots[0].agents[0].transcript = '/agent.jsonl';
   assert.equal(transcriptScope(subject(packet, client, intent), 'linux').path, '/agent.jsonl');
-  packet.feed.orchestrators[0].threads[0].agents[0].transcript = 'file:///agent.jsonl';
+  packet.feed.roots[0].agents[0].transcript = 'file:///agent.jsonl';
   assert.equal(transcriptScope(subject(packet, client, intent), 'linux'), null);
   packet.stale = true;
   assert.equal(transcriptScope(subject(packet, client, intent), 'linux'), null);
