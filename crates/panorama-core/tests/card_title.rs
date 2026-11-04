@@ -211,13 +211,14 @@ fn narrow_and_dock_rows_show_titles() {
     sw.docked = Some("w1:p1".into());
     let v = titled_view("a6c8a7b1");
     let narrow = panorama_core::view::render_narrow(&sw, &v, 70, 45, None, NO_SESSIONS).text();
-    let row = narrow
-        .lines()
-        .find(|r| r.contains("Author the invoice export"))
-        .unwrap_or_else(|| panic!("{narrow}"));
+    // its card's head is its title; the opened card's detail row adds `role id`
     assert!(
-        row.contains("Author the invoice export general-purpose a6c8a7b"),
-        "{row}"
+        narrow.contains("┨ ⠋ Author the invoice export "),
+        "{narrow}"
+    );
+    assert!(
+        narrow.contains("Author the invoice export general-purpose a6c8a7b"),
+        "{narrow}"
     );
     let dock = panorama_core::view::render_dock(&sw, &v, 46, 45, None, NO_SESSIONS).text();
     assert!(dock.contains("Author the invoice"), "{dock}");

@@ -124,6 +124,10 @@ by hand, and reviewed as a diff:
   not threads, so no design reference or Python capture matches it.
   - `rust/screens/{dock,remote-dock}.json`: the screens of those captures' runs (`app_screens`;
     `crates/panorama-core/tests/dock_screens.rs` reads them too).
+  - `rust/screens/panel.json`: the per-tab panel's run of `screens/panel.json`
+    (`PANORAMA_BLESS=1 cargo test --test panel_screens`).
+  - `rust/screens/narrow.json`: the narrow layout at the views of `screens/*-narrow.json` over
+    their captured swarms and model goldens (`crates/panorama-core/tests/narrow_screens.rs`).
   - `rust/screens/design-{9e,9e-smooth,10,8,5d-dock}.json`: the panel at the frames and views of
     `design_9.json`, `design_smooth.json`, `design_10.json`, `design_8.json` and `design_5d.json`,
     written by `PANORAMA_BLESS=1 cargo test -p panorama-core --test design_goldens --test
