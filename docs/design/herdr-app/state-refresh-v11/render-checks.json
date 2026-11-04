@@ -1,0 +1,237 @@
+{
+  "A": {
+    "frame": "A",
+    "interLoaded": true,
+    "viewport": [
+      1920,
+      937
+    ],
+    "images": [
+      {
+        "source": "../ui/herdr.png",
+        "loaded": true
+      }
+    ],
+    "badgeCount": 10,
+    "badgeTextOverflow": [],
+    "rowOverflow": [],
+    "galleryStates": [],
+    "depthHeaders": [],
+    "selectedMeta": null,
+    "donePhaseColors": [],
+    "workSweepColors": [
+      {
+        "color": "rgb(104, 194, 181)",
+        "state": "legend"
+      }
+    ],
+    "deepTiles": []
+  },
+  "B": {
+    "frame": "B",
+    "interLoaded": true,
+    "viewport": [
+      1208,
+      2217
+    ],
+    "images": [
+      {
+        "source": "../ui/herdr.png",
+        "loaded": true
+      }
+    ],
+    "badgeCount": 24,
+    "badgeTextOverflow": [],
+    "rowOverflow": [],
+    "galleryStates": [],
+    "depthHeaders": [],
+    "selectedMeta": null,
+    "donePhaseColors": [],
+    "workSweepColors": [
+      {
+        "color": "rgb(104, 194, 181)",
+        "state": "legend"
+      }
+    ],
+    "deepTiles": []
+  },
+  "C": {
+    "frame": "C",
+    "interLoaded": true,
+    "viewport": [
+      1288,
+      1657
+    ],
+    "images": [
+      {
+        "source": "../ui/herdr.png",
+        "loaded": true
+      }
+    ],
+    "badgeCount": 11,
+    "badgeTextOverflow": [],
+    "rowOverflow": [],
+    "galleryStates": [],
+    "depthHeaders": [],
+    "selectedMeta": null,
+    "donePhaseColors": [],
+    "workSweepColors": [
+      {
+        "color": "rgb(104, 194, 181)",
+        "state": "legend"
+      }
+    ],
+    "deepTiles": []
+  },
+  "D": {
+    "frame": "D",
+    "interLoaded": true,
+    "viewport": [
+      1920,
+      937
+    ],
+    "images": [
+      {
+        "source": "../ui/herdr.png",
+        "loaded": true
+      }
+    ],
+    "badgeCount": 27,
+    "badgeTextOverflow": [],
+    "rowOverflow": [],
+    "galleryStates": [],
+    "depthHeaders": [
+      "Depth 02",
+      "Depth 16",
+      "Depth 24",
+      "Depth 39"
+    ],
+    "selectedMeta": "",
+    "donePhaseColors": [],
+    "workSweepColors": [
+      {
+        "color": "rgb(104, 194, 181)",
+        "state": "legend"
+      },
+      {
+        "color": "rgb(104, 194, 181)",
+        "state": "dn state-fail path"
+      },
+      {
+        "color": "rgb(104, 194, 181)",
+        "state": "dn state-run"
+      },
+      {
+        "color": "rgb(104, 194, 181)",
+        "state": "dn state-run"
+      },
+      {
+        "color": "rgb(104, 194, 181)",
+        "state": "dn state-run"
+      },
+      {
+        "color": "rgb(104, 194, 181)",
+        "state": "dn state-run"
+      },
+      {
+        "color": "rgb(104, 194, 181)",
+        "state": "dn state-run"
+      },
+      {
+        "color": "rgb(142, 174, 230)",
+        "state": "dn state-rev sel"
+      }
+    ],
+    "deepTiles": []
+  },
+  "D2": {
+    "frame": "D2",
+    "interLoaded": true,
+    "viewport": [
+      1920,
+      937
+    ],
+    "images": [
+      {
+        "source": "../ui/herdr.png",
+        "loaded": true
+      }
+    ],
+    "badgeCount": 22,
+    "badgeTextOverflow": [],
+    "rowOverflow": [],
+    "galleryStates": [],
+    "depthHeaders": [
+      "Depth 24",
+      "Depth 39",
+      "Depth 41",
+      "Depth 52"
+    ],
+    "selectedMeta": "",
+    "donePhaseColors": [],
+    "workSweepColors": [
+      {
+        "color": "rgb(104, 194, 181)",
+        "state": "legend"
+      },
+      {
+        "color": "rgb(104, 194, 181)",
+        "state": "dn state-run"
+      },
+      {
+        "color": "rgb(104, 194, 181)",
+        "state": "dn state-run path"
+      },
+      {
+        "color": "rgb(104, 194, 181)",
+        "state": "dn state-run"
+      },
+      {
+        "color": "rgb(104, 194, 181)",
+        "state": "dn state-run"
+      },
+      {
+        "color": "rgb(104, 194, 181)",
+        "state": "dn state-run path"
+      },
+      {
+        "color": "rgb(104, 194, 181)",
+        "state": "dn state-run"
+      }
+    ],
+    "deepTiles": []
+  },
+  "Gallery": {
+    "frame": "Gallery",
+    "interLoaded": true,
+    "viewport": [
+      1600,
+      1117
+    ],
+    "images": [],
+    "badgeCount": 15,
+    "badgeTextOverflow": [],
+    "rowOverflow": [],
+    "galleryStates": [
+      "run",
+      "rev",
+      "wait",
+      "blk",
+      "fail",
+      "done",
+      "q",
+      "bg",
+      "cxl",
+      "inf",
+      "lost",
+      "stale",
+      "unknown",
+      "idle"
+    ],
+    "depthHeaders": [],
+    "selectedMeta": null,
+    "donePhaseColors": [],
+    "workSweepColors": [],
+    "deepTiles": []
+  }
+}

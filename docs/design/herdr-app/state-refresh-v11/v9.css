@@ -1,0 +1,27 @@
+/* V9: a denser dock: 20px tree rows, 14px tree tiles, tighter headers and card gaps. */
+.dk.it{height:20px;font-size:12px}
+.dk.it.last{height:23px}
+.dk.it .state-badge.mini{width:14px!important;min-width:14px!important;max-width:14px!important;height:14px;border-radius:3.5px;margin-right:6px}
+.dk.it .state-badge.mini .gsym{width:11px;height:11px}
+.dk.it .state-badge.mini .badge-symbol{font-size:9.5px}
+.dk.it .gl{width:11px;height:11px;font-size:11px;line-height:11px}
+.dk.spw .gl:first-of-type{margin-right:6px}
+.dk .gl+.gl{margin-left:5px}
+.gl.fin{font-size:10.5px}
+.dk.l1{height:25px}
+.dk.l2{height:19px}
+.dk.l2.last{height:22px}
+.dk.ent.first{margin-top:4px}
+.dk.l1.first:first-child{margin-top:2px}
+.dk.l1 .state-badge.mini{width:16px!important;min-width:16px!important;max-width:16px!important;height:16px;border-radius:4px}
+.dk.l1 .state-badge.mini.wide{width:auto!important;max-width:none!important}
+.dk.l1 .state-badge:not(.mini){height:17px}
+.dk-no+.gl{margin-right:7px}
+.dk .gl.fin{margin-left:6px!important}
+.dk.l1 .dk-ic{width:16px;height:16px;margin-right:8px}
+/* denser horizontal state runs */
+.dk .gl+.gl{margin-left:2px}
+.dk .gl.fin{margin-left:4px!important}
+.dk.l2 .state-badge.mini{margin-right:2px}
+.dk.l2 .state-badge+.dk-c{margin-left:6px}
+.dk.it .gl.fin,.dk .gl.fin{width:auto;justify-content:flex-start}

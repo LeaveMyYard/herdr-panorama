@@ -1,0 +1,10 @@
+/* V8: sidebar entries drawn as the graph's cards (proposal.css .dn): state-tinted body, state border,
+   3px state edge, filled state badge; the docked entry takes the graph's pale selection border. */
+.dk.ent{background:linear-gradient(var(--state-fill),var(--state-fill)),#17191d;border-color:var(--state-line);box-shadow:inset 3px 0 var(--state-edge)}
+.dk.ent::before{content:none}
+.dk.ent.hov{background:linear-gradient(var(--state-fill),var(--state-fill)),#1c1e23}
+.dk.ent.docked,.dk.docked.l1,.dk.docked.l2,.dk.ent.docked.it{background:linear-gradient(var(--state-fill),var(--state-fill)),#1c2026;border-color:#b4c8e4}
+.dk.ent .state-badge:not(.mini){flex:none;margin-left:6px}
+.dk.l1 .state-badge.mini+.state-badge{margin-left:4px}
+.dk.l1 .dk-n{margin-right:6px}
+.state-idle{--state-edge:#5c626b}
