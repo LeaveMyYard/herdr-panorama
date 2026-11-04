@@ -100,8 +100,8 @@ fn the_demos_roots_column_fits_and_links_from_the_selected_card() {
 fn a_roots_own_questions_and_prompt_are_in_its_unfolded_card() {
     // the interim U3 lost the "waiting on you" card of a root's own questions: the root card
     // carries them, with the prompt it blocks on and its answer hint
-    let swarm = wire_swarm("inputs/swarm-uniform.json", None);
-    let now = fixture("inputs/swarm-uniform.json")["now"]
+    let swarm = wire_swarm("rust/inputs/swarm-uniform.json", None);
+    let now = fixture("rust/inputs/swarm-uniform.json")["now"]
         .as_f64()
         .unwrap();
     let o = find_orch(&swarm, Some("w1:p1")).unwrap();
@@ -141,8 +141,8 @@ fn a_roots_own_questions_and_prompt_are_in_its_unfolded_card() {
 
 #[test]
 fn an_agent_card_carries_its_subtrees_marks_and_its_hidden_children() {
-    let swarm = wire_swarm("inputs/swarm-uniform.json", None);
-    let now = fixture("inputs/swarm-uniform.json")["now"]
+    let swarm = wire_swarm("rust/inputs/swarm-uniform.json", None);
+    let now = fixture("rust/inputs/swarm-uniform.json")["now"]
         .as_f64()
         .unwrap();
     let o = find_orch(&swarm, Some("w1:p2")).unwrap();

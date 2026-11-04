@@ -131,7 +131,7 @@ by hand, and reviewed as a diff:
     `rust/screens/uniform-wide.json`: the U4 review renders at 160 and 240 columns. Written by
     `PANORAMA_BLESS=1 cargo test -p panorama-core --test design_wide --test design_unseen
     --test design_states --test graph_columns --test wide_screens`.
-  - `inputs/swarm-uniform.json`: a synthetic swarm in the uniform shape (one `agents` thread per
+  - `rust/inputs/swarm-uniform.json`: a synthetic swarm in the uniform shape (one `agents` thread per
     root, titles, a root's own questions, prompt and background work, a tree five deep) for
     those renders, written once by a script and kept as data.
 - `collect/agent-ids-pre-u3.json`: every root's agents (id, status, end, parent) as the collector

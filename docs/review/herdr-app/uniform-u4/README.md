@@ -8,7 +8,7 @@ then its state or what it does. Finished siblings fold into one `N finished · n
 per parent, at every depth. The root's own group also counts the agents the done window
 hid (`+N older`).
 
-The swarm is synthetic (`tests/fixtures/inputs/swarm-uniform.json`): no live herdr, no
+The swarm is synthetic (`tests/fixtures/rust/inputs/swarm-uniform.json`): no live herdr, no
 personal data. Each image is a screen of `tests/fixtures/rust/screens/uniform-wide.json`, the
 Rust-owned golden that `crates/panorama-core/tests/wide_screens.rs`
 (`the_uniform_tree_at_160_and_240_columns`) compares cell for cell. They were drawn to PNG

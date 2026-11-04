@@ -149,12 +149,12 @@ fn remote_initial() {
 }
 
 /// The U4 review renders (plan `uniform-agent-tree.md` U4: the operator's check at 160 and
-/// 240 columns) on a synthetic uniform swarm, `inputs/swarm-uniform.json`: one tree per root,
+/// 240 columns) on a synthetic uniform swarm, `rust/inputs/swarm-uniform.json`: one tree per root,
 /// titled agents, a root's own questions, prompt and background work, the window's hidden
 /// finished agents, a tree five deep. Rust's own reviewed renders, `rust/screens/uniform-wide.json`.
 #[test]
 fn the_uniform_tree_at_160_and_240_columns() {
-    let rel = "inputs/swarm-uniform.json";
+    let rel = "rust/inputs/swarm-uniform.json";
     let swarm = wire_swarm(rel, None);
     let now = fixture(rel)["now"].as_f64().unwrap();
     for (name, w, pane, agent, focus) in [
