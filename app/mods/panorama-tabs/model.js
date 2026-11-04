@@ -31,7 +31,7 @@ export function joinRoots(feed, stock, terminals, panes, spaces, changes = {}) {
     if (source) used.add(source);
     const root = source ?? { host: 'herdr-core', terminal: agent.address, pane_id: agent.pane ?? agent.address, harness: agent.program?.key ?? 'unknown', herdr_status: agent.status, tab_label: agent.title ?? '', title: '', title_source: 'id', inbox: [], agents: [], hidden_finished: 0 };
     const tab = tabs.find(tab => tab.id === agent.tab);
-    const pane = panes.find(pane => pane.terminal === agent.address) ?? panes.find(pane => pane.pane === agent.pane);
+    const pane = panes.find(pane => pane.terminal === agent.address) ?? (agent.pane ? panes.find(pane => pane.pane === agent.pane) : undefined);
     const title = rootTitle({ address: agent.address, program: agent.program, terminal: byAddress.get(agent.address), tab,
       alone: stock.filter(other => other.tab === agent.tab).length === 1, feed: source, pane: pane ?? { title: agent.title, program: agent.program } });
     return { key: rootKey(root), root, stock: agent, terminal: live.has(agent.address) ? agent.address : null,

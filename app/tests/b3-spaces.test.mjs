@@ -25,3 +25,8 @@ test('native descendant direct space membership wins and does not double count s
  assert.equal(spaceTotals([own,child],'B').needsCount,1);
  assert.equal(spaceInventory([own],'B').agents,1);
 });
+test('a stock agent without a pane id never borrows another pane title',()=>{
+ const stock=[{address:'t1',space:'s',tab:'tab',status:'idle',program:{key:'claude',name:'Claude'}}];
+ const [root]=joinRoots(null,stock,[{address:'t1',state:'live'}],[{terminal:'other',tab:'tab',title:'Wrong pane title'}],[{id:'s',tabs:[{id:'tab',name:'Tab'}]}]);
+ assert.equal(root.name,'Claude · t1');
+});
