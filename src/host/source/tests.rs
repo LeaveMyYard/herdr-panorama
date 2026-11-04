@@ -1,4 +1,5 @@
 use super::*;
+use crate::host::link::Linker;
 
 fn list() -> Value {
     serde_json::from_str(include_str!("../../../tests/fixtures/hc-list.json")).unwrap()
@@ -49,7 +50,9 @@ fn missing_identity_keeps_plain_roots_and_exposes_availability_errors() {
         Some(dir.path().into()),
         1000,
     );
+    let link = Linker::system(&env);
     let mut source = CoreSource {
+        link,
         core: Core::new(binary.into_os_string(), Duration::from_secs(1)),
         env,
         hooks_dir: dir.path().join("no-hooks"),

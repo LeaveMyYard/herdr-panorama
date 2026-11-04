@@ -2,6 +2,7 @@
 use super::{
     Core, Host,
     context::{pane_key, valid_address},
+    link::{Link, Linker, unique},
     records,
 };
 use herdr_agent_kit::{
@@ -40,6 +41,8 @@ pub struct CoreSource {
     pub core: Core,
     pub env: PluginEnv,
     pub hooks_dir: PathBuf,
+    /// Process-derived linking (session-linking.md).
+    pub link: Linker,
 }
 impl SnapshotSource for CoreSource {
     fn read(&mut self) -> Observation {
@@ -55,7 +58,8 @@ impl SnapshotSource for CoreSource {
                 let records = records::load(&self.hooks_dir);
                 let table = SystemProcesses::new();
                 let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
-                for row in &mut rows {
+                let mut links = HashMap::new();
+                for row in &rows {
                     let address = row["terminal"].as_str().unwrap();
                     let key = pane_key(address);
                     observation
@@ -65,19 +69,30 @@ impl SnapshotSource for CoreSource {
                     let process = (!remaining.is_zero())
                         .then(|| self.core.with_timeout(remaining).process(address))
                         .flatten();
-                    let session = process.as_ref().and_then(|info| {
-                        if row["agent"] == "claude" {
-                            records::claude_session(&records, address, info, &table)
-                        } else {
-                            crate::codex::identity::resolve_core(&self.env, address, info, &table)
-                        }
+                    let link = process.as_ref().map_or((None, Link::Unavailable), |info| {
+                        self.link.terminal(
+                            &self.env,
+                            address,
+                            row["agent"].as_str().unwrap_or(""),
+                            info,
+                            &records,
+                            &table,
+                        )
                     });
-                    match session {
-                        Some(id) => {
+                    links.insert(key, link);
+                }
+                unique(&mut links);
+                for row in &mut rows {
+                    let key = row["pane_id"].as_str().unwrap().to_owned();
+                    match &links[&key].1 {
+                        Link::Linked(id) => {
                             row["agent_session"] =
                                 json!({"kind":"id","value":id,"source":"panorama:core"})
                         }
-                        None => observation
+                        Link::Conflict => observation
+                            .errors
+                            .push(format!("{key}: session evidence conflicts")),
+                        Link::Unavailable => observation
                             .errors
                             .push(format!("{key}: session ownership unavailable")),
                     }

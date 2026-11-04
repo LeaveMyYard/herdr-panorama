@@ -3,6 +3,7 @@ pub mod collect;
 pub mod command;
 pub mod context;
 pub mod core;
+pub mod link;
 pub mod records;
 pub mod source;
 

@@ -16,6 +16,7 @@
 
 pub mod record;
 pub mod session;
+pub mod setup;
 
 use herdr_agent_kit::agent_procs::claude::claude_process_here;
 use herdr_agent_kit::agent_procs::own_pidns;

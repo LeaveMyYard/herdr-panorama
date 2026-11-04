@@ -4,7 +4,7 @@ mod collect_support;
 
 use collect_support::{S1, STALE, Scenario, WINDOW};
 use herdr_agent_kit::{agent_procs::start_token, plugin_env::PluginEnv};
-use panorama::host::{Core, SnapshotSource, source::CoreSource};
+use panorama::host::{Core, SnapshotSource, link::Linker, source::CoreSource};
 use serde_json::json;
 use std::{
     os::unix::fs::PermissionsExt,
@@ -12,6 +12,16 @@ use std::{
     process::{Child, Command},
     time::Duration,
 };
+
+/// Each test writes executables and forks; run concurrently, a fork in one test can hold
+/// another test's still-open executable and its exec fails with ETXTBSY. Run them in turn.
+static SERIAL: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+fn serial() -> std::sync::MutexGuard<'static, ()> {
+    SERIAL
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
 
 struct Owned(Child);
 impl Drop for Owned {
@@ -23,6 +33,10 @@ impl Drop for Owned {
 
 /// A dedicated executable keeps its harness name without relying on renamed multicall tools.
 fn owned_agent(dir: &Path, harness: &str) -> Owned {
+    Owned(Command::new(compile_agent(dir, harness)).spawn().unwrap())
+}
+
+fn compile_agent(dir: &Path, harness: &str) -> std::path::PathBuf {
     let source = dir.join("owned_agent.rs");
     let executable = dir.join(harness);
     std::fs::write(
@@ -42,7 +56,92 @@ fn owned_agent(dir: &Path, harness: &str) -> Owned {
         "owned-process fixture compilation failed: {}",
         String::from_utf8_lossy(&compiled.stderr)
     );
-    Owned(Command::new(executable).spawn().unwrap())
+    executable
+}
+
+// Evidence P reads /proc/P/environ, which exists only on Linux.
+#[cfg(target_os = "linux")]
+/// `owned_agent` started with exactly `env` as its exec environment.
+fn owned_agent_with(dir: &Path, harness: &str, env: &[(&str, &Path)]) -> Owned {
+    let mut command = Command::new(compile_agent(dir, harness));
+    command.env_clear();
+    for (key, value) in env {
+        command.env(key, value);
+    }
+    Owned(command.spawn().unwrap())
+}
+
+// Evidence P reads /proc/P/environ, which exists only on Linux.
+#[cfg(target_os = "linux")]
+/// A fake hc listing `t2` as Claude Code with foreground `pid` running `argv`.
+fn fake_hc(dir: &Path, pid: u32, argv: &str) -> std::path::PathBuf {
+    let binary = dir.join("hc");
+    std::fs::write(&binary,format!(r#"#!/usr/bin/env python3
+import json,sys
+assert sys.argv[1:] in [['ls','--json'],['get','--json','t2']]
+if sys.argv[1]=='ls': value={{'hidden_finished':0,'terminals':[{{'address':'t2','agent':'claude-code','cwd':'/fixture/shared','state':'live','status':'working','turn':1,'where':'untrusted / label'}}]}}
+else: value={{'address':'t2','state':'live','foreground':{{'pid':{pid},'name':'claude','argv':[{argv:?}],'cwd':'/fixture/shared'}}}}
+print(json.dumps(value))
+"#)).unwrap();
+    std::fs::set_permissions(&binary, std::fs::Permissions::from_mode(0o700)).unwrap();
+    binary
+}
+
+// Evidence P reads /proc/P/environ, which exists only on Linux.
+#[cfg(target_os = "linux")]
+#[test]
+fn claudes_per_process_record_links_an_already_running_session_without_hooks() {
+    let _serial = serial();
+    let sc = Scenario::new("demo");
+    let config = sc.root().join("claude-config");
+    std::fs::create_dir_all(config.join("sessions")).unwrap();
+    let t2 = Path::new("t2");
+    let owned = owned_agent_with(
+        sc.root(),
+        "claude",
+        &[("HC_TERMINAL_ID", t2), ("CLAUDE_CONFIG_DIR", &config)],
+    );
+    let pid = owned.0.id();
+    let start = start_token(pid).unwrap();
+    let executable = sc.root().join("claude");
+    let binary = fake_hc(sc.root(), pid, executable.to_str().unwrap());
+    let record = config.join("sessions").join(format!("{pid}.json"));
+    std::fs::write(
+        &record,
+        json!({"pid":pid,"sessionId":S1,"procStart":start,"kind":"interactive"}).to_string(),
+    )
+    .unwrap();
+    let env = PluginEnv::from_vars(
+        [("CLAUDE_CONFIG_DIR", config.to_str().unwrap())],
+        Some(sc.root().into()),
+        rustix::process::getuid().as_raw(),
+    );
+    let mut source = CoreSource {
+        link: Linker::system(&env),
+        core: Core::new(binary.into_os_string(), Duration::from_secs(1)),
+        env,
+        hooks_dir: sc.root().join("no-hooks"),
+    };
+    let mut collector = sc.collector().with_core_source();
+    let observation = source.read();
+    assert!(observation.errors.is_empty(), "{:?}", observation.errors);
+    let swarm = collector.collect(observation.snapshot.as_ref(), None, sc.now(), WINDOW, STALE);
+    assert_eq!(swarm.roots[0].session_id.as_deref(), Some(S1));
+    assert!(!swarm.roots[0].agents.is_empty());
+    // A record left by an earlier process with this PID proves nothing.
+    std::fs::write(
+        &record,
+        json!({"pid":pid,"sessionId":S1,"procStart":"0","kind":"interactive"}).to_string(),
+    )
+    .unwrap();
+    let observation = source.read();
+    assert_eq!(
+        observation.errors,
+        ["core:t2: session ownership unavailable"]
+    );
+    let swarm = collector.collect(observation.snapshot.as_ref(), None, sc.now(), WINDOW, STALE);
+    assert!(swarm.roots[0].session_id.is_none());
+    assert!(swarm.roots[0].agents.is_empty());
 }
 
 /// This fixture must not depend on which Python `/usr/bin/env` finds after env_clear.
@@ -91,6 +190,7 @@ fn main() {
 
 #[test]
 fn exact_terminal_hook_identity_enriches_and_pid_reuse_or_legacy_records_do_not() {
+    let _serial = serial();
     let sc = Scenario::new("demo");
     let mut owned = owned_agent(sc.root(), "claude");
     let pid = owned.0.id();
@@ -110,7 +210,9 @@ print(json.dumps(value))
 "#)).unwrap();
     std::fs::set_permissions(&binary, std::fs::Permissions::from_mode(0o700)).unwrap();
     let env = PluginEnv::from_vars(Vec::<(String, String)>::new(), Some(sc.root().into()), 1000);
+    let link = Linker::system(&env);
     let mut source = CoreSource {
+        link,
         core: Core::new(binary.into_os_string(), Duration::from_secs(1)),
         env,
         hooks_dir: hooks,
@@ -157,6 +259,7 @@ print(json.dumps(value))
 
 #[test]
 fn snapshot_cli_uses_core_before_tui_and_source_failures_are_data() {
+    let _serial = serial();
     let dir = tempfile::tempdir().unwrap();
     native_host_commands(dir.path());
     let hc = dir.path().join("hc");
@@ -239,6 +342,7 @@ fn snapshot_cli_uses_core_before_tui_and_source_failures_are_data() {
 
 #[test]
 fn core_codex_binding_and_one_shot_snapshot_keep_existing_history_warmup() {
+    let _serial = serial();
     let fixture = codex_support::Fixture::new("complete");
     let process_dir = fixture.root().join("owned");
     std::fs::create_dir(&process_dir).unwrap();

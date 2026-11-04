@@ -31,7 +31,9 @@ The environment terminal is a claim. Only a root SessionStart record with an
 exact terminal, matching current foreground PID/start token and any supplied
 PID namespace, and recognized
 Claude process selects a transcript session. Multiple session IDs proven for
-the same terminal/process are ambiguous: no recency or cwd fallback is used.
+the same terminal/process are ambiguous: no recency or cwd fallback is used,
+except that the newest of them links when Claude's own per-process record for
+that exact process names the same session ([session-linking.md](session-linking.md) §3 H).
 Records without core metadata remain valid for the existing TUI; they cannot
 acquire a core terminal. Malformed hooks remain benign and exit zero.
 
@@ -46,6 +48,12 @@ namespace cannot prove local ownership; absent namespace retains macOS behavior.
 Conflicting automatic bindings remain unavailable; an operator can explicitly
 choose `panorama codex-bind THREAD_ID --terminal ADDRESS` when needed. This
 change does not run that command for existing sessions. Remote binding is refused.
+
+Automatic linking from the foreground process (Claude Code's own per-process
+session record, verified against the live foreground PID, start token, argv and
+terminal environment) and the agreement rule between it and hook records are
+specified in [session-linking.md](session-linking.md). Codex core roots still link
+only through the association above.
 
 Missing proof yields a plain supported core root and an availability error;
 source failures are `errors[]` data. Existing live sessions may have no new

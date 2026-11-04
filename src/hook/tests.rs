@@ -372,3 +372,28 @@ fn a_bom_is_refused_as_python_refuses_it() {
     assert!(payload("  {\"a\": 1}\r\n").contains_key("a"));
     assert!(payload("[1]").is_empty());
 }
+
+#[test]
+fn setup_prints_the_three_hooks_with_the_binary_quoted_for_sh() {
+    let value = super::setup::snippet("/opt/it's here/panorama");
+    let hooks = value["hooks"].as_object().unwrap();
+    assert_eq!(hooks.len(), 3);
+    let start = &hooks["SessionStart"][0];
+    assert_eq!(start["matcher"], "startup|resume|clear|compact|fork");
+    assert_eq!(
+        start["hooks"][0]["command"],
+        r"'/opt/it'\''s here/panorama' hook session-start >/dev/null 2>&1; exit 0"
+    );
+    assert_eq!(start["hooks"][0]["type"], "command");
+    assert_eq!(
+        hooks["SubagentStop"][0]["hooks"][0]["command"],
+        r"'/opt/it'\''s here/panorama' hook subagent-stop >/dev/null 2>&1; exit 0"
+    );
+    // The same matcher the plugin's own hooks file uses.
+    let shipped: serde_json::Value =
+        serde_json::from_str(include_str!("../../hooks/hooks.json")).unwrap();
+    assert_eq!(
+        shipped["hooks"]["SessionStart"][0]["matcher"],
+        start["matcher"]
+    );
+}
