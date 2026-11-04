@@ -6,6 +6,8 @@ per-space activity and needs counts while keeping stock machine/worktree/git
 behavior. Selecting an expanded Space creates Swarm once at the first tab
 position or selects its existing graph. The owned tabs and pane-header clones
 add the Swarm glyph/count and graph header while retaining stock terminal behavior.
+The tabs clone keeps the agent-usage-tabs Usage toggle for the layout's `usage`
+panel, shown only while the separately installed `agent-usage` mod exists.
 The graph uses fixed depth columns, independent vertical scrolling, folding,
 keyboard navigation and selected-card details. A selected transcript thread
 shows its recorded spawn tree; a root without a transcript thread can show its

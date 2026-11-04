@@ -160,6 +160,13 @@
                       "content": {
                         "mod": "changes"
                       }
+                    },
+                    {
+                      "id": "usage",
+                      "type": "block",
+                      "content": {
+                        "mod": "agent-usage"
+                      }
                     }
                   ]
                 }

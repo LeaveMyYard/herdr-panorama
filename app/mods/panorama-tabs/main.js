@@ -1,11 +1,18 @@
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex } from "gpui-base";
-import { spaces, panes, run, openOverlay, theme, window, shared, layout, settings, agents, terminals } from "herdr";
+import { spaces, panes, run, openOverlay, theme, window, shared, layout, settings, agents, terminals, appHome, readTextFile, nextCommand } from "herdr";
 
 import { joinRoots, spaceTotals } from './model.js';
 import { startConsumer, consumerFeed, closeConsumer } from './feed-client.js';
 
 import { glyph, countChip } from './swarm.js';
+
+// Usage, as in the agent-usage-tabs clone: a button for the `usage` child of the
+// panel-body stack and the `open-usage` command its toasts run. Panorama does not
+// own or install mods/agent-usage, so the button exists only while that mod does.
+const USAGE = "usage";
+const USAGE_PROBE_MS = 30000;
+const openUsage = () => { run("layout.select", { stack: "panel-body", child: USAGE }); run("layout.show", { id: "panel" }); };
 
 function find(node, id) {
   if (node?.id === id) return node;
@@ -19,6 +26,16 @@ function find(node, id) {
 export default class Tabs extends View {
   init(_props, cx) {
     startConsumer(this, cx);
+    this.usage = undefined; // unknown until the first probe answers
+    cx.spawn(async cx => {
+      for (;;) {
+        let present = false;
+        try { present = (await readTextFile(`${appHome()}/mods/agent-usage/mod.json`)) !== null; } catch { present = false; }
+        if (present !== this.usage) { this.usage = present; cx.notify(); }
+        await cx.sleep(USAGE_PROBE_MS);
+      }
+    });
+    cx.spawn(async () => { for (;;) { if (await nextCommand() === "open-usage" && this.usage) openUsage(); } });
     this.pressed = null;
     this.panels = JSON.parse(localStorage.getItem("panels") ?? "{}");
   }
@@ -93,8 +110,11 @@ export default class Tabs extends View {
       ? Math.max(10, (root.traffic_lights[0] + 64) / settings().zoom - (sidebar?.hidden ? 0 : sidebar?.size?.px ?? 0))
       : 10;
     const panel = find(root, "panel"), body = find(root, "panel-body");
-    const enabled = shared("workspace.panels") ?? ["files", "changes"];
-    this.syncPanel(space, panel, body, enabled);
+    const enabled = [...(shared("workspace.panels") ?? ["files", "changes"]), ...(this.usage ? [USAGE] : [])];
+    // Restore a remembered panel only once Usage availability is known; without
+    // agent-usage a shown usage child would be an empty block, so close it.
+    if (this.usage === false && panel && !panel.hidden && body?.active === USAGE) run("layout.hide", { id: "panel" });
+    else if (this.usage !== undefined) this.syncPanel(space, panel, body, enabled);
     const panelButton = (id, label, icon) => {
       const on = panel && !panel.hidden && body?.active === id;
       return h_flex().id(`panel-${id}`).h(26).px(8).gap(5).flex_none().items_center().rounded(6)
@@ -112,6 +132,7 @@ export default class Tabs extends View {
       .child(button("tab-new", "+", () => openOverlay({ mod: "new-menu", kind: "popup", width: 250, height: 512 })))
       .when(enabled.includes("files"), el => el.child(panelButton("files", "Files", "mods/files/file.svg")))
       .when(enabled.includes("changes"), el => el.child(panelButton("changes", "Changes", "mods/changes/changes.svg")))
+      .when(enabled.includes(USAGE), el => el.child(panelButton(USAGE, "Usage", "mods/agent-usage/usage.svg")))
       .when(w?.buttons, el => el.child(button("minimize", w.platform === "windows" ? svg("mods/tabs/win-min.svg").size(16) : "−", () => run("window.minimize")))
         .child(button("maximize", w.platform === "windows" ? svg(`mods/tabs/${w.maximized ? "win-restore" : "win-max"}.svg`).size(16) : "□", () => run("window.maximize")))
         .child(button("close-window", w.platform === "windows" ? svg("mods/tabs/win-close.svg").size(16) : svg("mods/pane/close.svg").size(13), () => run("window.close"))));

@@ -58,7 +58,12 @@ message, plus Open orchestrator and Transcript.
 ## Built from
 
 `layouts/panorama.json` is a clone of main. Brand/footer keep workspace-chrome;
-Files, Changes and workspace-status remain shipped references. Six owned mods
+Files, Changes and workspace-status remain shipped references. The panel stack
+also has a `usage` block for the separately installed `agent-usage` mod, which
+Panorama never installs, owns or edits. panorama-tabs shows a Usage toggle (and
+answers `panorama-tabs.open-usage`) only while `mods/agent-usage/mod.json`
+exists, checked every 30 s; without it the toggle is hidden and a remembered or
+restored usage panel is closed instead of showing an empty block. Six owned mods
 all use `place:none`:
 
 - panorama: sidebar and primary feed consumer.
