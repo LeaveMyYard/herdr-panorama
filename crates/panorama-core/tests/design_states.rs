@@ -18,7 +18,7 @@ use panorama_core::view::{Filter, Target, View, render_dock, render_graph};
 use support::design::design_swarm;
 use support::owned::check_owned;
 use support::states::{NOW, states_swarm};
-use support::{NO_SESSIONS, assert_same, cells, fixture, golden, wire_swarm};
+use support::{NO_SESSIONS, fixture, wire_swarm};
 
 const H: i32 = 56;
 
