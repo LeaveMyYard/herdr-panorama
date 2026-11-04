@@ -30,8 +30,8 @@ function motion(now, edge, sweep, edgeHue, sweepHue) {
     .child(div().absolute().left(`${(-.28 + eased * 1.28) * 100}%`).w('28%').h_full().bg(sweepHue).opacity(.85)));
   return result;
 }
-// Line 1's right side: aggregate need tiles of the subtree below (✗ / ! / ?N), then the own
-// state badge. A need the card's own badge already shows is not repeated as a tile.
+// Line 1's right side: a root session's aggregate need tiles (✗ / ! / ?N, as V11 D/D2 draw
+// them on depth-0 cards), then the own state badge, which a tile never repeats.
 function marks(kinds, questions, own, ownQuestions) {
   const code = stateCode(own);
   return h_flex().flex_none().items_center().gap(3)
@@ -42,7 +42,7 @@ function marks(kinds, questions, own, ownQuestions) {
 function subject(node, model, now) {
   if (node.kind === 'agent') {
     const agent = node.agent;
-    return { status: agent.status, program: iconProgram(harnessOf(agent, node.owner.root)), kinds: node.below.kinds, questions: node.below.questions.size,
+    return { status: agent.status, program: iconProgram(harnessOf(agent, node.owner.root)), kinds: [], questions: 0,
       own: agent.question_ids.length, activity: agent.activity, right: [agent.model, stamp(agent.last_at || agent.started, now)] };
   }
   const item = node.item, aggregate = item.aggregate ?? { kinds: [], questions: 0 };

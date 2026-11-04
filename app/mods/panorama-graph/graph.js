@@ -59,22 +59,11 @@ export function rootTree(item) {
   }
   return result;
 }
-// Bottom-up: whether a node stays listed, and the needs (✗ / ! / ?N) of everything below it.
+// Bottom-up: a node stays listed while anything in its subtree is unfinished.
 function annotate(roots) {
   const order = [], stack = roots.slice();
   while (stack.length) { const node = stack.pop(); order.push(node); stack.push(...node.children); }
-  for (const node of order.reverse()) {
-    node.shown = node.kind === 'native' || !finished(node.agent.status) || node.children.some(child => child.shown);
-    const kinds = new Set(), questions = new Set();
-    for (const child of node.children) {
-      const own = child.kind === 'native' ? child.item.aggregate.kinds : needs(child.agent.status) ? [child.agent.status] : [];
-      for (const kind of [...own, ...child.below.kinds]) kinds.add(kind);
-      const ids = child.kind === 'native' ? child.item.root.inbox ?? [] : child.agent.question_ids;
-      for (const id of ids) questions.add(JSON.stringify([child.owner.key, id]));
-      for (const id of child.below.questions) questions.add(id);
-    }
-    node.below = { kinds: ['fail', 'blk', 'wait'].filter(kind => kinds.has(kind)), questions };
-  }
+  for (const node of order.reverse()) node.shown = node.kind === 'native' || !finished(node.agent.status) || node.children.some(child => child.shown);
   return roots;
 }
 export function treeLayout(item, selected = null, expanded = new Set()) {
@@ -92,7 +81,7 @@ export function treeLayout(item, selected = null, expanded = new Set()) {
       const y = Math.max(cur[depth] ?? 0, group.parentY, children ? (trunk[depth + 1] ?? -100) - 27 + 16 : 0);
       const node = fold
         ? { kind: 'fold', key: JSON.stringify(['finished', group.key]), group: group.key, fold: source.map(node => node.agent), owner: source[0].owner, older: group.parent ? 0 : item.root.hidden_finished ?? 0 }
-        : { kind: source.kind, key: source.key, agent: source.agent ?? null, item: source.item, owner: source.owner, below: source.below, children: source.children.length };
+        : { kind: source.kind, key: source.key, agent: source.agent ?? null, item: source.item, owner: source.owner, children: source.children.length };
       Object.assign(node, { depth, column: depth, parent: group.parent, y, height, mid: fold ? 20 : 27 });
       nodes.push(node); cur[depth] = y + height + 10; group.ys.push(y + node.mid);
       if (children) work.push({ kind: 'group', list: source.children, depth: depth + 1, parent: node, parentY: y, key: node.key });

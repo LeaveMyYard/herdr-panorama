@@ -60,11 +60,6 @@ test('finished siblings fold per parent with titles; live descendants keep finis
   assert.ok(opened.nodes.some(node=>node.agent?.id==='done-explorer'));
   assert.equal(new Set(opened.nodes.map(node=>node.key)).size,opened.nodes.length);
 });
-test('a card carries the needs of its subtree below it, distinct per question', () => {
-  const nodes=treeLayout(scenario()).nodes, find=id=>nodes.find(node=>node.agent?.id===id);
-  assert.deepEqual(find('reviewer').below.kinds,['fail','wait']); assert.equal(find('reviewer').below.questions.size,1);
-  assert.deepEqual(find('checker').below.kinds,[]); assert.deepEqual(find('batch').below.kinds,[]);
-});
 test('arrow navigation traverses parents from depth 0 and remembers each child selection', () => {
   const root=scenario(), s=state();let model=graphModel([root],s);
   selectNode(s,model,model.heads[0]);
