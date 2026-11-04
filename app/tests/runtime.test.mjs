@@ -196,6 +196,16 @@ for (const name of ['panorama-spaces','panorama-graph','panorama-peek']) {
     assert.deepEqual(tree(s.home),before);
   });
 }
+test('a retained spaces store with the sidebar scope is reused; an unsupported scope value refuses before mutation', t => {
+  for (const [value, accepted] of [['"all"', true], ['"everything"', false]]) {
+    const s = sandbox(t); mkdirSync(join(s.home,'data/panorama-spaces'),{recursive:true});
+    writeManaged(join(s.home,'data/panorama-spaces/store.json'), { 'agents.scope': value, 'machines.folded': '[]' });
+    const before = tree(s.home), result = s.run('install');
+    if (accepted) { ok(result); ok(s.run('uninstall')); }
+    else { fail(result); assert.match(result.stderr,/Unsupported retained preference shape: data\/panorama-spaces\/store.json\/agents.scope/); }
+    assert.deepEqual(tree(s.home),before);
+  }
+});
 test('owned empty mod-data dirs are removed; added mod-data files survive without recursive cleanup', t => {
   const s = setup(t,false);
   for (const name of ['panorama-spaces','panorama-graph','panorama-peek']) assert.ok(s.receipt.dirs.includes(`data/${name}`));

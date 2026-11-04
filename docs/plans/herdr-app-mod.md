@@ -181,7 +181,8 @@ only no-trace exceptions:
   approved, and the installer never edits personal `shared.json`.
 - Exactly `data/panorama-spaces/store.json` and `data/panorama-tabs/store.json`, with their
   necessary parent directories, may remain to preserve stock panel selection, machine
-  folding and machine-reconnection recovery across ordinary restart and reinstall. No
+  folding and machine-reconnection recovery across ordinary restart and reinstall. The
+  spaces store also carries the sidebar's Agents scope (`agents.scope`); no file is added. No
   graph store or other owned payload cache is approved.
 - Exactly `layouts/.state/panorama.json` and its necessary parent may remain as
   host-owned layout state. Herdr can persist the full Panorama snapshot there, including

@@ -1,11 +1,11 @@
 import { View, div, svg } from 'gpui-kit';
 import { v_flex, h_flex } from 'gpui-base';
-import { agents, terminals, panes, spaces, layout, theme, shared, setShared, setAgentOrder, run, openOverlay, closeOverlay, props, window, nextCommand } from 'herdr';
+import { agents, terminals, panes, spaces, layout, theme, shared, setShared, setAgentOrder, run, openOverlay, closeOverlay, props, window, nextCommand, appHome, readTextFile } from 'herdr';
 import { startSidebar, consumerFeed, closeConsumer } from './feed-client.js';
 import { initViewport, wheelViewport, viewport } from './viewport.js';
 import { rootTarget } from './routing.js';
 import { PeekCaller } from './peek-caller.js';
-import { joinRoots, groups, listed, rootSignature, iconProgram, spaceTotals } from './model.js';
+import { joinRoots, groups, listed, rootSignature, iconProgram, headerTotals, storedScope, cardPlace } from './model.js';
 import { rows, isOpen, needs, directTiles, agentTitle } from './tree.js';
 import { icon, mark, rootMarks, lines } from './marks.js';
 import { tile, badge, glyph, glyphRun, mix, stateOf, cardColors, SURFACE } from './state.js';
@@ -49,29 +49,14 @@ function sweep(on, now) {
   return [div().absolute().left(28).right(14).bottom(0).h(1.5).overflow_hidden()
     .child(div().absolute().left(`${(-.28 + eased * 1.28) * 100}%`).w('28%').h_full().bg(stateOf('run').hue).opacity(.85))];
 }
-// Header totals for the active space: ?questions, !permission, ×failed (zeros hidden).
-function headerTotals(items, spaceId) {
-  const seen = new Set(), entities = [];
-  for (const item of items) for (const entity of [item, ...(item.nativeChildren ?? [])]) {
-    const address = entity.stock?.address ?? entity.terminal;
-    if (entity.space !== spaceId || address === null || address === undefined || seen.has(address)) continue;
-    seen.add(address); entities.push(entity);
-  }
-  const total = { wait: spaceTotals(items, spaceId).questions, blk: 0, fail: 0 };
-  for (const entity of entities) {
-    const agents = entity.root.agents ?? [];
-    total.fail += agents.filter(agent => agent.status === 'fail').length;
-    // A root blocked on its own agent's permission is one request, not two.
-    const asked = agents.filter(agent => agent.status === 'blk').length;
-    total.blk += asked || (entity.status === 'blocked' ? 1 : 0);
-  }
-  return total;
-}
 export default class Panorama extends View {
   init(_props, cx) {
     this.folds = new Map(); this.hovered = null; this.held = null;
-    this.changed = {};
+    this.changed = {}; this.scope = 'space';
     if (props()?.sortMenu) return;
+    // The scope persists in the retained panorama-spaces store (no shared key); that mod
+    // writes it on our command. A choice made before the read lands wins.
+    cx.spawn(async cx => { try { const text = await readTextFile(`${appHome()}/data/panorama-spaces/store.json`); if (!this.scopeSet && text) { this.scope = storedScope(text); cx.notify(); } } catch {} });
     initViewport(this, cx);
     const client = startSidebar(this, cx);
     this.peekCaller = new PeekCaller('panorama', client, () => consumerFeed(this));
@@ -90,6 +75,10 @@ export default class Panorama extends View {
   }
   peek(item, row, cx) {
     this.peekCaller.show({ root: item.root, agent: row.agent }, row.key, false, cx);
+  }
+  setScope(scope, cx) {
+    this.scope = scope; this.scopeSet = true; cx.notify();
+    run(`panorama-spaces.agents-scope-${scope}`);
   }
   newAgent() { openOverlay({ mod: 'new-menu', kind: 'popup', width: 250, height: 512 }); }
   sortMenu(t) {
@@ -110,7 +99,7 @@ export default class Panorama extends View {
   // V11 (as the TUI dock): only the docked entry opens into its list by default.
   // A stale feed-only root never opens: its rows would replay old feed states as fresh.
   rootOpen(item) { return !item.stale && isOpen(this.folds, item.key, rootSignature(item), item.focused); }
-  rootRow(item, index, compact, now, cx, joined = false) {
+  rootRow(item, index, compact, now, cx, joined = false, scope = 'space') {
     const t = theme(), sig = rootSignature(item), open = this.rootOpen(item);
     const count = item.stale ? 0 : (item.root.agents?.length ?? 0) + (item.root.hidden_finished > 0 ? 1 : 0) + item.nativeChildren.length;
     if (compact) return h_flex().id(`root-${item.key}`).h(26).px(8).flex_none().items_center().gap(4).hover(el => el.bg(t.hover))
@@ -139,7 +128,7 @@ export default class Panorama extends View {
         .children(line.tiles.map(mark => tile(mark.status, 16, mark.status === 'wait' ? mark.questions : null)))
         .when(line.done > 0, el => el.child(tile('done', 16, line.done)))))
       .child(div().flex_1().min_w(0).truncate().when(!quiet && (line.tiles.length > 0 || line.done > 0), el => el.ml(6)).text_size(11.5).text_color(docked ? SURFACE.dim : SURFACE.faint)
-        .child(item.stale ? '' : `${line.active} active · ${line.live} agents`));
+        .child(item.stale ? '' : [cardPlace(item, scope), `${line.active} active · ${line.live} agents`].filter(Boolean).join(' · ')));
     // An open card continues into its rows (inCard), so its bottom stays square and open.
     return div().pt(4).h(52).flex_none().child(div().id(`root-${item.key}`).relative().h(48).border_color(colors.border).bg(hue)
       .when(joined, el => el.rounded_t(8).border_t(1).border_l(1).border_r(1)).when(!joined, el => el.rounded(8).border(1))
@@ -188,10 +177,11 @@ export default class Panorama extends View {
     }
     const everything = joinRoots(this.feed?.feed, stock, all, ps, ss, this.changed);
     setAgentOrder(everything.filter(item => item.stock).map(item => item.stock.address));
-    // V10: the active space's roots, plus roots known only from the feed (listed()).
-    const active = ss.find(space => space.active)?.id ?? null;
-    const items = listed(everything, active, Boolean(this.feed?.stale));
-    const totals = headerTotals(items, active);
+    // V10: the active space's roots, plus roots known only from the feed (listed());
+    // All spaces lists every space's roots in the same sections.
+    const active = ss.find(space => space.active)?.id ?? null, scope = this.scope, everySpace = scope === 'all';
+    const items = listed(everything, active, Boolean(this.feed?.stale), scope);
+    const totals = headerTotals(items, active, scope);
     let sections = groups(items);
     const grouped = shared('agents.sort') === 'grouped';
     if (grouped) {
@@ -230,7 +220,7 @@ export default class Panorama extends View {
             if (childOpen) for (const row of rows(child.root, this.folds, true)) inner.push(this.detailRow(child, { ...row, lines: [...segments.map(() => '│'), ...row.lines] }, now, cx));
           }
         }
-        append(this.rootRow(item, items.indexOf(item), compact, now, cx, inner.length > 0), compact ? 26 : 52, !compact && cardState(item) === 'run' && item.aggregate.sweep);
+        append(this.rootRow(item, items.indexOf(item), compact, now, cx, inner.length > 0, scope), compact ? 26 : 52, !compact && cardState(item) === 'run' && item.aggregate.sweep);
         inner.forEach((element, n) => append(this.inCard(item, element, n === inner.length - 1), ROW + (n === inner.length - 1 ? 5 : 0)));
       }
     }
@@ -242,7 +232,11 @@ export default class Panorama extends View {
     const errors = [...(this.feed?.errors ?? []), ...(this.peekCaller.error ? [this.peekCaller.error] : []), ...(this.writerError ? [this.writerError] : [])];
     return v_flex().size_full().min_h(0).bg(t.chrome).border_t(1).border_color(t.border).text_size(13)
       .when(!compact, el => el.child(h_flex().px(16).h(41).pt(14).pb(5).flex_none().items_center().justify_between()
-        .child(div().text_size(11.5).font_medium().text_color(t.dim).child('Agents'))
+        .child(h_flex().gap(6).items_center().child(div().text_size(11.5).font_medium().text_color(t.dim).child('Agents'))
+          .child(h_flex().id('ag-scope').h(18).px(5).rounded(4).items_center().text_size(11).text_color(everySpace ? t.foreground : DOCK.number).cursor_pointer()
+            .hover(el => el.bg(t.hover).text_color(t.foreground))
+            .on_click((_event, cx) => this.setScope(everySpace ? 'space' : 'all', cx))
+            .child(everySpace ? 'All spaces' : 'This space')))
         .child(h_flex().gap(8).items_center()
           .child(h_flex().mr(2).gap(7).items_center().text_size(11).font_bold()
             .when(totals.wait > 0, el => el.child(div().text_color(DOCK.need).child(`?${totals.wait}`)))

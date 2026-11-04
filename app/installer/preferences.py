@@ -29,6 +29,8 @@ def machine(value, name):
 
 
 def valid(key, value):
+    if key == 'agents.scope':
+        return value == 'all'
     if key == 'panels':
         return record(value) and all(item is None or isinstance(item, str) for item in value.values())
     if key == 'machines.folded':
@@ -62,7 +64,7 @@ def inspect(home, directory):
     store = loads(current[0].decode('utf8'))
     if not record(store) or any(not isinstance(value, str) for value in store.values()):
         raise ValueError(f'Retained preference store must be a JSON string-map: {path}')
-    known = ('panels',) if directory.endswith('panorama-tabs') else ('machines.folded', 'machines.reconnecting')
+    known = ('panels',) if directory.endswith('panorama-tabs') else ('machines.folded', 'machines.reconnecting', 'agents.scope')
     for key in known:
         if key in store and not valid(key, loads(store[key])):
             raise ValueError(f'Unsupported retained preference shape: {path}/{key}')
