@@ -1,13 +1,13 @@
 {
-  "source_head": "a0d22d16d54753671e6af0e151b73d004a37fd2b",
+  "source_head": "496c7ee550c3b57409dc49f1fd75487248e1008d",
   "source_dirty": "",
   "sidebar_sources": {
     "panorama/binary.js": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
     "panorama/contract.js": "799534499636f7121188b6c7fc6f6a3f05d0781b236a75e05bb8536be56eca2c",
     "panorama/feed-client.js": "8a836fbc95b4d7d0d29946c39d88b75ce48b5293df8e1c9c4b4b5dcda09214ed",
-    "panorama/main.js": "4dbea0d6f674d83b9633f2ee99ef2633828fac1d98a829f565fbc108eedbe591",
+    "panorama/main.js": "cec0c319458e35a45a923b9fb6758c55714651ce679bd3131137e357fe039a3f",
     "panorama/marks.js": "13e5d13607af063dd3ff06db5671c986da80a5189b2bdda4c96b1e04aef2ea2a",
-    "panorama/model.js": "4d653d8cbf77c11ce49d502bacf8f986bd607e4fde3039b06fccb9ff7757b12d",
+    "panorama/model.js": "b4ba939697bbb8a88a4f66fa42665eae9173805b911fd107917702ae298cdec6",
     "panorama/peek-caller.js": "2feb99ac0380095169bca403e8767b9f98c2c3858b8b4b7895c48e0683caaa90",
     "panorama/routing.js": "0a0c932d301427c9c6fbd6365a670945f0515db237eef3ba070fa67a9f450ae2",
     "panorama/state.js": "fa728eaecbbff12978d23bf0db6de308106895b777cd692020e6b5685bde40fe",
@@ -18,16 +18,16 @@
     "panorama-spaces/contract.js": "799534499636f7121188b6c7fc6f6a3f05d0781b236a75e05bb8536be56eca2c",
     "panorama-spaces/feed-client.js": "8a836fbc95b4d7d0d29946c39d88b75ce48b5293df8e1c9c4b4b5dcda09214ed",
     "panorama-spaces/main.js": "45020698a06d5f69ff6c0bb10be4ad2f04aed1eacabd0f908e0f8ca7f3ce73e4",
-    "panorama-spaces/model.js": "4d653d8cbf77c11ce49d502bacf8f986bd607e4fde3039b06fccb9ff7757b12d",
+    "panorama-spaces/model.js": "b4ba939697bbb8a88a4f66fa42665eae9173805b911fd107917702ae298cdec6",
     "panorama-spaces/state.js": "33916886591ccc3b7bb877a09c7c68ebda29c04234083270d0e1a919740bc982",
     "panorama-spaces/tabs.js": "d39d193f14c0636836242fdf80d631fd51bac366c7fe9547713cf6c87b6a4354",
     "panorama-spaces/tree.js": "eb481ed97705f98fe8eb43d340b16c7f62bb1eefcf71bff236637075ad29b079"
   },
   "isolation": {
     "separate_core": true,
-    "core_pid": 3059273,
+    "core_pid": 3426311,
     "initial_live": 0,
-    "session": "v10s-405t7s0t",
+    "session": "v10s-fflui69u",
     "private_env_verified": true
   },
   "core_stop": 0,
