@@ -13,6 +13,16 @@ use std::{
     time::Duration,
 };
 
+/// Each test writes executables and forks; run concurrently, a fork in one test can hold
+/// another test's still-open executable and its exec fails with ETXTBSY. Run them in turn.
+static SERIAL: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+fn serial() -> std::sync::MutexGuard<'static, ()> {
+    SERIAL
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
 struct Owned(Child);
 impl Drop for Owned {
     fn drop(&mut self) {
@@ -75,6 +85,7 @@ print(json.dumps(value))
 
 #[test]
 fn claudes_per_process_record_links_an_already_running_session_without_hooks() {
+    let _serial = serial();
     let sc = Scenario::new("demo");
     let config = sc.root().join("claude-config");
     std::fs::create_dir_all(config.join("sessions")).unwrap();
@@ -173,6 +184,7 @@ fn main() {
 
 #[test]
 fn exact_terminal_hook_identity_enriches_and_pid_reuse_or_legacy_records_do_not() {
+    let _serial = serial();
     let sc = Scenario::new("demo");
     let mut owned = owned_agent(sc.root(), "claude");
     let pid = owned.0.id();
@@ -241,6 +253,7 @@ print(json.dumps(value))
 
 #[test]
 fn snapshot_cli_uses_core_before_tui_and_source_failures_are_data() {
+    let _serial = serial();
     let dir = tempfile::tempdir().unwrap();
     native_host_commands(dir.path());
     let hc = dir.path().join("hc");
@@ -323,6 +336,7 @@ fn snapshot_cli_uses_core_before_tui_and_source_failures_are_data() {
 
 #[test]
 fn core_codex_binding_and_one_shot_snapshot_keep_existing_history_warmup() {
+    let _serial = serial();
     let fixture = codex_support::Fixture::new("complete");
     let process_dir = fixture.root().join("owned");
     std::fs::create_dir(&process_dir).unwrap();
