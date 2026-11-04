@@ -1,9 +1,16 @@
-//! Feed v1: the swarm in its legacy shape ([`super::v1`]), adding only app v1 provenance.
-use super::{World, v1};
-use crate::{host::Host, snapshot::pyjson::J};
+//! Feed v2 (`docs/protocol/app-feed-v2.md`): the swarm as `snapshot --json` prints it, roots
+//! with one flat agent tree each, adding only the app's provenance (`v`, root `host` and
+//! `terminal`, agent `harness`).
+use super::World;
+use crate::{
+    host::Host,
+    snapshot::{json, pyjson::J},
+};
 use serde_json::{Map, Number, Value};
 use std::collections::HashSet;
 
+/// The feed version this writer emits and publishes (`docs/protocol/app-feed-v2.md`).
+pub const VERSION: i64 = 2;
 const SAFE_INTEGER: i64 = 9_007_199_254_740_991;
 
 fn value(j: J) -> Result<Value, String> {
@@ -59,6 +66,9 @@ fn validate(world: &World) -> Result<(), String> {
         if !world.swarm.inbox_ok && !root.inbox.is_empty() {
             return Err("unavailable inbox has questions".into());
         }
+        if root.hidden_finished < 0 {
+            return Err("negative hidden_finished".into());
+        }
         let mut agents = HashSet::new();
         for a in &root.agents {
             if a.id.is_empty() || !agents.insert(&a.id) || a.tool_calls < 0 || a.resumes < 0 {
@@ -86,9 +96,9 @@ fn validate(world: &World) -> Result<(), String> {
 
 pub fn model(world: &World) -> Result<Value, String> {
     validate(world)?;
-    let mut feed = value(v1::swarm(&world.swarm))?;
-    feed["v"] = Value::Number(1.into());
-    for ((row, root), meta) in feed["orchestrators"]
+    let mut feed = value(json::swarm(&world.swarm))?;
+    feed["v"] = Value::Number(VERSION.into());
+    for ((row, root), meta) in feed["roots"]
         .as_array_mut()
         .unwrap()
         .iter_mut()
@@ -104,14 +114,12 @@ pub fn model(world: &World) -> Result<Value, String> {
             row["tab_no"] = Value::Null;
             row["focused"] = Value::Bool(false);
         }
-        for thread in row["threads"].as_array_mut().unwrap() {
-            for agent in thread["agents"].as_array_mut().unwrap() {
-                let supplied = agent["id"]
-                    .as_str()
-                    .and_then(|id| meta.agent_harnesses.get(id));
-                agent["harness"] =
-                    Value::String(harness(supplied.map_or("unknown", String::as_str)).into());
-            }
+        for agent in row["agents"].as_array_mut().unwrap() {
+            let supplied = agent["id"]
+                .as_str()
+                .and_then(|id| meta.agent_harnesses.get(id));
+            agent["harness"] =
+                Value::String(harness(supplied.map_or("unknown", String::as_str)).into());
         }
     }
     Ok(feed)

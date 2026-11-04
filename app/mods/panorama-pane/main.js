@@ -60,7 +60,7 @@ export default class Pane extends View {
       return h_flex().size_full().tooltip(this.packet.errors.join(' · ')).px(10).gap(8).items_center().bg(t.background).border_b(1).border_color(t.border).text_size(12)
         .on_click(() => run('pane.focus', { pane: p.pane }))
         .child(glyph(t, totals)).child(div().font_medium().text_color(t.foreground).child('Swarm'))
-        .child(div().flex_1().truncate().text_color(t.dim).child(`${space?.name ?? ''} · ${totals.orchestrators} orchestrators · ${totals.threads} threads · ${totals.agents} agents`))
+        .child(div().flex_1().truncate().text_color(t.dim).child(`${space?.name ?? ''} · ${totals.roots} roots · ${totals.agents} agents`))
         .child(rootMarks(t, { status: totals.working ? 'working' : totals.done ? 'done' : 'idle', aggregate: totals }));
     }
     const name = ((p.program?.agent || p.program?.shell) && p.program.name) || p.title || p.program?.name || "shell";

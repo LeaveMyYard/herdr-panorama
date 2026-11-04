@@ -68,6 +68,12 @@ fn personal_feed_and_unproved_temporary_files_are_not_replaced_or_adopted() {
     fs::lock(&lifetime, Duration::ZERO).unwrap();
     let mut journal = Journal::open(&home, &receipt).unwrap();
     journal.publish(&home, &receipt, &frame(0)).unwrap();
+    // only the version this writer speaks is published; a v1 frame leaves the feed as it was
+    let mut v1: serde_json::Value = serde_json::from_slice(&frame(1)).unwrap();
+    v1["v"] = json!(1);
+    let v1 = serde_json::to_vec(&v1).unwrap();
+    assert!(journal.publish(&home, &receipt, &v1).is_err());
+    assert_eq!(std::fs::read(installed.app.join(FEED)).unwrap(), frame(0));
     std::fs::write(installed.app.join(FEED), b"personal content").unwrap();
     assert!(journal.publish(&home, &receipt, &frame(1)).is_err());
     assert_eq!(

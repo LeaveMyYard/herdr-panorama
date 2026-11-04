@@ -1,5 +1,5 @@
 import { appHome, exec, readTextFile, watchFolder, shared, setShared, layout } from 'herdr';
-import { readResult } from './contract.js';
+import { readResult, probeMatches } from './contract.js';
 import { installReceipt, verifiedBinary } from './binary.js';
 const OWNER = 'panorama.feed.owner', PACKET = 'panorama.feed';
 const HEARTBEAT = 5000, TTL = 15000;
@@ -156,7 +156,7 @@ function start(view, cx, role) {
           }
         });
         const capability = await invoke(['app-feed', '--help'], () => active(revision)); if (!active(revision)) return;
-        if (capability.code !== 0 || !capability.stdout.includes('panorama app-feed v1')) throw Error(capability.stderr || capability.stdout);
+        if (capability.code !== 0 || !probeMatches(capability.stdout)) throw Error(capability.stderr || capability.stdout);
         const result = await invoke(['app-feed', '--ensure'], () => active(revision)); if (!active(revision)) return;
         if (result.code !== 0) throw Error(result.stderr || result.stdout);
         started = true; view.writerError = null; reload(context);

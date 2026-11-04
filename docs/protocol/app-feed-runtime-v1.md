@@ -130,7 +130,7 @@ receipt cannot adopt an old generation directory or preexisting feed.
 | `G/ownership.json` | Writer | Ownership below; generation and binary fingerprint must match receipt. |
 | `G/.ownership.tmp` | Writer | Exclusive-create staging; any leftover is ambiguous and preserved/refused. |
 | `G/.control.tmp` | Installer / failed-start ensure | Exclusive-create staging for control replacement; leftover is ambiguous and preserved/refused. |
-| `data/panorama/feed.json` | Writer | Atomic full feed v1; bytes must match a recorded ownership digest before replacement/removal. |
+| `data/panorama/feed.json` | Writer | Atomic full feed ([v2](app-feed-v2.md)); bytes must match a recorded ownership digest before replacement/removal. |
 | `data/panorama/.feed-<install_id>.tmp` | Writer | Exclusive-create sibling staging; removable only if complete bytes match pending digest for this generation. |
 
 The shared `data/panorama` parent contains only `install.json`, `bin`, `runtime`,
@@ -214,7 +214,7 @@ leaves the last valid feed intact. No receipt or control means no new writes.
 ## Starting, stopping and timing
 
 `panorama app-feed --help` is a non-starting, no-files capability probe, exit 0,
-with `panorama app-feed v1` in stdout. Public startup is
+with `panorama app-feed v2` in stdout. Public startup is
 `app-feed --ensure --app-home ABSOLUTE_HOME [--install-id GENERATION]`;
 default home matches herdr-app:
 HERDR_APP_HOME, otherwise HOME/.config/herdr-app. No alternate development mode.

@@ -1,7 +1,7 @@
 use super::{ensure, fs::Home, json};
 use std::path::PathBuf;
 
-pub const HELP: &str = "panorama app-feed v1\nusage: panorama app-feed --ensure [--app-home ABSOLUTE_HOME] [--install-id GENERATION]\n";
+pub const HELP: &str = "panorama app-feed v2\nusage: panorama app-feed --ensure [--app-home ABSOLUTE_HOME] [--install-id GENERATION]\n";
 fn arguments(args: &[String]) -> Result<(bool, PathBuf, Option<String>), String> {
     let mut ensure = false;
     let mut watch = false;

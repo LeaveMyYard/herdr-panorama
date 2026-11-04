@@ -3,8 +3,10 @@ import { v_flex, h_flex, Editor, EditorState } from 'gpui-base';
 import { agents, terminals, panes, spaces, props, theme, settings, window, run, hc, closeOverlay } from 'herdr';
 import { startConsumer, consumerFeed, closeConsumer } from './feed-client.js';
 import { harnessOf, iconProgram, joinRoots } from './model.js';
-import { rootKey } from './contract.js';
-import { icon, mark } from './marks.js';
+import { agentTitle } from './tree.js';
+import { rootKey, requireProbe } from './contract.js';
+import { icon } from './marks.js';
+import { badge, stateOf } from './state.js';
 import { subject, transcriptScope, focusTarget } from './subject.js';
 import { Pages } from './paging.js';
 import { peekCommand, guard } from './actions.js';
@@ -31,8 +33,7 @@ export default class PanoramaPeek extends View {
   scope() { return transcriptScope(this.value(), window()?.platform); }
   current(scope) { return !this.closed && this.scope()?.key === scope?.key; }
   async validate() {
-    const response = await this.client.callPrivate(['app-feed', '--help']);
-    if (response.code !== 0 || response.stdout.split('\n')[0] !== 'panorama app-feed v1') throw Error(response.stderr || response.stdout);
+    await requireProbe(args => this.client.callPrivate(args));
   }
   newPages() {
     this.pages?.close();
@@ -113,15 +114,20 @@ export default class PanoramaPeek extends View {
         .when(Boolean(this.pages.error), el => el.child(div().text_size(11.5).text_color(t.blocked).child(this.pages.error.raw)))
         .child(this.editor ? Editor.new(this.editor).flex_1().min_h(0) : div().flex_1());
     }
-    const agent = value?.agent, root = value?.root, harness = value ? harnessOf(agent, root, value.thread) : 'unknown';
+    const agent = value?.agent, root = value?.root, harness = value ? harnessOf(agent, root) : 'unknown';
     const item = value ? joinRoots(consumerFeed(this).feed, agents(), terminals(), panes(), spaces()).flatMap(root => [root, ...root.nativeChildren]).find(item => rootKey(item.root) === rootKey(root)) : null;
     const space = item?.space ? spaces().find(space => space.id === item.space) : null;
-    const context = [space?.name, item?.detail ?? root?.tab_label ?? root?.pane_id].filter(Boolean).join(' · ');
-    const error = agent?.error || this.actionError;
-    return frame.child(h_flex().items_center().gap(7).child(icon(iconProgram(harness), 16, t.foreground))
-      .child(div().font_semibold().child(agent?.role || agent?.description || root?.tab_label || ''))
-      .child(div().min_w(0).flex_1().truncate().text_color(t.dim).child(value?.thread?.name ?? ''))
-      .when(Boolean(value), el => el.child(mark(t, agent?.status ?? root.herdr_status, agent?.question_ids.length ?? root.inbox.length, !agent))))
+    // V11: titled by the agent's name (else its root's), with role · model beside it.
+    const rootName = item?.name || root?.title || root?.tab_label || root?.pane_id || '';
+    const context = [space?.name, rootName].filter(Boolean).join(' · ');
+    const heading = agent ? agentTitle(agent) : rootName, secondary = agent ? [agent.title ? agent.role : null, agent.model].filter(Boolean).join(' · ') : '';
+    const error = agent?.error || this.actionError, status = agent?.status ?? root?.herdr_status;
+    // V11 C: the subject's state badge, and its state edge down the card's left side.
+    return frame.relative().when(Boolean(value), el => el.child(div().absolute().left(0).top(10).bottom(10).w(3).rounded(2).bg(stateOf(status).hue)))
+      .child(h_flex().items_center().gap(7).child(icon(iconProgram(harness), 16, t.foreground))
+      .child(div().flex_shrink(1).min_w(0).truncate().font_semibold().child(heading))
+      .child(div().min_w(0).flex_1().truncate().text_color(t.dim).child(secondary))
+      .when(Boolean(value), el => el.child(badge(status, undefined, { questions: agent?.question_ids.length ?? root.inbox.length, height: 20 }))))
       .child(v_flex().text_size(11.5).line_height(1.45).text_color(t.dim).child(metadata(value, harness, Date.now()))
         .when(Boolean(agent), el => el.child(`Subagent of ${context}. It has no pane of its own.`)))
       .when(Boolean(error), el => el.child(v_flex().rounded(7).px(9).py(7).bg(t.blocked + '1c').border(1).border_color(t.blocked + '40')
@@ -129,7 +135,7 @@ export default class PanoramaPeek extends View {
         .children(error.split('\n').map(line => div().child(line)))))
       .child(v_flex().gap(7).child(div().text_size(11).text_color(t.dim).child('Last message'))
         .child(div().text_size(12.5).line_height(1.5).text_color(t.muted).child(agent?.last_message ?? '')))
-      .child(h_flex().gap(6).child(button('Open orchestrator', '⏎', Boolean(value && this.target(value)) && !this.busy, true, cx => this.open(cx), t))
+      .child(h_flex().gap(6).child(button('Open root pane', '⏎', Boolean(value && this.target(value)) && !this.busy, true, cx => this.open(cx), t))
         .child(button('Transcript', 't', Boolean(scope && peekCommand(this.intent, 'transcript')) && !this.busy, false, cx => this.transcript(cx), t)));
   }
 }

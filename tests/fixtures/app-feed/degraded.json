@@ -1,5 +1,5 @@
 {
-  "v": 1,
+  "v": 2,
   "generated_at": 1800000000.0,
   "herdr_ok": false,
   "inbox_ok": false,
@@ -8,9 +8,7 @@
     "inbox: fixture database unavailable"
   ],
   "counts": {
-    "orchestrators": 0,
-    "threads": 0,
-    "active_threads": 0,
+    "roots": 0,
     "agents": 0,
     "running": 0,
     "waiting": 0,
@@ -18,5 +16,5 @@
     "blocked": 0,
     "failed": 0
   },
-  "orchestrators": []
+  "roots": []
 }

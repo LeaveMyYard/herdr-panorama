@@ -1,26 +1,40 @@
 import { rootKey } from './contract.js';
 import { aggregate, urgency } from './tree.js';
 const clean = text => (text ?? '').replace(/^[^\p{L}\p{N}]+/u, '').trim();
-function title(tab, pane, fallback) {
-  if (!tab) return fallback ?? '';
-  const program = pane?.program?.name, live = clean(pane?.title);
-  const telling = live && live !== program && !/^[~/]|^[A-Za-z]:\\/.test(live) && !live.includes('@') && live.toLowerCase() !== pane?.program?.key;
-  return (tab.name === program || !tab.named) && telling ? live : tab.name;
+// A live terminal/tab name counts as the operator's only when it says something beyond
+// the defaults: not empty, not a position, not the address or the program's own name.
+function named(value, address, program) {
+  const name = clean(value), lower = name.toLowerCase();
+  return name && !/^\d+$/.test(name) && name !== address && ![program?.name, program?.key].some(p => p && p.toLowerCase() === lower) ? name : null;
+}
+// The live pane title, when it is telling: not a path, user@host or the program.
+function telling(pane) {
+  const program = pane?.program?.name, raw = (pane?.title ?? '').trim(), live = clean(raw);
+  return live && live !== program && !/^[~/]|^[A-Za-z]:\\/.test(raw) && !live.includes('@') && live.toLowerCase() !== pane?.program?.key ? live : null;
+}
+// Root title in the app (plan §2.2, D3, D6): an operator-named terminal, then an operator-
+// named tab holding exactly one agent root, then the feed title, then the telling live
+// pane title, then the program name and address. The space name is secondary context.
+export function rootTitle({ address, program, terminal, tab, alone, feed, pane }) {
+  const pick = [[named(terminal?.name, address, program), 'pane'], [tab?.named && alone ? named(tab.name, address, program) : null, 'tab'],
+    [clean(feed?.title), feed?.title_source ?? 'feed'], [telling(pane), 'live'], [program?.name && address ? `${program.name} · ${address}` : program?.name, 'program'], [address, 'id']].find(([value]) => value);
+  return pick ? { name: pick[0], source: pick[1] } : { name: '', source: 'id' };
 }
 export function joinRoots(feed, stock, terminals, panes, spaces, changes = {}) {
-  const enrichment = new Map((feed?.orchestrators ?? []).filter(root => root.host === 'herdr-core' && root.terminal !== null).map(root => [root.terminal, root]));
+  const enrichment = new Map((feed?.roots ?? []).filter(root => root.host === 'herdr-core' && root.terminal !== null).map(root => [root.terminal, root]));
   const used = new Set(), tabs = spaces.flatMap(space => space.tabs);
   const live = new Set(terminals.filter(t => t.state === 'live').map(t => t.address));
+  const byAddress = new Map(terminals.map(t => [t.address, t]));
   const roots = stock.map((agent, index) => {
     const source = enrichment.get(agent.address);
     if (source) used.add(source);
-    const root = source ?? { host: 'herdr-core', terminal: agent.address, pane_id: agent.pane ?? agent.address, harness: agent.program?.key ?? 'unknown', herdr_status: agent.status, tab_label: agent.title ?? '', inbox: [], threads: [] };
+    const root = source ?? { host: 'herdr-core', terminal: agent.address, pane_id: agent.pane ?? agent.address, harness: agent.program?.key ?? 'unknown', herdr_status: agent.status, tab_label: agent.title ?? '', title: '', title_source: 'id', inbox: [], agents: [], hidden_finished: 0 };
     const tab = tabs.find(tab => tab.id === agent.tab);
-    const mine = panes.filter(pane => pane.tab === agent.tab && pane.terminal);
-    const lead = mine.find(pane => pane.program?.agent) ?? mine.find(pane => pane.focused) ?? mine[0];
-    const detail = title(tab, lead, agent.title || agent.program?.name);
+    const pane = panes.find(pane => pane.terminal === agent.address) ?? panes.find(pane => pane.pane === agent.pane);
+    const title = rootTitle({ address: agent.address, program: agent.program, terminal: byAddress.get(agent.address), tab,
+      alone: stock.filter(other => other.tab === agent.tab).length === 1, feed: source, pane: pane ?? { title: agent.title, program: agent.program } });
     return { key: rootKey(root), root, stock: agent, terminal: live.has(agent.address) ? agent.address : null,
-      name: agent.space_name || detail || agent.address, detail: /^\d+$/.test(detail) ? null : detail, space: agent.space ?? null,
+      name: title.name, title_source: title.source, space: agent.space ?? null,
       tab: agent.tab ?? null, nativeChildren: [], isNative: false, status: agent.status, program: agent.program, pinned: Boolean(agent.pinned), focused: Boolean(agent.focused),
       seq: agent.seq ?? index, changed: changes[agent.address]?.at ?? 0, aggregate: aggregate(root, agent.status) };
   });
@@ -29,9 +43,10 @@ export function joinRoots(feed, stock, terminals, panes, spaces, changes = {}) {
       const terminal = node.terminal, source = enrichment.get(terminal.address);
       if (source) used.add(source);
       const status = terminal.status === 'error' ? 'blocked' : terminal.status === 'done' ? 'idle' : terminal.status ?? 'idle';
-      const root = source ?? { host: 'herdr-core', terminal: terminal.address, pane_id: terminal.address, harness: terminal.program?.key ?? 'unknown', herdr_status: status, inbox: [], threads: [] };
+      const root = source ?? { host: 'herdr-core', terminal: terminal.address, pane_id: terminal.address, harness: terminal.program?.key ?? 'unknown', herdr_status: status, title: '', title_source: 'id', inbox: [], agents: [], hidden_finished: 0 };
+      const title = rootTitle({ address: terminal.address, program: terminal.program, terminal, feed: source });
       const membership = nativeMembership(terminal.address, stock, terminals, panes, spaces);
-      return { key: rootKey(root), root, stock: null, terminal: terminal.address, isNative: true, nativeChildren: [], nativeParent: terminal.parent ?? null, detail: null, pinned: false, focused: false, seq: 0, changed: 0, depth: node.depth, program: terminal.program ?? null, name: terminal.name || terminal.program?.name || terminal.address, status, aggregate: aggregate(root, status), ...membership };
+      return { key: rootKey(root), root, stock: null, terminal: terminal.address, isNative: true, nativeChildren: [], nativeParent: terminal.parent ?? null, pinned: false, focused: false, seq: 0, changed: 0, depth: node.depth, program: terminal.program ?? null, name: title.name, title_source: title.source, status, aggregate: aggregate(root, status), ...membership };
     });
   }
   // Projection follows the full native tree, independently of display ownership.
@@ -51,18 +66,26 @@ export function joinRoots(feed, stock, terminals, panes, spaces, changes = {}) {
       priority: kinds.length ? 4 : entity.status === 'done' ? 3 : contributions.some(part => part.working) ? 2 : 1,
       urgency: Math.max(0, ...kinds.map(urgency)) };
   }
-  // Feed roots without exact app agent matches are returned with space null, without
-  // assigning legacy titles, cwd or sessions to an app space or inventing a focus
-  // target. The V10 sidebar lists the active space only, so it does not show them.
-  for (const root of feed?.orchestrators ?? []) if (!used.has(root)) {
-    roots.push({ key: rootKey(root), root, stock: null, terminal: null, name: root.tab_label || root.pane_id, detail: null,
+  // Feed roots without exact app agent matches keep their opaque feed identity and space
+  // null: no app space, tab, focus target or aggregate is invented for them. The sidebar
+  // lists them after the active space's roots (feed v2 "Identity, tree and app joins").
+  for (const root of feed?.roots ?? []) if (!used.has(root)) {
+    const [name, source] = [[clean(root.title), root.title_source], [root.tab_label, 'tab'], [root.pane_id, 'id']].find(([value]) => value);
+    roots.push({ key: rootKey(root), root, stock: null, terminal: null, name, title_source: source,
       space: null, tab: null, nativeChildren: [], isNative: false, status: root.herdr_status, program: null, pinned: false, focused: false, seq: 0,
       changed: 0, aggregate: aggregate(root) });
   }
-  const seen = new Map();
-  for (const root of roots) if (root.stock && root.detail === null) seen.set(root.name, (seen.get(root.name) ?? 0) + 1);
-  for (const root of roots) if (root.stock && root.detail === null && seen.get(root.name) > 1) root.detail = title(tabs.find(tab => tab.id === root.stock.tab), null, root.stock.title);
   return roots.sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.aggregate.priority - a.aggregate.priority || b.aggregate.urgency - a.aggregate.urgency || b.changed - a.changed || b.seq - a.seq);
+}
+// A root known only from the feed: no stock agent, no app space.
+export const feedOnly = item => !item.stock && !item.isNative && item.space === null;
+// The sidebar's list: the active space's roots, then every feed-only root (feed v2 keeps
+// them listed under their feed identity, in the ordinary priority sections). A stale feed
+// is not fresh evidence, so its feed-only roots then read Stale with no needs or work.
+export function listed(roots, active, stale) {
+  const quiet = item => ({ ...item, status: 'stale', stale: true, aggregate: { ...item.aggregate, kinds: [], needsCount: 0, questions: 0, working: false, sweep: false, priority: 1, urgency: 0 } });
+  return roots.filter(item => (item.space !== null && item.space === active) || feedOnly(item)).map(item => stale && feedOnly(item) ? quiet(item) : item)
+    .sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.aggregate.priority - a.aggregate.priority); // stable: joinRoots order within a section
 }
 export function groups(roots) {
   const result = [];
@@ -77,13 +100,15 @@ export function groups(roots) {
   }
   return result;
 }
-export const rootSignature = root => JSON.stringify([root.status, root.root.inbox, root.root.threads.map(thread => [thread.id, thread.status, thread.agents.map(agent => [agent.id, agent.status, agent.question_ids])]), (root.nativeChildren ?? []).map(child => [child.terminal, child.status, child.root.inbox, child.root.threads.map(thread => [thread.id, thread.status, thread.agents.map(agent => [agent.id, agent.status, agent.question_ids])])])]);
-export function harnessOf(agent, root, thread) {
+const agentStates = root => (root.agents ?? []).map(agent => [agent.id, agent.status, agent.question_ids]);
+export const rootSignature = item => JSON.stringify([item.status, item.root.inbox, agentStates(item.root), (item.nativeChildren ?? []).map(child => [child.terminal, child.status, child.root.inbox, agentStates(child.root)])]);
+// The first explicit harness on the agent's verified parent chain, else the root's.
+export function harnessOf(agent, root) {
   let current = agent, seen = new Set();
   while (current) {
     if (current.harness && current.harness !== 'unknown') return current.harness;
     if (seen.has(current.id)) break;
-    seen.add(current.id); current = thread.agents.find(candidate => candidate.id === current.parent);
+    seen.add(current.id); current = (root.agents ?? []).find(candidate => candidate.id === current.parent);
   }
   return root.harness || 'unknown';
 }
