@@ -377,7 +377,7 @@ The window becomes **per-agent**, keeping today's mechanism and its config key:
   - `panorama.feed:null` and `panorama.feed.owner:null`;
   - `data/panorama-spaces/store.json` and `data/panorama-tabs/store.json`;
   - `layouts/.state/panorama.json`.
-- Their documented shapes are panel, machine and folding preferences, not thread keys (COMMON lines 74, 102-104). U8 must still check that no retained preference key embeds a thread id. Any graph or sidebar fold keys are in memory only.
+- Their documented shapes are panel, machine and folding preferences, plus the sidebar's `agents.scope` (`"all"` or absent) in the panorama-spaces store; none are thread keys (COMMON lines 74, 102-104). U8 must still check that no retained preference key embeds a thread id. Any graph or sidebar fold keys are in memory only.
 
 **Goldens and fixtures.**
 - Rewrite `tests/fixtures/app-feed/swarm.json` as v2:
