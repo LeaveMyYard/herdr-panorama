@@ -51,6 +51,14 @@ for manifest in sorted((root / 'app/mods').glob('panorama*/bundle.json')):
                 errors.append(str(target.relative_to(root)))
         else:
             target.write_bytes(data)
+# The installer ships an explicit inventory; keep it in step with the bundles.
+sys.path.insert(0, str(root / 'app/installer'))
+sys.dont_write_bytecode = True
+from manifest import GLYPHS, STATE_MODS
+bundled = sorted(m.parent.name for m in (root / 'app/mods').glob('panorama*/bundle.json') if 'state.js' in json.loads(m.read_text())['shared'])
+glyph_names = sorted(p.stem for p in (root / 'app/shared/glyphs').glob('*.svg'))
+if bundled != sorted(STATE_MODS) or glyph_names != sorted(GLYPHS):
+    parser.exit(1, f'Installer STATE_MODS/GLYPHS differ from bundles {bundled} / glyphs {glyph_names}\n')
 if errors:
     parser.exit(1, 'Stale native bundles; run scripts/app-build:\n' + '\n'.join(errors) + '\n')
 print('Native bundles match shared source.' if args.check else 'Built self-contained native bundles.')

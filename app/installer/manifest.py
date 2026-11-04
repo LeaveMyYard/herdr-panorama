@@ -63,6 +63,8 @@ def validate(data, definitions):
     allowed_files = expected_files | {BINARY} | (METADATA_FILES | STATE_FILES if version == 2 else set())
     if not isinstance(files, dict) or not expected_files <= set(files) or not set(files) <= allowed_files:
         raise ValueError('Manifest file inventory escapes the panorama package')
+    if version == 2 and STATE_FILES & set(files) and not STATE_FILES <= set(files):
+        raise ValueError('Manifest has a partial state vocabulary inventory')
     for path, info in files.items():
         if (not isinstance(info, dict) or set(info) != {'sha256', 'mode'}
                 or not isinstance(info['sha256'], str) or not re.fullmatch('[a-f0-9]{64}', info['sha256'])

@@ -30,7 +30,7 @@ export const SURFACE = { card: '#17191d', selectedCard: '#1c2026', selected: '#b
 export const NEEDS = ['fail', 'blk', 'wait'];
 
 // Native root statuses use words; feed agents use the short codes above.
-const ALIASES = { working: 'run', running: 'run', blocked: 'blk', failed: 'fail', error: 'fail', reviewing: 'rev', waiting: 'wait', queued: 'q', cancelled: 'cxl', inferred: 'inf', background: 'bg' };
+const ALIASES = { working: 'run', running: 'run', blocked: 'blk', failed: 'fail', reviewing: 'rev', waiting: 'wait', queued: 'q', cancelled: 'cxl', inferred: 'inf', background: 'bg' };
 export function stateCode(status) {
   const code = ALIASES[status] ?? status;
   return Object.hasOwn(STATES, code) ? code : 'unknown';
@@ -70,7 +70,7 @@ export function glyph(status, size = 11) {
 export function badge(status, label, { questions = null, height = 18 } = {}) {
   const code = stateCode(status), s = STATES[code], font = height >= 22 ? 11 : height >= 20 ? 10.5 : 10;
   const lead = symbol(code, height >= 22 ? 13 : 11, s.ink) ?? text(code === 'wait' && questions ? `?${questions}` : s.text, font, s.ink);
-  return h_flex().flex_none().items_center().gap(4).h(height).pl(height >= 22 ? 8 : 6).pr(height >= 22 ? 9 : 7).rounded(5)
+  return h_flex().flex_none().items_center().gap(4).h(height).pl(height >= 22 ? 8 : height >= 20 ? 7 : 6).pr(height >= 22 ? 9 : height >= 20 ? 8 : 7).rounded(5)
     .bg(s.fill).border_1().border_color(s.hue + '50').text_color(s.ink).text_size(font).font_semibold()
     .child(lead).child(div().flex_none().whitespace_nowrap().font_semibold().child(label ?? s.label));
 }
@@ -79,8 +79,8 @@ export function badge(status, label, { questions = null, height = 18 } = {}) {
 // widens it to ?N, !N or ✓N. Needs-you tiles breathe 70–100% unless `still`.
 export function tile(status, size = 18, count = null, { still = false } = {}) {
   const code = stateCode(status), s = STATES[code];
-  const radius = size >= 18 ? 5 : size >= 16 ? 4 : 3.5, font = size >= 16 ? 10 : 9.5, mark = size >= 16 ? 13 : 11;
-  const wide = count !== null && count !== undefined && !(code === 'done' && count <= 1);
+  const radius = size >= 18 ? 5 : size >= 16 ? 4 : 3.5, font = size >= 16 ? 10 : 9.5, mark = size >= 18 ? 13 : size >= 16 ? 12 : 11;
+  const wide = Number.isInteger(count) && count > 0 && !(code === 'done' && count === 1);
   let el = h_flex().flex_none().items_center().justify_center().h(size).rounded(radius)
     .bg(s.fill).border_1().border_color(s.hue + '50').text_color(s.ink).text_size(font).font_weight(700);
   el = wide ? el.min_w(size).px(4).gap(1) : el.w(size);
