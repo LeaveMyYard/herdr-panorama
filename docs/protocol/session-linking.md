@@ -39,7 +39,8 @@ The gate applies to evidence P for a row with local address `tN` and harness `cl
 Hook (H) and binding (B) evidence keep their existing A1/A2 owner rules; the gate does not
 run before them, so a gate failure makes P absent rather than refusing H or B. A remote
 `machine/tN` is refused before anything is read, because a remote PID proves nothing on
-this machine. The gate passes only if all of these hold:
+this machine. The gate passes only if all of these hold. In this section, "the gate refuses"
+means P is absent; it never refuses H or B by itself:
 
 1. `hc get --json tN` reports `state: live` and `foreground.pid` = P, with 1 < P ≤ u32::MAX.
 2. Panorama reads start token S1 from `/proc/P/stat` field 22, **before** it reads any
@@ -197,13 +198,13 @@ A stale link cannot outlive its process. Coverage:
 
 | Case | Outcome |
 |---|---|
-| PID reused between the hc read and the evidence read | S1 ≠ S2, or the process is no longer Claude → refuse |
+| PID reused between the hc read and the evidence read | S1 ≠ S2, or the process is no longer Claude → P absent |
 | Per-process record left by a reused PID | `procStart` ≠ S → P absent |
 | Hook records from an earlier process with the same PID | `pstart` differs → no match |
 | Container or other PID namespace: hc's P is a different local process | P: comm/argv mismatch or no `HC_TERMINAL_ID=tN` → P absent. H/B: a foreign recorded `pidns` refuses; otherwise H/B keep their existing A1/A2 owner rules (the gate applies to P only) |
 | Second herdr-core instance with the same `tN` numbering | the comm/argv equality and the stable start token **reduce, but do not exclude**, this case: two plain `claude` processes with the same PID number and the same `tN` in two cores pass. Accepted residual (it needs a PID collision across instances) |
 | Remote terminal `machine/tN` | refused before any read |
-| Process started in t1 that is now the foreground of t2 | `HC_TERMINAL_ID` mismatch → refuse |
+| Process started in t1 that is now the foreground of t2 | `HC_TERMINAL_ID` mismatch → P absent; an H record names `t1`, so it does not match `t2` |
 | Two terminals over one process tree, or the same foreground PID | cross-terminal uniqueness → refuse both |
 | Two Claude processes resumed into one session (shared transcript) | the same id links in two terminals → refuse both |
 | In-process `/resume` or `/clear` | P is rewritten. Until the H record lands, or if it is lost, H and P disagree → refuse |
@@ -212,7 +213,7 @@ A stale link cannot outlive its process. Coverage:
 | Claude's record rewrite fails after a switch (`updatePidFile` logs and returns, e.g. ENOSPC) | the old `sessionId` stays with a matching `procStart`. With P alone nothing contradicts it: **accepted residual**. With the hook configured, the new H record conflicts → refuse |
 | A hook write is lost after a switch and only the older SessionStart record remains | H alone names the old session (the existing A1 behaviour): **accepted residual** where P is unavailable. Where P is present, it names the new one → conflict → refuse |
 | Process with its own `CLAUDE_CONFIG_DIR` | it differs from Panorama's → P absent; H by its existing rules |
-| Hook record forged by another local user | the hooks dir is per-user state, and the record must still match the live P, S and terminal; another uid's process fails the gate |
+| Hook record forged by another local user | the hooks dir is per-user state, and the record must still match the live P, S and terminal; another uid's process fails the gate (P absent) and H's existing owner check |
 | Symlinked or hard-linked per-process record | `O_NOFOLLOW`, `nlink == 1` and the uid check → absent |
 | Oversized or malformed evidence | bounded reads; malformed → absent |
 | `/proc/P/environ` unreadable (other uid, hardened `/proc`) | P absent; H by its existing rules |

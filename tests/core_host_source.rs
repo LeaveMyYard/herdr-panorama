@@ -59,6 +59,8 @@ fn compile_agent(dir: &Path, harness: &str) -> std::path::PathBuf {
     executable
 }
 
+// Evidence P reads /proc/P/environ, which exists only on Linux.
+#[cfg(target_os = "linux")]
 /// `owned_agent` started with exactly `env` as its exec environment.
 fn owned_agent_with(dir: &Path, harness: &str, env: &[(&str, &Path)]) -> Owned {
     let mut command = Command::new(compile_agent(dir, harness));
@@ -69,6 +71,8 @@ fn owned_agent_with(dir: &Path, harness: &str, env: &[(&str, &Path)]) -> Owned {
     Owned(command.spawn().unwrap())
 }
 
+// Evidence P reads /proc/P/environ, which exists only on Linux.
+#[cfg(target_os = "linux")]
 /// A fake hc listing `t2` as Claude Code with foreground `pid` running `argv`.
 fn fake_hc(dir: &Path, pid: u32, argv: &str) -> std::path::PathBuf {
     let binary = dir.join("hc");
@@ -83,6 +87,8 @@ print(json.dumps(value))
     binary
 }
 
+// Evidence P reads /proc/P/environ, which exists only on Linux.
+#[cfg(target_os = "linux")]
 #[test]
 fn claudes_per_process_record_links_an_already_running_session_without_hooks() {
     let _serial = serial();

@@ -86,7 +86,7 @@ Replace both identities with the actual local session/terminal. This verifies ro
 metadata and the terminal's current foreground process; it is your chosen association,
 not detection of which conversation a shared-daemon TUI displays. Rebind after an
 in-process root switch.
-See [feed identity rules](../docs/protocol/app-feed-v1.md) and
+See [feed identity rules](../docs/protocol/app-feed-v2.md) and
 [Codex setup](../docs/codex.md). Synthetic previews do not prove natural rich session
 ingestion.
 

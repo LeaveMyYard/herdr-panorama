@@ -3,7 +3,7 @@
 //! session change and removes the file on exit (session-linking.md §3 P, V1).
 use super::Signal;
 use herdr_agent_kit::agent_session::SessionId;
-use rustix::fs::{FileType, Mode, OFlags};
+use rustix::fs::{Mode, OFlags};
 use serde_json::Value;
 use std::{fs::File, io::Read, os::unix::fs::MetadataExt, path::Path};
 
@@ -23,7 +23,7 @@ pub fn record(config: &Path, pid: u32, start: &str, uid: u32) -> Signal {
     let Ok(meta) = file.metadata() else {
         return Signal::Absent;
     };
-    if FileType::from_raw_mode(meta.mode()) != FileType::RegularFile
+    if !meta.file_type().is_file()
         || meta.uid() != uid
         || meta.nlink() != 1
         || meta.len() > MAX_BYTES
