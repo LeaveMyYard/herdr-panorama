@@ -6,7 +6,7 @@
 
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { spaces, machines, panes, run, openOverlay, exec, hc, theme, shared, setShared, watchFolder, window, layout, agents, terminals } from "herdr";
+import { spaces, machines, panes, run, openOverlay, exec, hc, theme, shared, setShared, watchFolder, window, layout, agents, terminals, nextCommand } from "herdr";
 
 import { joinRoots, spaceTotals } from './model.js';
 import { startConsumer, consumerFeed, closeConsumer } from './feed-client.js';
@@ -62,6 +62,11 @@ export function tone(t, status) {
 export default class Spaces extends View {
   init(_props, cx) {
     startConsumer(this, cx);
+    // The Panorama sidebar's agents scope persists in this store (no shared key):
+    // the sidebar asks, this writes. Absent means This space.
+    cx.spawn(async () => { for (;;) { const command = await nextCommand();
+      if (command === "agents-scope-all") localStorage.setItem("agents.scope", JSON.stringify("all"));
+      else if (command === "agents-scope-space" && localStorage.getItem("agents.scope") !== null) localStorage.removeItem("agents.scope"); } });
     this.swarmPending = new Map();
     this.git = {}; // where() -> { name, branch, ahead, behind, repo, linked }, null: not a repo
     this.checked = {}; // where() -> when it was last looked at

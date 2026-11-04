@@ -83,9 +83,10 @@ export const feedOnly = item => !item.stock && !item.isNative && item.space === 
 // The sidebar's list: the active space's roots, then every feed-only root (feed v2 keeps
 // them listed under their feed identity, in the ordinary priority sections). A stale feed
 // is not fresh evidence, so its feed-only roots then read Stale with no needs or work.
-export function listed(roots, active, stale) {
+// Scope 'all' lists every space's roots (the sidebar's "All spaces" setting).
+export function listed(roots, active, stale, scope = 'space') {
   const quiet = item => ({ ...item, status: 'stale', stale: true, aggregate: { ...item.aggregate, kinds: [], needsCount: 0, questions: 0, working: false, sweep: false, priority: 1, urgency: 0 } });
-  return roots.filter(item => (item.space !== null && item.space === active) || feedOnly(item)).map(item => stale && feedOnly(item) ? quiet(item) : item)
+  return roots.filter(item => scope === 'all' || (item.space !== null && item.space === active) || feedOnly(item)).map(item => stale && feedOnly(item) ? quiet(item) : item)
     .sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.aggregate.priority - a.aggregate.priority); // stable: joinRoots order within a section
 }
 export function groups(roots) {
@@ -148,15 +149,47 @@ function questions(entities) {
   return new Set(entities.flatMap(entity => entity.root.inbox.map(id => JSON.stringify([rootKey(entity.root), entity.root.session_id ?? null, id]))));
 }
 
-export function spaceTotals(roots, spaceId) {
+// The app entities (stock roots and native children, once each) in one space, or in
+// every space for scope 'all'. Feed-only roots have no app address and never count.
+function entitiesOf(roots, spaceId, scope = 'space') {
   const entities = [], seen = new Set();
   for (const root of roots) for (const entity of [root, ...(root.nativeChildren ?? [])]) {
     const address = entity.stock?.address ?? entity.terminal;
-    if (entity.space !== spaceId || address === null || address === undefined || seen.has(address)) continue;
+    if ((scope !== 'all' && entity.space !== spaceId) || address === null || address === undefined || seen.has(address)) continue;
     seen.add(address); entities.push(entity);
   }
+  return entities;
+}
+export function spaceTotals(roots, spaceId, scope = 'space') {
+  const entities = entitiesOf(roots, spaceId, scope);
   const own = entities.map(entity => aggregate(entity.root, entity.status));
   return { kinds: ['fail', 'blk', 'wait'].filter(kind => own.some(part => part.kinds.includes(kind))),
     needsCount: own.reduce((sum, part) => sum + part.needsCount, 0), questions: questions(entities).size,
     working: own.some(part => part.working), done: entities.some(entity => entity.status === 'done') };
+}
+// Agents header totals for the sidebar's scope: ?questions, !permission, ×failed.
+export function headerTotals(items, spaceId, scope = 'space') {
+  const total = { wait: spaceTotals(items, spaceId, scope).questions, blk: 0, fail: 0 };
+  for (const entity of entitiesOf(items, spaceId, scope)) {
+    const agents = entity.root.agents ?? [];
+    total.fail += agents.filter(agent => agent.status === 'fail').length;
+    // A root blocked on its own agent's permission is one request, not two.
+    const asked = agents.filter(agent => agent.status === 'blk').length;
+    total.blk += asked || (entity.status === 'blocked' ? 1 : 0);
+  }
+  return total;
+}
+// The sidebar's scope lives under `agents.scope` in the retained panorama-spaces store
+// (a JSON string-map whose values are JSON): '"all"' means All spaces; anything else,
+// including no store, is This space.
+export const SCOPE_KEY = 'agents.scope';
+export function storedScope(text) {
+  try { const store = JSON.parse(text); return typeof store?.[SCOPE_KEY] === 'string' && JSON.parse(store[SCOPE_KEY]) === 'all' ? 'all' : 'space'; }
+  catch { return 'space'; }
+}
+// Line 2 in All spaces: the card's space and its per-space tab number, so ids stay unambiguous.
+export function cardPlace(item, scope) {
+  if (scope !== 'all' || !item.stock) return '';
+  const tab = item.stock.tab_index;
+  return [item.stock.space_name || null, Number.isInteger(tab) ? `tab ${tab}` : null].filter(Boolean).join(' · ');
 }

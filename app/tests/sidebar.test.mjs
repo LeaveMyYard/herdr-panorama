@@ -6,7 +6,7 @@ import { root as repo } from './helpers.mjs';
 import { parseFeed, readResult, rootKey, agentKey, probeMatches, requireProbe } from '../shared/contract.js';
 import { rootTarget, detailTarget } from '../shared/routing.js';
 import { aggregate, forest, rows, directTiles, agentTitle } from '../shared/tree.js';
-import { joinRoots, harnessOf, iconProgram, nativeMembership, spaceTotals, rootTitle, listed, groups } from '../shared/model.js';
+import { joinRoots, harnessOf, iconProgram, nativeMembership, spaceTotals, rootTitle, listed, groups, headerTotals, storedScope, cardPlace } from '../shared/model.js';
 const read = name => readFileSync(join(repo, `tests/fixtures/app-feed/${name}.json`), 'utf8');
 const fixture = () => JSON.parse(read('swarm'));
 const root = () => fixture().roots[0];
@@ -290,4 +290,27 @@ test('feed-only roots stay listed in the ordinary sections; a stale feed shows t
   const stale = listed(all, 'a', true).find(item => !item.stock);
   assert.equal(stale.status, 'stale'); assert.equal(stale.stale, true); assert.deepEqual(stale.aggregate.kinds, []); assert.equal(stale.aggregate.priority, 1);
   assert.equal(all.find(item => !item.stock).aggregate.priority, 4, 'the joined entity itself is not mutated');
+});
+
+test('All spaces lists every space in the same priority sections; header totals follow the scope', () => {
+  const asking = minimal([agent('q', 'blk')]); asking.terminal = 't2';
+  const stock = [{ address: 't1', space: 'a', space_name: 'Alpha', tab: 'ta', tab_index: 1, status: 'working' },
+    { address: 't2', space: 'b', space_name: 'Beta', tab: 'tb', tab_index: 1, status: 'idle' }];
+  const joined = joinRoots({ roots: [asking] }, stock, stock.map(({ address }) => ({ address, state: 'live' })), [], []);
+  assert.deepEqual(listed(joined, 'a', false).map(item => item.stock.address), ['t1']);
+  const every = listed(joined, 'a', false, 'all');
+  assert.deepEqual(every.map(item => item.stock.address), ['t2', 't1']);
+  assert.deepEqual(groups(every).map(group => group.label), ['Needs you', 'Working']);
+  assert.deepEqual(headerTotals(listed(joined, 'a', false), 'a'), { wait: 0, blk: 0, fail: 0 });
+  assert.deepEqual(headerTotals(every, 'a', 'all'), { wait: 0, blk: 1, fail: 0 });
+  // Both cards are tab 1 of their space: line 2 names the space so the ids stay distinct.
+  assert.deepEqual(every.map(item => cardPlace(item, 'all')), ['Beta · tab 1', 'Alpha · tab 1']);
+  assert.equal(cardPlace(every[0], 'space'), '');
+  assert.equal(cardPlace({ stock: null }, 'all'), '', 'a feed-only root has no app space');
+});
+
+test('the stored scope is All spaces only for an exact JSON "all"; anything else is This space', () => {
+  assert.equal(storedScope(JSON.stringify({ 'agents.scope': JSON.stringify('all'), 'machines.folded': '[]' })), 'all');
+  for (const text of [null, '', '{broken', '{}', JSON.stringify({ 'agents.scope': 'all' }), JSON.stringify({ 'agents.scope': JSON.stringify('space') }), '[]'])
+    assert.equal(storedScope(text), 'space');
 });

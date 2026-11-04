@@ -57,6 +57,11 @@ cannot start transcript enrichment; oversized debug builds may also be unavailab
 - In the graph, a root click selects and drills down; Enter or double-click
   focuses its pane. Clicking an agent opens its verified terminal or Peek.
   Sidebar roots focus their terminal; chevrons fold. `g` focuses the root pane.
+- The Agents header's scope chip switches the sidebar between **This space** (the
+  default) and **All spaces**. All spaces keeps the priority sections, adds
+  `space · tab N` to each card's second line and scopes the header totals to
+  match; the Spaces rows are unchanged. The choice is kept as `agents.scope` in
+  the retained panorama-spaces store (below), not in shared state.
 - Peek shows supplied status/error/last message. Transcript (`t`) opens a native
   read-only JSONL viewer; its arrows page 100 lines and `t` refreshes. Escape closes
   the popup/dialog. `a`/`i` navigate to an available existing Inbox bridge or verified
@@ -233,7 +238,8 @@ journaled before module load and removed only when empty. The operator also
 approved retaining exactly data/panorama-spaces/store.json and
 data/panorama-tabs/store.json plus their necessary parents: these preserve stock
 machine folding/reconnection recovery and panel selection across restart and
-reinstall. Those exact parents may preexist without entering the new receipt's
+reinstall. The spaces store also holds the sidebar's `agents.scope` ("all", or
+absent for This space), written by panorama-spaces on the sidebar's command. Those exact parents may preexist without entering the new receipt's
 created-directory list or granting deletion authority. A known store must be a
 no-follow regular single-link mode-0600 file, at most 1 MiB, containing a strict
 UTF-8 JSON string-map with supported consumed preference shapes. Unsafe known
