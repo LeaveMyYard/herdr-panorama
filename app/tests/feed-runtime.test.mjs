@@ -255,8 +255,9 @@ test('a pinned receipt and valid persisted lease cannot present fresh data befor
   assert.equal(consumerFeed(s.view).stale,false);assert.equal(state.execs.length,0);
 });
 
-test('Peek opens only after the bound writer answers the exact v2 probe', async () => {
+test('Peek opens only after the bound writer answers the exact v2 probe', async t => {
   const G = '0123456789abcdef0123456789abcdef', feed = JSON.parse(readFileSync(join(root, 'tests/fixtures/app-feed/swarm.json')));
+  const previous = globalThis.window; t.after(() => { globalThis.window = previous; });
   globalThis.window = { viewport_size: () => ({ width: 1200, height: 900 }) };
   for (const [stdout, opens] of [['panorama app-feed v1\n', 0], ['panorama app-feed v2\n', 1]]) {
     state.overlays = []; let done;

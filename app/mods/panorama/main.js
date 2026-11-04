@@ -108,10 +108,11 @@ export default class Panorama extends View {
       .when(!open, el => el.child(String(count)));
   }
   // V11 (as the TUI dock): only the docked entry opens into its list by default.
-  rootOpen(item) { return isOpen(this.folds, item.key, rootSignature(item), item.focused); }
+  // A stale feed-only root never opens: its rows would replay old feed states as fresh.
+  rootOpen(item) { return !item.stale && isOpen(this.folds, item.key, rootSignature(item), item.focused); }
   rootRow(item, index, compact, now, cx, joined = false) {
     const t = theme(), sig = rootSignature(item), open = this.rootOpen(item);
-    const count = (item.root.agents?.length ?? 0) + (item.root.hidden_finished > 0 ? 1 : 0) + item.nativeChildren.length;
+    const count = item.stale ? 0 : (item.root.agents?.length ?? 0) + (item.root.hidden_finished > 0 ? 1 : 0) + item.nativeChildren.length;
     if (compact) return h_flex().id(`root-${item.key}`).h(26).px(8).flex_none().items_center().gap(4).hover(el => el.bg(t.hover))
       .when(Boolean(item.terminal), el => el.on_click(() => run(rootTarget(item).name, rootTarget(item).args)))
       .child(div().flex_1().min_w(0).text_right().text_color(t.muted).child(String(item.stock?.tab_index ?? (index >= 0 ? index + 1 : ""))))
