@@ -1,35 +1,44 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { threadsOf, graphModel, treeLayout, columnWindow, navigate, selectNode, currentNode, ClickGuard, animationVisible, viewportAnimates, logicalSize } from '../mods/panorama-graph/graph.js';
-import { agentKey } from '../mods/panorama-graph/contract.js';
+import { graphModel, treeLayout, columnWindow, navigate, selectNode, currentNode, crumbs, ClickGuard, animationVisible, viewportAnimates, logicalSize, WIDTH } from '../mods/panorama-graph/graph.js';
+import { agentKey, rootKey } from '../mods/panorama-graph/contract.js';
+import { joinRoots } from '../mods/panorama-graph/model.js';
 const feed = JSON.parse(readFileSync(new URL('../../tests/fixtures/app-feed/swarm.json', import.meta.url)));
-const item = { key: 'root', root: feed.roots[0], aggregate: { kinds: [], sweep: false }, status: 'working' };
-const state = () => ({ orch: item.key, thread: null, agent: null, focus: 1, expanded: new Set(), remember: new Map(), scroll: {} });
+const item = { key: 'root', name: 'Billing API migration', root: feed.roots[0], aggregate: { kinds: [], sweep: false }, status: 'working', space: 's', nativeChildren: [] };
+const state = () => ({ root: item.key, agent: null, focus: 0, expanded: new Set(), remember: new Map(), scroll: {} });
 const sourceAgent = feed.roots.flatMap(root => root.agents)[0];
-const agent = (id, status, parent = null, extra = {}) => ({ ...sourceAgent, id, parent, role: id, status, questions: [], question_ids: [], activity: '', error: null, ...extra });
+const agent = (id, status, parent = null, extra = {}) => ({ ...sourceAgent, id, parent, role: id, title: `Task ${id}`, status, questions: [], question_ids: [], activity: '', error: null, ...extra });
 function scenario() {
   const root = structuredClone(item);
   root.root.agents = [
     agent('reviewer','rev'), agent('author','done'), agent('researcher','run','reviewer'),
     agent('batch','run','reviewer'), agent('done-explorer','done','reviewer'),
-    agent('checker','wait','researcher'), agent('fixer','fail','researcher'),
+    agent('checker','wait','researcher',{question_ids:[14],questions:['Which migration should be kept?']}), agent('fixer','fail','researcher'),
     agent('shard','run','batch'), agent('probe','run','checker'), agent('done-probe','done','checker'),
   ];
   return root;
 }
-test('fixed-width window matches final D and D2 and retains focus+parent on narrow viewports', () => {
-  assert.deepEqual(columnWindow(7, 1, 1230).columns.map(column => column.column), [0,1,2,3]);
-  const scrolled = columnWindow(7, 5, 1230);
-  assert.deepEqual(scrolled.columns.map(column => column.column), [3,4,5,6]);
+const native=(id,parent,space='s',agents=[])=>({key:id,terminal:id,nativeParent:parent,space,status:'working',root:{agents,inbox:[],herdr_status:'working'},aggregate:{kinds:[],working:true},isNative:true,name:id});
+test('uniform fixed-width depth window matches V11 D and D2 and retains focus+parent on narrow viewports', () => {
+  assert.deepEqual(columnWindow(6, 1, 1230).columns.map(column => column.column), [0,1,2,3]);
+  const scrolled = columnWindow(6, 4, 1230);
+  assert.deepEqual(scrolled.columns.map(column => column.column), [2,3,4,5]);
   assert.equal(scrolled.columns[0].x,24);
-  assert.equal(scrolled.columns[0].width,272);
-  assert.deepEqual(columnWindow(7,5,200).columns.map(column=>column.column),[4,5]);
-  assert.equal(columnWindow(7,5,1230,0).lo,0);
+  assert.ok(scrolled.columns.every(column => column.width === WIDTH));
+  assert.deepEqual(columnWindow(6,4,200).columns.map(column=>column.column),[3,4]);
+  assert.equal(columnWindow(6,4,1230,0).lo,0);
   assert.ok(scrolled.left > 0 && scrolled.shown < scrolled.total);
 });
+test('depth columns hold one card kind per node: roots at depth 0, then the whole agent tree', () => {
+  const root=scenario(), model=graphModel([root,{...structuredClone(item),key:'other',name:'Other'}],state());
+  assert.deepEqual(model.columns.map(column=>column.length),[2,2,3,3,2]);
+  assert.deepEqual(model.columns[0].map(node=>node.kind),['root','root']);
+  assert.ok(model.nodes.every(node=>['root','agent','fold','native'].includes(node.kind)));
+  assert.ok(model.nodes.filter(node=>node.kind!=='root').every(node=>node.column===node.depth));
+});
 test('5d placement aligns spawn groups and reserves trunk room after prior children', () => {
-  const root = scenario(), thread = threadsOf(root.root)[0], result = treeLayout(root,thread,null);
+  const result = treeLayout(scenario());
   const find = id => result.nodes.find(node => node.agent?.id === id);
   assert.equal(find('researcher').y,find('reviewer').y);
   assert.ok(find('batch').y >= find('researcher').y + find('researcher').height + 10);
@@ -38,19 +47,27 @@ test('5d placement aligns spawn groups and reserves trunk room after prior child
   assert.ok(result.nodes.filter(node => node.fold).length === 3);
   assert.ok(result.nodes.filter(node => node.fold).every(node => node.mid === 20));
 });
-test('finished ancestors with live descendants stay visible; folding and unfolding preserve identity', () => {
-  const root=scenario(), thread=threadsOf(root.root)[0]; thread.agents.find(a=>a.id==='researcher').status='done';
-  const result=treeLayout(root,thread,null), researcher=result.nodes.find(node=>node.agent?.id==='researcher');
+test('finished siblings fold per parent with titles; live descendants keep finished ancestors visible', () => {
+  const root=scenario(); root.root.agents.find(a=>a.id==='researcher').status='done';
+  const result=treeLayout(root), researcher=result.nodes.find(node=>node.agent?.id==='researcher');
   assert.ok(researcher);
   const reviewer=result.nodes.find(node=>node.agent?.id==='reviewer');
-  assert.equal(result.nodes.find(node=>node.fold?.some(a=>a.id==='done-explorer')).parent.key,reviewer.key);
-  const opened=treeLayout(root,thread,null,new Set([reviewer.key]));
+  const fold=result.nodes.find(node=>node.fold?.some(a=>a.id==='done-explorer'));
+  assert.equal(fold.parent.key,reviewer.key); assert.equal(fold.group,reviewer.key); assert.equal(fold.older,0);
+  const top=result.nodes.find(node=>node.fold?.some(a=>a.id==='author'));
+  assert.equal(top.parent,null); assert.equal(top.older,root.root.hidden_finished);
+  const opened=treeLayout(root,null,new Set([reviewer.key]));
   assert.ok(opened.nodes.some(node=>node.agent?.id==='done-explorer'));
   assert.equal(new Set(opened.nodes.map(node=>node.key)).size,opened.nodes.length);
 });
-test('arrow navigation traverses parents and remembers each child selection', () => {
+test('a card carries the needs of its subtree below it, distinct per question', () => {
+  const nodes=treeLayout(scenario()).nodes, find=id=>nodes.find(node=>node.agent?.id===id);
+  assert.deepEqual(find('reviewer').below.kinds,['fail','wait']); assert.equal(find('reviewer').below.questions.size,1);
+  assert.deepEqual(find('checker').below.kinds,[]); assert.deepEqual(find('batch').below.kinds,[]);
+});
+test('arrow navigation traverses parents from depth 0 and remembers each child selection', () => {
   const root=scenario(), s=state();let model=graphModel([root],s);
-  selectNode(s,model,model.threadNodes[0]);
+  selectNode(s,model,model.heads[0]);
   navigate(s,model,'right'); model=graphModel([root],s);
   assert.equal(currentNode(model,s).agent.id,'reviewer');
   navigate(s,model,'right');model=graphModel([root],s);
@@ -63,15 +80,19 @@ test('arrow navigation traverses parents and remembers each child selection', ()
   assert.equal(currentNode(model,s).agent.id,'batch');
   navigate(s,model,'right');model=graphModel([root],s);
   assert.equal(currentNode(model,s).agent.id,'shard');
+  assert.deepEqual(crumbs(model,s),['Billing API migration','Task reviewer','Task batch','Task shard']);
   navigate(s,model,'left');model=graphModel([root],s);
   assert.equal(currentNode(model,s).agent.id,'batch');
+  navigate(s,model,'left');navigate(s,model,'left');assert.equal(s.focus,0);
+  model=graphModel([root],s);navigate(s,model,'right');model=graphModel([root],s);
+  assert.equal(currentNode(model,s).agent.id,'reviewer');
 });
 test('arbitrary depth and cyclic producer parent references do not recurse or drop identities', () => {
-  const root=scenario(), thread=threadsOf(root.root)[0];
-  thread.agents=Array.from({length:2500},(_,i)=>agent(`a${i}`,'run',i ? `a${i-1}`:null));
-  assert.equal(treeLayout(root,thread,null).depth,2500);
-  thread.agents=[agent('a','run','b'),agent('b','run','a'),agent('c','run','c')];
-  const nodes=treeLayout(root,thread,null).nodes;
+  const root=scenario();
+  root.root.agents=Array.from({length:2500},(_,i)=>agent(`a${i}`,'run',i ? `a${i-1}`:null));
+  assert.equal(treeLayout(root).depth,2500);
+  root.root.agents=[agent('a','run','b'),agent('b','run','a'),agent('c','run','c')];
+  const nodes=treeLayout(root).nodes;
   assert.equal(nodes.length,3);assert.equal(new Set(nodes.map(node=>node.key)).size,3);
 });
 test('scroll and moved-card refresh guards have exact independent deadlines; selection geometry does not arm', () => {
@@ -88,38 +109,55 @@ test('animation math pauses cards exactly outside the independent column viewpor
   node.agent.status='done';assert.equal(animationVisible(node,100,200),false);
 });
 test('fixture agent identity remains scoped to its owning root and does not become a terminal', () => {
-  const thread=threadsOf(item.root)[0], result=treeLayout(item,thread,null);
-  assert.ok(result.nodes.some(node=>node.key===agentKey(item.root,thread.agents[0])));
-  assert.ok(result.nodes.every(node=>node.terminal===undefined));
+  const result=treeLayout(item);
+  assert.ok(result.nodes.some(node=>node.key===agentKey(item.root,item.root.agents[0])));
+  assert.ok(result.nodes.every(node=>node.terminal===undefined && (node.kind==='fold' || node.owner===item)));
 });
-test('selected card details collapse when focus returns to thread and expand only in focused depth',()=>{
- const root=scenario(), s=state();const key=agentKey(root.root,threadsOf(root.root)[0].agents.find(a=>a.id==='checker'));
- s.agent=key;s.focus=4;let model=graphModel([root],s);
- assert.ok(model.nodes.find(node=>node.key===key).height>54);
- assert.equal(model.threadNodes[0].height,54);
- s.focus=1;model=graphModel([root],s);
+test('selected card details collapse when focus returns to depth 0 and expand only in agent depths',()=>{
+ const root=scenario(), s=state();const key=agentKey(root.root,root.root.agents.find(a=>a.id==='checker'));
+ s.agent=key;s.focus=3;let model=graphModel([root],s);
+ assert.ok(model.nodes.find(node=>node.key===key).height>54+20);
+ assert.equal(model.heads[0].height,54);
+ s.focus=0;model=graphModel([root],s);
  assert.equal(model.nodes.find(node=>node.key===key).height,54);
- assert.ok(model.threadNodes[0].height>54);
 });
-test('threadless native fallback uses only verified same-space ancestry and never invents a thread',()=>{
- const root=scenario();root.space='s';root.root.agents=[];
- const native=(id,parent,space='s')=>({key:id,terminal:id,nativeParent:parent,space,status:'working',root:{agents:[],inbox:[],herdr_status:'working'},aggregate:{kinds:[],working:true},isNative:true,name:id});
+test('native terminal children and transcript agents merge into one tree under the root',()=>{
+ const root=scenario();root.root.agents=[];
  root.nativeChildren=[native('t-child','t-root'),native('t-grandchild','t-child'),native('other','t-root','other-space')];
  const s=state();let model=graphModel([root],s);
- assert.equal(model.thread,null);assert.equal(model.threadNodes.length,0);assert.equal(model.nativeFallback,true);
  assert.deepEqual(model.tree.nodes.map(n=>[n.key,n.column]),[['t-child',1],['t-grandchild',2]]);
- selectNode(s,model,model.orchs[0]);navigate(s,model,'right');model=graphModel([root],s);
+ navigate(s,model,'right');model=graphModel([root],s);
  assert.equal(currentNode(model,s).key,'t-child');
  navigate(s,model,'right');model=graphModel([root],s);assert.equal(currentNode(model,s).key,'t-grandchild');
  navigate(s,model,'left');model=graphModel([root],s);assert.equal(currentNode(model,s).key,'t-child');
  navigate(s,model,'left');assert.equal(s.focus,0);
  root.root.agents=scenario().root.agents;model=graphModel([root],s);
- assert.equal(model.nativeFallback,false);assert.ok(model.tree.nodes.every(n=>n.kind!=='native'));
+ assert.deepEqual(model.columns[1].map(n=>n.kind),['agent','native','fold']);
+ assert.equal(model.columns[2].filter(n=>n.kind==='native').length,1);
+ root.nativeChildren=[native('loop-a','loop-b'),native('loop-b','loop-a')];
+ assert.deepEqual(treeLayout(root).nodes.filter(n=>n.kind==='native').map(n=>[n.key,n.depth]),[['loop-a',1],['loop-b',2]]);
+});
+test('R8: a feed root that is also a native terminal child appears once, carrying its own agents',()=>{
+ const own=structuredClone(feed.roots[0]), nested=structuredClone(feed.roots[0]);
+ own.terminal='t1';own.pane_id='core:t1';own.agents=[agent('lead','run')];
+ nested.terminal='vps/t7';nested.pane_id='core:vps/t7';nested.title='Nested session';nested.agents=[agent('helper','wait',null,{question_ids:[14],questions:[nested.inbox_texts[0]]})];
+ const stock=[{address:'t1',space:'s',tab:'tab',status:'working',program:{key:'claude'}}];
+ const terminals=[{address:'t1',state:'live'},{address:'vps/t7',parent:'t1',state:'live',status:'working'},{address:'t9',parent:'vps/t7',state:'live',status:'idle'}];
+ const roots=joinRoots({roots:[own,nested]},stock,terminals,[],[{id:'s',tabs:[{id:'tab',name:'Tab'}]}]).filter(root=>root.space==='s');
+ const model=graphModel(roots,{...state(),root:rootKey(own)});
+ assert.deepEqual(model.columns[0].map(n=>n.key),[rootKey(own)]);
+ assert.equal(new Set(model.nodes.map(n=>n.key)).size,model.nodes.length);
+ assert.equal(model.nodes.filter(n=>n.key===rootKey(nested)).length,1);
+ const host=model.nodes.find(n=>n.key===rootKey(nested));
+ assert.equal(host.kind,'native');assert.equal(host.depth,1);assert.equal(host.item.name,'Nested session');
+ const helper=model.nodes.find(n=>n.agent?.id==='helper');
+ assert.equal(helper.parent.key,host.key);assert.equal(helper.key,agentKey(nested,nested.agents[0]));assert.equal(helper.owner,host.item);
+ assert.deepEqual(model.columns[2].map(n=>n.kind),['agent','native']);
 });
 
 test('an arrow at the column boundary preserves an independently scrolled viewport',()=>{
  const root=scenario(), s=state(), model=graphModel([root],s);
- selectNode(s,model,model.orchs[0]);s.scroll={0:64};s.manual=2;
+ selectNode(s,model,model.heads[0]);s.scroll={0:64};s.manual=2;
  assert.equal(navigate(s,model,'up'),false);
  assert.deepEqual(s.scroll,{0:64});assert.equal(s.manual,2);
 });
@@ -139,14 +177,14 @@ test('vertical motion intersection excludes visible nonanimated corners and clip
 test('horizontal clip and independent vertical column offsets jointly govern animation',()=>{
  const card=(id,column,y,status)=>({key:id,column,y,height:54,kind:'agent',agent:agent(id,status)});
  const model={columns:[[card('quiet',0,0,'done')],[card('run',1,0,'run')],[card('wait',2,0,'wait')]]};
- const window={columns:[{column:0,x:0,width:236},{column:1,x:272,width:300}]};
- assert.equal(viewportAnimates(model,window,{},200,500),false); // Included fixed-width column is completely clipped.
- assert.equal(viewportAnimates(model,window,{},290,500),true);
- assert.equal(viewportAnimates(model,window,{1:100},500,500),false); // Working card above its column viewport.
- assert.equal(viewportAnimates(model,window,{1:-600},500,500),false); // Working card below its column viewport.
- assert.equal(viewportAnimates(model,window,{1:0,2:0},500,500),true);
+ const window={columns:[{column:0,x:0,width:272},{column:1,x:308,width:272}]};
+ assert.equal(viewportAnimates(model,window,{},300,500),false); // Included fixed-width column is completely clipped.
+ assert.equal(viewportAnimates(model,window,{},330,500),true);
+ assert.equal(viewportAnimates(model,window,{1:100},600,500),false); // Working card above its column viewport.
+ assert.equal(viewportAnimates(model,window,{1:-600},600,500),false); // Working card below its column viewport.
+ assert.equal(viewportAnimates(model,window,{1:0,2:0},600,500),true);
  const onlyQuiet={columns:[window.columns[0]]};
- assert.equal(viewportAnimates(model,onlyQuiet,{},500,500),false); // Horizontally hidden needs edge never animates.
+ assert.equal(viewportAnimates(model,onlyQuiet,{},600,500),false); // Horizontally hidden needs edge never animates.
 });
 
 test('native zoomed canvas bounds normalize into the same units as graph card placement',()=>{
