@@ -1,5 +1,5 @@
 import { agents, terminals, panes, spaces, openOverlay, closeOverlay, settings } from 'herdr';
-import { rootKey } from './contract.js';
+import { rootKey, probeMatches } from './contract.js';
 import { joinRoots } from './model.js';
 const generation = value => typeof value === 'string' && /^[0-9a-f]{32}$/.test(value);
 const token = () => Array.from({ length: 4 }, () => Math.floor(Math.random() * 4294967296).toString(16).padStart(8, '0')).join('');
@@ -16,15 +16,13 @@ export class PeekCaller {
     const packet = this.packet();
     if (this.closed || this.client.stopped || packet.stale || !generation(id)
         || id !== this.client.install_id || id !== packet.install_id) return null;
-    const root = packet.feed?.orchestrators.find(root => rootKey(root) === rootKey(scope.root));
+    const root = packet.feed?.roots.find(root => rootKey(root) === rootKey(scope.root));
     if (!root || root.session_id !== scope.root.session_id) return null;
-    const thread = scope.thread ? root.threads.find(thread => thread.id === scope.thread.id) : null;
-    if (scope.thread && !thread) return null;
-    const agent = scope.agent && thread ? thread.agents.find(agent => agent.id === scope.agent.id) : null;
+    const agent = scope.agent ? root.agents.find(agent => agent.id === scope.agent.id) : null;
     if (scope.agent && !agent) return null;
     const items = joinRoots(packet.feed, agents(), terminals(), panes(), spaces());
     const item = items.flatMap(item => [item, ...item.nativeChildren]).find(item => rootKey(item.root) === rootKey(root));
-    return { root, thread, agent, terminal: item?.terminal ?? null, terminalAction: item?.isNative ? 'peek' : 'focus' };
+    return { root, agent, terminal: item?.terminal ?? null, terminalAction: item?.isNative ? 'peek' : 'focus' };
   }
   retire(keep = null) {
     for (const id of this.owned) if (id !== keep) { this.owned.delete(id); closeOverlay(id); }
@@ -44,7 +42,7 @@ export class PeekCaller {
       try {
         const answer = await this.client.callPrivate(['app-feed', '--help']);
         if (this.current !== next || this.closed) return;
-        if (answer.code !== 0 || answer.stdout.split('\n')[0] !== 'panorama app-feed v1') throw Error(answer.stderr || answer.stdout);
+        if (answer.code !== 0 || !probeMatches(answer.stdout)) throw Error(answer.stderr || answer.stdout);
         const subject = this.resolve(scope, id);
         if (!subject) { this.current = null; this.retire(); return; }
         const viewport = globalThis.window.viewport_size(), zoom = settings().zoom ?? 1;

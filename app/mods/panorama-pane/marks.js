@@ -24,10 +24,6 @@ export function rootMarks(t, item) {
     .children(item.aggregate.kinds.map(kind => mark(t, kind, item.aggregate.questions)))
     .when(item.status !== 'blocked', el => el.child(mark(t, item.status, 0, true)));
 }
-export function phases(t, items) {
-  return h_flex().flex_none().gap(2).ml(8).items_center().children(items.map(phase => div().w(8).h(4).rounded(2)
-    .bg(({ done: t.dim, now: t.working, failed: t.blocked, waiting: t.blocked })[phase.state] ?? t.input)));
-}
 export function lines(t, segments) {
   return segments.map(segment => div().relative().w(13).h_full().flex_none()
     .when(segment === '│' || segment === '├', el => el.child(div().absolute().left(7).top(-2).bottom(0).w(1.5).bg(t.input)))

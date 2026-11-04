@@ -12,13 +12,18 @@ must be self-contained. No mod reads another mod's code at runtime.
 
 Current exports for later app slices:
 
-- `contract.js`: `parseFeed`, `readResult`, `rootKey`, `threadKey`, `agentKey`.
+- `contract.js`: feed v2 (`docs/protocol/app-feed-v2.md`) `parseFeed`, `readResult`,
+  `rootKey`, `agentKey`, and the capability probe `FEED_PROBE` / `probeMatches(stdout)`
+  (first stdout line exactly `panorama app-feed v2`).
   Render identities are tagged opaque namespaces, not terminal addresses.
-- `model.js`: `joinRoots`, `groups`, `rootSignature`, `harnessOf`, `iconProgram`,
+- `model.js`: `joinRoots`, `groups`, `rootSignature`, `harnessOf(agent, root)`, `iconProgram`,
+  `rootTitle`,
   `terminalChildren`, `nativeMembership`, `spaceTotals`.
-- `tree.js`: `needs`, `finished`, `urgency`, `forest`, `aggregate`, `threadMark`,
-  `annotate`, `isOpen`, `rows`.
-- `marks.js`: native `icon`, `mark`, `rootMarks`, `phases`, `lines`,
+- `tree.js`: `needs`, `finished`, `urgency`, `forest`, `aggregate`, `agentTitle`,
+  `subtree`, `live`, `directTiles(root, natives)` (line-2 tiles per direct subagent),
+  `annotate`, `isOpen`, `rows` (the V11 docked list: layer-1/layer-2 agent rows and the
+  root's `N finished · titles · +N older` fold).
+- `marks.js`: native `icon`, `mark`, `rootMarks`, `lines`,
   `borderMotion`, `age`. It imports native gpui APIs and is not a Node module.
 - `peek-caller.js`: `PeekCaller`; caller-local current-G scope, token/owned-overlay lifecycle and Transcript replacement. No persisted keys.
 - `routing.js`: `rootTarget`, `detailTarget`; only model-verified addresses can
@@ -44,9 +49,12 @@ inventory lists them as `STATE_FILES`; receipts from before V10 stay valid.
 `joinRoots` returns top-level stock entities plus unmatched feed roots. Every
 stock `agents()` row remains top-level. Each entity has key, root (feed data),
 stock (stock AgentInfo or null), terminal (verified live address or null),
-name/detail, space/tab, status/program, pinned/focused, seq/changed, aggregate,
+name/title_source/spaceName, space/tab, status/program, pinned/focused, seq/changed, aggregate,
 `nativeChildren` (array) and `isNative` (boolean). Unmatched roots have null app
-membership/target and no invented changed-age. Native child entities are in the
+membership/target and no invented changed-age. Entity `name` follows the app title rule (`rootTitle`, plan §2.2 and D3/D6): an
+operator-named terminal, then an operator-named tab holding exactly one agent root,
+then the feed `title`, then the telling live pane title, then the program name and
+address; the space name is secondary (`spaceName`). Native child entities are in the
 owning top-level entity's flat `nativeChildren` array, with depth/nativeParent,
 verified inherited/direct membership and optional exact-address feed enrichment.
 Display recursion stops at stock-row boundaries. Stock roots focus; native
@@ -60,7 +68,7 @@ from each canonical top/native entity with exact proven space membership, dedupe
 qualified terminal addresses, and unions scoped root/session/question IDs. It
 returns `{kinds, needsCount, questions, working, done}` and never adds projected
 parent aggregates. Own done stays Done unless needs; own idle plus a working
-descendant is Working; child done alone never promotes Done. Unmatched roots have no space contribution. Thread/agent parent links stay
+descendant is Working; child done alone never promotes Done. Unmatched roots have no space contribution. Agent parent links stay
 inside their owning feed root and are independent of native terminal ancestry.
 
 ## Shared-v3 feed consumer and private calls
@@ -74,7 +82,7 @@ Do not duplicate receipt hashing, startup, or private executable dispatch.
 Use `consumerFeed(this)` in render, and `closeConsumer(this,cx)` in View.close.
 
 The full returned packet is `{feed, stale, errors, generated_at, writerError,
-install_id}`. Feed is the retained last valid v1 snapshot or null. Preserve stale
+install_id}`. Feed is the retained last valid v2 snapshot or null. Preserve stale
 and errors; do not unwrap `.feed` and discard its provenance. `install_id` is the
 pinned generation or null during initialization. Pinning alone does not make a
 view fresh: consumerFeed stays stale until receipt, control and artifact

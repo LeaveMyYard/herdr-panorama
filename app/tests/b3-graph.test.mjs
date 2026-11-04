@@ -1,21 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { graphModel, treeLayout, columnWindow, navigate, selectNode, currentNode, ClickGuard, animationVisible, viewportAnimates, logicalSize } from '../mods/panorama-graph/graph.js';
+import { threadsOf, graphModel, treeLayout, columnWindow, navigate, selectNode, currentNode, ClickGuard, animationVisible, viewportAnimates, logicalSize } from '../mods/panorama-graph/graph.js';
 import { agentKey } from '../mods/panorama-graph/contract.js';
 const feed = JSON.parse(readFileSync(new URL('../../tests/fixtures/app-feed/swarm.json', import.meta.url)));
-const item = { key: 'root', root: feed.orchestrators[0], aggregate: { kinds: [], sweep: false }, status: 'working' };
+const item = { key: 'root', root: feed.roots[0], aggregate: { kinds: [], sweep: false }, status: 'working' };
 const state = () => ({ orch: item.key, thread: null, agent: null, focus: 1, expanded: new Set(), remember: new Map(), scroll: {} });
-const sourceAgent = feed.orchestrators.flatMap(root => root.threads.flatMap(thread => thread.agents))[0];
+const sourceAgent = feed.roots.flatMap(root => root.agents)[0];
 const agent = (id, status, parent = null, extra = {}) => ({ ...sourceAgent, id, parent, role: id, status, questions: [], question_ids: [], activity: '', error: null, ...extra });
 function scenario() {
   const root = structuredClone(item);
-  root.root.threads = [{ ...root.root.threads[0], agents: [
+  root.root.agents = [
     agent('reviewer','rev'), agent('author','done'), agent('researcher','run','reviewer'),
     agent('batch','run','reviewer'), agent('done-explorer','done','reviewer'),
     agent('checker','wait','researcher'), agent('fixer','fail','researcher'),
     agent('shard','run','batch'), agent('probe','run','checker'), agent('done-probe','done','checker'),
-  ] }];
+  ];
   return root;
 }
 test('fixed-width window matches final D and D2 and retains focus+parent on narrow viewports', () => {
@@ -29,7 +29,7 @@ test('fixed-width window matches final D and D2 and retains focus+parent on narr
   assert.ok(scrolled.left > 0 && scrolled.shown < scrolled.total);
 });
 test('5d placement aligns spawn groups and reserves trunk room after prior children', () => {
-  const root = scenario(), thread = root.root.threads[0], result = treeLayout(root,thread,null);
+  const root = scenario(), thread = threadsOf(root.root)[0], result = treeLayout(root,thread,null);
   const find = id => result.nodes.find(node => node.agent?.id === id);
   assert.equal(find('researcher').y,find('reviewer').y);
   assert.ok(find('batch').y >= find('researcher').y + find('researcher').height + 10);
@@ -39,7 +39,7 @@ test('5d placement aligns spawn groups and reserves trunk room after prior child
   assert.ok(result.nodes.filter(node => node.fold).every(node => node.mid === 20));
 });
 test('finished ancestors with live descendants stay visible; folding and unfolding preserve identity', () => {
-  const root=scenario(), thread=root.root.threads[0]; thread.agents.find(a=>a.id==='researcher').status='done';
+  const root=scenario(), thread=threadsOf(root.root)[0]; thread.agents.find(a=>a.id==='researcher').status='done';
   const result=treeLayout(root,thread,null), researcher=result.nodes.find(node=>node.agent?.id==='researcher');
   assert.ok(researcher);
   const reviewer=result.nodes.find(node=>node.agent?.id==='reviewer');
@@ -67,7 +67,7 @@ test('arrow navigation traverses parents and remembers each child selection', ()
   assert.equal(currentNode(model,s).agent.id,'batch');
 });
 test('arbitrary depth and cyclic producer parent references do not recurse or drop identities', () => {
-  const root=scenario(), thread=root.root.threads[0];
+  const root=scenario(), thread=threadsOf(root.root)[0];
   thread.agents=Array.from({length:2500},(_,i)=>agent(`a${i}`,'run',i ? `a${i-1}`:null));
   assert.equal(treeLayout(root,thread,null).depth,2500);
   thread.agents=[agent('a','run','b'),agent('b','run','a'),agent('c','run','c')];
@@ -88,12 +88,12 @@ test('animation math pauses cards exactly outside the independent column viewpor
   node.agent.status='done';assert.equal(animationVisible(node,100,200),false);
 });
 test('fixture agent identity remains scoped to its owning root and does not become a terminal', () => {
-  const thread=item.root.threads[0], result=treeLayout(item,thread,null);
+  const thread=threadsOf(item.root)[0], result=treeLayout(item,thread,null);
   assert.ok(result.nodes.some(node=>node.key===agentKey(item.root,thread.agents[0])));
   assert.ok(result.nodes.every(node=>node.terminal===undefined));
 });
 test('selected card details collapse when focus returns to thread and expand only in focused depth',()=>{
- const root=scenario(), s=state();const key=agentKey(root.root,root.root.threads[0].agents.find(a=>a.id==='checker'));
+ const root=scenario(), s=state();const key=agentKey(root.root,threadsOf(root.root)[0].agents.find(a=>a.id==='checker'));
  s.agent=key;s.focus=4;let model=graphModel([root],s);
  assert.ok(model.nodes.find(node=>node.key===key).height>54);
  assert.equal(model.threadNodes[0].height,54);
@@ -102,8 +102,8 @@ test('selected card details collapse when focus returns to thread and expand onl
  assert.ok(model.threadNodes[0].height>54);
 });
 test('threadless native fallback uses only verified same-space ancestry and never invents a thread',()=>{
- const root=scenario();root.space='s';root.root.threads=[];
- const native=(id,parent,space='s')=>({key:id,terminal:id,nativeParent:parent,space,status:'working',root:{threads:[],inbox:[],herdr_status:'working'},aggregate:{kinds:[],working:true},isNative:true,name:id});
+ const root=scenario();root.space='s';root.root.agents=[];
+ const native=(id,parent,space='s')=>({key:id,terminal:id,nativeParent:parent,space,status:'working',root:{agents:[],inbox:[],herdr_status:'working'},aggregate:{kinds:[],working:true},isNative:true,name:id});
  root.nativeChildren=[native('t-child','t-root'),native('t-grandchild','t-child'),native('other','t-root','other-space')];
  const s=state();let model=graphModel([root],s);
  assert.equal(model.thread,null);assert.equal(model.threadNodes.length,0);assert.equal(model.nativeFallback,true);
@@ -113,7 +113,7 @@ test('threadless native fallback uses only verified same-space ancestry and neve
  navigate(s,model,'right');model=graphModel([root],s);assert.equal(currentNode(model,s).key,'t-grandchild');
  navigate(s,model,'left');model=graphModel([root],s);assert.equal(currentNode(model,s).key,'t-child');
  navigate(s,model,'left');assert.equal(s.focus,0);
- root.root.threads=scenario().root.threads;model=graphModel([root],s);
+ root.root.agents=scenario().root.agents;model=graphModel([root],s);
  assert.equal(model.nativeFallback,false);assert.ok(model.tree.nodes.every(n=>n.kind!=='native'));
 });
 

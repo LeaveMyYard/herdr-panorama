@@ -6,9 +6,9 @@ import { startConsumer, consumerFeed, closeConsumer } from './feed-client.js';
 import { InboxNavigation } from './inbox.js';
 import { rootTarget } from './routing.js';
 import { PeekCaller } from './peek-caller.js';
-import { rootKey, threadKey, agentKey } from './contract.js';
+import { rootKey, agentKey } from './contract.js';
 
-import { graphModel, columnWindow, currentNode, selectNode, navigate, selectionPath, ClickGuard, viewportAnimates, logicalSize } from './graph.js';
+import { threadKey, graphModel, columnWindow, currentNode, selectNode, navigate, selectionPath, ClickGuard, viewportAnimates, logicalSize } from './graph.js';
 import { card, alpha } from './cards.js';
 import { answerIntent } from './actions.js';
 export default class Graph extends View {

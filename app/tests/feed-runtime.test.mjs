@@ -39,7 +39,7 @@ test('native adapter prehash gates exact private capability/ensure argv with exp
 test('modified artifact never executes, while valid feed and stock enrichment data survive', async t => {
   const s = ready(t); writeFileSync(join(s.home, 'data/panorama/bin/panorama'), '#!/bin/sh\nexit 91\n');
   startFeed(s.view, s.cx); await until(() => s.view.writerError && s.view.feed?.feed);
-  assert.equal(state.execs.length, 0); assert.equal(s.view.feed.feed.orchestrators.length, 6);
+  assert.equal(state.execs.length, 0); assert.equal(s.view.feed.feed.roots.length, 6);
   assert.ok(consumerFeed(s.view).errors.length); assert.equal(s.failures.length, 0);
 });
 
@@ -55,9 +55,12 @@ test('absent receipt prevents new startup and a later read retains stale provena
 });
 
 test('incompatible capability marker prevents ensure rather than falling back to PATH', async t => {
-  const s = ready(t); state.exec = () => ({ code: 0, stdout: 'another executable', stderr: '' });
-  startFeed(s.view, s.cx); await until(() => s.view.writerError);
-  assert.equal(state.execs.length, 1); assert.deepEqual(state.execs[0].args, ['app-feed', '--help']);
+  // A v1 writer (or a v2 line that is not the first) is as foreign as any other executable.
+  for (const stdout of ['another executable', 'panorama app-feed v1\n', 'note\npanorama app-feed v2\n']) {
+    const s = ready(t); state.exec = () => ({ code: 0, stdout, stderr: '' });
+    startFeed(s.view, s.cx); await until(() => s.view.writerError);
+    assert.equal(state.execs.length, 1); assert.deepEqual(state.execs[0].args, ['app-feed', '--help']);
+  }
 });
 
 test('coalesced file events queue a second read so a completed stale read cannot swallow the latest feed', async t => {
@@ -95,10 +98,10 @@ test('no-sidebar consumer initial takeover wins once; losing async help cannot s
   const first = {}; startConsumer(first, s.cx); await until(() => releases.length === 1);
   const second = {}; startConsumer(second, s.cx);
   await until(() => state.execs.length === 2); const winner = state.values['panorama.feed.owner'].token;
-  releases[0]({ code: 0, stdout: 'panorama app-feed v1', stderr: '' });
+  releases[0]({ code: 0, stdout: 'panorama app-feed v2', stderr: '' });
   await new Promise(resolve => setTimeout(resolve, 10));
   assert.equal(state.execs.filter(call => call.args[1] === '--ensure').length, 0);
-  releases[1]({ code: 0, stdout: 'panorama app-feed v1', stderr: '' });
+  releases[1]({ code: 0, stdout: 'panorama app-feed v2', stderr: '' });
   await until(() => state.execs.some(call => call.args[1] === '--ensure'));
   for (const timer of s.timers) timer.callback(s.cx);
   assert.equal(state.values['panorama.feed.owner'].token, winner);
@@ -224,7 +227,7 @@ test('delayed feed result cannot republish after disabled stop acknowledgment', 
 });
 test('delayed private response cannot restart or republish after disabled generation', async t=>{
   const s=ready(t);let release;
-  state.exec=(_binary,args)=>args[1]==='--ensure'?new Promise(resolve=>{release=resolve;}):{code:0,stdout:'panorama app-feed v1',stderr:''};
+  state.exec=(_binary,args)=>args[1]==='--ensure'?new Promise(resolve=>{release=resolve;}):{code:0,stdout:'panorama app-feed v2',stderr:''};
   startFeed(s.view,s.cx);await until(()=>release);disabled(s);
   for(const timer of s.timers)timer.callback(s.cx);await until(()=>s.view.feedClient.stopped);
   release({code:0,stdout:'',stderr:''});await new Promise(resolve=>setTimeout(resolve,10));

@@ -7,7 +7,7 @@ export const readTextFile = async path => {
 };
 export const exec = async (command, args) => {
   state.execs.push({ command, args });
-  return state.exec ? state.exec(command, args) : { code: 0, stdout: 'panorama app-feed v1\n', stderr: '' };
+  return state.exec ? state.exec(command, args) : { code: 0, stdout: 'panorama app-feed v2\n', stderr: '' };
 };
 export const shared = key => state.values[key];
 export const layout = () => state.layout;
