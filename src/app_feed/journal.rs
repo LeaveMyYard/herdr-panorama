@@ -83,7 +83,7 @@ impl Journal {
         r.active(home)?;
         let value: serde_json::Value =
             serde_json::from_slice(bytes).map_err(|_| "feed is not complete JSON")?;
-        if value["v"].as_i64() != Some(1) {
+        if value["v"].as_i64() != Some(super::serialize::VERSION) {
             return Err("feed has unsupported version".into());
         }
         let old = home.read(FEED, FEED_LIMIT, 0o600)?;
