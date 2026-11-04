@@ -94,5 +94,5 @@ fn every_scenario_keeps_its_agents_but_the_main_card_and_aged_failures() {
             }
         }
     }
-    assert!(checked >= 40, "{checked} roots checked");
+    assert!(checked >= 60, "{checked} roots checked");
 }
