@@ -25,7 +25,8 @@ for manifest in sorted((root / 'app/mods').glob('panorama*/bundle.json')):
         imports = set(re.findall(r'''from\s+['"]\./([^'"]+)['"]''', text))
         if not imports <= requested:
             parser.exit(1, f'Missing shared dependencies for {name}: {sorted(imports - requested)}\n')
-        content = f'// Generated from app/shared/{name} by scripts/app-build.\n' + text
+        # Asset paths resolve from the app root, so each copy names its own mod.
+        content = f'// Generated from app/shared/{name} by scripts/app-build.\n' + text.replace('__PANORAMA_MOD__', manifest.parent.name)
         target = manifest.parent / name
         if target.is_symlink():
             parser.exit(1, f'Refusing generated symlink: {target}\n')
@@ -34,6 +35,30 @@ for manifest in sorted((root / 'app/mods').glob('panorama*/bundle.json')):
                 errors.append(str(target.relative_to(root)))
         else:
             target.write_text(content)
+    # state.js draws mod-owned glyphs: copy each shared glyph byte-for-byte as state-<name>.svg.
+    glyphs = {f'state-{p.name}': p.read_bytes() for p in sorted((root / 'app/shared/glyphs').glob('*.svg'))} if 'state.js' in requested else {}
+    for stale in sorted(set(p.name for p in manifest.parent.glob('state-*.svg')) - set(glyphs)):
+        if args.check:
+            errors.append(str((manifest.parent / stale).relative_to(root)))
+        else:
+            (manifest.parent / stale).unlink()
+    for name, data in glyphs.items():
+        target = manifest.parent / name
+        if target.is_symlink():
+            parser.exit(1, f'Refusing generated symlink: {target}\n')
+        if args.check:
+            if not target.is_file() or target.read_bytes() != data:
+                errors.append(str(target.relative_to(root)))
+        else:
+            target.write_bytes(data)
+# The installer ships an explicit inventory; keep it in step with the bundles.
+sys.path.insert(0, str(root / 'app/installer'))
+sys.dont_write_bytecode = True
+from manifest import GLYPHS, STATE_MODS
+bundled = sorted(m.parent.name for m in (root / 'app/mods').glob('panorama*/bundle.json') if 'state.js' in json.loads(m.read_text())['shared'])
+glyph_names = sorted(p.stem for p in (root / 'app/shared/glyphs').glob('*.svg'))
+if bundled != sorted(STATE_MODS) or glyph_names != sorted(GLYPHS):
+    parser.exit(1, f'Installer STATE_MODS/GLYPHS differ from bundles {bundled} / glyphs {glyph_names}\n')
 if errors:
     parser.exit(1, 'Stale native bundles; run scripts/app-build:\n' + '\n'.join(errors) + '\n')
 print('Native bundles match shared source.' if args.check else 'Built self-contained native bundles.')

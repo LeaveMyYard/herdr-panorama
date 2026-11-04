@@ -1,1 +1,1 @@
-{"shared":["contract.js","tree.js","model.js","binary.js","feed-client.js","marks.js","routing.js","peek-caller.js"]}
+{"shared":["contract.js","tree.js","model.js","binary.js","feed-client.js","marks.js","routing.js","peek-caller.js","state.js"]}

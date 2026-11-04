@@ -26,6 +26,11 @@ RUNTIME_FILES = {
     'panorama-pane': ('LICENSE.herdr-app', 'contract.js', 'tree.js', 'model.js', 'binary.js', 'feed-client.js', 'marks.js', 'space.js', 'swarm.js'),
 }
 BASE_FILES.update(f'mods/{mod}/{name}' for mod, names in RUNTIME_FILES.items() for name in names)
+# V10 state vocabulary: shared state.js plus its generated mod-owned glyph copies.
+GLYPHS = ('check', 'check-q', 'dashed', 'minus', 'orbit', 'review', 'ring', 'spin', 'tilde', 'x')
+STATE_MODS = ('panorama', 'panorama-graph', 'panorama-spaces', 'panorama-peek')
+STATE_FILES = frozenset(f'mods/{mod}/{name}' for mod in STATE_MODS for name in ('state.js', *(f'state-{g}.svg' for g in GLYPHS)))
+BASE_FILES.update(STATE_FILES)
 METADATA_FILES = {f'mods/{mod}/{name}' for mod in MODS for name in ('gpui-kit.d.ts', 'jsconfig.json')}
 
 
@@ -52,10 +57,14 @@ def validate(data, definitions):
     if version == 2 and (not isinstance(manifest['install_id'], str) or not re.fullmatch('[a-f0-9]{32}', manifest['install_id'])):
         raise ValueError('Invalid installation generation')
     files, dirs = manifest['files'], manifest['dirs']
-    expected_files = LEGACY_FILES if version == 1 else BASE_FILES
-    allowed_files = expected_files | {BINARY} | (METADATA_FILES if version == 2 else set())
+    # Receipts written before the V10 vocabulary lack STATE_FILES; they stay valid
+    # (and uninstallable) because those paths remain allowed, just not required.
+    expected_files = LEGACY_FILES if version == 1 else BASE_FILES - STATE_FILES
+    allowed_files = expected_files | {BINARY} | (METADATA_FILES | STATE_FILES if version == 2 else set())
     if not isinstance(files, dict) or not expected_files <= set(files) or not set(files) <= allowed_files:
         raise ValueError('Manifest file inventory escapes the panorama package')
+    if version == 2 and STATE_FILES & set(files) and not STATE_FILES <= set(files):
+        raise ValueError('Manifest has a partial state vocabulary inventory')
     for path, info in files.items():
         if (not isinstance(info, dict) or set(info) != {'sha256', 'mode'}
                 or not isinstance(info['sha256'], str) or not re.fullmatch('[a-f0-9]{64}', info['sha256'])

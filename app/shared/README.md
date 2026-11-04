@@ -23,6 +23,23 @@ Current exports for later app slices:
 - `peek-caller.js`: `PeekCaller`; caller-local current-G scope, token/owned-overlay lifecycle and Transcript replacement. No persisted keys.
 - `routing.js`: `rootTarget`, `detailTarget`; only model-verified addresses can
   produce a root command. Every detailed transcript agent targets Peek.
+- `state.js`: the V10 state vocabulary (`docs/design/herdr-app/state-refresh-v10`).
+  Native gpui, not a Node module. Exports `STATES` (code → title, label, text,
+  hue, fill, ink, glyph, mute), `SURFACE`, `NEEDS`, `GLYPH_DIR`, `stateCode`,
+  `stateOf`, `mix`, `cardColors(status, selected)` → `{edge, fill, border}`,
+  `glyph(status, size=11)`, `badge(status, label?, {questions, height})`,
+  `tile(status, size=18|16|14, count?, {still})` and
+  `glyphRun(statuses, limit=6, finished=0, size=11)`. Statuses may be feed codes
+  (`run`, `blk`, …) or native words (`working`, `blocked`); unknown codes draw as
+  Unknown. Colours are Panorama-scoped (TUI `palette.rs` ST/PB), not `theme()`.
+  Running glyphs spin natively (`.spin(900)`); needs-you tiles breathe 70–100%
+  unless `still`. Badges hug their label inside a row; put them in an `h_flex`.
+
+Shared glyphs live in `glyphs/*.svg` (tinted masks, `currentColor`). A mod whose
+bundle lists `state.js` gets byte-identical `state-<name>.svg` copies, and its
+`state.js` copy has `__PANORAMA_MOD__` replaced by the mod name, so
+`svg("mods/<mod>/state-<name>.svg")` resolves inside that mod. The installer
+inventory lists them as `STATE_FILES`; receipts from before V10 stay valid.
 
 `joinRoots` returns top-level stock entities plus unmatched feed roots. Every
 stock `agents()` row remains top-level. Each entity has key, root (feed data),
