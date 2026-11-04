@@ -1,9 +1,7 @@
-//! The MCP server (rmcp, behind this thin adapter): one tool, `report_thread`, and the
-//! instructions line. It speaks what rmcp speaks: the 2025-06-18 `initialize` handshake and
+//! The MCP server (rmcp, behind this thin adapter): one deprecated tool, `report_thread`, and
+//! no instructions. It speaks what rmcp speaks: the 2025-06-18 `initialize` handshake and
 //! Claude Code's 2026-07-28 `server/discover`.
 
-use super::call::{arguments, report_thread};
-use super::session::Sessions;
 use super::tool::{NAME, tool};
 use crate::snapshot::pyjson::{J, dumps};
 use rmcp::model::{
@@ -14,19 +12,19 @@ use rmcp::model::{
 use rmcp::service::RequestContext;
 use rmcp::{ErrorData, RoleServer, ServerHandler};
 use serde_json::Value;
-use std::path::PathBuf;
 
 /// The server's name.
 pub const SERVER: &str = "herdr-panorama";
-/// What Claude Code adds to the agent's context about this server.
-pub const INSTRUCTIONS: &str = "Report multi-step work to the herdr swarm view with report_thread.";
 
-/// The server: where reports go and how the session is found.
-pub struct Server {
-    pub events_dir: PathBuf,
-    pub sessions: Sessions,
-    /// Now (POSIX seconds).
-    pub clock: fn() -> f64,
+/// The server. It holds nothing: no call reads a session, a clock or a file.
+pub struct Server;
+
+/// What every `report_thread` call the schema allows answers.
+pub fn ignored() -> J {
+    J::obj([
+        ("status", J::str("ignored")),
+        ("reason", J::str("threads were removed")),
+    ])
 }
 
 /// A tool result as the Python server returns a dict: its JSON as text (indented) and as
@@ -52,9 +50,7 @@ impl ServerHandler for Server {
             .enable_tools()
             .enable_tool_list_changed()
             .build();
-        ServerConfig::new(caps)
-            .with_server_info(Implementation::new(SERVER, ""))
-            .with_instructions(INSTRUCTIONS)
+        ServerConfig::new(caps).with_server_info(Implementation::new(SERVER, ""))
     }
 
     /// The 2025-06-18 handshake, as the Python server answers it: the same capabilities with
@@ -111,31 +107,17 @@ impl ServerHandler for Server {
     async fn call_tool(
         &self,
         request: CallToolRequestParams,
-        context: RequestContext<RoleServer>,
+        _context: RequestContext<RoleServer>,
     ) -> Result<CallToolResponse, ErrorData> {
-        // rmcp moves wire params._meta into RequestContext on deserialization.
-        let sid = match self.sessions.for_call(&context.meta).await {
-            Ok(sid) => sid,
-            Err(why) => return Ok(CallToolResult::error(vec![ContentBlock::text(why)]).into()),
-        };
         if request.name != NAME {
             let msg = format!("Unknown tool: {}", request.name);
             return Ok(CallToolResult::error(vec![ContentBlock::text(msg)]).into());
         }
         let args = request.arguments.unwrap_or_default();
-        let r = match arguments(&args) {
-            Ok(r) => r,
-            Err(why) => {
-                let msg = format!("Error executing tool {NAME}: {why}");
-                return Ok(CallToolResult::error(vec![ContentBlock::text(msg)]).into());
-            }
-        };
-        Ok(result(&report_thread(
-            r,
-            sid.as_deref(),
-            &self.events_dir,
-            (self.clock)(),
-        ))
-        .into())
+        if !args.get("thread_id").is_some_and(Value::is_string) {
+            let msg = format!("Error executing tool {NAME}: thread_id: Field required");
+            return Ok(CallToolResult::error(vec![ContentBlock::text(msg)]).into());
+        }
+        Ok(result(&ignored()).into())
     }
 }

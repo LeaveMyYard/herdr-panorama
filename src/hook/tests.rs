@@ -12,7 +12,7 @@ fn captured(name: &str) -> String {
     doc["stdin"].to_string()
 }
 
-fn cx(dir: &Path, in_herdr: bool) -> Ctx {
+fn cx(dir: &Path) -> Ctx {
     Ctx {
         host: crate::host::Context {
             host: crate::host::Host::Unknown,
@@ -21,7 +21,6 @@ fn cx(dir: &Path, in_herdr: bool) -> Ctx {
         },
         harness: "claude",
         hooks_dir: dir.join("hooks"),
-        in_herdr,
         now: 1_791_960_000.5,
         identity: Box::new(|| None),
     }
@@ -48,7 +47,7 @@ fn records(cx: &Ctx, session: &str) -> Vec<Value> {
 #[test]
 fn start_and_stop_are_recorded() {
     let dir = tempfile::tempdir().unwrap();
-    let c = cx(dir.path(), false);
+    let c = cx(dir.path());
     let (rc, out) = hook(
         "subagent-start",
         r#"{"session_id": "s1", "agent_id": "agent-abc", "agent_type": "Explore"}"#,
@@ -84,7 +83,7 @@ fn start_and_stop_are_recorded() {
 #[test]
 fn captured_payloads_are_recorded() {
     let dir = tempfile::tempdir().unwrap();
-    let mut c = cx(dir.path(), true);
+    let mut c = cx(dir.path());
     c.identity = Box::new(|| Some((4242, "123456".into(), Some("pid:[4026531836]".into()))));
     let session = "00000001-0000-4000-8000-000000000001";
     assert_eq!(
@@ -109,10 +108,11 @@ fn captured_payloads_are_recorded() {
             (Some(4242), Some("123456"), Some("pid:[4026531836]"))
         );
     }
-    let (rc, out) = hook("session-start", &captured("SessionStart.startup"), &c);
-    assert_eq!(rc, 0);
-    let out: Value = serde_json::from_str(&out).unwrap();
-    assert_eq!(out["hookSpecificOutput"]["hookEventName"], "SessionStart");
+    // the hook payload golden: SessionStart says nothing to Claude Code (no additionalContext)
+    assert_eq!(
+        hook("session-start", &captured("SessionStart.startup"), &c),
+        (0, String::new())
+    );
     let session_rec = &records(&c, session)[2];
     assert_eq!(
         (
@@ -120,18 +120,19 @@ fn captured_payloads_are_recorded() {
             session_rec["source"].as_str(),
             session_rec["told"].as_bool()
         ),
-        (Some("session"), Some("startup"), Some(true))
+        (Some("session"), Some("startup"), Some(false))
     );
     assert_eq!(
-        hook("session-start", &captured("SessionStart.compact"), &c).1,
-        ""
-    ); // told once
+        hook("session-start", &captured("SessionStart.compact"), &c),
+        (0, String::new())
+    );
+    assert_eq!(records(&c, session)[3]["source"], "compact");
 }
 
 #[test]
 fn bad_input_never_fails_and_writes_nothing() {
     let dir = tempfile::tempdir().unwrap();
-    let c = cx(dir.path(), true);
+    let c = cx(dir.path());
     for payload in [
         "{bad",
         "[1]",
@@ -157,7 +158,7 @@ fn bad_input_never_fails_and_writes_nothing() {
         },
         harness: "claude",
         hooks_dir: blocker.join("sub"),
-        ..cx(dir.path(), true)
+        ..cx(dir.path())
     }; // cannot be created
     assert_eq!(
         hook(
@@ -174,60 +175,41 @@ fn bad_input_never_fails_and_writes_nothing() {
 }
 
 #[test]
-fn session_start_text_only_inside_herdr() {
+fn session_start_says_nothing_and_still_records_the_session() {
+    // inside herdr or not (the hook no longer asks): nothing on stdout, the record written
     let dir = tempfile::tempdir().unwrap();
+    let c = cx(dir.path());
+    let payload = r#"{"session_id": "s7", "source": "startup"}"#;
+    assert_eq!(hook("session-start", payload, &c), (0, String::new()));
+    let recs = records(&c, "s7");
+    assert_eq!(recs.len(), 1);
     assert_eq!(
-        hook(
-            "session-start",
-            r#"{"session_id": "s0", "source": "startup"}"#,
-            &cx(dir.path(), false)
-        )
-        .1,
-        ""
+        (&recs[0]["event"], &recs[0]["told"]),
+        (&Value::from("session"), &Value::from(false))
     );
-    let out = hook(
-        "session-start",
-        r#"{"session_id": "s7", "source": "startup"}"#,
-        &cx(dir.path(), true),
-    )
-    .1;
-    let out: Value = serde_json::from_str(&out).unwrap();
-    let ctx = out["hookSpecificOutput"]["additionalContext"]
-        .as_str()
-        .unwrap();
-    assert_eq!(out["hookSpecificOutput"]["hookEventName"], "SessionStart");
-    assert!(ctx.contains("report_thread") && ctx.split_whitespace().count() < 70); // short
 }
 
 #[test]
-fn l4_session_text_once_per_session() {
+fn every_session_start_is_recorded_and_none_is_told() {
     let dir = tempfile::tempdir().unwrap();
-    let c = cx(dir.path(), true);
-    let first = hook(
-        "session-start",
-        r#"{"session_id": "s1", "source": "startup"}"#,
-        &c,
-    )
-    .1;
-    let again = hook(
-        "session-start",
-        r#"{"session_id": "s1", "source": "compact"}"#,
-        &c,
-    )
-    .1;
-    let other = hook(
-        "session-start",
-        r#"{"session_id": "s2", "source": "startup"}"#,
-        &c,
-    )
-    .1;
-    assert!(first.contains("report_thread") && again.is_empty() && other.contains("report_thread"));
+    let c = cx(dir.path());
+    for (sid, source) in [("s1", "startup"), ("s1", "compact"), ("s2", "startup")] {
+        let payload = format!(r#"{{"session_id": "{sid}", "source": "{source}"}}"#);
+        assert_eq!(hook("session-start", &payload, &c), (0, String::new()));
+    }
+    let told = |sid| -> Vec<bool> {
+        records(&c, sid)
+            .iter()
+            .map(|r| r["told"].as_bool().unwrap())
+            .collect()
+    };
+    assert_eq!((told("s1"), told("s2")), (vec![false, false], vec![false]));
 }
 
 #[test]
 fn stop_hook_active_is_respected_and_unknown_kinds_do_nothing() {
     let dir = tempfile::tempdir().unwrap();
-    let c = cx(dir.path(), true);
+    let c = cx(dir.path());
     hook(
         "subagent-stop",
         r#"{"session_id": "s1", "agent_id": "a", "stop_hook_active": true}"#,
@@ -244,7 +226,7 @@ fn stop_hook_active_is_respected_and_unknown_kinds_do_nothing() {
 #[test]
 fn old_hook_files_are_pruned() {
     let dir = tempfile::tempdir().unwrap();
-    let c = cx(dir.path(), false);
+    let c = cx(dir.path());
     std::fs::create_dir_all(&c.hooks_dir).unwrap();
     let (old, new, other) = (
         c.hooks_dir.join("old.jsonl"),
@@ -287,7 +269,6 @@ fn concurrent_hooks_keep_every_line_whole() {
                     },
                     harness: "claude",
                     hooks_dir,
-                    in_herdr: false,
                     now: 1.0,
                     identity: Box::new(|| None),
                 };
@@ -316,7 +297,7 @@ fn concurrent_hooks_keep_every_line_whole() {
 #[test]
 fn core_records_keep_terminal_and_pane_beside_existing_process_identity() {
     let dir = tempfile::tempdir().unwrap();
-    let mut c = cx(dir.path(), true);
+    let mut c = cx(dir.path());
     c.host = crate::host::Context {
         host: crate::host::Host::Core,
         terminal: Some("t2".into()),
@@ -346,18 +327,10 @@ fn core_records_keep_terminal_and_pane_beside_existing_process_identity() {
 }
 
 #[test]
-fn an_empty_herdr_pane_id_is_not_inside_herdr() {
-    let env = |vars: &[(&str, &str)]| PluginEnv::from_vars(vars.iter().copied(), None, 1000);
-    assert!(!Ctx::from_env(&env(&[("HERDR_PANE_ID", "")])).in_herdr);
-    assert!(Ctx::from_env(&env(&[("HERDR_PANE_ID", "w1:p1")])).in_herdr);
-    assert!(Ctx::from_env(&env(&[("HERDR_ENV", "1")])).in_herdr);
-}
-
-#[test]
 fn a_lone_surrogate_escape_never_loses_a_record() {
     // Node cuts a string inside an emoji: Claude Code sends `\ud83d` with no partner
     let dir = tempfile::tempdir().unwrap();
-    let c = cx(dir.path(), true);
+    let c = cx(dir.path());
     let stop = r#"{"session_id": "s1", "agent_id": "a1", "agent_type": "Explore", "last_assistant_message": "done \ud83d"}"#;
     let start = r#"{"session_id": "s1", "agent_id": "a1", "agent_type": "x\udc00"}"#;
     assert_eq!(hook("subagent-start", start, &c), (0, String::new()));
@@ -379,14 +352,14 @@ fn a_lone_surrogate_escape_never_loses_a_record() {
         &c,
     )
     .1;
-    assert!(said.contains("report_thread"));
+    assert!(said.is_empty());
     assert_eq!(records(&c, "s1")[2]["source"], "startup \u{fffd}");
 }
 
 #[test]
 fn a_bom_is_refused_as_python_refuses_it() {
     let dir = tempfile::tempdir().unwrap();
-    let c = cx(dir.path(), true);
+    let c = cx(dir.path());
     assert_eq!(
         hook(
             "subagent-stop",

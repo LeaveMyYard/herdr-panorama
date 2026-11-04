@@ -38,15 +38,15 @@ def test_bad_input_never_fails_and_writes_nothing(capsys, monkeypatch, tmp_path)
     assert rc == 0 and out.out == ""
 
 
-def test_session_start_text_only_inside_herdr(capsys, monkeypatch):
+def test_session_start_says_nothing_inside_or_outside_herdr(capsys, monkeypatch):
     monkeypatch.delenv("HERDR_PANE_ID", raising=False)
     monkeypatch.delenv("HERDR_ENV", raising=False)
     assert run("session-start", {"session_id": "s0", "source": "startup"}, capsys)[1].out == ""
     monkeypatch.setenv("HERDR_PANE_ID", "w1:p1")
-    out = json.loads(run("session-start", {"session_id": "s7", "source": "startup"}, capsys)[1].out)
-    ctx = out["hookSpecificOutput"]["additionalContext"]
-    assert out["hookSpecificOutput"]["hookEventName"] == "SessionStart"
-    assert "report_thread" in ctx and len(ctx.split()) < 70  # short
+    assert run("session-start", {"session_id": "s7", "source": "startup"}, capsys)[1].out == ""
+    for sid in ("s0", "s7"):  # the session is still recorded, never told
+        [rec] = [json.loads(x) for x in hooks.hooks_path(sid).read_text().splitlines()]
+        assert rec["event"] == "session" and rec["told"] is False
 
 
 def test_process_identity():
@@ -151,12 +151,13 @@ def test_m3_old_hook_files_are_pruned(tmp_path, monkeypatch, capsys):
     assert not old.exists() and new.exists()
 
 
-def test_l4_session_text_once_per_session(capsys, monkeypatch):
+def test_every_session_start_is_recorded_and_none_is_told(capsys, monkeypatch):
     monkeypatch.setenv("HERDR_PANE_ID", "w1:p1")
-    first = run("session-start", {"session_id": "s1", "source": "startup"}, capsys)[1].out
-    again = run("session-start", {"session_id": "s1", "source": "compact"}, capsys)[1].out
-    other = run("session-start", {"session_id": "s2", "source": "startup"}, capsys)[1].out
-    assert "report_thread" in first and again == "" and "report_thread" in other
+    for sid, source in (("s1", "startup"), ("s1", "compact"), ("s2", "startup")):
+        assert run("session-start", {"session_id": sid, "source": source}, capsys)[1].out == ""
+    told = {sid: [json.loads(x)["told"] for x in hooks.hooks_path(sid).read_text().splitlines()]
+            for sid in ("s1", "s2")}
+    assert told == {"s1": [False, False], "s2": [False]}
 
 
 def test_m2_claude_process_found_for_native_and_node_installs(monkeypatch):

@@ -1,9 +1,7 @@
-# Optional Codex 0.166.0 report_thread MCP server. Use the Rust panorama binary.
-# Merge this block into an appropriate config layer only when opting in.
-# Per-call _meta.threadId identifies each caller, including child threads.
-[mcp_servers.herdr_panorama]
-command = "panorama"
-args = ["mcp"]
+# The optional report_thread MCP server is gone: threads were removed, so there is
+# nothing to report. If you merged a [mcp_servers.herdr_panorama] block from an
+# earlier version of this file, delete it; until then `panorama mcp` keeps answering
+# (its tool does nothing) so Codex never fails on it.
 
 # hooks.json is a separate opt-in artifact; review/trust it with /hooks.
 # Automatic pane binding requires `codex --no-daemon` and verified foreground

@@ -2,10 +2,11 @@
 //! `tools/capture_mcp.py`): each session's client lines are sent to the binary (environment
 //! cleared, events in a temp dir) and its replies compared with the Python server's.
 //!
-//! The tool's list entry and every `report_thread` result and events record are the Python
-//! server's exactly. Where rmcp's envelope differs (stated in `src/mcp/mod.rs`), the parts a
-//! client reads are compared: an unknown method's code, a refused call's `isError`, and the
-//! advertised capabilities, instructions and server info.
+//! The tool's list entry and every `report_thread` result are the Python server's exactly:
+//! deprecated, every call the schema allows answers `ignored`, and no events file is written.
+//! Where rmcp's envelope differs (stated in `src/mcp/mod.rs`), the parts a client reads are
+//! compared: an unknown method's code, a refused call's `isError`, and the advertised
+//! capabilities, instructions (none) and server info.
 
 use serde_json::{Value, json};
 use std::io::{BufRead, BufReader, Write};
@@ -145,44 +146,30 @@ fn claude_code_s_2026_requests_get_the_python_server_s_answers() {
     );
 }
 
-/// An events record with its times replaced, as the capture writes them.
-fn normalised(mut rec: Value) -> Value {
-    rec["ts"] = json!("<ts>");
-    for ph in rec["phases"].as_array_mut().into_iter().flatten() {
-        for k in ["start", "end"] {
-            if ph.get(k).is_some() {
-                ph[k] = json!("<ts>");
-            }
-        }
-    }
-    rec
-}
-
 #[test]
-fn report_thread_answers_and_records_as_the_python_server_does() {
+fn report_thread_answers_ignored_and_records_nothing_as_the_python_server_does() {
     let recs = golden("report-thread");
+    assert!(
+        of(&recs, "events").is_empty(),
+        "the Python server wrote no events"
+    );
     let (got, dir) = replay(&of(&recs, "client->server"), true);
     let want = of(&recs, "server->client");
-    assert_eq!(
-        advertised(by_id(&got, &json!(0))),
-        advertised(by_id(&want, &json!(0)))
-    );
+    let init = advertised(by_id(&got, &json!(0)));
+    assert_eq!(init, advertised(by_id(&want, &json!(0))));
+    assert_eq!(init[1], Value::Null, "no instructions");
     for id in (1..=9).filter(|i| *i != 7) {
+        let reply = by_id(&got, &json!(id));
+        assert_eq!(reply, by_id(&want, &json!(id)), "call {id}");
         assert_eq!(
-            by_id(&got, &json!(id)),
-            by_id(&want, &json!(id)),
+            reply["result"]["structuredContent"],
+            json!({"status": "ignored", "reason": "threads were removed"}),
             "call {id}"
         );
     }
     // no thread_id: refused (in rmcp's words, not pydantic's)
     assert_eq!(by_id(&got, &json!(7))["result"]["isError"], json!(true));
-    let text =
-        std::fs::read_to_string(dir.path().join("events").join(format!("{SID}.jsonl"))).unwrap();
-    let events: Vec<Value> = text
-        .lines()
-        .map(|l| normalised(serde_json::from_str(l).unwrap()))
-        .collect();
-    assert_eq!(events, of(&recs, "events"));
+    assert!(!dir.path().join("events").exists());
 }
 
 #[test]

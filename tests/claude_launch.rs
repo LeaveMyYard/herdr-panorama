@@ -3,7 +3,7 @@
 //! has it built and it speaks the Claude-side contract, else Python, as before. A plugin root
 //! is built in a temp dir; the environment is cleared (never the session's herdr).
 
-use serde_json::Value;
+use serde_json::{Value, json};
 use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
@@ -140,6 +140,62 @@ fn a_binary_with_another_contract_is_passed_over() {
 }
 
 #[test]
+fn a_binary_on_claude_contract_1_is_passed_over() {
+    // a binary from before threads were removed still says the report_thread instruction:
+    // the launchers must fall back to the Python hooks and server, which no longer do
+    let dir = tempfile::tempdir().unwrap();
+    let (root, bin) = plugin(dir.path());
+    write_exe(
+        &root.join("target/release/panorama"),
+        "[ \"$1\" = contract ] && echo 'claude 1' && exit 0\necho \"rust $*\"",
+    );
+    let out = run(&hook_argv(&root, "SessionStart"), dir.path(), &bin, "{}");
+    let text = String::from_utf8(out.stdout).unwrap();
+    assert!(
+        text.starts_with("python3 ") && !text.contains("rust "),
+        "{text}"
+    );
+    let out = run(&mcp_argv(&root), dir.path(), &bin, "");
+    let text = String::from_utf8(out.stdout).unwrap();
+    assert!(
+        text.starts_with("uv run ") && !text.contains("rust "),
+        "{text}"
+    );
+}
+
+#[test]
+fn emit_takes_any_arguments_records_nothing_and_exits_0() {
+    let dir = tempfile::tempdir().unwrap();
+    for args in [
+        &["--session", "s1", "--thread", "pr-7", "--status", "active"][..],
+        &[
+            "--thread", "t", "--phase", "a=now", "--agent", "x", "--json", "{}",
+        ],
+        &["--help"],
+        &["--no-such-flag"],
+        &[],
+    ] {
+        let out = Command::new(env!("CARGO_BIN_EXE_panorama"))
+            .env_clear()
+            .env("HOME", dir.path())
+            .env("CLAUDE_CODE_SESSION_ID", "s1")
+            .env("PANORAMA_EVENTS_DIR", dir.path().join("events"))
+            .arg("emit")
+            .args(args)
+            .output()
+            .unwrap();
+        assert_eq!(out.status.code(), Some(0), "{args:?}");
+        assert!(out.stdout.is_empty(), "{args:?}");
+        assert_eq!(
+            String::from_utf8(out.stderr).unwrap(),
+            "panorama emit: threads were removed; nothing recorded\n",
+            "{args:?}"
+        );
+    }
+    assert!(std::fs::read_dir(dir.path()).unwrap().next().is_none());
+}
+
+#[test]
 fn the_built_binary_runs_the_hooks_and_the_server() {
     let dir = tempfile::tempdir().unwrap();
     let (root, bin) = plugin(dir.path());
@@ -173,8 +229,17 @@ fn the_built_binary_runs_the_hooks_and_the_server() {
         &bin,
         r#"{"session_id": "s1", "source": "startup"}"#,
     );
-    let said: Value = serde_json::from_str(&String::from_utf8(out.stdout).unwrap()).unwrap();
-    assert_eq!(said["hookSpecificOutput"]["hookEventName"], "SessionStart");
+    // SessionStart says nothing (no additionalContext) but still records the session
+    assert_eq!(
+        (out.status.code(), out.stdout.as_slice()),
+        (Some(0), &b""[..])
+    );
+    let recs = std::fs::read_to_string(dir.path().join("hooks-out/s1.jsonl")).unwrap();
+    let last: Value = serde_json::from_str(recs.lines().last().unwrap()).unwrap();
+    assert_eq!(
+        (&last["event"], &last["told"]),
+        (&json!("session"), &json!(false))
+    );
     // garbage in, nothing out, exit 0 (exit 2 would keep a subagent running)
     let out = run(&hook_argv(&root, "SubagentStop"), dir.path(), &bin, "{bad");
     assert_eq!(
@@ -279,7 +344,7 @@ fn the_binary_answers_only_what_it_knows() {
         (out.status.code(), String::from_utf8(out.stdout).unwrap())
     };
     assert_eq!(ask(&["contract"]), (Some(0), "1\n".into()));
-    assert_eq!(ask(&["contract", "claude"]), (Some(0), "claude 1\n".into()));
+    assert_eq!(ask(&["contract", "claude"]), (Some(0), "claude 2\n".into()));
     assert_eq!(ask(&["contract", "bogus"]), (Some(2), String::new()));
     assert_eq!(ask(&["bogus"]), (Some(2), String::new()));
     assert!(ask(&[]).1.starts_with("panorama "));
@@ -322,9 +387,7 @@ fn every_hook_kind_run_directly_exits_0_and_says_nothing_on_bad_input() {
             let out = child.wait_with_output().unwrap();
             assert_eq!(out.status.code(), Some(0), "{kind} {payload}");
             assert!(out.stderr.is_empty(), "{kind} {payload}");
-            if kind != "session-start" {
-                assert!(out.stdout.is_empty(), "{kind} {payload}");
-            }
+            assert!(out.stdout.is_empty(), "{kind} {payload}");
         }
     }
 }

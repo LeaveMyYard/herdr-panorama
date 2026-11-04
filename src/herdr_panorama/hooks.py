@@ -14,8 +14,8 @@ empty ``agent_type`` and are skipped) append one line per event to
      "pid": <claude pid>, "pstart": "<process start token>", "pidns": "<pid namespace>"}
 
 ``SessionStart`` appends ``{"event": "session", ...}`` with the same process identity
-(a resume shows up as a new process), prunes hook files older than 14 days, and
-prints the short ``report_thread`` instruction once per session, inside herdr only.
+(a resume shows up as a new process) and prunes hook files older than 14 days. It prints
+nothing: the ``report_thread`` instruction was removed with threads.
 
 Payload fields (official hooks reference, https://code.claude.com/docs/en/hooks):
 ``session_id``, ``agent_id``, ``agent_type``; SubagentStop also ``stop_hook_active``
@@ -38,14 +38,6 @@ from pathlib import Path
 VERSION = 1
 MAX_DEPTH = 32
 PRUNE_AFTER = 14 * 86400
-
-SESSION_TEXT = (
-    "herdr-panorama shows your work in a swarm view. When you run multi-step work (a PR through "
-    "review rounds, a plan's tasks, several subagents on one goal), call report_thread when a thread "
-    "starts and whenever its phase changes: thread_id, title, the current phase, finished phases, "
-    "next phases. One call per change; skip it for single-step tasks."
-)
-
 
 def hooks_dir() -> Path:
     env = os.environ.get("PANORAMA_HOOKS_DIR")
@@ -189,14 +181,6 @@ def record(event: str, payload: dict) -> None:
                       "ts": time.time()})
 
 
-def _told(path: Path) -> bool:
-    try:
-        with open(path, "rb") as fh:
-            return any(b'"event": "session"' in line and b'"told": true' in line for line in fh)
-    except OSError:
-        return False
-
-
 def prune(now: float | None = None) -> None:
     now = time.time() if now is None else now
     try:
@@ -212,19 +196,15 @@ def prune(now: float | None = None) -> None:
 
 
 def session_start(payload: dict) -> str:
-    """Record the session's process (resumes show up as a new one); return the instruction
-    the first time a session starts inside herdr, else nothing."""
+    """Record the session's process (resumes show up as a new one). Says nothing: the
+    report_thread instruction was removed with threads; ``told`` stays in the record, false."""
     prune()
     session = payload.get("session_id")
-    in_herdr = bool(os.environ.get("HERDR_PANE_ID") or os.environ.get("HERDR_ENV"))
     if not isinstance(session, str) or not session:
         return ""
-    tell = in_herdr and not _told(hooks_path(session))
     _append(session, {"v": VERSION, "event": "session", "agent": "", "source": payload.get("source"),
-                      "ts": time.time(), "told": tell})
-    if not tell:
-        return ""
-    return json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": SESSION_TEXT}})
+                      "ts": time.time(), "told": False})
+    return ""
 
 
 def main(kind: str, stdin=None) -> int:

@@ -1,4 +1,6 @@
-//! A shared MCP server must route each Codex caller independently.
+//! A shared MCP server answers every Codex caller alike since threads were removed: whatever
+//! `_meta.threadId` a call carries (a root, a child, none, or one that is not a thread id), it
+//! is ignored, and nothing is written for anyone.
 use serde_json::{Value, json};
 use std::io::{BufRead, BufReader, Write};
 use std::process::{Command, Stdio};
@@ -49,7 +51,7 @@ fn replay(requests: &[Value]) -> (Vec<Value>, tempfile::TempDir) {
 }
 
 #[test]
-fn alternating_root_child_calls_use_wire_metadata_without_sticky_environment() {
+fn codex_calls_with_any_caller_metadata_are_ignored_and_write_nothing() {
     let root = "11111111-1111-4111-8111-111111111111";
     let child = "22222222-2222-4222-8222-222222222222";
     let mut requests = vec![
@@ -73,25 +75,12 @@ fn alternating_root_child_calls_use_wire_metadata_without_sticky_environment() {
     let (got, dir) = replay(&requests);
     for id in 1..=7 {
         let msg = got.iter().find(|m| m["id"] == id).unwrap();
-        if (4..=6).contains(&id) {
-            assert_eq!(msg["result"]["isError"], true);
-        } else {
-            assert_eq!(msg["result"]["structuredContent"]["status"], "recorded");
-        }
+        assert_eq!(msg["result"]["isError"], false, "call {id}");
+        assert_eq!(
+            msg["result"]["structuredContent"],
+            json!({"status": "ignored", "reason": "threads were removed"}),
+            "call {id}"
+        );
     }
-    let read = |id: &str| {
-        std::fs::read_to_string(dir.path().join("events").join(format!("{id}.jsonl"))).unwrap()
-    };
-    assert_eq!(read(root).lines().count(), 2);
-    assert_eq!(read(child).lines().count(), 1);
-    assert!(read(child).contains("call-1"));
-    assert_eq!(read("claude-fallback").lines().count(), 1);
-    assert_eq!(
-        std::fs::read_dir(dir.path().join("events"))
-            .unwrap()
-            .filter_map(Result::ok)
-            .filter(|e| e.path().extension().is_some_and(|x| x == "jsonl"))
-            .count(),
-        3
-    );
+    assert!(!dir.path().join("events").exists());
 }

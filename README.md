@@ -40,7 +40,7 @@ open questions are in [docs/DESIGN.md](docs/DESIGN.md).
 **Local Codex support is available in the Rust view.** Claude Code and Codex panes share
 the list, navigation and launcher. Exact session associations add Codex turns, tools and
 child-agent history; unbound panes remain visible. See [Codex setup and limits](docs/codex.md)
-for optional hooks, existing-session binding and MCP reporting. The Python entrypoint remains
+for optional hooks and existing-session binding. The Python entrypoint remains
 Claude-only during the Rust port.
 
 | Full screen (160 columns) | Side split (70 columns) |
@@ -294,9 +294,18 @@ The view works without it. The plugin adds, for the sessions where it is install
 - `SubagentStart` / `SubagentStop` hooks that record exact start and stop times. Agents that
   ended then show as a confirmed `done` instead of `done?`. An agent that started but never
   stopped, and whose Claude process is gone, shows as `lost`.
-- an MCP tool, `report_thread(thread_id, title, phase, phases_done, next, status, agents)`, that
-  orchestrators call to declare threads and phases (the same format as `panorama emit`);
-- one short line of session instructions (inside herdr only) asking orchestrators to use it.
+- a `SessionStart` hook that records the session's Claude process (a resume shows up as a new
+  one). It says nothing to the agent.
+
+**Removed: threads.** Earlier versions asked orchestrators, in one line of session
+instructions, to call an MCP tool, `report_thread`, and offered `panorama emit` to declare
+threads by hand. Panorama now shows every agent and subagent as one tree, named by its spawner,
+so both are gone: the instruction is no longer sent, `report_thread` is still listed but
+records nothing (it answers `ignored`), and the Rust `panorama emit` records nothing, says so
+on stderr and exits 0. (The frozen Python entrypoint's `panorama emit` still writes, for its
+own legacy thread view.) A later release removes them. Report files under
+`${XDG_STATE_HOME:-~/.local/state}/herdr-panorama/events/` are left in place; the Rust view no
+longer needs them, and you can delete them.
 
 ```
 /plugin install herdr-panorama --marketplace LeaveMyYard/herdr-panorama
@@ -305,7 +314,8 @@ The view works without it. The plugin adds, for the sessions where it is install
 or `claude plugin marketplace add LeaveMyYard/herdr-panorama` then
 `claude plugin install herdr-panorama@herdr-panorama`. The hooks need `python3` on `PATH` (stdlib only): the interpreter it resolves to is cached in the plugin's
 data directory (`${CLAUDE_PLUGIN_DATA}/python-interpreter`) and run directly afterwards, so a pyenv-style shim
-costs its 60–75 ms once, not on every hook. The MCP server needs `uv`.
+costs its 60–75 ms once, not on every hook. The (deprecated) MCP server needs `uv` unless the
+plugin root has the Rust binary built.
 
 ## Configure
 

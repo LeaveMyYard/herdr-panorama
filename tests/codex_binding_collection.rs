@@ -202,7 +202,7 @@ fn untrusted_binding_directory_never_authorizes_history_reads() {
 }
 
 #[test]
-fn per_caller_mcp_reports_reach_only_the_verified_child_subtree() {
+fn per_caller_reports_reach_only_the_verified_child_subtree_and_mcp_writes_none() {
     let fixture = Fixture::new("complete");
     let fake = FakeHerdr::start();
     fake.on(
@@ -233,10 +233,24 @@ fn per_caller_mcp_reports_reach_only_the_verified_child_subtree() {
         .lines()
         .map(|line| serde_json::from_str(line).unwrap())
         .collect();
-    assert!(
-        replies.iter().any(|reply| reply["id"] == 1
-            && reply["result"]["structuredContent"]["status"] == "recorded")
-    );
+    // threads were removed: the call is ignored and nothing is written
+    assert!(replies.iter().any(
+        |reply| reply["id"] == 1 && reply["result"]["structuredContent"]["status"] == "ignored"
+    ));
+    let events = fixture.root().join("events");
+    assert!(!events.join(format!("{CHILD}.jsonl")).exists());
+    // the read side still takes what an earlier version wrote for that call (until it goes)
+    std::fs::create_dir_all(&events).unwrap();
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs_f64();
+    let written = json!({"v": 1, "ts": now, "thread": "child-plan", "name": "Synthetic child plan", "status": "active"});
+    std::fs::write(
+        events.join(format!("{CHILD}.jsonl")),
+        format!("{written}\n"),
+    )
+    .unwrap();
     // Attribution needs a complete verified graph, which may legitimately arrive
     // after a one-shot CLI's short warmup. Its separate tests cover that budget.
     let mut collector = fixture.collector(true);
