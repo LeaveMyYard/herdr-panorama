@@ -175,13 +175,13 @@
           true
         ],
         [
-          " Backfill ledger ids ",
+          " general-purpose ",
           "#eceef1",
           "#101215",
           true
         ],
         [
-          "general-purpose p2backf · sonnet …   │ ",
+          "p2backf · sonnet · 8m · 1 calls          │ ",
           "#80868f",
           "#101215",
           false

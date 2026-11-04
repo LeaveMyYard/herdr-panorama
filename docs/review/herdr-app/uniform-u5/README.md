@@ -11,6 +11,7 @@ These are renders of the Rust views (`render_dock`, `render_narrow`) from isolat
   - Right, docked next to the Codex root. Its rows use the same component. The Claude entry, no longer docked, is two lines: line 2 has one tile per active direct subagent (its subtree's most urgent state), then `✓3`, then the counts.
 - [dock-46-demo-before-after.png](dock-46-demo-before-after.png): the collected demo scenario. Before (U3) is the single adapter thread row `Billing API` with the thread's glyphs. After (U5) is the root's subagents as rows, plus the finished fold.
 - [dock-46-deep.png](dock-46-deep.png): design 5d's deep dataset. `lead l1`, then `researcher r1` and `batch b1` with their whole subtrees as runs. No row goes deeper than layer 2.
+- [dock-46-unseen.png](dock-46-unseen.png): design 9e's data with and without turn 6's unseen marks. An agent row whose agent or run holds an unseen event pulses its glyph's background (review round 1, M1), as does the finished fold.
 - [narrow-70-synthetic.png](narrow-70-synthetic.png): the narrow layout at 70 columns over the same fixture.
   - The selected root opens one card per direct subagent. A card shows the agent's title, its subtree's marks, a pod per descendant, and its model and age.
   - Left: a depth-3 agent is selected. It is the bracketed pod in its depth-1 ancestor's card, which opens with its details.
