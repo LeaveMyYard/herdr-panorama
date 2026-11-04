@@ -23,10 +23,11 @@ export function rootMarks(t, item) {
     .children(item.aggregate.kinds.map(kind => mark(t, kind, item.aggregate.questions)))
     .when(item.status !== 'blocked', el => el.child(mark(t, item.status, 0, true)));
 }
-export function lines(t, segments) {
+// Tree segments for one row: │ continues, ├/└ elbow into this row's centre (`height`).
+export function lines(t, segments, height = 26) {
   return segments.map(segment => div().relative().w(13).h_full().flex_none()
     .when(segment === '│' || segment === '├', el => el.child(div().absolute().left(7).top(-2).bottom(0).w(1.5).bg(t.input)))
-    .when(segment === '├' || segment === '└', el => el.child(div().absolute().left(7).top(-2).h(15).w(6).border_l(1.5).border_b(1.5).rounded_bl(6).border_color(t.input))));
+    .when(segment === '├' || segment === '└', el => el.child(div().absolute().left(7).top(-2).h(height / 2 + 2).w(6).border_l(1.5).border_b(1.5).rounded_bl(6).border_color(t.input))));
 }
 export function borderMotion(t, now, { edge = false, sweep = false, root = false } = {}) {
   const p = (now % 2400) / 2400, eased = p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;

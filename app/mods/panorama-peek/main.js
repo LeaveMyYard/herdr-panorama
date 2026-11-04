@@ -5,7 +5,8 @@ import { startConsumer, consumerFeed, closeConsumer } from './feed-client.js';
 import { harnessOf, iconProgram, joinRoots } from './model.js';
 import { agentTitle } from './tree.js';
 import { rootKey, probeMatches } from './contract.js';
-import { icon, mark } from './marks.js';
+import { icon } from './marks.js';
+import { badge, stateOf } from './state.js';
 import { subject, transcriptScope, focusTarget } from './subject.js';
 import { Pages } from './paging.js';
 import { peekCommand, guard } from './actions.js';
@@ -121,11 +122,13 @@ export default class PanoramaPeek extends View {
     const rootName = item?.name || root?.title || root?.tab_label || root?.pane_id || '';
     const context = [space?.name, rootName].filter(Boolean).join(' · ');
     const heading = agent ? agentTitle(agent) : rootName, secondary = agent ? [agent.role, agent.model].filter(Boolean).join(' · ') : '';
-    const error = agent?.error || this.actionError;
-    return frame.child(h_flex().items_center().gap(7).child(icon(iconProgram(harness), 16, t.foreground))
+    const error = agent?.error || this.actionError, status = agent?.status ?? root?.herdr_status;
+    // V11 C: the subject's state badge, and its state edge down the card's left side.
+    return frame.relative().when(Boolean(value), el => el.child(div().absolute().left(0).top(10).bottom(10).w(3).rounded(2).bg(stateOf(status).hue)))
+      .child(h_flex().items_center().gap(7).child(icon(iconProgram(harness), 16, t.foreground))
       .child(div().flex_shrink(1).min_w(0).truncate().font_semibold().child(heading))
       .child(div().min_w(0).flex_1().truncate().text_color(t.dim).child(secondary))
-      .when(Boolean(value), el => el.child(mark(t, agent?.status ?? root.herdr_status, agent?.question_ids.length ?? root.inbox.length, !agent))))
+      .when(Boolean(value), el => el.child(badge(status, undefined, { questions: agent?.question_ids.length ?? root.inbox.length, height: 20 }))))
       .child(v_flex().text_size(11.5).line_height(1.45).text_color(t.dim).child(metadata(value, harness, Date.now()))
         .when(Boolean(agent), el => el.child(`Subagent of ${context}. It has no pane of its own.`)))
       .when(Boolean(error), el => el.child(v_flex().rounded(7).px(9).py(7).bg(t.blocked + '1c').border(1).border_color(t.blocked + '40')

@@ -7,7 +7,7 @@ import { rootTarget } from './routing.js';
 import { PeekCaller } from './peek-caller.js';
 import { joinRoots, groups, rootSignature, iconProgram, spaceTotals } from './model.js';
 import { rows, isOpen, needs, directTiles, agentTitle } from './tree.js';
-import { icon, mark, rootMarks, lines, borderMotion } from './marks.js';
+import { icon, mark, rootMarks, lines } from './marks.js';
 import { tile, badge, glyph, glyphRun, mix, stateOf, cardColors, SURFACE } from './state.js';
 function find(node, id) {
   if (node?.id === id) return node;
@@ -22,6 +22,7 @@ function shown(node, target, visible = true) {
 }
 const narrow = () => (find(layout(), 'sidebar')?.size?.px ?? Infinity) < 160;
 const stop = (_event, cx) => cx.stop_propagation();
+const ROW = 20; // V9/V11 dense tree rows
 const DOCK = { fg: '#c3c7cd', hi: '#eceef1', number: '#4d535c', need: '#ffb547', fail: '#ff6b6b', hover: '#1c1e23' };
 const SECTION = { 4: stateOf('wait').hue, 3: stateOf('done').hue, 2: stateOf('run').hue };
 // V10 card state, aligned with the priority sections (groups()): failed > permission >
@@ -105,8 +106,10 @@ export default class Panorama extends View {
       .child(svg(`mods/workspace-chrome/chevron-${open ? 'down' : 'right'}.svg`).size(11))
       .when(!open, el => el.child(String(count)));
   }
-  rootRow(item, index, compact, now, cx) {
-    const t = theme(), sig = rootSignature(item), open = isOpen(this.folds, item.key, sig, item.aggregate.priority === 4 || item.aggregate.priority === 2);
+  // V11 (as the TUI dock): only the docked entry opens into its list by default.
+  rootOpen(item) { return isOpen(this.folds, item.key, rootSignature(item), item.focused); }
+  rootRow(item, index, compact, now, cx, joined = false) {
+    const t = theme(), sig = rootSignature(item), open = this.rootOpen(item);
     const count = (item.root.agents?.length ?? 0) + (item.root.hidden_finished > 0 ? 1 : 0) + item.nativeChildren.length;
     if (compact) return h_flex().id(`root-${item.key}`).h(26).px(8).flex_none().items_center().gap(4).hover(el => el.bg(t.hover))
       .when(Boolean(item.terminal), el => el.on_click(() => run(rootTarget(item).name, rootTarget(item).args)))
@@ -135,30 +138,38 @@ export default class Panorama extends View {
         .when(line.done > 0, el => el.child(tile('done', 16, line.done)))))
       .child(div().flex_1().min_w(0).truncate().when(!quiet && (line.tiles.length > 0 || line.done > 0), el => el.ml(6)).text_size(11.5).text_color(docked ? SURFACE.dim : SURFACE.faint)
         .child(`${line.active} active · ${line.live} agents`));
-    return div().pt(4).h(52).flex_none().child(div().id(`root-${item.key}`).relative().h(48).rounded(8).border(1).border_color(colors.border).bg(hue)
+    // An open card continues into its rows (inCard), so its bottom stays square and open.
+    return div().pt(4).h(52).flex_none().child(div().id(`root-${item.key}`).relative().h(48).border_color(colors.border).bg(hue)
+      .when(joined, el => el.rounded_t(8).border_t(1).border_l(1).border_r(1)).when(!joined, el => el.rounded(8).border(1))
       .on_hover((on, cx) => { this.hovered = on ? item.key : (this.hovered === item.key ? null : this.hovered); cx.notify(); })
       .when(Boolean(item.terminal), el => el.cursor_pointer().on_click(() => run(rootTarget(item).name, rootTarget(item).args)))
-      .child(v_flex().absolute().left(3).right(0).top(0).bottom(0).rounded_r(7).bg(fill).child(head).child(tail))
+      .child(v_flex().absolute().left(3).right(0).top(0).bottom(0).when(joined, el => el.rounded_tr(7)).when(!joined, el => el.rounded_r(7)).bg(fill).child(head).child(tail))
       .children(sweep(state === 'run' && item.aggregate.sweep, now)));
   }
+  // A row inside its root's card: the card's state edge, tint and border continue down to
+  // the last row, which closes the card (V11 B: the docked entry holds its list).
+  inCard(item, element, last) {
+    const state = cardState(item), colors = cardColors(state, item.focused);
+    return div().relative().h(ROW + (last ? 5 : 0)).flex_none().bg(stateOf(state).hue).border_l(1).border_r(1).border_color(colors.border)
+      .when(last, el => el.border_b(1).rounded_b(8))
+      .child(div().absolute().left(3).right(0).top(0).bottom(0).bg(colors.fill).when(last, el => el.rounded_br(7)).child(element));
+  }
   // V11: one row component for every agent (own glyph, title, a run of states) and the
-  // root's `N finished · titles` fold.
+  // root's `N finished · titles` fold. The tree trunk starts under the card's icon.
   detailRow(item, row, now, cx) {
     const t = theme(), agent = row.agent;
-    const base = h_flex().id(row.key).relative().px(8).h(26).flex_none().rounded(8).items_center().gap(0).text_size(12.5).hover(el => el.bg(t.hover)).when(this.hovered === row.key, el => el.bg(t.hover)).when(this.peekCaller?.rowKey === row.key, el => el.bg(t.raised)).cursor_pointer().children(lines(t, row.lines)).child(div().w(4).flex_none());
+    const base = h_flex().id(row.key).relative().pl(29).pr(10).h(ROW).flex_none().rounded(4).items_center().gap(0).text_size(12.5).hover(el => el.bg(t.hover)).when(this.hovered === row.key, el => el.bg(t.hover)).when(this.peekCaller?.rowKey === row.key, el => el.bg(t.raised)).cursor_pointer().children(lines(t, row.lines, ROW)).child(div().w(4).flex_none());
     if (row.kind === 'summary') {
       const label = [row.count ? `${row.count} finished` : null, row.names.join(', ') || null, row.older ? `+${row.older} older` : null].filter(Boolean).join(' · ');
       return base.when(row.count > 0, el => el.on_click((_event, cx) => this.toggle(row.key, row.signature, row.open, cx)))
-        .child(div().mr(7).flex_none().child(glyph('done', 12))).child(div().flex_1().min_w(0).truncate().text_color(SURFACE.dim).child(label))
-        .when(row.count > 0, el => el.child(svg(`mods/workspace-chrome/chevron-${row.open ? 'down' : 'right'}.svg`).size(11).text_color(SURFACE.dim)));
+        .child(div().mr(7).flex_none().child(glyph('done', 11))).child(div().flex_1().min_w(0).truncate().text_color(SURFACE.dim).child(label));
     }
     const on = this.hovered === row.key;
     return base.on_click((_event, cx) => this.peek(item, row, cx)).on_hover((hovered, cx) => { this.hovered = hovered ? row.key : null; cx.notify(); })
-      .child(div().id(`icon-${row.key}`).mr(7).flex_none().when(row.children > 0, el => el.on_click((event, cx) => { cx.stop_propagation(); this.toggle(row.key, row.signature, row.open, cx); })).child(glyph(agent.status, 12)))
+      .child(div().id(`icon-${row.key}`).mr(7).flex_none().when(row.children > 0, el => el.on_click((event, cx) => { cx.stop_propagation(); this.toggle(row.key, row.signature, row.open, cx); })).child(glyph(agent.status, 11)))
       .child(div().flex_1().min_w(0).truncate().text_color(needs(agent.status) ? DOCK.hi : DOCK.fg).child(agentTitle(agent)))
       .when(on, el => el.child(div().h(18).ml(6).px(6).rounded(5).flex_none().bg(t.raised).text_size(10.5).font_medium().text_color(t.foreground).child('Peek')))
-      .child(div().ml(6).flex_none().child(glyphRun(row.run.statuses, 6, row.run.finished)))
-      .children(borderMotion(t, now, { edge: needs(agent.status) }));
+      .child(div().ml(6).flex_none().child(glyphRun(row.run.statuses, 6, row.run.finished)));
   }
   render(cx) {
     const t = theme(); if (props()?.sortMenu) return this.sortMenu(t);
@@ -203,22 +214,23 @@ export default class Panorama extends View {
         .when(!open, el => el.child(svg('mods/workspace-chrome/chevron-right.svg').size(11).text_color(SURFACE.dim))), heading);
       if (!open && !compact) continue;
       for (const item of section.roots) {
-        append(this.rootRow(item, items.indexOf(item), compact, now, cx), compact ? 26 : 52, !compact && cardState(item) === 'run' && item.aggregate.sweep);
+        const inner = [], open = !compact && this.rootOpen(item);
         if (!compact) {
-          const open = isOpen(this.folds, item.key, rootSignature(item), item.aggregate.priority === 4 || item.aggregate.priority === 2);
-          for (const row of rows(item.root, this.folds, open)) append(this.detailRow(item, row, now, cx), 26, row.kind === 'agent' && needs(row.agent.status));
+          for (const row of rows(item.root, this.folds, open)) inner.push(this.detailRow(item, row, now, cx));
           if (open && item.stock) for (const child of item.nativeChildren ?? []) {
             const childSig = rootSignature(child), childOpen = isOpen(this.folds, child.key, childSig, child.aggregate.priority === 4 || child.aggregate.priority === 2);
             const count = child.root.agents?.length ?? 0, segments = Array.from({ length: child.depth + 1 }, (_, i) => i === child.depth ? '└' : '│');
-            append(h_flex().id(`terminal-${child.terminal}`).relative().h(26).px(8).flex_none().items_center().text_size(12.5).gap(0).hover(el => el.bg(t.hover)).cursor_pointer()
-              .on_click(() => run(rootTarget(child).name, rootTarget(child).args)).children(lines(t, segments)).child(div().w(4).flex_none())
+            inner.push(h_flex().id(`terminal-${child.terminal}`).relative().h(ROW).pl(29).pr(10).flex_none().rounded(4).items_center().text_size(12.5).gap(0).hover(el => el.bg(t.hover)).cursor_pointer()
+              .on_click(() => run(rootTarget(child).name, rootTarget(child).args)).children(lines(t, segments, ROW)).child(div().w(4).flex_none())
               .child(div().id(`native-fold-${child.terminal}`).mr(7).when(count > 0, el => el.on_click((event, cx) => { cx.stop_propagation(); this.toggle(child.key, childSig, childOpen, cx); })).child(icon(child.program, 14, t.foreground)))
               .child(div().flex_1().min_w(0).truncate().text_color(t.muted).child(child.name))
               .when(count > 0 && !childOpen, el => el.child(this.foldControl(child.key, childSig, childOpen, count, child.aggregate.kinds.length ? t.blocked : t.dim, cx)))
-              .child(rootMarks(t, child)).children(borderMotion(t, now, { edge: child.aggregate.kinds.length > 0 })), 26, child.aggregate.kinds.length > 0);
-            if (childOpen) for (const row of rows(child.root, this.folds, true)) append(this.detailRow(child, { ...row, lines: [...segments.map(() => '│'), ...row.lines] }, now, cx), 26, row.kind === 'agent' && needs(row.agent.status));
+              .child(rootMarks(t, child)));
+            if (childOpen) for (const row of rows(child.root, this.folds, true)) inner.push(this.detailRow(child, { ...row, lines: [...segments.map(() => '│'), ...row.lines] }, now, cx));
           }
         }
+        append(this.rootRow(item, items.indexOf(item), compact, now, cx, inner.length > 0), compact ? 26 : 52, !compact && cardState(item) === 'run' && item.aggregate.sweep);
+        inner.forEach((element, n) => append(this.inCard(item, element, n === inner.length - 1), ROW + (n === inner.length - 1 ? 5 : 0)));
       }
     }
     if (!compact) append(h_flex().id('new-agent').mt(12).h(24).pl(6).pr(10).flex_none().items_center().rounded(6).cursor_pointer().hover(el => el.bg(DOCK.hover))
