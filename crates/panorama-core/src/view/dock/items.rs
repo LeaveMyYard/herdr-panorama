@@ -1,11 +1,12 @@
-//! The docked entry's list (9e; Python `render.dock_row`'s items): the session's background
-//! tasks, then each active thread with the tree rows of its spawning agents, then one row for
-//! the done threads. Each row starts with a tile, as the thread rows do.
+//! The docked entry's list (plan `uniform-agent-tree.md` §4, V11 sidebar): the root's
+//! background tasks, then one row per agent still going in two layers (the root's direct
+//! subagents, then theirs), then one row folding the root's finished subagents. Every agent
+//! row is the same: its own glyph, its title, and a run of states on the right. Nothing
+//! below layer 2 gets a row.
 
-use super::state::{DockState, thread_glyph};
+use super::state::DockState;
 use super::tiles::{agent_glyphs, glyph_colour, tile};
-use super::tree_rows::{SpawnRow, spawn_rows};
-use crate::model::{Agent, BgTask, Orchestrator, Status, Thread, TreeKids};
+use crate::model::{Agent, BgTask, Orchestrator, Status};
 use crate::view::agent_text::name;
 use crate::view::anim::{clock, glyph};
 use crate::view::palette::{DIM, FAINT, FG, LINE};
@@ -17,42 +18,45 @@ use crate::view::unseen::mark_of;
 
 /// One row of the list.
 pub enum Item<'a> {
-    /// A background task of the session.
+    /// A background task of the root itself.
     Bg(&'a BgTask),
-    /// An active thread, and the agents it spawned itself.
-    Thread(&'a Thread, Vec<&'a Agent>),
-    /// An agent of a thread that spawned others, and those it spawned.
-    Spawn(SpawnRow<'a>, Vec<&'a Agent>),
-    /// The done threads, folded.
-    Done,
+    /// A direct subagent of the root, and its finished children (its run: `+N✓`; its
+    /// children still going get their own rows under it).
+    Agent(&'a Agent, Vec<&'a Agent>),
+    /// A layer-2 agent, whether it is its parent's last such row, and all its descendants
+    /// (its run).
+    Sub(&'a Agent, bool, Vec<&'a Agent>),
+    /// The root's finished subagents, folded.
+    Fin,
 }
 
 impl Item<'_> {
-    /// Whether the row hangs off the entry's own branch (everything but a tree row).
+    /// Whether the row hangs off the entry's own branch (everything but a layer-2 row).
     pub fn is_head(&self) -> bool {
-        !matches!(self, Item::Spawn(..))
+        !matches!(self, Item::Sub(..))
     }
 }
 
 /// The rows of the docked entry, in order.
 pub fn items_of<'a>(o: &'a Orchestrator, d: &DockState<'a>) -> Vec<Item<'a>> {
     let mut out: Vec<Item> = o.bg.iter().map(Item::Bg).collect();
-    for t in &d.active {
-        let kids = TreeKids::of(t);
-        out.push(Item::Thread(t, kids.children(None).to_vec()));
-        for row in spawn_rows(&kids) {
-            let below = kids.children(Some(&row.agent.id)).to_vec();
-            out.push(Item::Spawn(row, below));
+    for a in &d.active {
+        let (going, fin) = d.tree.split(Some(&a.id));
+        out.push(Item::Agent(a, fin));
+        let n = going.len();
+        for (i, k) in going.into_iter().enumerate() {
+            out.push(Item::Sub(k, i + 1 == n, d.tree.descendants(k)));
         }
     }
-    if !d.done.is_empty() {
-        out.push(Item::Done);
+    if !d.done.is_empty() || o.hidden_finished > 0 {
+        out.push(Item::Fin);
     }
     out
 }
 
 /// What every row of one entry's list shares.
 pub struct ItemCtx<'a> {
+    pub o: &'a Orchestrator,
     pub view: &'a View,
     pub d: &'a DockState<'a>,
     /// Where right-aligned fields end.
@@ -64,51 +68,43 @@ pub struct ItemCtx<'a> {
 /// Draws list row `i` at `yy`.
 pub fn draw_item(cv: &mut Screen, yy: i32, item: &Item, i: usize, ctx: &ItemCtx) {
     let (view, xr) = (ctx.view, ctx.xr);
+    if let Item::Sub(a, last, below) = item {
+        if ctx.last_head.is_some_and(|l| i < l) {
+            cv.put(3, yy, "│", LINE, None, false);
+        }
+        let branch = if *last { "└" } else { "├" };
+        let x = cv.segs(5, yy, &[Seg::new(branch, LINE)]) + 1;
+        agent_row(cv, x, yy, a, &agent_glyphs(below, view.frame, 6), view, xr);
+        return;
+    }
+    let branch = if Some(i) == ctx.last_head {
+        "└"
+    } else {
+        "├"
+    };
+    cv.put(3, yy, branch, LINE, None, false);
     match item {
-        Item::Spawn(row, below) => {
-            if ctx.last_head.is_some_and(|l| i < l) {
-                cv.put(3, yy, "│", LINE, None, false);
-            }
-            draw_spawn(cv, yy, row, below, view.frame, xr);
+        Item::Bg(t) => draw_bg(cv, yy, t, i, view, xr),
+        Item::Fin => draw_fin(cv, yy, ctx),
+        Item::Agent(a, fin) => {
+            let run = agent_glyphs(fin, view.frame, 0);
+            agent_row(cv, 5, yy, a, &run, view, xr);
         }
-        head => {
-            cv.put(
-                3,
-                yy,
-                if Some(i) == ctx.last_head {
-                    "└"
-                } else {
-                    "├"
-                },
-                LINE,
-                None,
-                false,
-            );
-            match head {
-                Item::Bg(t) => draw_bg(cv, yy, t, i, view, xr),
-                Item::Done => draw_done(cv, yy, ctx.d, view),
-                Item::Thread(t, own) => draw_thread(cv, yy, t, own, view, xr),
-                Item::Spawn(..) => {}
-            }
-        }
+        Item::Sub(..) => {}
     }
 }
 
-/// An agent that spawned others, indented by depth, its children's glyphs on the right.
-fn draw_spawn(cv: &mut Screen, yy: i32, row: &SpawnRow, below: &[&Agent], frame: f64, xr: i32) {
-    let branch = format!("{}{}", row.prefix, if row.last { "└" } else { "├" });
-    let x = cv.segs(5, yy, &[Seg::new(branch, LINE)]) + 1;
-    let segs = agent_glyphs(below, frame, 5);
-    let a = row.agent;
-    let g = glyph(a, frame);
-    let room = (xr - width(&segs) - 1 - (x + g.chars().count() as i32 + 1)).max(1);
-    let name = trunc(&name(a), room);
+/// The one agent row: its own glyph at `x`, its title, and `run` on the right.
+fn agent_row(cv: &mut Screen, x: i32, yy: i32, a: &Agent, run: &[Seg], view: &View, xr: i32) {
+    let g = glyph(a, view.frame);
+    let room = (xr - width(run) - 1 - (x + g.chars().count() as i32 + 1)).max(1);
     let att = a.status.needs_operator();
-    let glyph_seg = Seg::new(g, glyph_colour(&a.status, frame))
+    let glyph_seg = Seg::new(g, glyph_colour(&a.status, view.frame))
         .bold_if(att)
         .fg_moving(att);
-    cv.segs(x, yy, &[glyph_seg, Seg::plain(" "), Seg::new(name, FG)]);
-    cv.segs_right(xr, yy, &segs);
+    let title = Seg::new(trunc(&name(a), room), FG);
+    cv.segs(x, yy, &[glyph_seg, Seg::plain(" "), title]);
+    cv.segs_right(xr, yy, run);
 }
 
 /// A background task: its clock tile, what it does, and its kind and age on the right.
@@ -140,33 +136,34 @@ fn draw_bg(cv: &mut Screen, yy: i32, t: &BgTask, i: usize, view: &View, xr: i32)
     cv.segs_right(xr, yy, &[Seg::new(when, DIM)]);
 }
 
-/// The done threads, folded into one row; unseen, its tile pulses.
-fn draw_done(cv: &mut Screen, yy: i32, d: &DockState, view: &View) {
-    let fm = mark_of(d.done.iter().flat_map(|t| &t.agents), &view.unseen, true);
-    let n = format!("{} done", d.done.len());
+/// The root's finished subagents in one row, `✓ N finished · names`, and `+N older` for
+/// those the done window dropped; unseen, its tile pulses.
+fn draw_fin(cv: &mut Screen, yy: i32, ctx: &ItemCtx) {
+    let (d, view) = (ctx.d, ctx.view);
+    let below = d.done.iter().flat_map(|a| {
+        let mut all = d.tree.descendants(a);
+        all.insert(0, a);
+        all
+    });
+    let fm = mark_of(below, &view.unseen, true);
+    let older = ctx.o.hidden_finished;
+    let right = if older > 0 {
+        vec![Seg::new(format!("+{older} older"), FAINT)]
+    } else {
+        vec![]
+    };
+    let tl = tile(&Status::Done, "✓", view.frame, fm);
+    let x = 5 + tl.len() + 1;
+    let names: Vec<String> = d.done.iter().map(|a| name(a)).collect();
+    let text = match names.len() {
+        0 => String::new(),
+        n => format!("{n} finished · {}", names.join(", ")),
+    };
+    let room = (ctx.xr - width(&right) - 1 - x).max(1);
     cv.segs(
         5,
         yy,
-        &[
-            tile(&Status::Done, "✓", view.frame, fm),
-            Seg::plain(" "),
-            Seg::new(n, FAINT),
-        ],
+        &[tl, Seg::plain(" "), Seg::new(trunc(&text, room), FAINT)],
     );
-}
-
-/// An active thread: its tile (unseen: its background pulses), name, and its own agents'
-/// glyphs on the right.
-fn draw_thread(cv: &mut Screen, yy: i32, t: &Thread, own: &[&Agent], view: &View, xr: i32) {
-    let frame = view.frame;
-    let (g, st) = thread_glyph(t, frame);
-    let tl = tile(&st, &g, frame, mark_of(&t.agents, &view.unseen, true));
-    let ags = agent_glyphs(own, frame, 4);
-    let room = (xr - width(&ags) - 1 - (5 + tl.len() + 1)).clamp(1, 22);
-    cv.segs(
-        5,
-        yy,
-        &[tl, Seg::plain(" "), Seg::new(trunc(&t.name, room), FG)],
-    );
-    cv.segs_right(xr, yy, &ags);
+    cv.segs_right(ctx.xr, yy, &right);
 }

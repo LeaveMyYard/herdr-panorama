@@ -69,14 +69,17 @@ fn codex(runtime: &str, history: Option<&str>) -> Swarm {
     o.herdr_status = panorama_core::model::HerdrStatus::from_code(runtime);
     if let Some(status) = history {
         o.session_id = Some("exact-root".into());
-        o.threads.push(serde_json::from_value(json!({
-            "id":"codex:exact-root", "name":"History", "source":"session", "status":status,
-            "agents":[
-                {"id":"main:codex:codex-pane", "description":"Root", "role":"orchestrator",
-                 "status":match runtime { "working"=>"run", "blocked"=>"blk", "idle"=>"q", other=>other }},
-                {"id":"verified-child", "description":"main", "role":"main", "status":"unknown"}
-            ]
-        })).unwrap());
+        // the uniform tree (U3): the root's runtime is herdr's; its one thread holds the agents
+        o.threads.push(
+            serde_json::from_value(json!({
+                "id":panorama_core::model::TREE_THREAD, "name":"agents", "source":"session",
+                "status":status,
+                "agents":[
+                    {"id":"verified-child", "description":"main", "role":"main", "status":"unknown"}
+                ]
+            }))
+            .unwrap(),
+        );
     }
     sw
 }
@@ -154,7 +157,7 @@ fn codex_child_and_report_attention_survives_root_state_and_main_names() {
                 let thread = &mut sw.orchestrators[0].threads[0];
                 thread.source = panorama_core::model::ThreadSource::from_code(source);
                 // A distinct child can have the root's name/role and even a main prefix.
-                let child = &mut thread.agents[1];
+                let child = &mut thread.agents[0];
                 child.id = "main:distinct-child".into();
                 child.status = panorama_core::model::Status::from_code(status);
                 assert_layout_state(&sw, label, false);
@@ -164,11 +167,11 @@ fn codex_child_and_report_attention_survives_root_state_and_main_names() {
         sw.orchestrators[0].inbox.push(1);
         assert_layout_state(&sw, "needs you", false);
         sw.orchestrators[0].inbox.clear();
-        sw.orchestrators[0].threads[0].agents[1]
+        sw.orchestrators[0].threads[0].agents[0]
             .question_ids
             .push(2);
         assert_layout_state(&sw, "needs you", false);
-        sw.orchestrators[0].threads[0].agents[1]
+        sw.orchestrators[0].threads[0].agents[0]
             .question_ids
             .clear();
         sw.orchestrators[0].bg.push(

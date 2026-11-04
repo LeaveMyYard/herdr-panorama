@@ -3,7 +3,8 @@
 //! fractional 1.5 and 3.4, where only the eased blink moves. The fractional frames are the
 //! proof that rendering again at a fractional frame gives the design's colours (Python
 //! restyles there instead). Python's tests/test_states.py: the panel, and the 2a graph's
-//! root cards, a root's background work and the waiting agent card.
+//! root cards, a root's background work and the waiting agent card. The panel's screens are
+//! Rust's own since U5 (D5): `rust/screens/design-8.json`, written by `PANORAMA_BLESS=1`.
 //!
 //! The design's 2a graph draws the thread column the uniform tree removed (plan
 //! `uniform-agent-tree.md` U4, D5): its pages are compared with Rust's own reviewed renders,
@@ -35,7 +36,7 @@ fn turn_8_panel_cell_for_cell_at_whole_and_fractional_frames() {
     let swarm = states_swarm(&eight["data"]);
     let frames = eight["frames"].as_object().unwrap();
     assert!(frames.contains_key("1.5") && frames.contains_key("3.4"));
-    for (key, panes) in frames {
+    for key in frames.keys() {
         let view = View {
             orch: Some("w1:p5".into()),
             hover: Some(Target::Orch("w1:p7".into())), // the design's hover
@@ -44,11 +45,7 @@ fn turn_8_panel_cell_for_cell_at_whole_and_fractional_frames() {
             ..View::default()
         };
         let got = render_dock(&swarm, &view, 46, H, None, NO_SESSIONS);
-        assert_same(
-            &format!("turn 8 frame {key}"),
-            &golden(&panes["P"]),
-            &cells(&got),
-        );
+        check_owned("design-8.json", &format!("P@{key}"), &got);
     }
 }
 /// The 2a graph at `frame`, 160 × 56: `sel`'s root and agent, the keyboard in `focus`.

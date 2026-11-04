@@ -3,7 +3,7 @@
 //! one pulses its background toward the event's colour, never fully off (Q115). Also the
 //! glyph runs of an entry's lines.
 
-use super::state::{DockState, thread_glyph};
+use super::state::DockState;
 use crate::model::{Agent, Status};
 use crate::view::anim::{blink_between, blink_faint, glyph, pulse};
 use crate::view::colour::Rgb;
@@ -54,14 +54,14 @@ pub fn spaced(segs: Vec<Seg>) -> Vec<Seg> {
     out
 }
 
-/// An entry's second line (swarm-tiles.js `rowTiles`): a tile per active thread, its most
-/// urgent agent's state, and one `✓n` tile for the done threads.
-pub fn thread_tiles(d: &DockState, frame: f64) -> Vec<Seg> {
+/// An entry's second line (V11 sidebar): a tile per active direct subagent, its subtree's
+/// most urgent state, and one `✓n` tile for the finished ones.
+pub fn child_tiles(d: &DockState, frame: f64) -> Vec<Seg> {
     let mut tiles: Vec<Seg> = d
         .active
         .iter()
-        .map(|t| {
-            let (g, st) = thread_glyph(t, frame);
+        .map(|a| {
+            let (g, st) = d.tree.state(a, frame);
             tile(&st, &g, frame, None)
         })
         .collect();
@@ -76,7 +76,7 @@ pub fn thread_tiles(d: &DockState, frame: f64) -> Vec<Seg> {
     tiles
 }
 
-/// The thread tiles, then `counts`, in `room` cells. When they do not all fit, the first
+/// The tiles, then `counts`, in `room` cells. When they do not all fit, the first
 /// tiles then `+n` for the rest, so the counts always stay whole (Python `_fit_thread_segs`).
 pub fn fit_tiles(tiles: Vec<Seg>, counts: &str, room: i32) -> Vec<Seg> {
     let counts_len = counts.chars().count() as i32;

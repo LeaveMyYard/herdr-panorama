@@ -101,20 +101,14 @@
           false
         ],
         [
-          " ⠋ ",
-          "#d8f2ee",
-          "#1f625c",
-          true
-        ],
-        [
-          " Payments                           ",
-          "#c3c7cd",
+          "⠋ ",
+          "#68c2b5",
           "#14161b",
           false
         ],
         [
-          "⠋ ",
-          "#68c2b5",
+          "Backfill ledger ids                    ",
+          "#c3c7cd",
           "#14161b",
           false
         ]
@@ -643,20 +637,14 @@
           false
         ],
         [
-          " ⠋ ",
-          "#d8f2ee",
-          "#1f625c",
-          true
-        ],
-        [
-          " Payments                           ",
-          "#c3c7cd",
+          "⠋ ",
+          "#68c2b5",
           "#14161b",
           false
         ],
         [
-          "⠋ ",
-          "#68c2b5",
+          "Backfill ledger ids                    ",
+          "#c3c7cd",
           "#14161b",
           false
         ]

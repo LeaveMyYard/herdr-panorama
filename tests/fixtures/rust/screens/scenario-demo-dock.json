@@ -81,9 +81,87 @@
           false
         ],
         [
-          "1 active · 3 agents                   ",
+          "3 active · 3 agents                   ",
           "#4d535c",
           "#302e3b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "» ",
+          "#8eaee6",
+          "#14161b",
+          false
+        ],
+        [
+          "Review PR #42 round 2                  ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "✗ ",
+          "#ff6b6b",
+          "#14161b",
+          true
+        ],
+        [
+          "Fix CI for PR #44                      ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "? ",
+          "#ffb547",
+          "#14161b",
+          true
+        ],
+        [
+          "Draft retry banner copy                ",
+          "#c3c7cd",
+          "#14161b",
           false
         ]
       ],
@@ -101,37 +179,13 @@
           false
         ],
         [
-          " ✗ ",
-          "#ffffff",
-          "#e6494e",
+          " ✓ ",
+          "#e3f2e9",
+          "#367152",
           true
         ],
         [
-          " Billing API                ",
-          "#c3c7cd",
-          "#14161b",
-          false
-        ],
-        [
-          "✗ ",
-          "#ff6b6b",
-          "#14161b",
-          true
-        ],
-        [
-          "? ",
-          "#ffb547",
-          "#14161b",
-          true
-        ],
-        [
-          "» ",
-          "#8eaee6",
-          "#14161b",
-          false
-        ],
-        [
-          "+3✓ ",
+          " 3 finished · Author PR #42… +1 older ",
           "#4d535c",
           "#14161b",
           false
@@ -185,7 +239,31 @@
           true
         ],
         [
-          "  1 active · 2 agents              ",
+          " ",
+          null,
+          "#141719",
+          false
+        ],
+        [
+          " ⠹ ",
+          "#d8f2ee",
+          "#1f625c",
+          true
+        ],
+        [
+          " ",
+          null,
+          "#141719",
+          false
+        ],
+        [
+          " ✓ ",
+          "#e3f2e9",
+          "#2c6b4c",
+          true
+        ],
+        [
+          "  2 active · 2 agents      ",
           "#4d535c",
           "#141719",
           false
@@ -317,30 +395,6 @@
         [
           "n ",
           "#4d535c",
-          "#14161b",
-          false
-        ]
-      ],
-      [
-        [
-          "                                              ",
-          null,
-          "#14161b",
-          false
-        ]
-      ],
-      [
-        [
-          "                                              ",
-          null,
-          "#14161b",
-          false
-        ]
-      ],
-      [
-        [
-          "                                              ",
-          null,
           "#14161b",
           false
         ]
@@ -707,9 +761,87 @@
           false
         ],
         [
-          "1 active · 3 agents                   ",
+          "3 active · 3 agents                   ",
           "#4d535c",
           "#302e3b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "» ",
+          "#8eaee6",
+          "#14161b",
+          false
+        ],
+        [
+          "Review PR #42 round 2                  ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "✗ ",
+          "#ff6b6b",
+          "#14161b",
+          true
+        ],
+        [
+          "Fix CI for PR #44                      ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "? ",
+          "#ffb547",
+          "#14161b",
+          true
+        ],
+        [
+          "Draft retry banner copy                ",
+          "#c3c7cd",
+          "#14161b",
           false
         ]
       ],
@@ -727,37 +859,13 @@
           false
         ],
         [
-          " ✗ ",
-          "#ffffff",
-          "#e6494e",
+          " ✓ ",
+          "#e3f2e9",
+          "#367152",
           true
         ],
         [
-          " Billing API                ",
-          "#c3c7cd",
-          "#14161b",
-          false
-        ],
-        [
-          "✗ ",
-          "#ff6b6b",
-          "#14161b",
-          true
-        ],
-        [
-          "? ",
-          "#ffb547",
-          "#14161b",
-          true
-        ],
-        [
-          "» ",
-          "#8eaee6",
-          "#14161b",
-          false
-        ],
-        [
-          "+3✓ ",
+          " 3 finished · Author PR #42… +1 older ",
           "#4d535c",
           "#14161b",
           false
@@ -817,7 +925,31 @@
           true
         ],
         [
-          "  1 active · 2 agents              ",
+          " ",
+          null,
+          "#1a1f22",
+          false
+        ],
+        [
+          " ⠹ ",
+          "#d8f2ee",
+          "#1f625c",
+          true
+        ],
+        [
+          " ",
+          null,
+          "#1a1f22",
+          false
+        ],
+        [
+          " ✓ ",
+          "#e3f2e9",
+          "#2c6b4c",
+          true
+        ],
+        [
+          "  2 active · 2 agents      ",
           "#4d535c",
           "#1a1f22",
           false
@@ -949,30 +1081,6 @@
         [
           "n ",
           "#4d535c",
-          "#14161b",
-          false
-        ]
-      ],
-      [
-        [
-          "                                              ",
-          null,
-          "#14161b",
-          false
-        ]
-      ],
-      [
-        [
-          "                                              ",
-          null,
-          "#14161b",
-          false
-        ]
-      ],
-      [
-        [
-          "                                              ",
-          null,
           "#14161b",
           false
         ]

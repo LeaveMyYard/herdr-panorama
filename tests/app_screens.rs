@@ -13,6 +13,8 @@
 //! rewritten by `PANORAMA_BLESS=1 cargo test --test app_screens` and reviewed as a diff.
 //! The wide graph's captures ([`RUST_GRAPHS`]) are Rust's too since U4 (D5): its columns are
 //! depths, no longer orchestrators and threads.
+//! The docked panel's captures ([`RUST_DOCKS`]) are Rust's too since U5 (D5): its list is
+//! the root's agent tree, no longer its threads.
 
 mod collect_support;
 mod screen_support;
@@ -66,11 +68,16 @@ const RUST_GRAPHS: [&str; 5] = [
     "demo-narrow.json",
 ];
 
+/// The captured wire-swarm runs whose screens are Rust's own (U5, D5): the docked panel's.
+const RUST_DOCKS: [&str; 2] = ["dock.json", "remote-dock.json"];
+
 /// Every run of `file` played; its snaps compared (but `skip`'s, and the steps after them).
 fn check(file: &str, skip: &[&str]) {
     let golden_file = fixture(&format!("screens/{file}"));
     let owned = format!("rust/screens/{file}");
-    let rust = file.starts_with("scenario-") || RUST_GRAPHS.contains(&file);
+    let rust = file.starts_with("scenario-")
+        || RUST_GRAPHS.contains(&file)
+        || RUST_DOCKS.contains(&file);
     if rust && blessing() {
         return bless(file, &golden_file, &owned, skip);
     }
