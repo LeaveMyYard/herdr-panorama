@@ -1,0 +1,62 @@
+/* V6 sidebar = the TUI dock (approved 9e/turn-10 panel; view/dock/*.rs, palette.rs), drawn natively.
+   Graph, Peek, tabs and spaces keep V5 (proposal.css + v5.css). */
+.ag-list.dock{gap:0;padding:2px 6px 0 4px;--sel:#1e2937;--hov:#181a1f;--key:#e2cf9c;--fg:#c3c7cd;--hi:#eceef1;--dim:#80868f;--faint:#666c75}
+.dk-tot{display:flex;gap:7px;margin-right:10px;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
+.dk-tot .t-wait,.dk-tot .t-blk{color:#ffb547}.dk-tot .t-fail{color:#ff6b6b}
+.ag-h .grow{flex:1}
+
+.dk{position:relative;display:flex;align-items:center;flex:none;height:24px;padding:0 10px 0 6px;font-size:12.5px;color:var(--fg);white-space:nowrap}
+.dk.l1{height:27px;margin-top:7px;border-radius:7px 7px 0 0}
+.dk.l1:first-child{margin-top:2px}
+.dk.l2{height:21px;font-size:11.5px;border-radius:0 0 7px 7px}
+.dk.l2:not(.last){border-radius:0}
+.dk-no{width:14px;flex:none;margin-right:8px;text-align:right;font-size:11px;color:#4d535c;font-variant-numeric:tabular-nums}
+.dk-no.hov{color:var(--dim);font-size:13px}
+.dk .state-badge.mini{margin:0 7px 0 0;flex:none}
+.dk .dk-ic{width:14px;height:14px;margin-right:7px}
+.dk-n{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--fg)}
+.dk-n.b{font-weight:600;color:var(--hi)}
+.dk-n.dim{color:var(--dim)}
+.dk .grow{flex:1;min-width:6px}
+.dk-q{flex:none;margin-right:6px;font-size:11.5px;font-weight:700;color:#ffb547}
+.dk-w{flex:none;font-size:11.5px;font-weight:500;color:var(--h)}
+.dk-w.h-done,.dk-w.h-idle{color:var(--dim)}
+/* line 2: the threads' tiles, then the counts; tiles a step smaller, as a strip */
+.dk.l2 .state-badge.mini{width:16px!important;min-width:16px!important;max-width:16px!important;height:16px;margin-right:4px;border-radius:4px}
+.dk.l2 .state-badge.mini.wide{width:auto!important;max-width:none!important}
+.dk.l2 .state-badge.mini .gsym{width:12px;height:12px}
+.dk.l2 .dk-no{margin-right:8px}
+.dk.l2 .dk-no+.dk-c{margin-left:0}
+.dk.l2 .state-badge+.dk-c{margin-left:4px}
+.dk-c{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--faint)}
+.dk.l2 .bar{left:28px;right:12px;bottom:0}
+/* the docked entry: the selected fill on its two lines, the key-coloured bar down its whole height */
+.dk.docked.l1,.dk.docked.l2{background:var(--sel)}
+.dk.docked::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--key)}
+.dk.docked.l1::before{border-radius:2px 0 0 0}.dk.docked.last::before{bottom:2px;border-radius:0 0 0 2px}
+.dk.docked .dk-c{color:var(--dim)}
+.dk.hov.l1,.dk.hov.l2{background:var(--hov)}
+/* its list: threads (tile, name, own agents' glyphs) and spawning agents (glyph, role id, children's glyphs) */
+.dk.it{padding-left:28px;height:24px}
+.dk.it .seg{width:13px}
+.dk.it .seg.t,.dk.it .seg.l{margin-right:5px}
+.dk.it .state-badge.mini{width:16px!important;min-width:16px!important;max-width:16px!important;height:16px;border-radius:4px;margin-right:7px}
+.dk.it .state-badge.mini .gsym{width:12px;height:12px}
+.dk-t{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--fg)}
+.dk-a{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--fg)}
+.dk.it.last{margin-bottom:2px}
+.dk.pk{background:#232427;border-radius:6px}
+/* glyphs without a tile: colour + shape */
+.gl{display:inline-flex;align-items:center;justify-content:center;flex:none;width:12px;height:12px;color:var(--h);font-size:12px;font-weight:700;line-height:12px}
+.gl.gsym{background:var(--h)}
+.dk .gl+.gl{margin-left:6px}
+.dk .grow+.gl{margin-left:0}
+.dk.spw .gl:first-of-type{margin-right:6px}
+.gl.fin{width:auto;margin-left:7px!important;font-size:11px;font-weight:500;color:var(--faint)}
+.dk.new{margin-top:12px;color:var(--fg)}
+.dk-no.plus{color:var(--key);font-weight:700;font-size:13px}
+.dk-key{font-size:11px;color:#4d535c}
+/* hues for words and bare glyphs (palette.rs status()) */
+.h-run{--h:#68c2b5}.h-rev{--h:#8eaee6}.h-wait,.h-blk{--h:#ffb547}.h-fail{--h:#ff6b6b}.h-done{--h:#6c9673}.h-q,.h-idle{--h:#8d939d}
+.h-bg{--h:#b39ddb}.h-cxl,.h-stale{--h:#80868f}.h-inf{--h:#8a9a8d}.h-lost{--h:#c08a8a}
+.gl.gsym.h-run{animation:status-spin 900ms linear infinite}.export .gl{animation:none!important}
