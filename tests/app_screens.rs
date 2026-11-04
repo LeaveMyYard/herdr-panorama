@@ -6,6 +6,11 @@
 //!
 //! Not here: the snaps of the New agent form (P4 PR 9) and of a failed go-to (its notice is
 //! the herdr side's, P4 8c).
+//!
+//! The scenario runs' screens are Rust's own since the uniform agent tree (plan
+//! `uniform-agent-tree.md` U3, R3): the collector no longer groups threads as Python's did, so
+//! their runs are still the capture's but their screens are `tests/fixtures/rust/screens/`,
+//! rewritten by `PANORAMA_BLESS=1 cargo test --test app_screens` and reviewed as a diff.
 
 mod collect_support;
 mod screen_support;
@@ -13,8 +18,9 @@ mod screen_support;
 use collect_support::{STALE, Scenario, WINDOW};
 use panorama::proto::state::cleaned_swarm;
 use panorama_core::model::Swarm;
+use screen_support::bless::blessing;
 use screen_support::player::Player;
-use screen_support::{cells, fixture, golden};
+use screen_support::{cells, fixture, golden, runs};
 use serde_json::Value;
 
 /// The swarm a run showed: a captured wire swarm, or its scenario collected at the run's now
@@ -51,11 +57,21 @@ fn swarm_of(run: &Value) -> Swarm {
 /// Every run of `file` played; its snaps compared (but `skip`'s, and the steps after them).
 fn check(file: &str, skip: &[&str]) {
     let golden_file = fixture(&format!("screens/{file}"));
+    let owned = format!("rust/screens/{file}");
+    let rust = file.starts_with("scenario-");
+    if rust && blessing() {
+        return bless(file, &golden_file, &owned);
+    }
+    let screens = if rust {
+        fixture(&owned)["screens"].clone()
+    } else {
+        golden_file["screens"].clone()
+    };
     let mut snapped = 0;
     for run in golden_file["runs"].as_array().unwrap() {
         let player = Player::new(run, &golden_file["unseen"], swarm_of(run));
         for (name, screen) in player.play(skip) {
-            let (want, got) = (golden(&golden_file["screens"][&name]), cells(&screen));
+            let (want, got) = (golden(&screens[&name]), cells(&screen));
             assert_eq!(want.len(), got.len(), "{file} {name}: rows");
             for (y, (w, g)) in want.iter().zip(&got).enumerate() {
                 assert_eq!(
@@ -69,8 +85,29 @@ fn check(file: &str, skip: &[&str]) {
         }
     }
     // every snap the file holds, but the skipped ones
-    let held = golden_file["screens"].as_object().unwrap().len();
+    let held = screens.as_object().unwrap().len();
     assert_eq!(snapped, held - skip.len(), "{file}: snaps compared");
+}
+
+/// Rewrite the Rust-owned screens of `file`'s runs.
+fn bless(file: &str, golden_file: &Value, owned: &str) {
+    let mut screens = serde_json::Map::new();
+    for run in golden_file["runs"].as_array().unwrap() {
+        let player = Player::new(run, &golden_file["unseen"], swarm_of(run));
+        for (name, screen) in player.play(&[]) {
+            screens.insert(name, runs(&screen));
+        }
+    }
+    let doc = serde_json::json!({
+        "source": format!(
+            "Rust's screens for the runs of tests/fixtures/screens/{file}, written by \
+             PANORAMA_BLESS=1 cargo test --test app_screens"
+        ),
+        "screens": screens,
+    });
+    let path = format!("{}/tests/fixtures/{owned}", env!("CARGO_MANIFEST_DIR"));
+    std::fs::create_dir_all(std::path::Path::new(&path).parent().unwrap()).unwrap();
+    std::fs::write(&path, serde_json::to_string_pretty(&doc).unwrap() + "\n").unwrap();
 }
 
 #[test]

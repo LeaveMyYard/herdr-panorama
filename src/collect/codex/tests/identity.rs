@@ -5,32 +5,34 @@ fn exact_thread_binding_rejects_group_ids_old_cache_and_child_roots() {
     let observation = observed();
     for id in ["other-thread", "shared-session-group", ""] {
         let mut pane = pane(id);
-        apply(&mut pane, Some(&observation), &channel());
-        assert!(pane.threads.is_empty(), "{id}");
+        assert!(
+            apply(&mut pane, Some(&observation)).agents.is_empty(),
+            "{id}"
+        );
         assert_eq!(pane.session_id.as_deref(), Some(id));
         assert_eq!(pane.last_activity, None);
     }
     let mut child_root = observation;
     child_root.root.parent_thread_id = Some("another-root".into());
-    let mut pane = pane("root");
-    apply(&mut pane, Some(&child_root), &channel());
-    assert!(pane.threads.is_empty());
+    assert!(
+        apply(&mut pane("root"), Some(&child_root))
+            .agents
+            .is_empty()
+    );
 }
 
 #[test]
-fn exact_children_keep_parents_and_depth_with_no_duplicate_root() {
+fn exact_children_keep_parents_and_depth_with_no_root_agent() {
     let observation = observed();
     let mut pane = pane("root");
-    apply(&mut pane, Some(&observation), &channel());
-    let agents = &pane.threads[0].agents;
-    assert_eq!(agents.len(), 3);
-    assert_eq!(agents[0].id, "main:codex:w1:p1");
-    assert_eq!(agents[0].depth, 0);
-    assert_eq!(agents[1].id, "child");
-    assert_eq!(agents[1].parent.as_deref(), Some("main:codex:w1:p1"));
-    assert_eq!(agents[1].depth, 1);
-    assert_eq!(agents[2].parent.as_deref(), Some("child"));
-    assert_eq!(agents[2].depth, 2);
+    let tree = apply(&mut pane, Some(&observation));
+    let agents = &tree.agents;
+    assert_eq!(ids(&tree), ["child", "grandchild"]);
+    // the root's own child has no parent: it is the root's
+    assert_eq!(agents[0].parent, None);
+    assert_eq!(agents[0].depth, 1);
+    assert_eq!(agents[1].parent.as_deref(), Some("child"));
+    assert_eq!(agents[1].depth, 2);
     assert_eq!(pane.session_id.as_deref(), Some("root"));
 }
 
@@ -46,16 +48,8 @@ fn disconnected_cyclic_duplicate_and_root_children_are_rejected() {
         thread("duplicate", Some("child")),
         thread("duplicate-child", Some("duplicate")),
     ]);
-    let mut pane = pane("root");
-    apply(&mut pane, Some(&observation), &channel());
-    assert_eq!(
-        pane.threads[0]
-            .agents
-            .iter()
-            .map(|a| a.id.as_str())
-            .collect::<Vec<_>>(),
-        ["main:codex:w1:p1", "child", "grandchild"]
-    );
+    let tree = apply(&mut pane("root"), Some(&observation));
+    assert_eq!(ids(&tree), ["child", "grandchild"]);
 }
 
 #[test]
@@ -64,13 +58,12 @@ fn unavailable_observations_keep_herdr_metadata_without_old_detail() {
     pane.tab_no = Some(2);
     pane.focused = true;
     pane.cwd = Some("/synthetic/shared".into());
-    apply(&mut pane, Some(&observed()), &channel());
-    assert!(!pane.threads.is_empty());
-    apply(&mut pane, None, &channel());
+    assert!(!apply(&mut pane, Some(&observed())).agents.is_empty());
+    let tree = apply(&mut pane, None);
     assert_eq!(pane.session_id.as_deref(), Some("root"));
     assert_eq!(pane.tab_no, Some(2));
     assert!(pane.focused);
     assert_eq!(pane.cwd.as_deref(), Some("/synthetic/shared"));
-    assert!(pane.threads.is_empty());
+    assert!(tree.agents.is_empty());
     assert_eq!(pane.last_activity, None);
 }

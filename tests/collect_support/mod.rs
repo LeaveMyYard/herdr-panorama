@@ -77,7 +77,6 @@ impl Scenario {
     pub fn collector(&self) -> Collector {
         Collector::new(Options {
             projects: self.projects(),
-            events_dir: self.root().join(self.input["events"].as_str().unwrap()),
             hooks_dir: self.root().join("hooks"),
             procs: true,
             pane_pid: Box::new(|_| None),

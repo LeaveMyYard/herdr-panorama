@@ -186,3 +186,27 @@ fn codex_history_age_and_synthetic_main_do_not_replace_root_runtime() {
     o.threads[0].source = ThreadSource::Explicit;
     assert_eq!(orch_state(&o, 0.0, ages).st, Status::Running);
 }
+
+#[test]
+fn a_root_question_no_agent_filed_keeps_an_idle_finished_root_needing_you() {
+    // the uniform tree (U3): no session card carries the question, the root does
+    for agents in [vec![], vec![agent("d", Status::Done)]] {
+        let o: Orchestrator = serde_json::from_value(serde_json::json!({
+            "pane_id": "p", "tab_id": null, "tab_label": "t", "session_id": null,
+            "herdr_status": "idle", "inbox": [7], "inbox_texts": ["Merge now?"],
+            "threads": [{"id": crate::model::TREE_THREAD, "name": "t", "source": "session",
+                         "status": "done", "agents": agents}]
+        }))
+        .unwrap();
+        assert_eq!(
+            names(&orch_state(&o, 0.0, None)),
+            (Status::Waiting, "?", "needs you")
+        );
+        let answered = Orchestrator {
+            inbox: vec![],
+            inbox_texts: vec![],
+            ..o
+        };
+        assert_eq!(names(&orch_state(&answered, 0.0, None)).0, Status::Done);
+    }
+}

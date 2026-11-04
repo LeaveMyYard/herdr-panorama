@@ -3,7 +3,7 @@
 //! and per machine a watcher whose collector reads that machine's rsync mirror.
 
 use crate::collect::mirror::MirrorCollector;
-use crate::collect::paths::{events_dir, hooks_dir};
+use crate::collect::paths::hooks_dir;
 use crate::collect::{Collector, Options};
 use crate::machines::sync::{RsyncSync, mirror_root};
 use crate::machines::{Machine, Refresher, Remotes, Selection, Source, Watcher};
@@ -39,7 +39,6 @@ impl Source for HerdrMachines {
 pub fn mirror_options(env: &PluginEnv, state: &std::path::Path, m: &Machine) -> Options {
     Options {
         projects: mirror_root(state, m),
-        events_dir: events_dir(env),
         hooks_dir: hooks_dir(env),
         procs: false,
         pane_pid: Box::new(|_| None),

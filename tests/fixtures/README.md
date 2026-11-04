@@ -109,3 +109,17 @@ Not covered yet (#58): a non-empty `errors` list, scrolling, mouse targets, the 
 flows, `is_stale` exactly at `stale_after`, a hidden per-tab panel (by design it keeps its last
 picture), and remote machines in the model (`panorama snapshot` reads only this machine). The
 inbox popup's screens (§5.2 item 2) belong to the herdr-inbox repo.
+
+Rust's own goldens (`docs/plans/uniform-agent-tree.md` U3, R3). The uniform agent tree is a
+deliberate break from Python's model, so the goldens of collected scenarios are Rust's from U3
+on (`docs/plans/rust-rewrite.md` §5.2, "Divergence"). They are written by the Rust tests, never
+by hand, and reviewed as a diff:
+
+    PANORAMA_BLESS=1 cargo test --test model_goldens --test app_screens
+
+- `rust/model/*.json`: `panorama snapshot --json` at the times and conditions of `model/*.json`.
+- `rust/screens/scenario-*.json`: the screens of the `screens/scenario-*.json` runs (the runs
+  and their `unseen` marks are still read from the capture).
+- `collect/agent-ids-pre-u3.json`: every root's agents (id, status, end, parent) as the collector
+  built them before U3, over every scenario at the model times, a wide window and no inbox. It is
+  the baseline of `tests/collect_agent_ids.rs`; it is not regenerated.

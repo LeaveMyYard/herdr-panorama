@@ -16,7 +16,7 @@ pub mod tree;
 
 pub use status::{CLOCK, SPIN, Status};
 pub use swarm::{
-    Agent, BgTask, Counts, HerdrStatus, Orchestrator, Phase, PhaseState, Swarm, Thread,
-    ThreadSource, ThreadStatus,
+    Agent, BgTask, Counts, HerdrStatus, Orchestrator, Phase, PhaseState, Swarm, TREE_THREAD,
+    Thread, ThreadSource, ThreadStatus,
 };
 pub use tree::TreeKids;

@@ -111,12 +111,13 @@ never overridden by the local store.
 
 ## What the details mean
 
-One Codex session card contains its recorded turns as chronological phases and
-its exact parent/child agent tree. It shows bounded prompt/summary text, model,
-the latest recorded tool, and the tool count in the loaded turn window. Counts
-are not all-time totals. An exactly associated session shows its default
-descendant hierarchy without MCP reports. The compact dock keeps its existing presentation: session/thread
-tiles, indented rows for agents that spawned children, and child status glyphs
+A Codex root is its pane: its own state (herdr's status, inbox questions) is on
+the root, and no agent stands for the root thread. Below it is its exact
+parent/child agent tree, at any depth; the root's own children have no parent.
+Each agent shows bounded prompt/summary text, model, the latest recorded tool,
+and the tool count in the loaded turn window. Counts are not all-time totals.
+Turns are not phases (plan `uniform-agent-tree.md` U3). The compact dock keeps its existing
+presentation: one tile for the root's tree, indented rows for agents that spawned children, and child status glyphs
 on the right (leaf agents are glyphs). Open the expanded graph to navigate full
 agent cards by depth; the narrow graph offers selectable agent pods and the
 selected agent's details.
@@ -192,11 +193,7 @@ its descendant can appear. Rejected metadata never allocates persisted scan stat
 so foreign references cannot reset a valid branch's older backfill. Oversized graphs,
 truncated display history, unsupported/failed reads and exhausted limits remain
 partial. Cached ancestry never refreshes metadata proof merely by reuse. Only a
-fresh, complete, verified descendant graph permits reading child report files.
-Each child's reports can claim only its own verified subtree, root reports take
-precedence, and declaration IDs include their source thread to prevent sibling
-collisions. Report reads are capped per collection and do not read arbitrary
-paths supplied in a report.
+Report files are no longer read at all.
 
 ## Removed: the `report_thread` MCP server
 
@@ -213,7 +210,7 @@ says so on stderr and exits 0. A later release removes both.
 
 Report files an earlier version wrote under the state directory's
 `herdr-panorama/events/` are left in place; the Rust binary no longer writes
-them (only the frozen Python entrypoint's `emit` still does), and you can
+or reads them (only the frozen Python entrypoint still does), and you can
 delete them.
 
 ## Compatibility and limits

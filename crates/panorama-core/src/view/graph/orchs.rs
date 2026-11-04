@@ -120,7 +120,7 @@ fn state_line(o: &Orchestrator, st: &OrchState, w: i32) -> [Seg; 2] {
         let active = o
             .threads
             .iter()
-            .filter(|t| !t.is_done() && t.source != ThreadSource::Session)
+            .filter(|t| !t.is_done() && (t.is_tree() || t.source != ThreadSource::Session))
             .count();
         let live = o
             .agents()

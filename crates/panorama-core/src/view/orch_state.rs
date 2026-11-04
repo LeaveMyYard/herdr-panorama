@@ -193,9 +193,12 @@ pub fn orch_state(o: &Orchestrator, frame: f64, ages: Option<Ages>) -> OrchState
         &agents,
         // Preserve the legacy Claude empty-session display. An unobserved harness
         // has no evidence of completed work merely because its thread list is empty.
+        // A question no agent filed keeps the root needing you: the session's own card
+        // carried it before the uniform tree (U3), the root itself does now.
         !codex
             && (o.harness == "claude" || !o.threads.is_empty())
-            && o.threads.iter().all(|t| t.is_done()),
+            && o.threads.iter().all(|t| t.is_done())
+            && o.inbox.is_empty(),
         frame,
         &extras,
         ages,

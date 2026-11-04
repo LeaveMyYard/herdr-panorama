@@ -20,7 +20,6 @@ fn snapshot(args: &[&str], socket: &Path, sc: &Scenario) -> (i32, String) {
         .env("HERDR_BIN_PATH", "/nonexistent/herdr")
         .env("HERDR_PLUGIN_CONFIG_DIR", sc.root().join("config"))
         .env("CLAUDE_CONFIG_DIR", sc.root())
-        .env("PANORAMA_EVENTS_DIR", sc.root().join("events"))
         .env("PANORAMA_HOOKS_DIR", sc.root().join("hooks"))
         .env("HERDR_INBOX_DB", sc.root().join("missing.db"))
         .env("PANORAMA_DONE_WINDOW", "100000000")
@@ -113,11 +112,17 @@ fn the_text_listing_names_each_orchestrator() {
         "{}",
         heads[0]
     );
-    // the scenario is days old by the real clock: its threads read as finished or failed
+    // the scenario is days old by the real clock: each root's one tree reads as finished or
+    // failed, its own blocked state on its head line, not in a card of its own
     assert!(
         out.lines()
-            .any(|l| l.starts_with("  ✓ #42  (ref, done, 4 agents)")),
+            .any(|l| l.starts_with("  • Billing API  (session, failed, 7 agents)")),
         "{out}"
+    );
+    assert!(
+        heads[2].starts_with("Docs site  [blocked] blocked "),
+        "{}",
+        heads[2]
     );
     assert!(
         out.lines()

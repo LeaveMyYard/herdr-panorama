@@ -124,7 +124,7 @@ print(json.dumps(value))
     assert!(observation.errors.is_empty());
     let swarm = collector.collect(observation.snapshot.as_ref(), None, sc.now(), WINDOW, STALE);
     assert_eq!(swarm.orchestrators[0].session_id.as_deref(), Some(S1));
-    assert!(!swarm.orchestrators[0].threads.is_empty());
+    assert!(swarm.orchestrators[0].agents().next().is_some());
     assert_eq!(swarm.orchestrators[0].pane_id, "core:t2");
     assert!(swarm.orchestrators[0].tab_id.is_none());
     // Same cwd and existing transcripts do not substitute for an exact address record.
@@ -134,7 +134,7 @@ print(json.dumps(value))
     let observation = source.read();
     let swarm = collector.collect(observation.snapshot.as_ref(), None, sc.now(), WINDOW, STALE);
     assert!(swarm.orchestrators[0].session_id.is_none());
-    assert!(swarm.orchestrators[0].threads.is_empty());
+    assert!(swarm.orchestrators[0].agents().next().is_none());
     let mut legacy = record.clone();
     legacy.as_object_mut().unwrap().remove("terminal");
     std::fs::write(&hook, legacy.to_string()).unwrap();
@@ -278,9 +278,6 @@ print(json.dumps(value))
     let model: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
     let root = &model["orchestrators"][0];
     assert_eq!(root["session_id"], codex_support::ROOT_A);
-    assert!(!root["threads"].as_array().unwrap().is_empty());
-    assert_eq!(
-        root["threads"][0]["id"],
-        format!("codex:{}", codex_support::ROOT_A)
-    );
+    assert!(root["last_activity"].is_number());
+    assert!(!root["threads"][0]["agents"].as_array().unwrap().is_empty());
 }

@@ -8,10 +8,7 @@ use super::{
     serialize,
     triggers::Triggers,
 };
-use crate::{
-    collect::paths::{events_dir, hooks_dir},
-    host::Core,
-};
+use crate::{collect::paths::hooks_dir, host::Core};
 use herdr_agent_kit::plugin_env::PluginEnv;
 use std::{
     io::Write,
@@ -51,7 +48,6 @@ pub fn watch(home: Home, r: Receipt, _lifetime: std::fs::File) -> Result<()> {
         let mut triggers = Triggers::new(
             core,
             vec![
-                events_dir(&env),
                 hooks_dir(&env),
                 env.xdg_state_home().join("herdr-panorama/codex-bindings"),
             ],

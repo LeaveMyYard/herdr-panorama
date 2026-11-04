@@ -6,22 +6,18 @@ use crate::codex::{Observation, Thread};
 use crate::collect::agents::Arena;
 use std::collections::{HashMap, HashSet};
 
-/// Insert descendants only when their parent chain reaches this exact root.
-pub(super) fn append(arena: &mut Arena, observation: &Observation, root_agent: &str) {
+/// Insert descendants only when their parent chain reaches this exact root; the root's own
+/// children have no parent (they are the root's).
+pub(super) fn append(arena: &mut Arena, observation: &Observation) {
     let root = observation.root.thread_id.as_str();
     for (depth, thread) in descendants(observation) {
-        if thread.thread_id == root_agent {
-            continue;
-        }
         let mut agent = history::agent(thread, arena.len() as i64 + 1);
         agent.depth = depth as i64;
-        agent.parent = thread.parent_thread_id.as_deref().map(|parent| {
-            if parent == root {
-                root_agent.to_owned()
-            } else {
-                parent.to_owned()
-            }
-        });
+        agent.parent = thread
+            .parent_thread_id
+            .as_deref()
+            .filter(|parent| *parent != root)
+            .map(str::to_owned);
         arena.insert(agent.id.clone(), agent);
     }
 }

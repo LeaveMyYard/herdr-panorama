@@ -5,7 +5,7 @@ mod collect_support;
 
 use collect_support::{S1, STALE, Scenario};
 use panorama::collect::Collector;
-use panorama_core::model::{Agent, Orchestrator, Status, Swarm, ThreadSource, ThreadStatus};
+use panorama_core::model::{Agent, Orchestrator, Status, Swarm, ThreadStatus};
 use serde_json::Value;
 use std::io::Write;
 use std::path::PathBuf;
@@ -81,12 +81,19 @@ fn demo_swarm_shape() {
     ); // the shell pane is skipped
     let billing = by_label(&sw, "Billing API");
     assert_eq!(billing.inbox, [1, 2]);
-    assert_eq!(billing.flavour, "pr-review");
-    let thread = |name: &str| billing.threads.iter().find(|t| t.name == name).unwrap();
-    let t42 = thread("#42");
-    let status: Vec<(String, Status)> = t42
-        .agents
-        .iter()
+    // one uniform tree per root, carried as one thread on the 1.x wires
+    for o in &sw.orchestrators {
+        let [t] = o.threads.as_slice() else {
+            panic!("{}: {:?}", o.tab_label, o.threads)
+        };
+        assert!(t.is_tree() && t.phases.is_empty() && t.name == o.name());
+        assert_eq!(o.flavour, "agents");
+        // no agent stands for the session: its own state is on the root
+        assert!(o.agents().all(|a| !a.id.starts_with("main:")));
+        assert!(o.agents().all(|a| a.phases.is_empty()));
+    }
+    let status: Vec<(String, Status)> = billing
+        .agents()
         .map(|a| (a.id[..8].to_owned(), a.status.clone()))
         .collect();
     for (id, st) in [
@@ -94,66 +101,50 @@ fn demo_swarm_shape() {
         ("a4review", Status::Reviewing),
         ("a2review", Status::Done),
         ("a3explor", Status::Done),
+        ("b3fixer0", Status::Failed),
+        ("c1banner", Status::Waiting),
     ] {
         assert!(
             status.contains(&(id.to_owned(), st.clone())),
             "{id} {st:?} in {status:?}"
         );
     }
-    assert_eq!(status.len(), 4);
-    let nested = t42.agents.iter().find(|a| a.id.starts_with("a3")).unwrap();
+    assert_eq!(status.len(), 7);
+    let nested = billing.agents().find(|a| a.id.starts_with("a3")).unwrap();
     assert_eq!(
         (nested.parent.as_deref(), nested.depth),
         (Some("a1author0000000001"), 2)
     );
-    let phases: Vec<_> = t42.phases.iter().map(|p| p.name.as_str()).collect();
-    assert_eq!(phases, ["author", "review r1", "author 2", "review r2"]);
-    let a1 = t42
-        .agents
-        .iter()
+    let a1 = billing
+        .agents()
         .find(|a| a.id.starts_with("a1author"))
         .unwrap();
     assert_eq!((a1.resumes, a1.tool_calls), (1, 44)); // the notice's count wins over the file's
-    let t44 = thread("#44");
-    assert!(
-        t44.status == ThreadStatus::Failed && t44.agents.iter().any(|a| a.status == Status::Failed)
-    );
-    let draft: Vec<_> = thread("Draft retry banner copy")
-        .agents
-        .iter()
-        .map(|a| a.status.clone())
+    assert_eq!(billing.threads[0].status, ThreadStatus::Active);
+    // Q1 is no agent's: it stays the root's own question
+    assert!(billing.agents().all(|a| !a.question_ids.contains(&1)));
+    // a Workflow run's agents are the root's children, its label their role (D8)
+    let search = by_label(&sw, "Search refactor");
+    let roles: Vec<(&str, Option<&str>, &str)> = search
+        .agents()
+        .map(|a| (&a.id[..8], a.parent.as_deref(), a.role.as_str()))
         .collect();
-    assert_eq!(draft, [Status::Waiting]);
-    assert_eq!(thread("Billing API").source, ThreadSource::Session); // Q1 is no agent's
-    let wf = &by_label(&sw, "Search refactor").threads[0];
     assert_eq!(
-        (wf.source.clone(), wf.name.as_str()),
-        (ThreadSource::Workflow, "search-index-rebuild")
+        roles,
+        [
+            ("w2build0", None, "author"),
+            ("w3build0", None, "author"),
+            ("w1plan00", None, "planner")
+        ]
     );
-    let wf_phases: Vec<_> = wf
-        .phases
-        .iter()
-        .map(|p| (p.name.as_str(), p.state.code()))
-        .collect();
-    assert_eq!(wf_phases, [("Plan", "done"), ("Build", "now")]);
     let docs = by_label(&sw, "Docs site");
     assert_eq!(
         docs.pending,
         ["Publish the v2 docs now or after the release?"]
     );
-    let explicit = docs
-        .threads
-        .iter()
-        .find(|t| t.source == ThreadSource::Explicit)
-        .unwrap();
-    assert_eq!(
-        (
-            explicit.name.as_str(),
-            explicit.agents[0].role.as_str(),
-            explicit.pct
-        ),
-        ("Docs v2 release", "writer", Some(60))
-    );
+    // the explicit channel is no longer read: its role and progress are gone
+    let guide: Vec<&str> = docs.agents().map(|a| a.role.as_str()).collect();
+    assert_eq!(guide, ["author"]);
     assert_eq!(
         by_label(&sw, "Release notes").threads[0].status,
         ThreadStatus::Done
@@ -161,10 +152,45 @@ fn demo_swarm_shape() {
 }
 
 #[test]
-fn done_window_hides_old_threads() {
-    let sw = demo(0.0, 60.0);
+fn done_window_hides_old_finished_agents_and_counts_them() {
+    let wide = demo(0.0, 1e9);
+    // the failed fixer ended a minute before now
+    let sw = demo(0.0, 30.0);
     let notes = by_label(&sw, "Release notes");
-    assert!(notes.threads.is_empty() && notes.hidden_done == 0); // its agent is outside the window entirely
+    // its agent is outside the window: the root keeps its one, empty thread
+    assert!(notes.agents().next().is_none());
+    assert_eq!(
+        (
+            notes.threads.len(),
+            notes.hidden_finished,
+            notes.hidden_done
+        ),
+        (1, 1, 0)
+    );
+    assert_eq!(by_label(&wide, "Release notes").hidden_finished, 0);
+    // a failed agent ages out like a done one (D4); a live one stays however old
+    let billing = |sw: &Swarm| -> Vec<(String, Status)> {
+        by_label(sw, "Billing API")
+            .agents()
+            .map(|a| (a.id[..8].to_owned(), a.status.clone()))
+            .collect()
+    };
+    let (all, shown) = (billing(&wide), billing(&sw));
+    assert!(
+        all.contains(&("b3fixer0".into(), Status::Failed)),
+        "{all:?}"
+    );
+    assert!(
+        shown
+            .iter()
+            .all(|(_, st)| st.is_live() && *st != Status::Failed),
+        "{shown:?}"
+    );
+    assert!(!shown.is_empty());
+    assert_eq!(
+        by_label(&sw, "Billing API").hidden_finished as usize,
+        all.len() - shown.len()
+    );
 }
 
 #[test]

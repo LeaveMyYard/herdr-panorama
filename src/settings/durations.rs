@@ -1,5 +1,5 @@
 //! The two duration settings in panorama's `config.toml` (Python `config.parse_duration`,
-//! `done_window`, `stale_after`): how long finished threads stay visible, and how long an
+//! `done_window`, `stale_after`): how long finished agents stay visible, and how long an
 //! idle orchestrator waits before it reads "stale". Each is seconds or a string such as
 //! `"90m"`, `"1h"`, `"2h30m"`; an environment variable overrides the file.
 //!

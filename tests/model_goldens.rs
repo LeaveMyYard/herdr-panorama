@@ -1,11 +1,22 @@
 //! The model goldens (plan §5.2 item 3): `panorama snapshot --json` over each captured
-//! scenario at the capture's times, byte for byte the golden file `tools/capture_goldens.py`
-//! wrote from the Python (`tests/fixtures/model/*.json`), but for the Rust-only additions
-//! (`harness`, and the titles of plan `uniform-agent-tree.md` U1a).
+//! scenario at the capture's times and conditions, byte for byte.
+//!
+//! Python parity is retired for them (plan `uniform-agent-tree.md` U3, R3): the times,
+//! conditions and inputs are still those `tools/capture_goldens.py` captured from the Python
+//! (`tests/fixtures/model/*.json`, kept as Python's own record), but the expected models are
+//! Rust's, `tests/fixtures/rust/model/*.json`, rewritten by
+//! `PANORAMA_BLESS=1 cargo test --test model_goldens` and reviewed as a diff. They differ from
+//! Python's in the agent tree (one thread per root, no session card, no phases, D4's window),
+//! the titles and `harness` (`docs/plans/rust-rewrite.md`, "Divergence").
 
+#[path = "screen_support/bless.rs"]
+mod bless;
 mod collect_support;
 
+use bless::blessing;
 use collect_support::{MODELS, STALE, Scenario, WINDOW, read_json};
+
+const RUST_MODELS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/rust/model");
 use panorama::snapshot::pyjson::{self, J};
 use panorama::snapshot::{Format, json, render};
 use serde_json::Value;
@@ -47,15 +58,14 @@ fn snapshot(sc: &Scenario, now: f64, env: Option<&Value>) -> J {
         render(&swarm, Format::Json, 0.0),
         pyjson::dumps(&json::swarm(&swarm), 2) + "\n"
     );
-    // `snapshot --json` names every orchestrator and agent (the session's own `main:` card
-    // has no title of its own)
+    // `snapshot --json` names every orchestrator and agent
     for o in &swarm.orchestrators {
         assert!(
             !o.title.is_empty() && !o.title_source.is_empty(),
             "{}",
             o.pane_id
         );
-        for a in o.agents().filter(|a| !a.id.starts_with("main:")) {
+        for a in o.agents() {
             assert!(
                 !a.title.is_empty() && !a.title_source.is_empty(),
                 "{}",
@@ -67,29 +77,8 @@ fn snapshot(sc: &Scenario, now: f64, env: Option<&Value>) -> J {
 }
 
 fn check(name: &str, minutes: &[i64]) {
-    let golden_path = Path::new(MODELS).join(format!("{name}.json"));
-    let golden_text = std::fs::read_to_string(&golden_path).unwrap();
-    let mut golden = read_json(&golden_path);
-    // Additive Rust identity: old Python snapshots omit the Claude-only harness.
-    for snap in golden["snapshots"].as_object_mut().unwrap().values_mut() {
-        for o in snap["orchestrators"].as_array_mut().unwrap() {
-            o["harness"] = Value::String("claude".into());
-        }
-    }
-    // Keep the original Python key order and formatting, inserting only the new field.
-    let golden_text = golden_text
-        .lines()
-        .map(|line| {
-            if line.trim_start().starts_with("\"pane_id\":") {
-                let indent = line.len() - line.trim_start().len();
-                format!("{line}\n{}\"harness\": \"claude\",", " ".repeat(indent))
-            } else {
-                line.to_owned()
-            }
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
-        + "\n";
+    // the capture's inputs, times and conditions
+    let golden = read_json(&Path::new(MODELS).join(format!("{name}.json")));
     let sc = Scenario::new(name);
     let now = sc.now();
     assert_eq!(golden["now"].as_f64(), Some(now));
@@ -113,22 +102,27 @@ fn check(name: &str, minutes: &[i64]) {
             .collect(),
     );
     let doc = J::obj([
-        ("source", J::from(&golden["source"])),
+        (
+            "source",
+            J::str(
+                "Rust's `panorama snapshot --json` at the times and conditions of \
+                 tests/fixtures/model (Python's capture), written by \
+                 PANORAMA_BLESS=1 cargo test --test model_goldens",
+            ),
+        ),
         ("input", J::from(&golden["input"])),
         ("now", J::Float(now)),
         ("conditions", conditions),
         ("snapshots", J::Obj(snaps)),
     ]);
-    // Additive Rust titles (U1a): Python's snapshots have none; every one is checked above.
-    let written = (pyjson::dumps(&doc, 1) + "\n")
-        .lines()
-        .filter(|l| {
-            let key = l.trim_start();
-            !key.starts_with("\"title\": ") && !key.starts_with("\"title_source\": ")
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
-        + "\n";
+    let written = pyjson::dumps(&doc, 1) + "\n";
+    let rust_path = Path::new(RUST_MODELS).join(format!("{name}.json"));
+    if blessing() {
+        std::fs::create_dir_all(RUST_MODELS).unwrap();
+        std::fs::write(&rust_path, &written).unwrap();
+        return;
+    }
+    let golden_text = std::fs::read_to_string(&rust_path).unwrap();
     if written != golden_text {
         let line = written
             .lines()
@@ -161,7 +155,13 @@ fn the_background_model_matches_its_golden() {
 
 #[test]
 fn every_golden_is_checked() {
-    let mut names: Vec<String> = std::fs::read_dir(MODELS)
+    for dir in [MODELS, RUST_MODELS] {
+        check_names(dir);
+    }
+}
+
+fn check_names(dir: &str) {
+    let mut names: Vec<String> = std::fs::read_dir(dir)
         .unwrap()
         .map(|e| e.unwrap().file_name().into_string().unwrap())
         .collect();
