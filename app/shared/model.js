@@ -51,8 +51,9 @@ export function joinRoots(feed, stock, terminals, panes, spaces, changes = {}) {
       priority: kinds.length ? 4 : entity.status === 'done' ? 3 : contributions.some(part => part.working) ? 2 : 1,
       urgency: Math.max(0, ...kinds.map(urgency)) };
   }
-  // Feed roots without exact app agent matches remain visible, without assigning
-  // legacy titles, cwd or sessions to an app space or inventing a focus target.
+  // Feed roots without exact app agent matches are returned with space null, without
+  // assigning legacy titles, cwd or sessions to an app space or inventing a focus
+  // target. The V10 sidebar lists the active space only, so it does not show them.
   for (const root of feed?.orchestrators ?? []) if (!used.has(root)) {
     roots.push({ key: rootKey(root), root, stock: null, terminal: null, name: root.tab_label || root.pane_id, detail: null,
       space: null, tab: null, nativeChildren: [], isNative: false, status: root.herdr_status, program: null, pinned: false, focused: false, seq: 0,

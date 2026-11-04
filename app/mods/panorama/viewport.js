@@ -28,6 +28,7 @@ export function wheelViewport(view, event, cx) {
 }
 export function keyViewport(view, event, cx) {
   if (!view.scrollFocus.is_focused() || event.modifiers.control || event.modifiers.alt || event.modifiers.platform) return;
+  if (event.key === 'n' && !event.modifiers.shift && view.newAgent) { view.newAgent(); cx.stop_propagation(); return; }
   const height = logical(view.viewportPhysical.height, zoom());
   const max = Math.max(0, view.contentHeight - height);
   const next = { up: view.scrollOffset - 26, down: view.scrollOffset + 26,
