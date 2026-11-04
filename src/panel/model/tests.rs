@@ -11,7 +11,7 @@ fn state(extra: Value) -> State {
         "/tests/fixtures/inputs/swarm-design9.json"
     );
     let fixture: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-    let mut st = json!({ "swarm": fixture["swarm"] });
+    let mut st = json!({ "swarm": crate::v1_wire::swarm(fixture["swarm"].clone()) });
     st.as_object_mut()
         .unwrap()
         .extend(extra.as_object().unwrap().clone());
@@ -226,12 +226,12 @@ fn the_shown_orchestrator_is_selected_again_when_the_filter_shows_it_again() {
         let mut st = state(json!({"visible_tabs": ["w1:t3"], "filter": "needs"}));
         let o = st
             .swarm
-            .orchestrators
+            .roots
             .iter_mut()
             .find(|o| o.pane_id == "w1:p3")
             .unwrap();
         o.inbox = serde_json::from_value(inbox).unwrap();
-        for a in o.threads.iter_mut().flat_map(|t| t.agents.iter_mut()) {
+        for a in o.agents.iter_mut() {
             a.question_ids.clear();
             if a.status == panorama_core::model::Status::Waiting {
                 a.status = panorama_core::model::Status::Running;

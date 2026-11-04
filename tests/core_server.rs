@@ -64,7 +64,7 @@ async fn another_users_connection_is_refused() {
     let (sock, _) = paths(dir.path());
     let mut v = connect(&sock).await;
     let _ = v
-        .write_all(&line(json!({"hello": {"protocol": "1.3"}})))
+        .write_all(&line(json!({"hello": {"protocol": "2.0"}})))
         .await;
     assert!(closed(&mut v).await); // closed without a word
     assert!(c.connected().is_empty());
@@ -92,7 +92,7 @@ async fn hello_welcome_state_seen_and_an_old_major_refused() {
     )
     .await;
     let got = lines(&mut v, 2).await;
-    assert_eq!(got[0], json!({"welcome": {"protocol": "1.4"}}));
+    assert_eq!(got[0], json!({"welcome": {"protocol": "2.0"}}));
     assert_eq!(got[1]["state"]["unseen"], json!({"a5": "done"}));
     assert_eq!(got[1]["state"]["visible_tabs"], json!(["w1:t3"]));
     assert!(
@@ -108,12 +108,12 @@ async fn hello_welcome_state_seen_and_an_old_major_refused() {
         .unwrap();
     assert!(matches!(rx.recv().await, Some(Event::Seen(ids)) if ids == ["a5"]));
     let mut old = connect(&sock).await;
-    old.write_all(&line(json!({"hello": {"protocol": "2.0"}})))
+    old.write_all(&line(json!({"hello": {"protocol": "1.4"}})))
         .await
         .unwrap();
     assert_eq!(
         lines(&mut old, 1).await[0],
-        json!({"error": {"message": "protocol", "protocol": "1.4"}})
+        json!({"error": {"message": "protocol", "protocol": "2.0"}})
     );
     assert!(closed(&mut old).await);
     c.stop();
@@ -126,9 +126,10 @@ async fn a_hellos_protocol_reads_as_pythons_str_of_it() {
     let (c, _rx) = up(cfg(dir.path()), Panes::default()).await;
     let (sock, _) = paths(dir.path());
     for (p, ok) in [
-        (json!(1), true),
-        (json!(1.3), true),
-        (json!("1"), true),
+        (json!(2), true),
+        (json!(2.0), true),
+        (json!("2"), true),
+        (json!(1.3), false),
         (json!(null), false),
         (json!("x"), false),
     ] {
@@ -199,7 +200,7 @@ async fn one_read_reports_seen_once() {
     let (c, mut rx) = up(cfg(dir.path()), Panes::default()).await;
     let (sock, _) = paths(dir.path());
     let mut v = connect(&sock).await;
-    let mut all = line(json!({"hello": {"protocol": "1.3"}}));
+    let mut all = line(json!({"hello": {"protocol": "2.0"}}));
     all.extend(line(json!({"seen": ["a1"]})));
     all.extend(line(json!({"seen": ["a2", "a1"]})));
     v.write_all(&all).await.unwrap();
@@ -405,7 +406,9 @@ async fn the_open_key_is_answered_and_gets_no_state() {
     c.publish(&swarm_state());
     let (sock, _) = paths(dir.path());
     let mut key = connect(&sock).await;
-    hello(&mut key, json!({"role": "key"})).await;
+    // Python's `panorama open` (herdr's open action) says 1.x; the key's messages did not
+    // change in 2.0, so it is answered (docs/protocol/panel-v2.md, "Versions")
+    hello(&mut key, json!({"role": "key", "protocol": "1.3"})).await;
     assert!(wait(|| !c.connected().is_empty()).await);
     c.publish(&swarm_state()); // a key connection gets no state, before or after its hello
     key.write_all(&line(json!({"open": {}}))).await.unwrap();
@@ -416,7 +419,7 @@ async fn the_open_key_is_answered_and_gets_no_state() {
     assert_eq!(
         lines(&mut key, 2).await,
         [
-            json!({"welcome": {"protocol": "1.4"}}),
+            json!({"welcome": {"protocol": "2.0"}}),
             json!({"opened": {"result": "panel"}})
         ]
     );

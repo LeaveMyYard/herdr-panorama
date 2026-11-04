@@ -2,7 +2,7 @@
 //! clicks for a second; animation frames and the hover stamp nothing.
 
 use super::*;
-use panorama_core::model::{Orchestrator, Status};
+use panorama_core::model::{Root, Status};
 use panorama_core::view::target::AgentRef;
 
 const WIDE: (i32, i32) = (160, 45);
@@ -25,12 +25,12 @@ fn a_card_that_moved_in_a_refresh_ignores_clicks() {
     let now = r.settled();
     let at = r.spot(&orch("w1:p3")).unwrap();
     let mut sw = wire("demo").0;
-    let new_one: Orchestrator = serde_json::from_value(serde_json::json!({
+    let new_one: Root = serde_json::from_value(serde_json::json!({
         "pane_id": "w1:p0", "tab_id": "w1:t0", "tab_label": "New one", "session_id": "s0",
         "herdr_status": "idle",
     }))
     .unwrap();
-    sw.orchestrators.insert(0, new_one);
+    sw.roots.insert(0, new_one);
     r.refresh(sw.clone(), now); // every card moved down a slot; the selected one is the same
     assert!(r.d.app.armed(now));
     let s = r.d.shown().unwrap();
@@ -74,7 +74,7 @@ fn cards_that_shifted_ignore_clicks() {
         .map(|h| ((h.x0 + 1, h.y), h.target.clone()))
         .collect();
     let mut sw = wire("demo").0;
-    let a3 = sw.orchestrators[0].threads[0]
+    let a3 = sw.roots[0]
         .agents
         .iter_mut()
         .find(|a| a.id == "a3e1b22")

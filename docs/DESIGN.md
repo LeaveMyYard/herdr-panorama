@@ -1810,8 +1810,9 @@ per-tab had proven itself).
   start that runs the Rust viewer removes it. While the probe runs (about 10 ms, at most 3 s) the pane is
   not yet `panorama panel` to `process-info`; the core's own panels count by id, so only a +
   New agent tab's panel (started by `layout.apply`) is in that window, and the duplicate rule
-  covers it. Removing the binary rolls back, panel by panel (old and new
-  viewers share one core). The core knows the Rust process as a panel as before: `pane
+  covers it. Removing the binary rolls back once the home view restarts: since protocol 2.0
+  a Rust core and a Python panel no longer share a major, so the core and its panels must come
+  from the same binary (`docs/protocol/panel-v2.md`, "Version 1"). The core knows the Rust process as a panel as before: `pane
   process-info` shows `…/panorama panel`. Checked on an isolated herdr
   0.9.3 (own HOME and socket), with two then eight orchestrator tabs:
   - placement (left of the agent, 46 columns plus the frame), the record, no doubling;
@@ -1844,8 +1845,9 @@ per-tab had proven itself).
   venv's app, else `uv run`. A binary from before the contract answers nothing (or the panel's
   bare number) and is passed over, said on stderr and in `<state dir>/tui-launch.log`. The
   `open`/`open-popup`/`open-split` actions and the `home --startup` hook stay Python for now;
-  they open the `panorama` pane and talk to the core over protocol 1.3, which the Rust app's
-  core serves, so a Python `open` drives a Rust home view. Removing the binary rolls back.
+  they open the `panorama` pane and talk to the core over protocol 1.3 as an open key, which
+  the Rust app's 2.x core still answers (`docs/protocol/panel-v2.md`, "Versions"), so a Python
+  `open` drives a Rust home view. Removing the binary rolls back.
 - **Open key.** In per-tab mode the open key asks the core over its socket (`role: "key"`,
   `{"open": {}}`, answered with `{"opened": {"result": …}}`):
   - a panel in the operator's tab: it is focused;

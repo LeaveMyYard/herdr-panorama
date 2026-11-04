@@ -12,7 +12,7 @@ fn graph(name: &str, pane: &str) -> Graph {
         env!("CARGO_MANIFEST_DIR")
     );
     let v: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-    let swarm: Swarm = serde_json::from_value(v["swarm"].clone()).unwrap();
+    let swarm: Swarm = serde_json::from_value(crate::v1_wire::swarm(v["swarm"].clone())).unwrap();
     let mut g = Graph {
         swarm,
         ..Graph::default()

@@ -9,7 +9,12 @@
 //! changes incompatibly.
 
 /// The panel contract this binary implements.
-pub const PANEL: u32 = 1;
+///
+/// 2: the core protocol's major 2 (`docs/protocol/panel-v2.md`, the uniform agent tree). A
+/// binary on 1 speaks 1.x, which this checkout's Rust core no longer answers, so it is passed
+/// over for the Python viewer, which speaks 1.x to the Python core that `scripts/tui` starts
+/// for the same binary.
+pub const PANEL: u32 = 2;
 
 /// The Claude Code side's contract (`panorama contract claude`): what `hooks/run-hook.sh` and
 /// `scripts/mcp` check before they run this binary instead of the Python hooks and MCP server.
@@ -30,11 +35,18 @@ pub const CLAUDE: u32 = 2;
 /// The view's contract (`panorama contract tui`): what `scripts/tui` checks before it runs this
 /// binary as the manifest's `panorama` and `new-agent` panes instead of the Python app. It
 /// covers the `tui` and `new-agent` subcommands, the home view's record and lock (the paths
-/// Python's `home` reads), the core it serves and the protocol (1.x, what Python's `open` and
-/// `home --startup` speak to it), the + New agent popup's started marker and
-/// `PANORAMA_NEW_AGENT_CWD`. Raise it with `TUI_CONTRACT=` in `scripts/tui` when any of these
-/// changes incompatibly. Answered as `tui <n>`, like `claude <n>`.
-pub const TUI: u32 = 1;
+/// Python's `home` reads), the core it serves and its protocol, the + New agent popup's
+/// started marker and `PANORAMA_NEW_AGENT_CWD`. Raise it with `TUI_CONTRACT=` in
+/// `scripts/tui` when any of these changes incompatibly. Answered as `tui <n>`, like
+/// `claude <n>`.
+///
+/// 2: the core serves protocol 2.x, the major of `panel` 2, so the view and the panels are
+/// both Rust or both Python while both probes give the same answer. A binary changed under a
+/// running core, or one probe timing out, mixes them: the core refuses the other major's
+/// panels (`docs/protocol/panel-v2.md`, "Version 1"; a restart of the home view fixes it).
+/// Python's `open` (herdr's open action, always the venv's) still says 1.x as an open key,
+/// which a 2.x core answers ([`crate::proto::key_compatible`]).
+pub const TUI: u32 = 2;
 
 /// The answer to `panorama contract [name]`: the panel's bare number without a name,
 /// `claude <n>` for `claude`, `tui <n>` for `tui`, nothing for a name this binary does not know.

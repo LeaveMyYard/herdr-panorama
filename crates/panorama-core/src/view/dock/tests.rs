@@ -55,7 +55,7 @@ fn the_footer_fills_in_the_open_key_and_drops_whole_hints_when_narrow() {
 }
 
 #[test]
-fn many_thread_tiles_end_in_plus_n_and_the_counts_stay_whole() {
+fn many_child_tiles_end_in_plus_n_and_the_counts_stay_whole() {
     let t = |g: &str| tiles::tile(&Status::Running, g, 0.0, None);
     let line = tiles::fit_tiles(vec![t("a"), t("b"), t("c"), t("d")], "  4 active", 20);
     let text: String = line.iter().map(|s| s.text.as_str()).collect();
@@ -67,17 +67,13 @@ fn many_thread_tiles_end_in_plus_n_and_the_counts_stay_whole() {
     );
 }
 
-fn orch(extra: serde_json::Value) -> Orchestrator {
+fn orch(extra: serde_json::Value) -> Root {
     let mut v =
         serde_json::json!({"pane_id": "p", "tab_id": null, "tab_label": "x", "session_id": null});
     v.as_object_mut()
         .unwrap()
         .extend(extra.as_object().unwrap().clone());
     serde_json::from_value(v).unwrap()
-}
-
-fn thread(status: &str, agents: serde_json::Value) -> serde_json::Value {
-    serde_json::json!({"id": "t", "name": "n", "source": "turn", "status": status, "agents": agents})
 }
 
 const NOW: f64 = 100_000.0;
@@ -88,16 +84,14 @@ const AGES: Ages = Ages {
 
 #[test]
 fn the_entry_states_ladder_in_pythons_order() {
-    let done = || thread("done", serde_json::json!([{"id": "a", "status": "done"}]));
+    let done = || serde_json::json!([{"id": "a", "status": "done"}]);
     let bg_at = |t: f64| serde_json::json!([{"id": "b", "kind": "k", "started": t}]);
     // (case, orchestrator, status, label)
     let cases = [
         (
             "failed wins over blocked",
-            orch(
-                serde_json::json!({"threads": [thread("active", serde_json::json!(
-            [{"id": "a", "status": "blk"}, {"id": "b", "status": "fail"}]))]}),
-            ),
+            orch(serde_json::json!({"agents": serde_json::json!(
+            [{"id": "a", "status": "blk"}, {"id": "b", "status": "fail"}])})),
             Status::Failed,
             "failed",
         ),
@@ -109,22 +103,20 @@ fn the_entry_states_ladder_in_pythons_order() {
         ),
         (
             "all done but a question",
-            orch(serde_json::json!({"threads": [done()], "inbox": [1]})),
+            orch(serde_json::json!({"agents": done(), "inbox": [1]})),
             Status::Waiting,
             "needs you",
         ),
         (
             "questions of the agents",
-            orch(
-                serde_json::json!({"threads": [thread("active", serde_json::json!(
-            [{"id": "a", "status": "q", "question_ids": [4, 5]}]))]}),
-            ),
+            orch(serde_json::json!({"agents": serde_json::json!(
+            [{"id": "a", "status": "q", "question_ids": [4, 5]}])})),
             Status::Waiting,
             "needs you",
         ),
         (
             "all done with background work",
-            orch(serde_json::json!({"threads": [done()], "bg": bg_at(NOW - 60.0)})),
+            orch(serde_json::json!({"agents": done(), "bg": bg_at(NOW - 60.0)})),
             Status::Background,
             "waiting",
         ),
@@ -136,13 +128,13 @@ fn the_entry_states_ladder_in_pythons_order() {
         ),
         (
             "all done and stale",
-            orch(serde_json::json!({"threads": [done()], "last_activity": NOW - 7200.0})),
+            orch(serde_json::json!({"agents": done(), "last_activity": NOW - 7200.0})),
             Status::Stale,
             "stale 2h",
         ),
         (
             "all done",
-            orch(serde_json::json!({"threads": [done()], "last_activity": NOW - 60.0})),
+            orch(serde_json::json!({"agents": done(), "last_activity": NOW - 60.0})),
             Status::Done,
             "done",
         ),
@@ -154,10 +146,8 @@ fn the_entry_states_ladder_in_pythons_order() {
         ),
         (
             "reviewing only",
-            orch(
-                serde_json::json!({"threads": [thread("active", serde_json::json!(
-            [{"id": "a", "status": "rev"}]))]}),
-            ),
+            orch(serde_json::json!({"agents": serde_json::json!(
+            [{"id": "a", "status": "rev"}])})),
             Status::Reviewing,
             "working",
         ),

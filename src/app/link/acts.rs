@@ -49,7 +49,7 @@ impl Link {
         });
     }
 
-    /// g / Enter: into the orchestrator's agent. A popup closes once it is there; the home
+    /// g / Enter: into the root's agent. A popup closes once it is there; the home
     /// view stays (Python: `elif not self.home_mode: self.exit()`).
     pub fn goto(&self, pane: String) {
         let (h, home) = (self.herdr.clone(), self.home_mode);
@@ -69,7 +69,7 @@ impl Link {
         });
     }
 
-    /// An orchestrator on another machine: focused on its own server, and where it is said.
+    /// A root on another machine: focused on its own server, and where it is said.
     pub fn goto_remote(&self, machine_id: String, machine: String, pane: String, label: String) {
         let h = self.herdr.clone();
         self.spawn("going to the remote pane", async move {

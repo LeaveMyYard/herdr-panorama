@@ -2,7 +2,7 @@ use super::*;
 use crate::machines::Outcome;
 use crate::machines::watcher::StopFlag;
 use herdr_agent_kit::herdr_api::Machine as Saved;
-use panorama_core::model::Orchestrator;
+use panorama_core::model::Root;
 use serde_json::json;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -47,7 +47,7 @@ fn remotes(sel: Selection, rows: Vec<Saved>) -> (Remotes, Shared, Started) {
     (r, shared, started)
 }
 
-fn orch(pane: &str, label: &str) -> Orchestrator {
+fn orch(pane: &str, label: &str) -> Root {
     serde_json::from_value(
         json!({"pane_id": pane, "tab_id": null, "tab_label": label, "session_id": null}),
     )
@@ -56,7 +56,7 @@ fn orch(pane: &str, label: &str) -> Orchestrator {
 
 fn swarm(panes: &[&str]) -> Swarm {
     Swarm {
-        orchestrators: panes.iter().map(|p| orch(p, "x")).collect(),
+        roots: panes.iter().map(|p| orch(p, "x")).collect(),
         ..Swarm::default()
     }
 }
@@ -79,11 +79,7 @@ fn merge_marks_stale_and_unreachable() {
     });
     let mut local = swarm(&["w1:p1"]);
     r.merge_at(&mut local, now);
-    let panes: Vec<_> = local
-        .orchestrators
-        .iter()
-        .map(|o| o.pane_id.as_str())
-        .collect();
+    let panes: Vec<_> = local.roots.iter().map(|o| o.pane_id.as_str()).collect();
     assert_eq!(panes, ["w1:p1", "devbox:w1:p1"]);
     assert_eq!(local.errors, ["lab: unreachable (ssh: connect timed out)"]);
     let mut later = Swarm::default(); // no answer for a minute
@@ -116,7 +112,7 @@ fn a_failed_refresh_with_a_last_result_is_stale_with_its_error() {
             "devbox: stale (unreachable)"
         ]
     );
-    assert_eq!(local.orchestrators.len(), 1);
+    assert_eq!(local.roots.len(), 1);
 }
 
 #[test]
@@ -124,7 +120,7 @@ fn a_machine_not_tried_yet_adds_nothing() {
     let (mut r, _, _) = remotes(Selection::All, vec![row("a", "devbox", "devbox")]);
     let mut local = Swarm::default();
     r.merge(&mut local);
-    assert!(local.errors.is_empty() && local.orchestrators.is_empty());
+    assert!(local.errors.is_empty() && local.roots.is_empty());
 }
 
 fn ids(started: &Started) -> Vec<String> {

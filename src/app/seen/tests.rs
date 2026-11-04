@@ -2,13 +2,11 @@
 
 use super::*;
 use crate::unseen::Event;
-use panorama_core::model::{Agent, Orchestrator, Status, Swarm, Thread};
+use panorama_core::model::{Agent, Root, Status, Swarm};
 use serde_json::json;
 
 fn swarm(status: &str) -> Swarm {
-    let thread: Thread =
-        serde_json::from_value(json!({"id": "t1", "name": "t", "source": "turn"})).unwrap();
-    let mut o: Orchestrator = serde_json::from_value(
+    let mut o: Root = serde_json::from_value(
         json!({"pane_id": "w1:p1", "tab_id": "t", "tab_label": "o", "session_id": "s"}),
     )
     .unwrap();
@@ -17,12 +15,9 @@ fn swarm(status: &str) -> Swarm {
         status: Status::from_code(status),
         ..Agent::default()
     };
-    o.threads = vec![Thread {
-        agents: vec![agent("a"), agent("b")],
-        ..thread
-    }];
+    o.agents = vec![agent("a"), agent("b")];
     Swarm {
-        orchestrators: vec![o],
+        roots: vec![o],
         ..Swarm::default()
     }
 }

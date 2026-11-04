@@ -219,6 +219,6 @@ fn an_unarmed_click_in_the_docked_list_may_select_but_never_switches() {
         "{out:?}"
     );
     p.input.armed_at = t;
-    p.graph.swarm.orchestrators.retain(|o| o.pane_id != "w1:p4"); // the model changed, not repainted
+    p.graph.swarm.roots.retain(|o| o.pane_id != "w1:p4"); // the model changed, not repainted
     assert!(p.click(x, y, &s, t).is_empty());
 }

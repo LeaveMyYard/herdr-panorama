@@ -1,11 +1,11 @@
-//! The lines from the selected orchestrator down to its cards (Python `_narrow`'s anchors):
-//! a trunk at column 1 from below the orchestrator to the last card, a branch to each.
+//! The lines from the selected root down to its cards (Python `_narrow`'s anchors):
+//! a trunk at column 1 from below the root to the last card, a branch to each.
 
 use crate::view::cards::boxes::jn;
 use crate::view::palette::LINE;
 use crate::view::screen::Screen;
 
-/// Joins the orchestrator at row `top_y` to the cards whose link rows are `anchors`.
+/// Joins the root at row `top_y` to the cards whose link rows are `anchors`.
 pub fn join(cv: &mut Screen, top_y: i32, anchors: &[i32]) {
     let Some(&last) = anchors.last() else { return };
     for yy in top_y + 1..=last {

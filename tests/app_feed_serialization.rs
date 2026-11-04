@@ -2,12 +2,16 @@ use panorama::{
     app_feed::{Root, World, serialize},
     host::{Host, collect::Collected},
 };
+#[path = "v1_wire/mod.rs"]
+mod v1_wire;
+
 use panorama_core::model::Swarm;
 use serde_json::{Value, json};
 use std::collections::HashMap;
 
+/// The world a feed was written from: its threads' agents are each root's tree.
 fn world(feed: &Value) -> World {
-    let swarm: Swarm = serde_json::from_value(feed.clone()).unwrap();
+    let swarm: Swarm = serde_json::from_value(v1_wire::swarm(feed.clone())).unwrap();
     let roots = feed["orchestrators"]
         .as_array()
         .unwrap()
@@ -36,8 +40,35 @@ fn world(feed: &Value) -> World {
     World { swarm, roots }
 }
 
+/// A feed with each root's threads merged into its one tree: its agents in order without
+/// phases, no thread totals, flavour or hidden threads. What the writer keeps of a feed.
+fn as_tree(feed: &Value) -> Value {
+    let mut feed = feed.clone();
+    for k in ["threads", "active_threads"] {
+        feed["counts"].as_object_mut().unwrap().remove(k);
+    }
+    for root in feed["orchestrators"].as_array_mut().unwrap() {
+        let root = root.as_object_mut().unwrap();
+        let mut agents = vec![];
+        for t in root.remove("threads").unwrap().as_array().unwrap() {
+            for a in t["agents"].as_array().unwrap() {
+                let mut a = a.clone();
+                a.as_object_mut().unwrap().remove("phases");
+                agents.push(a);
+            }
+        }
+        root.remove("flavour");
+        root.remove("hidden_done");
+        root.insert("agents".into(), Value::Array(agents));
+    }
+    feed
+}
+
 #[test]
 fn fixture_worlds_serialize_to_the_complete_normative_feed() {
+    // since U6 the writer has the uniform tree only: each root's one `agents` thread (plan
+    // `uniform-agent-tree.md` U6); every other field is the fixture's, and a fixture without
+    // threads reads back byte for byte
     let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/app-feed");
     for entry in std::fs::read_dir(dir).unwrap() {
         let path = entry.unwrap().path();
@@ -45,12 +76,24 @@ fn fixture_worlds_serialize_to_the_complete_normative_feed() {
             let expected: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
             let bytes = serialize::bytes(&world(&expected)).unwrap();
             assert!(bytes.ends_with(b"\n"));
-            assert_eq!(
-                serde_json::from_slice::<Value>(&bytes).unwrap(),
-                expected,
-                "{}",
-                path.display()
-            );
+            let got: Value = serde_json::from_slice(&bytes).unwrap();
+            assert_eq!(as_tree(&got), as_tree(&expected), "{}", path.display());
+            for root in got["orchestrators"].as_array().unwrap() {
+                let [t] = root["threads"].as_array().unwrap().as_slice() else {
+                    panic!("one thread: {root}")
+                };
+                assert_eq!(
+                    (&t["id"], &t["source"]),
+                    (&json!("agents"), &json!("session"))
+                );
+                assert_eq!(
+                    (&root["flavour"], &root["hidden_done"]),
+                    (&json!("agents"), &json!(0))
+                );
+            }
+            if expected["orchestrators"] == json!([]) {
+                assert_eq!(got, expected, "{}", path.display());
+            }
         }
     }
 }
@@ -88,9 +131,9 @@ fn harness_provenance_is_scoped_and_unknown_never_defaults_to_claude() {
 fn core_membership_is_neutral_and_invalid_provenance_never_serializes() {
     let feed: Value = serde_json::from_str(include_str!("fixtures/app-feed/swarm.json")).unwrap();
     let mut world = world(&feed);
-    world.swarm.orchestrators[0].tab_id = Some("legacy-tab".into());
-    world.swarm.orchestrators[0].workspace_id = Some("legacy-space".into());
-    world.swarm.orchestrators[0].focused = true;
+    world.swarm.roots[0].tab_id = Some("legacy-tab".into());
+    world.swarm.roots[0].workspace_id = Some("legacy-space".into());
+    world.swarm.roots[0].focused = true;
     let model = serialize::model(&world).unwrap();
     assert!(model["orchestrators"][0]["tab_id"].is_null());
     assert!(model["orchestrators"][0]["workspace_id"].is_null());

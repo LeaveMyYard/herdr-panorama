@@ -8,7 +8,7 @@ use super::column::TALL;
 use super::fin_card::fin_card;
 use super::layout::Columns;
 use super::place::{Tree, place_tree};
-use crate::model::{Orchestrator, TreeKids};
+use crate::model::{Root, TreeKids};
 use crate::view::cards::link::{Link, link};
 use crate::view::nav::{TreeEntry, find_agent};
 use crate::view::palette::FAINT;
@@ -23,7 +23,7 @@ const COLUMN: usize = 1;
 /// What the tree is drawn from: the root, its entries, the columns, and the selected
 /// agent's path.
 pub struct TreeCtx<'a> {
-    pub o: &'a Orchestrator,
+    pub o: &'a Root,
     pub entries: &'a [TreeEntry],
     pub cols: &'a Columns,
     pub path: &'a [String],
@@ -105,7 +105,7 @@ pub fn agent_tree(s: &mut Screen, c: &TreeCtx, top: i32, bottom: i32, root_y: Op
 
 /// The cards in shown columns; the selected card's rows.
 fn cards(cv: &mut Screen, c: &TreeCtx, tree: &Tree) -> Option<(i32, i32)> {
-    let kids = TreeKids::of_root(c.o);
+    let kids = TreeKids::of(c.o);
     let on_path = &c.path[..c.path.len().saturating_sub(1)];
     let mut sel = None;
     for p in &tree.cards {

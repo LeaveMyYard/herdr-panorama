@@ -5,7 +5,7 @@
 //! hid, and its action hints.
 
 use super::card::{Line, Look, draw_frame, line, own_out};
-use crate::model::{HerdrStatus, Orchestrator, Status};
+use crate::model::{HerdrStatus, Root, Status};
 use crate::view::cards::Area;
 use crate::view::cards::actions::hint_row;
 use crate::view::cards::details::bg_row;
@@ -34,9 +34,10 @@ pub struct RootPlace {
 }
 
 /// The questions in `o`'s inbox that no agent filed, with their texts when known.
-pub fn loose_questions(o: &Orchestrator) -> Vec<&str> {
+pub fn loose_questions(o: &Root) -> Vec<&str> {
     let filed: HashSet<i64> = o
-        .agents()
+        .agents
+        .iter()
         .flat_map(|a| a.question_ids.iter().copied())
         .collect();
     o.inbox
@@ -48,7 +49,7 @@ pub fn loose_questions(o: &Orchestrator) -> Vec<&str> {
 }
 
 /// The unfolded card's detail lines in `w` cells.
-pub fn root_detail_lines(o: &Orchestrator, w: i32, view: &View) -> Vec<Vec<Seg>> {
+pub fn root_detail_lines(o: &Root, w: i32, view: &View) -> Vec<Vec<Seg>> {
     let mut out = vec![];
     let led = |text: &str, lead: &str, st: &Status, out: &mut Vec<Vec<Seg>>| {
         let col = status(st);
@@ -83,7 +84,7 @@ pub fn root_detail_lines(o: &Orchestrator, w: i32, view: &View) -> Vec<Vec<Seg>>
 }
 
 /// `o`'s card at `p`. Its height.
-pub fn root_card(cv: &mut Screen, p: RootPlace, o: &Orchestrator, view: &View, ages: Ages) -> i32 {
+pub fn root_card(cv: &mut Screen, p: RootPlace, o: &Root, view: &View, ages: Ages) -> i32 {
     let RootPlace { y, w, is_sel, .. } = p;
     let st = orch_state(o, view.frame, Some(ages));
     let open = is_sel && p.focus;
@@ -104,11 +105,11 @@ pub fn root_card(cv: &mut Screen, p: RootPlace, o: &Orchestrator, view: &View, a
         is_sel,
         st: &st,
         seed: 0,
-        pulse: mark_of(o.agents(), &view.unseen, true),
+        pulse: mark_of(o.agents.iter(), &view.unseen, true),
     };
     draw_frame(cv, card, &look, view);
     pod(cv, 2, y + 1, &st.st, &st.glyph, false);
-    let agents: Vec<_> = o.agents().collect();
+    let agents: Vec<_> = o.agents.iter().collect();
     let blocked = o.herdr_status == HerdrStatus::Blocked;
     let mut marks = marks_of(&agents, blocked, loose_questions(o).len());
     own_out(&mut marks, &st.st);
@@ -147,7 +148,7 @@ pub fn root_card(cv: &mut Screen, p: RootPlace, o: &Orchestrator, view: &View, a
 }
 
 /// The state words, then ` · live/agents` (or ` · n bg` while it waits on background work).
-fn state_line(o: &Orchestrator, st: &OrchState, w: i32) -> [Seg; 2] {
+fn state_line(o: &Root, st: &OrchState, w: i32) -> [Seg; 2] {
     let label = trunc(&st.label, w - 8);
     let room = (w - 8 - label.chars().count() as i32).max(0);
     let rest = if st.st == Status::Background {
@@ -155,8 +156,8 @@ fn state_line(o: &Orchestrator, st: &OrchState, w: i32) -> [Seg; 2] {
     } else if st.quiet() {
         String::new()
     } else {
-        let live = o.agents().filter(|a| a.status.is_live()).count();
-        trunc(&format!(" · {live}/{}", o.agents().count()), room)
+        let live = o.agents.iter().filter(|a| a.status.is_live()).count();
+        trunc(&format!(" · {live}/{}", o.agents.len()), room)
     };
     let col = if st.st == Status::Stale {
         status(&Status::Stale)
@@ -173,7 +174,7 @@ fn state_line(o: &Orchestrator, st: &OrchState, w: i32) -> [Seg; 2] {
 
 /// The root's `g open pane`, `t transcript` and `a answer` (blocked: in its pane) from `at`,
 /// in `room` cells, each enabled one a click target.
-fn hints(cv: &mut Screen, at: (i32, i32), room: i32, o: &Orchestrator, inbox_ok: bool) {
+fn hints(cv: &mut Screen, at: (i32, i32), room: i32, o: &Root, inbox_ok: bool) {
     let blocked = o.herdr_status == HerdrStatus::Blocked;
     let can_answer = blocked || (inbox_ok && !o.inbox.is_empty());
     let pane = &o.pane_id;

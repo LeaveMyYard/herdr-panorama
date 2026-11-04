@@ -36,7 +36,7 @@ fn wire(name: &str) -> (Swarm, f64) {
     );
     let v: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
     (
-        serde_json::from_value(v["swarm"].clone()).unwrap(),
+        serde_json::from_value(crate::v1_wire::swarm(v["swarm"].clone())).unwrap(),
         v["now"].as_f64().unwrap(),
     )
 }

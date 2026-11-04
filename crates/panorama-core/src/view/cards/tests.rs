@@ -5,14 +5,14 @@ use super::boxes::jn;
 use super::details::agent_detail_lines;
 use super::edge::sweep_pos;
 use super::pods::{Pods, pods_row};
-use crate::model::{Agent, Thread};
+use crate::model::{Agent, Root};
 use crate::view::palette::LINE;
 use crate::view::screen::Screen;
 use crate::view::state::View;
 use serde_json::{Value, json};
 
-fn thread(v: Value) -> Thread {
-    let mut t = json!({"id": "t", "name": "n", "source": "turn"});
+fn root(v: Value) -> Root {
+    let mut t = json!({"pane_id": "p", "tab_id": null, "tab_label": "t", "session_id": null});
     t.as_object_mut()
         .unwrap()
         .extend(v.as_object().unwrap().clone());
@@ -67,7 +67,7 @@ fn pods_show_live_first_and_fold_the_finished_when_short_of_room() {
                 .map(|i| json!({"id": format!("d{i}"), "status": "done", "started": f64::from(i)})),
         )
         .collect();
-    let t = thread(json!({"agents": ags}));
+    let t = root(json!({"agents": ags}));
     let mut s = Screen::new(40, 1);
     pods_row(
         &mut s,
@@ -259,7 +259,7 @@ fn marks_count_the_questions_no_agent_filed() {
 #[test]
 fn pods_are_click_targets_selecting_their_agent() {
     use crate::view::target::Target;
-    let t = thread(json!({"agents": [
+    let t = root(json!({"agents": [
         {"id": "a", "status": "run"}, {"id": "b", "status": "done"},
     ]}));
     let mut s = Screen::new(40, 1);

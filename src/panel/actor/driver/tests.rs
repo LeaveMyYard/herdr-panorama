@@ -18,7 +18,7 @@ fn driver() -> (Driver, Instant) {
 /// The design 9 state without its first orchestrator: every row below it moves up.
 fn fewer() -> State {
     let mut st = state(json!({"visible_tabs": ["w1:t2"], "focused_pane": "w1:p90"}));
-    st.swarm.orchestrators.remove(0);
+    st.swarm.roots.remove(0);
     st
 }
 

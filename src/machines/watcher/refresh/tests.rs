@@ -1,5 +1,5 @@
 use super::*;
-use panorama_core::model::Orchestrator;
+use panorama_core::model::Root;
 use serde_json::json;
 use std::sync::Mutex;
 
@@ -82,11 +82,11 @@ impl Collect for Mirrorlike {
             .map(|a| {
                 let sid = if has_new { Some(NEW) } else { a.agent_session.as_ref().and_then(|s| s.id()) };
                 let o = json!({"pane_id": a.pane_id, "tab_id": a.tab_id, "tab_label": "work", "session_id": sid});
-                serde_json::from_value::<Orchestrator>(o).unwrap()
+                serde_json::from_value::<Root>(o).unwrap()
             })
             .collect();
         Swarm {
-            orchestrators,
+            roots: orchestrators,
             ..Swarm::default()
         }
     }
@@ -106,7 +106,7 @@ fn a_failed_refresh_keeps_the_last_result() {
     let api = Arc::new(Api(Mutex::new(Ok(one_agent(None)))));
     let mut r = refresher(api.clone(), Arc::default());
     let first = r.refresh(&Outcome::default(), &|| false);
-    let pane = |o: &Outcome| o.swarm.as_ref().unwrap().orchestrators[0].pane_id.clone();
+    let pane = |o: &Outcome| o.swarm.as_ref().unwrap().roots[0].pane_id.clone();
     assert_eq!(pane(&first), "abc123:w1:p1");
     assert!(first.tried && first.error.is_none() && first.at.is_some());
     *api.0.lock().unwrap() = Err("unreachable".into());
@@ -127,7 +127,7 @@ fn continuations_are_mirrored_in_the_same_refresh() {
     let syncs: Arc<Syncs> = Arc::default();
     let mut r = refresher(api, syncs.clone());
     let out = r.refresh(&Outcome::default(), &|| false);
-    let o = &out.swarm.unwrap().orchestrators[0];
+    let o = &out.swarm.unwrap().roots[0];
     assert_eq!(o.session_id.as_deref(), Some(NEW));
     let mut both = vec![OLD.to_owned(), NEW.to_owned()];
     both.sort();

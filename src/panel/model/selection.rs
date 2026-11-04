@@ -9,13 +9,13 @@ use panorama_core::model::Swarm;
 use panorama_core::view::Filter;
 use panorama_core::view::nav::default_children;
 
-/// The local orchestrator in the tab herdr shows, else the one whose pane has the focus.
+/// The local root in the tab herdr shows, else the one whose pane has the focus.
 pub(super) fn herdr_shows(
     swarm: &Swarm,
     visible: Option<&[String]>,
     focused: Option<&str>,
 ) -> Option<String> {
-    let local = || swarm.orchestrators.iter().filter(|o| o.machine.is_none());
+    let local = || swarm.roots.iter().filter(|o| o.machine.is_none());
     if let Some(vis) = visible {
         let hit = local().find(|o| o.tab_id.as_ref().is_some_and(|t| vis.contains(t)));
         if let Some(o) = hit {
@@ -29,7 +29,7 @@ pub(super) fn herdr_shows(
 }
 
 impl Panel {
-    /// The filter changes: a selection it hides is parked; the shown orchestrator stays
+    /// The filter changes: a selection it hides is parked; the shown root stays
     /// selected while the filter shows it, and none is selected while it hides it.
     pub(crate) fn apply_filter(&mut self, f: Filter) {
         self.graph.view.filter = f;
@@ -43,7 +43,7 @@ impl Panel {
         }
     }
 
-    /// No selected row while the filter shows the orchestrator herdr shows: it is selected
+    /// No selected row while the filter shows the root herdr shows: it is selected
     /// again. Whether that changed anything.
     pub(super) fn back_to_shown(&mut self) -> bool {
         let Some(active) = self.active.clone() else {
@@ -59,7 +59,7 @@ impl Panel {
 }
 
 impl Panel {
-    /// Docked or narrow (Python `_update_dock`): docked while this tab has an orchestrator
+    /// Docked or narrow (Python `_update_dock`): docked while this tab has a root
     /// and the pane (as last painted) is narrower than the wide layout; the docked list is
     /// one column. Decided on each refresh before the arming comparison, and on each paint.
     pub(crate) fn update_dock(&mut self) {

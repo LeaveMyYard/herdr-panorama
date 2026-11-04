@@ -124,13 +124,13 @@ fn a_roots_background_work_keeps_inside_its_card() {
     // test_states.py::test_the_background_card_takes_the_wide_thread_column, on the uniform
     // tree: the root's background tasks are rows of its own card, cut at its border
     let mut swarm = states_swarm(&fixture("design_8.json")["data"]);
-    swarm.orchestrators[3].bg = vec![BgTask {
+    swarm.roots[3].bg = vec![BgTask {
         id: "x".into(),
         kind: "Bash".into(),
         description: "a long description ".repeat(4),
         started: Some(NOW - 60.0),
     }];
-    let pane = swarm.orchestrators[3].pane_id.clone();
+    let pane = swarm.roots[3].pane_id.clone();
     let view = View {
         orch: Some(pane),
         focus: 0,

@@ -17,7 +17,7 @@ pub struct HomeRef {
 /// One look at herdr.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Survey {
-    /// tab → its orchestrator's pane.
+    /// tab → its root's pane.
     pub targets: BTreeMap<String, String>,
     /// tab → the panel panes there (runs our viewer), in herdr's order.
     pub panels: BTreeMap<String, Vec<String>>,
@@ -57,10 +57,10 @@ impl<O: Ops> Manager<O> {
         runs
     }
 
-    /// Which tabs should have a panel (the model's local orchestrators, checked against the
+    /// Which tabs should have a panel (the model's local roots, checked against the
     /// snapshot: a supported agent pane, not in the home tab, in the home pane's workspace) and which
     /// panels exist. `single`: `cockpit_follow_tabs = "single"`, only tabs whose one pane is
-    /// the orchestrator.
+    /// the root.
     pub async fn survey(
         &mut self,
         snap: &Snap,
@@ -78,7 +78,7 @@ impl<O: Ops> Manager<O> {
         let workspace = home
             .and_then(|h| snap.pane(&h.pane_id))
             .and_then(|p| p.workspace_id.clone());
-        for o in swarm.orchestrators.iter().filter(|o| o.machine.is_none()) {
+        for o in swarm.roots.iter().filter(|o| o.machine.is_none()) {
             let Some(p) = snap.pane(&o.pane_id) else {
                 continue;
             };

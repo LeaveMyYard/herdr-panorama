@@ -28,7 +28,7 @@ fn a_refresh_that_changes_the_selected_card_re_arms_them_and_one_that_does_not_d
     assert!(!p.on_key(Key::Goto, t + TICK).is_empty());
     // the selected orchestrator (Data Pipeline) changes its state: keys wait 400 ms
     let mut st = state(json!({"visible_tabs": ["w1:t2"], "focused_pane": "w1:p90"}));
-    st.swarm.orchestrators[1].herdr_status = panorama_core::model::HerdrStatus::Working;
+    st.swarm.roots[1].herdr_status = panorama_core::model::HerdrStatus::Working;
     p.on_state(st, t);
     assert!(p.on_key(Key::Goto, t + ARM - TICK).is_empty());
     assert!(!p.on_key(Key::Goto, t + ARM).is_empty());
@@ -42,7 +42,7 @@ fn a_refresh_that_docks_the_panel_re_arms_the_keys() {
     p.on_key(Key::Right, t);
     p.on_key(Key::Right, t);
     let mut st = state(json!({"visible_tabs": ["w1:t1"], "focused_pane": "w1:p90"}));
-    st.swarm.orchestrators[0].tab_id = Some("w1:t9".into());
+    st.swarm.roots[0].tab_id = Some("w1:t9".into());
     let t1 = t + Duration::from_secs(5);
     p.on_state(st, t1);
     assert!(p.input.dock && p.view.focus == 0);

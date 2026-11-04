@@ -15,7 +15,7 @@
 # The probe is scripts/panel's: stdin from /dev/null, its answer through a file, at most 2 s. A
 # binary passed over is said on stderr and in <state dir>/tui-launch.log (the latest fallback;
 # a later start that runs the Rust app removes it).
-TUI_CONTRACT=1
+TUI_CONTRACT=2
 
 R=${HERDR_PLUGIN_ROOT:-.}
 B="$R/target/release/panorama"

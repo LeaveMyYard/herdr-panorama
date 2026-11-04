@@ -1,6 +1,6 @@
 use super::*;
 
-fn orch(extra: serde_json::Value) -> Orchestrator {
+fn orch(extra: serde_json::Value) -> Root {
     let mut v =
         serde_json::json!({"pane_id": "p", "tab_id": null, "tab_label": "x", "session_id": null});
     v.as_object_mut()
@@ -25,7 +25,7 @@ fn shown(swarm: &Swarm, f: Filter) -> Vec<&str> {
 fn running_keeps_work_in_flight_and_waiting_but_not_stale() {
     let bg = serde_json::json!([{"id": "b", "kind": "k", "started": 99_000.0}]);
     let swarm = Swarm {
-        orchestrators: vec![
+        roots: vec![
             orch(serde_json::json!({"tab_label": "working", "herdr_status": "working"})),
             orch(serde_json::json!({"tab_label": "waiting", "bg": bg})),
             orch(serde_json::json!({"tab_label": "idle"})),

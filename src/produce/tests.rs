@@ -5,26 +5,21 @@ use crate::machines::{
 };
 use herdr_agent_kit::herdr_api::{Machine as Saved, Snapshot};
 use herdr_agent_kit::plugin_env::PluginEnv;
-use panorama_core::model::{Agent, Orchestrator, Status, Thread};
+use panorama_core::model::{Agent, Root, Status};
 use serde_json::json;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-fn orch(pane: &str, status: &str) -> Orchestrator {
-    let thread: Thread =
-        serde_json::from_value(json!({"id": "t1", "name": "t", "source": "turn"})).unwrap();
+fn orch(pane: &str, status: &str) -> Root {
     let agent = Agent {
         id: format!("{pane}-a"),
         status: Status::from_code(status),
         ..Agent::default()
     };
-    let mut o: Orchestrator = serde_json::from_value(
+    let mut o: Root = serde_json::from_value(
         json!({"pane_id": pane, "tab_id": "t", "tab_label": "o", "session_id": "s"}),
     )
     .unwrap();
-    o.threads = vec![Thread {
-        agents: vec![agent],
-        ..thread
-    }];
+    o.agents = vec![agent];
     o
 }
 
@@ -55,7 +50,7 @@ fn remotes(flags: Arc<Mutex<Vec<StopFlag>>>) -> Remotes {
         o.machine = Some("box".into());
         o.machine_id = Some("m1".into());
         let swarm = Swarm {
-            orchestrators: vec![o],
+            roots: vec![o],
             ..Swarm::default()
         };
         w.set_outcome(Outcome {
@@ -76,7 +71,7 @@ fn a_refresh_merges_the_machines_and_marks_what_changed() {
     let status = Arc::new(Mutex::new("run"));
     let s = status.clone();
     let source = move || Swarm {
-        orchestrators: vec![orch("w1:p1", *s.lock().unwrap())],
+        roots: vec![orch("w1:p1", *s.lock().unwrap())],
         ..Swarm::default()
     };
     let starts = Arc::new(AtomicUsize::new(0));
@@ -96,7 +91,7 @@ fn a_refresh_merges_the_machines_and_marks_what_changed() {
     let first = p.refresh();
     let panes: Vec<_> = first
         .swarm
-        .orchestrators
+        .roots
         .iter()
         .map(|o| o.pane_id.as_str())
         .collect();
@@ -123,7 +118,7 @@ fn a_panicking_refresh_keeps_the_last_result_with_its_error() {
             panic!("a broken transcript");
         }
         Swarm {
-            orchestrators: vec![orch("w1:p1", "run")],
+            roots: vec![orch("w1:p1", "run")],
             ..Swarm::default()
         }
     };
@@ -352,7 +347,7 @@ fn a_remote_agent_that_fails_is_marked() {
     p.refresh();
     let w = &p.remotes.as_ref().unwrap().watchers[0];
     let mut out = w.outcome();
-    out.swarm.as_mut().unwrap().orchestrators[0].threads[0].agents[0].status = Status::Failed;
+    out.swarm.as_mut().unwrap().roots[0].agents[0].status = Status::Failed;
     w.set_outcome(out);
     let r = p.refresh();
     assert_eq!(r.marks.get("m1:w1:p1-a"), Some(&unseen::Event::Fail)); // marks are of the merged swarm
@@ -395,7 +390,7 @@ fn a_remote_start_that_panics_is_tried_again_next_refresh() {
     assert!(p.refresh().error.is_some());
     let r = p.refresh();
     assert!(r.error.is_none());
-    assert_eq!(r.swarm.orchestrators.len(), 1);
+    assert_eq!(r.swarm.roots.len(), 1);
     assert_eq!(tries.load(Ordering::SeqCst), 2);
 }
 
@@ -457,6 +452,6 @@ fn a_producer_without_machines_never_starts_any() {
         Box::new(|| 1.0),
     );
     let r = p.refresh();
-    assert!(r.error.is_none() && r.swarm.orchestrators.is_empty());
+    assert!(r.error.is_none() && r.swarm.roots.is_empty());
     assert!(p.remotes.is_none());
 }

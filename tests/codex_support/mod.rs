@@ -2,7 +2,7 @@
 
 use panorama::codex;
 use panorama::collect::{Collector, Options};
-use panorama_core::model::{Orchestrator, Swarm};
+use panorama_core::model::{Root, Swarm};
 use serde_json::{Value, json};
 use std::path::Path;
 use std::time::{Duration, Instant};
@@ -158,11 +158,11 @@ pub fn ready(collector: &mut Collector, snapshot: &Value) -> Swarm {
 
 /// The root's own history was read: only an exact root observation sets its last activity
 /// (its agents are its children; the root thread is the root, no agent).
-pub fn observed(o: &Orchestrator) -> bool {
+pub fn observed(o: &Root) -> bool {
     o.last_activity.is_some()
 }
 
 /// Nothing of the root's history shows: no last activity, no agents.
-pub fn unobserved(o: &Orchestrator) -> bool {
-    o.last_activity.is_none() && o.agents().next().is_none()
+pub fn unobserved(o: &Root) -> bool {
+    o.last_activity.is_none() && o.agents.is_empty()
 }

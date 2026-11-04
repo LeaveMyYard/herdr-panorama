@@ -14,9 +14,9 @@ use support::NO_SESSIONS;
 /// The agent and a second one in thread `t` of orchestrator w1:p1 (`swarm_with`).
 fn swarm_with(agent: Value) -> Swarm {
     let other = json!({"id": "b2c3d4e", "role": "other", "status": "run"});
-    serde_json::from_value(json!({"orchestrators": [{
+    serde_json::from_value(json!({"roots": [{
         "pane_id": "w1:p1", "tab_id": "t1", "tab_label": "orch", "session_id": "s",
-        "threads": [{"id": "t", "name": "work", "source": "turn", "agents": [agent, other]}],
+        "agents": [agent, other],
     }]}))
     .unwrap()
 }
@@ -143,16 +143,14 @@ fn a_title_that_fits_exactly_is_kept_whole() {
 
 /// Two titled agents (the second spawned by the first) under a titled orchestrator.
 fn titled() -> Swarm {
-    serde_json::from_value(json!({"orchestrators": [{
+    serde_json::from_value(json!({"roots": [{
         "pane_id": "w1:p1", "tab_id": "t1", "tab_label": "orch", "session_id": "s",
         "title": "Billing API", "title_source": "tab", "tab_no": 1,
-        "threads": [{"id": "t", "name": "work", "source": "turn", "agents": [
-            {"id": "a6c8a7b1", "title": "Author the invoice export", "title_source": "spawner",
+        "agents": [{"id": "a6c8a7b1", "title": "Author the invoice export", "title_source": "spawner",
              "role": "general-purpose", "model": "opus 4.5", "status": "run", "started": 0.0},
             {"id": "b2c3d4e5", "title": "Review the diff", "title_source": "spawner",
              "role": "reviewer", "model": "sonnet 4.5", "status": "run", "parent": "a6c8a7b1",
-             "depth": 2, "started": 0.0},
-        ]}],
+             "depth": 2, "started": 0.0}],
     }]}))
     .unwrap()
 }
@@ -196,10 +194,10 @@ fn a_titled_card_leads_with_its_title_and_keeps_role_id_and_model_secondary() {
 fn an_untitled_card_still_reads_role_and_id() {
     // a 1.3 core or the Python core sends no titles: the cards read as before
     let mut sw = titled();
-    for a in &mut sw.orchestrators[0].threads[0].agents {
+    for a in &mut sw.roots[0].agents {
         a.title.clear();
     }
-    sw.orchestrators[0].title.clear();
+    sw.roots[0].title.clear();
     let text = rows(&sw, &titled_view("b2c3d4e5"), 200).join("\n");
     assert!(text.contains("general-purpose a6c8a7b"), "{text}");
     assert!(text.contains("Claude Code · orch "), "{text}");
@@ -235,15 +233,15 @@ fn narrow_and_dock_rows_show_titles() {
 fn a_selected_titled_card_keeps_its_gap_to_the_card_below() {
     // its `role id · model` line is counted in the layout: the next card moves down by one row
     let sibling = |sw: &mut Swarm| {
-        let mut b = sw.orchestrators[0].threads[0].agents[1].clone();
+        let mut b = sw.roots[0].agents[1].clone();
         b.parent = None;
         b.depth = 1;
-        sw.orchestrators[0].threads[0].agents[1] = b;
+        sw.roots[0].agents[1] = b;
     };
     let mut titled_sw = titled();
     sibling(&mut titled_sw);
     let mut plain = titled_sw.clone();
-    for a in &mut plain.orchestrators[0].threads[0].agents {
+    for a in &mut plain.roots[0].agents {
         a.title.clear();
     }
     let v = titled_view("a6c8a7b1");

@@ -7,6 +7,8 @@
 
 #[path = "harness_goldens/mod.rs"]
 mod harness_goldens;
+#[path = "v1_wire/mod.rs"]
+mod v1_wire;
 
 use panorama::panel::input::Key;
 use panorama::panel::model::Panel;
@@ -18,10 +20,10 @@ use std::time::{Duration, Instant};
 
 fn fixture(rel: &str) -> Value {
     let path = format!("{}/tests/fixtures/{rel}", env!("CARGO_MANIFEST_DIR"));
-    harness_goldens::adapt(
+    v1_wire::fixture(harness_goldens::adapt(
         rel,
         serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap(),
-    )
+    ))
 }
 
 fn cell(ch: char, fg: &str, bg: &str, bold: bool) -> String {

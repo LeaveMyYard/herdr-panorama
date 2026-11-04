@@ -1,11 +1,11 @@
-//! An orchestrator's state as the graph's cards and the filters read it (Python
+//! A root's state as the graph's cards and the filters read it (Python
 //! `render.state_of`, `orch_state`, `is_stale`): attention > working > reviewing > waiting >
 //! stale | idle, and done when everything is.
 
 use super::anim::{clock, glyph, spin};
 use super::state::View;
 use super::text::ago;
-use crate::model::{Agent, BgTask, HerdrStatus, Orchestrator, Status, Swarm};
+use crate::model::{Agent, BgTask, HerdrStatus, Root, Status, Swarm};
 
 /// The clock the ages are judged by: now, and how long idle reads "stale".
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -24,7 +24,7 @@ impl Ages {
     }
 
     /// Idle longer than `stale_after`: nothing in its transcripts or its agents' for that long.
-    pub fn is_stale(&self, o: &Orchestrator) -> bool {
+    pub fn is_stale(&self, o: &Root) -> bool {
         o.last_activity
             .is_some_and(|t| self.now - t > self.stale_after)
     }
@@ -160,16 +160,21 @@ pub fn state_of(
     OrchState::new(Status::Queued, "○", "idle")
 }
 
-/// An orchestrator's card state (Python `orch_state`): herdr reporting the session working
+/// Nothing in the root's tree is still going (a failed agent is: it needs the operator).
+pub fn tree_done(o: &Root) -> bool {
+    o.agents.iter().all(|a| !a.status.is_live())
+}
+
+/// A root's card state (Python `orch_state`): herdr reporting the session working
 /// counts as working, blocked as blocked, and its open questions as needs you. With `ages`:
 /// waiting's age and stale (turn 8).
-pub fn orch_state(o: &Orchestrator, frame: f64, ages: Option<Ages>) -> OrchState {
+pub fn orch_state(o: &Root, frame: f64, ages: Option<Ages>) -> OrchState {
     let codex = o.harness == "codex";
     let stale_label = ages
         .filter(|_| !codex || o.herdr_status == HerdrStatus::Idle)
         .filter(|a| a.is_stale(o))
         .and_then(|a| o.last_activity.map(|t| format!("stale {}", ago(a.now - t))));
-    let agents: Vec<&Agent> = o.agents().collect();
+    let agents: Vec<&Agent> = o.agents.iter().collect();
     let extras = Extras {
         working: o.herdr_status == HerdrStatus::Working,
         blocked: o.herdr_status == HerdrStatus::Blocked,
@@ -180,13 +185,12 @@ pub fn orch_state(o: &Orchestrator, frame: f64, ages: Option<Ages>) -> OrchState
     };
     let state = state_of(
         &agents,
-        // Preserve the legacy Claude empty-session display. An unobserved harness
-        // has no evidence of completed work merely because its thread list is empty.
-        // A question no agent filed keeps the root needing you: the session's own card
-        // carried it before the uniform tree (U3), the root itself does now.
+        // A Claude session with no agents is done when idle; an unobserved harness has no
+        // evidence of completed work merely because it has no agents. A question no agent
+        // filed keeps the root needing you.
         !codex
-            && (o.harness == "claude" || !o.threads.is_empty())
-            && o.threads.iter().all(|t| t.is_done())
+            && (o.harness == "claude" || !agents.is_empty())
+            && tree_done(o)
             && o.inbox.is_empty(),
         frame,
         &extras,

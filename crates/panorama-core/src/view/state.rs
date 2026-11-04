@@ -7,7 +7,7 @@ use super::theme::PanelLook;
 use super::unseen::Marks;
 use std::collections::{BTreeMap, BTreeSet};
 
-/// The orchestrator-list id of the `+ New agent` row (Python `NEW_ROW`).
+/// The root-list id of the `+ New agent` row (Python `NEW_ROW`).
 pub const NEW_ROW: &str = "new:";
 /// The agent-list id prefix of a "n finished" card (`FIN_CARD` + group key: the id of the
 /// agent that spawned the group, or the root's pane id for the root's own).
@@ -16,7 +16,7 @@ pub const FIN_CARD: &str = "fin:";
 /// How a view is drawn this frame. The binary owns it and passes it to each render.
 #[derive(Clone, Debug)]
 pub struct View {
-    /// The selected orchestrator's pane id, or [`NEW_ROW`].
+    /// The selected root's pane id, or [`NEW_ROW`].
     pub orch: Option<String>,
     /// The selected agent's id at any depth (or [`FIN_CARD`] + its group key).
     pub agent: Option<String>,
@@ -36,7 +36,7 @@ pub struct View {
     /// The open key as herdr binds it, (full, short) (`openkey.py`).
     pub open_key: (String, String),
     /// The keyboard cursor wears the hover look. A per-tab panel turns it off: its selected
-    /// row is the shown orchestrator, already docked there.
+    /// row is the shown root, already docked there.
     pub cursor_look: bool,
     /// The docked panel in herdr's theme, focused or not; `None`: panorama's own colours.
     pub panel: Option<PanelLook>,

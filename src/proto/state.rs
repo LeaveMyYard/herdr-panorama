@@ -1,4 +1,4 @@
-//! The core's `state` snapshot (`docs/protocol/panel-v1.md`, "`state`"), read as Python's
+//! The core's `state` snapshot (`docs/protocol/panel-v2.md`, "`state`"), read as Python's
 //! panel reads it (`PanelApp._got_state`): each field on its own, a field of the wrong shape
 //! taken as absent. Only the swarm is strict: a swarm that does not read (see
 //! `panorama_core::model::swarm`) rejects the state, and the panel keeps its last picture.

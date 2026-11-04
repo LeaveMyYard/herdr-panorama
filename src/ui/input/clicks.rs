@@ -78,7 +78,7 @@ pub trait Clicks: Actions {
         out
     }
 
-    /// An orchestrator: in the docked list one click switches to it (what Enter then does);
+    /// A root: in the docked list one click switches to it (what Enter then does);
     /// in the narrow layout it selects, and a second click goes to its pane. Its `?N`
     /// answers it.
     fn click_orch(&mut self, pane: &str, answer: bool, now: Instant) -> Vec<Effect> {

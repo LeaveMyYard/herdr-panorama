@@ -19,6 +19,7 @@ pub fn link(fake: &FakeHerdr, home: bool, dir: &Path) -> Link {
     let place = Place {
         plugin_id: "leavemyyard.herdr-panorama".into(),
         root: Some("/plugins/p".into()),
+        state: dir.to_path_buf(),
         new_agent_mark: dir.join("new-agent.mark"),
         home: "/home/op".into(),
     };

@@ -11,7 +11,7 @@
 //!    ssh into the plugin state dir ([`mirror`], [`sync`]; append-only, so each refresh copies
 //!    only new bytes), and pruned when the machine stops naming them ([`prune`]);
 //! 3. the same collector as local sessions, pointed at that mirror ([`Collect`]); then every
-//!    orchestrator is tagged with its machine and its herdr ids are namespaced
+//!    root is tagged with its machine and its herdr ids are namespaced
 //!    (`<machine id>:w1:p2`, [`namespace`]), because ids are per server.
 //!
 //! [`Remotes`] merges the latest result of every machine into the local swarm. A machine

@@ -116,7 +116,7 @@ fn the_arrows_do_not_switch_onto_new_agent_or_another_machine() {
     let remote = p
         .graph
         .swarm
-        .orchestrators
+        .roots
         .iter_mut()
         .find(|o| o.pane_id == "w1:p3")
         .unwrap();

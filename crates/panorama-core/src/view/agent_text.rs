@@ -34,13 +34,9 @@ pub fn about(a: &Agent) -> Option<String> {
     Some(format!("{} {}{model}", role_label(a), short_id(a)))
 }
 
-/// "main" for the session's own work, else the id's first 7 characters.
+/// The id's first 7 characters.
 pub fn short_id(a: &Agent) -> String {
-    if a.id.starts_with("main:") {
-        "main".into()
-    } else {
-        a.id.chars().take(7).collect()
-    }
+    a.id.chars().take(7).collect()
 }
 
 /// How long it ran (still running: until `now`); `None` without a start time.

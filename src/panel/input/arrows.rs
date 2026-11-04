@@ -37,7 +37,7 @@ impl Panel {
     }
 
     /// The arrows' rest came due at `now` (a later arrow set a later one: nothing yet). Switch
-    /// to the orchestrator they rest on, the keyboard staying on the panels: not the docked
+    /// to the root they rest on, the keyboard staying on the panels: not the docked
     /// one, not + New agent, not one on another machine, and only while the keyboard is
     /// still here.
     pub fn arrows_rested(&mut self, now: Instant) -> Vec<Effect> {
@@ -70,7 +70,7 @@ impl Panel {
         };
         let (pane, ids): (String, Vec<String>) = (
             o.pane_id.clone(),
-            o.agents().map(|a| a.id.clone()).collect(),
+            o.agents.iter().map(|a| a.id.clone()).collect(),
         );
         let mut out = vec![];
         self.seen(ids, &mut out); // switched next to it: all of it is in view

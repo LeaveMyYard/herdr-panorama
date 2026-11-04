@@ -9,7 +9,7 @@
 
 mod support;
 
-use panorama_core::model::{Agent, Orchestrator, Status, Swarm};
+use panorama_core::model::{Agent, Root, Status, Swarm};
 use panorama_core::view::cards::edge::sweep_pos;
 use panorama_core::view::nav::nav;
 use panorama_core::view::palette::{FAINT, HI, status};
@@ -209,7 +209,7 @@ fn long_columns_scroll_to_keep_the_selection_visible() {
             "started": demo_now() + f64::from(i),
         }))
         .unwrap();
-        sw.orchestrators[0].threads[0].agents.push(a);
+        sw.roots[0].agents.push(a);
     }
     let v = View {
         agent: Some("x11".into()),
@@ -226,7 +226,7 @@ fn long_columns_scroll_to_keep_the_selection_visible() {
 fn inferred_and_lost_agents_are_marked() {
     // test_render.py::test_inferred_and_lost_agents_are_marked
     let mut sw = demo();
-    let t = &mut sw.orchestrators[0].threads[0];
+    let t = &mut sw.roots[0];
     t.agents[2].status = Status::Inferred;
     t.agents[3].status = Status::Lost;
     let (inf, lost) = (t.agents[2].id.clone(), t.agents[3].id.clone());
@@ -482,8 +482,9 @@ fn a_sideways_scroll_shows_its_hint_and_fixes_the_first_column() {
 
 /// test_wide.py `r1_id`: the depth-2 agent tracing the manifest cache.
 fn r1(sw: &Swarm) -> String {
-    sw.orchestrators[0]
-        .agents()
+    sw.roots[0]
+        .agents
+        .iter()
         .find(|a| a.depth == 2 && a.activity.starts_with("tracing"))
         .unwrap()
         .id
@@ -509,13 +510,13 @@ fn the_full_title_fits_from_240_columns() {
 fn a_roots_background_work_is_in_its_card_not_a_column() {
     // test_states.py::test_the_background_card_is_selectable_in_the_thread_column: the
     // background card went with the thread column; the root's card lists the tasks
-    let o: Orchestrator = serde_json::from_value(json!({
+    let o: Root = serde_json::from_value(json!({
         "pane_id": "p", "tab_id": "t", "tab_label": "o", "session_id": "s",
         "bg": [{"id": "b", "kind": "Bash", "description": "watch the build", "started": DEEP_NOW}],
     }))
     .unwrap();
     let sw = Swarm {
-        orchestrators: vec![o],
+        roots: vec![o],
         ..Swarm::default()
     };
     let v = View {
@@ -553,11 +554,11 @@ fn the_selected_card_stays_apart_through_a_whole_pulse() {
     // or question pulse reaches the full event colour at its peak; the selected card must
     // still differ there (focused: brighter by a margin; selected elsewhere: another colour)
     let sw = demo();
-    let (a, b) = (&sw.orchestrators[0], &sw.orchestrators[1]);
+    let (a, b) = (&sw.roots[0], &sw.roots[1]);
     for event in [Unseen::Fail, Unseen::Wait, Unseen::Done] {
         let unseen: Marks = [a, b]
             .iter()
-            .map(|o| (o.agents().next().unwrap().id.clone(), event))
+            .map(|o| (o.agents.first().unwrap().id.clone(), event))
             .collect();
         for focused in [true, false] {
             let (mut worst_lum, mut worst_dist) = (f64::MAX, f64::MAX);
@@ -591,7 +592,7 @@ fn the_selected_card_stays_apart_through_a_whole_pulse() {
 fn without_a_pulse_the_selection_is_unchanged() {
     // test_current_card.py::test_without_a_pulse_the_selection_is_unchanged
     let sw = demo();
-    let a = &sw.orchestrators[0];
+    let a = &sw.roots[0];
     let v = View {
         orch: Some(a.pane_id.clone()),
         now: demo_now(),
@@ -664,7 +665,7 @@ const MORE_H: i32 = 42;
 fn the_path_above_the_columns_cuts_each_name_at_28() {
     // a 29-character tab label: 27 characters and "…"
     let mut sw = deep();
-    sw.orchestrators[0].tab_label = "Core Library of plugins 12345".into();
+    sw.roots[0].tab_label = "Core Library of plugins 12345".into();
     let s = render(&sw, &deep_view(Some("c1"), 4), 160, 45);
     let want = "  ‹ Core Library of plugins 123… › lead l1 › researcher r1   3 columns left";
     assert!(
@@ -678,18 +679,16 @@ fn the_path_above_the_columns_cuts_each_name_at_28() {
 fn a_selected_agent_scrolled_off_keeps_a_folded_height_for_the_cards_below_it() {
     // a spawned x (selected) and y, y spawned z; only z's column is shown: x keeps three
     // rows, so y and z start right below it
-    let o: Orchestrator = serde_json::from_value(json!({
+    let o: Root = serde_json::from_value(json!({
         "pane_id": "p", "tab_id": "tt", "tab_label": "o", "session_id": null,
-        "threads": [{"id": "agents", "name": "n", "source": "session", "agents": [
-            {"id": "a", "status": "run", "started": 1.0},
+        "agents": [{"id": "a", "status": "run", "started": 1.0},
             {"id": "x", "parent": "a", "status": "run", "started": 2.0, "activity": "long ".repeat(20)},
             {"id": "y", "parent": "a", "status": "run", "started": 3.0},
-            {"id": "z", "parent": "y", "status": "run", "started": 4.0},
-        ]}],
+            {"id": "z", "parent": "y", "status": "run", "started": 4.0}],
     }))
     .unwrap();
     let sw = Swarm {
-        orchestrators: vec![o],
+        roots: vec![o],
         ..Swarm::default()
     };
     let v = View {

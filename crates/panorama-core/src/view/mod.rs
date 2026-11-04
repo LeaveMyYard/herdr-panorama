@@ -61,7 +61,7 @@ pub fn render_dock(
     no_sessions: &str,
 ) -> Screen {
     debug_assert!(!no_sessions.is_empty(), "the empty page needs its words");
-    if !swarm.herdr_ok || swarm.orchestrators.is_empty() {
+    if !swarm.herdr_ok || swarm.roots.is_empty() {
         return empty::page(swarm, view, w, h, stale, no_sessions);
     }
     dock::dock_panel(swarm, view, w, h, stale.is_some())
@@ -88,7 +88,7 @@ pub fn render_graph(
         return render_narrow(swarm, view, w, h, stale, no_sessions);
     }
     debug_assert!(!no_sessions.is_empty(), "the empty page needs its words");
-    if !swarm.herdr_ok || swarm.orchestrators.is_empty() {
+    if !swarm.herdr_ok || swarm.roots.is_empty() {
         return empty::page(swarm, view, w, h, stale, no_sessions);
     }
     graph::page(swarm, view, w, h, stale)
@@ -105,7 +105,7 @@ pub fn render_narrow(
     no_sessions: &str,
 ) -> Screen {
     debug_assert!(!no_sessions.is_empty(), "the empty page needs its words");
-    if !swarm.herdr_ok || swarm.orchestrators.is_empty() {
+    if !swarm.herdr_ok || swarm.roots.is_empty() {
         return empty::page(swarm, view, w, h, stale, no_sessions);
     }
     narrow::page(swarm, view, w, h, stale)

@@ -41,15 +41,14 @@ fn one_shot_snapshot_warms_history_once_and_preserves_exact_mixed_identity() {
         Reply::Result(json!({"snapshot":snapshot()})),
     );
     let model = run(&fixture, &fake);
-    assert_eq!(model["orchestrators"].as_array().unwrap().len(), 4);
-    assert_eq!(model["orchestrators"][0]["harness"], "claude");
-    let codex = &model["orchestrators"][1];
+    assert_eq!(model["roots"].as_array().unwrap().len(), 4);
+    assert_eq!(model["roots"][0]["harness"], "claude");
+    let codex = &model["roots"][1];
     assert_eq!(codex["harness"], "codex");
     assert_eq!(codex["session_id"], ROOT_A);
     assert!(codex["last_activity"].is_number());
     // the root's child and grandchild; the root thread itself is the root, no agent
-    assert_eq!(codex["threads"][0]["id"], panorama_core::model::TREE_THREAD);
-    assert_eq!(codex["threads"][0]["agents"].as_array().unwrap().len(), 2);
+    assert_eq!(codex["agents"].as_array().unwrap().len(), 2);
     let calls = fake.calls();
     assert_eq!(
         calls
@@ -79,17 +78,14 @@ fn timeout_keeps_panes_and_reaps_the_owned_app_server_before_cli_exit() {
     // The production budget is 750ms; allow scheduling overhead while rejecting
     // the adapter's 4s read timeout and the fixture's 30s stalled response.
     assert!(start.elapsed() < Duration::from_secs(3));
-    assert_eq!(model["orchestrators"].as_array().unwrap().len(), 4);
+    assert_eq!(model["roots"].as_array().unwrap().len(), 4);
     assert!(
-        model["orchestrators"]
+        model["roots"]
             .as_array()
             .unwrap()
             .iter()
             .all(|orchestrator| orchestrator["last_activity"].is_null()
-                && orchestrator["threads"][0]["agents"]
-                    .as_array()
-                    .unwrap()
-                    .is_empty())
+                && orchestrator["agents"].as_array().unwrap().is_empty())
     );
     let pid = std::fs::read_to_string(fixture.root().join("pid")).unwrap();
     #[cfg(target_os = "linux")]

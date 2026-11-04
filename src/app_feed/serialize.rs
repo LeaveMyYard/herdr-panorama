@@ -1,9 +1,6 @@
-//! Reuse every legacy snapshot field, adding only app v1 provenance.
-use super::World;
-use crate::{
-    host::Host,
-    snapshot::{json, pyjson::J},
-};
+//! Feed v1: the swarm in its legacy shape ([`super::v1`]), adding only app v1 provenance.
+use super::{World, v1};
+use crate::{host::Host, snapshot::pyjson::J};
 use serde_json::{Map, Number, Value};
 use std::collections::HashSet;
 
@@ -34,18 +31,17 @@ fn harness(s: &str) -> &str {
 }
 
 fn validate(world: &World) -> Result<(), String> {
-    if world.roots.len() != world.swarm.orchestrators.len() {
+    if world.roots.len() != world.swarm.roots.len() {
         return Err("root provenance does not match the swarm".into());
     }
     let mut roots = HashSet::new();
-    for (root, meta) in world.swarm.orchestrators.iter().zip(&world.roots) {
+    for (root, meta) in world.swarm.roots.iter().zip(&world.roots) {
         let key = if meta.host == Host::Core {
             meta.terminal.as_deref().unwrap_or(&root.pane_id)
         } else {
             &root.pane_id
         };
-        if root.pane_id.is_empty() || !roots.insert((meta.host.code(), key)) || root.hidden_done < 0
-        {
+        if root.pane_id.is_empty() || !roots.insert((meta.host.code(), key)) {
             return Err("invalid feed root identity or count".into());
         }
         if meta
@@ -63,36 +59,24 @@ fn validate(world: &World) -> Result<(), String> {
         if !world.swarm.inbox_ok && !root.inbox.is_empty() {
             return Err("unavailable inbox has questions".into());
         }
-        let mut threads = HashSet::new();
         let mut agents = HashSet::new();
-        for thread in &root.threads {
-            if thread.id.is_empty() || !threads.insert(&thread.id) {
-                return Err("invalid feed thread identity".into());
+        for a in &root.agents {
+            if a.id.is_empty() || !agents.insert(&a.id) || a.tool_calls < 0 || a.resumes < 0 {
+                return Err("invalid feed agent identity or count".into());
             }
-            for a in &thread.agents {
-                if a.id.is_empty() || !agents.insert(&a.id) || a.tool_calls < 0 || a.resumes < 0 {
-                    return Err("invalid feed agent identity or count".into());
-                }
-                if a.question_ids.len() != a.questions.len()
-                    || a.question_ids.iter().collect::<HashSet<_>>().len() != a.question_ids.len()
-                {
-                    return Err("invalid agent question inventory".into());
-                }
-                for (id, text) in a.question_ids.iter().zip(&a.questions) {
-                    if root
-                        .inbox
-                        .iter()
-                        .position(|q| q == id)
-                        .is_none_or(|i| root.inbox_texts[i] != *text)
-                    {
-                        return Err("invalid agent question attribution".into());
-                    }
-                }
-                if a.phases
+            if a.question_ids.len() != a.questions.len()
+                || a.question_ids.iter().collect::<HashSet<_>>().len() != a.question_ids.len()
+            {
+                return Err("invalid agent question inventory".into());
+            }
+            for (id, text) in a.question_ids.iter().zip(&a.questions) {
+                if root
+                    .inbox
                     .iter()
-                    .any(|&i| i < 0 || i as usize >= thread.phases.len())
+                    .position(|q| q == id)
+                    .is_none_or(|i| root.inbox_texts[i] != *text)
                 {
-                    return Err("invalid agent phase index".into());
+                    return Err("invalid agent question attribution".into());
                 }
             }
         }
@@ -102,13 +86,13 @@ fn validate(world: &World) -> Result<(), String> {
 
 pub fn model(world: &World) -> Result<Value, String> {
     validate(world)?;
-    let mut feed = value(json::swarm(&world.swarm))?;
+    let mut feed = value(v1::swarm(&world.swarm))?;
     feed["v"] = Value::Number(1.into());
     for ((row, root), meta) in feed["orchestrators"]
         .as_array_mut()
         .unwrap()
         .iter_mut()
-        .zip(&world.swarm.orchestrators)
+        .zip(&world.swarm.roots)
         .zip(&world.roots)
     {
         row["host"] = Value::String(meta.host.code().into());

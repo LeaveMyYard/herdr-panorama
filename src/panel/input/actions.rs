@@ -11,8 +11,8 @@ use std::time::Instant;
 pub use crate::ui::input::actions::HELP;
 
 impl Panel {
-    /// g (and Enter on an orchestrator): to the selected orchestrator's tab. `switch`: from
-    /// the docked list onto another orchestrator, the keyboard stays on a panel there.
+    /// g (and Enter on a root): to the selected root's tab. `switch`: from
+    /// the docked list onto another root, the keyboard stays on a panel there.
     pub fn goto(&mut self, switch: bool, now: Instant) -> Vec<Effect> {
         let mut out = vec![];
         if !self.usable(&mut out) || !self.armed(now) {
@@ -22,7 +22,7 @@ impl Panel {
         let Some(o) = self.selection().0.cloned() else {
             return out;
         };
-        let ids: Vec<String> = o.agents().map(|a| a.id.clone()).collect();
+        let ids: Vec<String> = o.agents.iter().map(|a| a.id.clone()).collect();
         if let Some(machine) = o.machine.clone() {
             self.seen(ids, &mut out);
             let machine_id = o.machine_id.clone().unwrap_or_else(|| machine.clone());
@@ -49,21 +49,17 @@ impl Panel {
         out
     }
 
-    /// n: + New agent, in its own herdr popup, in the selected orchestrator's directory (else
-    /// any orchestrator's; the popup's own default without one).
+    /// n: + New agent, in its own herdr popup, in the selected root's directory (else
+    /// any root's; the popup's own default without one).
     pub fn new_agent(&mut self) -> Vec<Effect> {
         let mut out = vec![];
         if !self.usable(&mut out) {
             return out;
         }
         let o = find_orch(&self.graph.swarm, self.graph.view.orch.as_deref());
-        let cwd = o.and_then(|o| o.cwd.clone()).or_else(|| {
-            self.graph
-                .swarm
-                .orchestrators
-                .iter()
-                .find_map(|o| o.cwd.clone())
-        });
+        let cwd = o
+            .and_then(|o| o.cwd.clone())
+            .or_else(|| self.graph.swarm.roots.iter().find_map(|o| o.cwd.clone()));
         out.push(Effect::NewAgent { cwd });
         out
     }

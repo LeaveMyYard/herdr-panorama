@@ -43,7 +43,7 @@ pub enum Status {
     Lost,
     /// `bg`: its turn ended, but background work it started is still in flight.
     Background,
-    /// `stale`: an orchestrator idle for longer than `stale_after` (views only).
+    /// `stale`: a root idle for longer than `stale_after` (views only).
     Stale,
     /// A code this version does not know, as it was sent. Never a known code: build a
     /// status with [`Status::from_code`] (or serde), not this variant by hand.

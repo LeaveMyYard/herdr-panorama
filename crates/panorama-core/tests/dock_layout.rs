@@ -95,7 +95,7 @@ fn the_panel_lays_out_to_the_width_it_gets() {
             ..design_view(4.0)
         };
         let rows = lines(&render_dock(&sw, &v, w, 45, None, NO_SESSIONS));
-        for o in &sw.orchestrators {
+        for o in &sw.roots {
             let tag = format!(" {} ", o.tab_no.unwrap());
             let row = rows
                 .iter()
@@ -125,9 +125,8 @@ fn many_subagents(n: usize) -> Swarm {
     let agents: Vec<_> = (0..n)
         .map(|i| json!({"id": format!("a{i}"), "status": "run", "seq": i}))
         .collect();
-    serde_json::from_value(json!({"orchestrators": [{"pane_id": "w1:p1", "tab_id": "t",
-        "tab_label": "busy", "session_id": "s", "tab_no": 1, "threads": [{"id": "agents",
-        "name": "agents", "source": "session", "agents": agents}]}]}))
+    serde_json::from_value(json!({"roots": [{"pane_id": "w1:p1", "tab_id": "t",
+        "tab_label": "busy", "session_id": "s", "tab_no": 1, "agents": agents}]}))
     .unwrap()
 }
 
@@ -197,7 +196,7 @@ fn the_cursor_has_no_highlight_only_the_mouse_has() {
     use panorama_core::view::palette::DOCK_HOV;
     let sw = swarm();
     let other = sw
-        .orchestrators
+        .roots
         .iter()
         .find(|o| sw.docked.as_deref() != Some(o.pane_id.as_str()))
         .unwrap();

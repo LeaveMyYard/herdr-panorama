@@ -1,5 +1,5 @@
 //! The docked panel's header line and footer (Python `render.dock_panel`'s first and last
-//! lines): the orchestrator count and the swarm's `?N !N ✗N`; the rule, and the key hints
+//! lines): the root count and the swarm's `?N !N ✗N`; the rule, and the key hints
 //! with herdr's open key filled in.
 
 use crate::model::{Status, Swarm};
@@ -19,7 +19,7 @@ const KEYS: [(&str, &str); 5] = [
 /// The open key's slot in [`KEYS`], filled from `View.open_key`.
 const OPEN_KEY: &str = "pfx+spc";
 
-/// Line 0: `SWARM  N orchestrators`, the refresh-failed badge, and the totals on the right.
+/// Line 0: `SWARM  N roots`, the refresh-failed badge, and the totals on the right.
 pub fn header(s: &mut Screen, swarm: &Swarm, shown: usize, stale: bool) {
     let n = format!("{shown} orchestrators");
     s.segs(

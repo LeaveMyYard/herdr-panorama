@@ -4,7 +4,7 @@
 //! opened: that agent's details and actions. The root's finished subagents fold into one
 //! `✓ N finished · names` line.
 
-use crate::model::{Agent, Orchestrator, Status, Swarm};
+use crate::model::{Agent, Root, Status, Swarm};
 use crate::view::agent_text::{age_of, name, role_label, short_id};
 use crate::view::anim::glyph;
 use crate::view::cards::Area;
@@ -26,7 +26,7 @@ use crate::view::text::trunc;
 
 /// What every card under one root shares.
 pub struct CardCtx<'a> {
-    pub o: &'a Orchestrator,
+    pub o: &'a Root,
     pub swarm: &'a Swarm,
     pub view: &'a View,
     pub w: i32,

@@ -9,11 +9,11 @@ use super::filter::Filter;
 /// A thing on screen that a click acts on.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Target {
-    /// An orchestrator's whole card or entry (`orch`), by its pane id.
+    /// A root's whole card or entry (`orch`), by its pane id.
     Orch(String),
     /// The `+ New agent` row (`new`).
     NewAgent,
-    /// An orchestrator's `?N`: answer its questions (`answer-orch`).
+    /// A root's `?N`: answer its questions (`answer-orch`).
     AnswerOrch(String),
     /// A filter in the graph header (`filter`).
     Filter(Filter),

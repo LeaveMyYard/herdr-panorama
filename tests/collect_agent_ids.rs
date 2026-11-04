@@ -13,7 +13,6 @@
 mod collect_support;
 
 use collect_support::{STALE, Scenario, read_json};
-use panorama_core::model::TREE_THREAD;
 use serde_json::Value;
 use std::collections::{BTreeSet, HashMap};
 use std::path::Path;
@@ -72,23 +71,11 @@ fn every_scenario_keeps_its_agents_but_the_main_card_and_aged_failures() {
                 .collector()
                 .collect(Some(sc.snapshot()), inbox, now, window, STALE);
             let old = run["roots"].as_array().unwrap();
-            let panes: Vec<&str> = sw
-                .orchestrators
-                .iter()
-                .map(|o| o.pane_id.as_str())
-                .collect();
+            let panes: Vec<&str> = sw.roots.iter().map(|o| o.pane_id.as_str()).collect();
             let want: Vec<&str> = old.iter().map(|r| r["pane"].as_str().unwrap()).collect();
             assert_eq!(panes, want, "{name} {key}: the roots");
-            for (o, r) in sw.orchestrators.iter().zip(old) {
-                let [t] = o.threads.as_slice() else {
-                    panic!(
-                        "{name} {key} {}: one thread, got {}",
-                        o.pane_id,
-                        o.threads.len()
-                    )
-                };
-                assert_eq!((t.id.as_str(), t.phases.len()), (TREE_THREAD, 0));
-                let got: Vec<String> = o.agents().map(|a| a.id.clone()).collect();
+            for (o, r) in sw.roots.iter().zip(old) {
+                let got: Vec<String> = o.agents.iter().map(|a| a.id.clone()).collect();
                 let unique: BTreeSet<String> = got.iter().cloned().collect();
                 assert_eq!(unique.len(), got.len(), "{name} {key}: a repeated agent");
                 let before = r["agents"].as_array().unwrap();

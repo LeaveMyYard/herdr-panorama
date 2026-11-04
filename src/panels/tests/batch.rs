@@ -249,7 +249,7 @@ async fn only_local_supported_orchestrators_outside_home_in_its_workspace_are_ta
     w.s().tab("w1:t3")[0].agent = Some("opencode".into());
     let mut m = manager(&w, dir.path());
     let mut sw = orch(&["w1:p2", "w1:p3", "w1:p4", "w1:p9", "w1:p77"]);
-    sw.orchestrators[2].machine = Some("box".into());
+    sw.roots[2].machine = Some("box".into());
     let mut snap = w.snap();
     snap.panes
         .iter_mut()
@@ -332,7 +332,7 @@ async fn codex_tabs_get_panels_and_mixed_tabs_keep_the_same_single_tab_rule() {
         .agent = Some("codex".into());
     let mut m = manager(&w, dir.path());
     let mut sw = orch(&["w1:p2", "w1:p3"]);
-    sw.orchestrators[1].harness = "codex".into();
+    sw.roots[1].harness = "codex".into();
     let sv = m
         .reconcile(w.snap(), &sw, Some(&home()), &set(&[]), true, false)
         .await

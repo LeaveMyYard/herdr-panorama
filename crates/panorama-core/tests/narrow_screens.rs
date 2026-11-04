@@ -23,7 +23,7 @@ fn swarm_of(run: &Value) -> Swarm {
     let name = input.trim_start_matches("inputs/scenario-");
     let mut snap = fixture(&format!("model/{name}"))["snapshots"]["+0m"].clone();
     snap.as_object_mut().unwrap().remove("counts");
-    serde_json::from_value(snap).unwrap()
+    serde_json::from_value(support::v1_wire::swarm(snap)).unwrap()
 }
 
 /// The screen `snap` of `file`'s run, with the cursor on `orch` (its default agent) in

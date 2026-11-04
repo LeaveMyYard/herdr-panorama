@@ -8,7 +8,7 @@
 
 mod support;
 
-use panorama_core::model::{Orchestrator, Swarm, TreeKids};
+use panorama_core::model::{Root, Swarm, TreeKids};
 use panorama_core::view::graph::agent_card::{AgentCtx, agent_card};
 use panorama_core::view::graph::column::{Column, Place};
 use panorama_core::view::graph::orchs::orch_column;
@@ -42,8 +42,8 @@ fn view_on(swarm: &Swarm, pane: &str, focus: usize, now: f64) -> View {
 }
 
 /// `a`'s card drawn alone, 44 wide (`sel`: unfolded), with its root's tree.
-fn agent_alone(o: &Orchestrator, id: &str, view: &View, sel: bool, kids_off: usize) -> Screen {
-    let kids = TreeKids::of_root(o);
+fn agent_alone(o: &Root, id: &str, view: &View, sel: bool, kids_off: usize) -> Screen {
+    let kids = TreeKids::of(o);
     let a = find_agent(Some(o), Some(id)).unwrap();
     let mut cv = Screen::new(44, 24);
     let place = Place {
@@ -173,7 +173,8 @@ fn the_deep_trees_first_agent_folded_with_its_children_off_to_the_right() {
     let swarm = wire_swarm("inputs/swarm-deep.json", None);
     let o = find_orch(&swarm, Some("w1:p3")).unwrap();
     let kids = o
-        .agents()
+        .agents
+        .iter()
         .filter(|a| a.parent.as_deref() == Some("l1"))
         .count();
     let view = view_on(&swarm, "w1:p3", 0, 1_800_000_000.0);
@@ -205,7 +206,7 @@ fn the_columns_rules_on_a_swarm_built_for_them() {
     assert!(s.text().contains("waiting 30m"), "{}", s.text());
     check_owned(FILE, "rules n1", &s);
     // a card on the selected agent's path: its title and border as selected
-    let kids = TreeKids::of_root(o);
+    let kids = TreeKids::of(o);
     let mut cv = Screen::new(44, 3);
     let place = Place {
         x: 0,
@@ -229,16 +230,12 @@ fn the_columns_rules_on_a_swarm_built_for_them() {
 #[test]
 fn an_older_producers_threads_are_one_tree() {
     // a Python core's threads: every agent of every thread in one tree below its root
-    let swarm: Swarm = serde_json::from_value(json!({"orchestrators": [{
+    let swarm: Swarm = serde_json::from_value(json!({"roots": [{
         "pane_id": "p", "tab_id": "t", "tab_label": "o", "session_id": "s",
-        "threads": [
-            {"id": "t1", "name": "one", "source": "turn", "agents": [{"id": "a", "status": "run"}]},
-            {"id": "t2", "name": "two", "source": "turn",
-             "agents": [{"id": "b", "status": "run", "parent": "a"}, {"id": "c", "status": "run"}]},
-        ],
+        "agents": [{"id": "a", "status": "run"}, {"id": "b", "status": "run", "parent": "a"}, {"id": "c", "status": "run"}],
     }]}))
     .unwrap();
-    let kids = TreeKids::of_root(&swarm.orchestrators[0]);
+    let kids = TreeKids::of(&swarm.roots[0]);
     let ids = |p: Option<&str>| -> Vec<String> {
         kids.children(p).iter().map(|a| a.id.clone()).collect()
     };

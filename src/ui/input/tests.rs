@@ -65,7 +65,7 @@ fn stub(home: bool) -> Stub {
         env!("CARGO_MANIFEST_DIR")
     );
     let v: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-    let swarm: Swarm = serde_json::from_value(v["swarm"].clone()).unwrap();
+    let swarm: Swarm = serde_json::from_value(crate::v1_wire::swarm(v["swarm"].clone())).unwrap();
     let mut graph = Graph {
         swarm,
         ..Graph::default()
@@ -153,8 +153,9 @@ fn the_inbox_key_needs_the_inbox() {
 fn answer_on_a_blocked_agent_goes_to_its_pane() {
     // the agent itself is blocked (its session not): a blocking prompt is answered in the pane
     let mut s = stub(false);
-    s.swarm.orchestrators[2].herdr_status = panorama_core::model::HerdrStatus::Idle;
-    s.point("w1:p3", Some("main:w1:p3"));
+    s.swarm.roots[2].herdr_status = panorama_core::model::HerdrStatus::Idle;
+    s.swarm.roots[2].agents[0].status = panorama_core::model::Status::Blocked;
+    s.point("w1:p3", Some("d1e2f3a"));
     assert_eq!(s.view.focus, 1);
     s.answer(Instant::now());
     assert_eq!(s.gone_to, [false]);

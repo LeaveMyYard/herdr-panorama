@@ -3,12 +3,12 @@
 //! card; with no agents below it, → and Enter stay on it.
 
 use super::*;
-use panorama_core::model::{BgTask, Orchestrator};
+use panorama_core::model::{BgTask, Root};
 
 #[test]
 fn a_roots_background_work_is_in_its_card_and_right_and_enter_stay() {
     let (mut sw, now_s) = wire("demo");
-    let mut o: Orchestrator = serde_json::from_value(serde_json::json!({
+    let mut o: Root = serde_json::from_value(serde_json::json!({
         "pane_id": "w1:p9", "tab_id": "w1:t9", "tab_label": "Nightly", "session_id": null,
         "herdr_status": "idle",
     }))
@@ -21,7 +21,7 @@ fn a_roots_background_work_is_in_its_card_and_right_and_enter_stay() {
             started: Some(now_s - 600.0),
         });
     }
-    sw.orchestrators.push(o);
+    sw.roots.push(o);
     let mut r = Run::new((sw, now_s), "w1:p9", false, (160, 56));
     let now = r.settled();
     r.d.app.view.orch = Some("w1:p9".into());

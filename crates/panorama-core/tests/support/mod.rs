@@ -14,6 +14,8 @@ pub const NO_SESSIONS: &str = "No Claude Code sessions in herdr";
 
 #[path = "../../../../tests/harness_goldens/mod.rs"]
 mod harness_goldens;
+#[path = "../../../../tests/v1_wire/mod.rs"]
+pub mod v1_wire;
 
 use panorama_core::model::Swarm;
 use panorama_core::view::Screen;
@@ -21,13 +23,17 @@ use panorama_core::view::palette::{BG, FG};
 use serde_json::Value;
 use std::path::PathBuf;
 
-/// A fixture under tests/fixtures/, as JSON.
+/// A fixture under tests/fixtures/, as JSON; a captured `swarm` in it is read as 2.x
+/// (`tests/v1_wire`).
 pub fn fixture(rel: &str) -> Value {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../tests/fixtures")
         .join(rel);
     let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
-    harness_goldens::adapt(rel, serde_json::from_str(&text).unwrap())
+    v1_wire::fixture(harness_goldens::adapt(
+        rel,
+        serde_json::from_str(&text).unwrap(),
+    ))
 }
 
 /// A captured swarm in wire form (`inputs/swarm-*.json`), docked next to `docked`.

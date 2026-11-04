@@ -3,7 +3,7 @@
 //! the same marks and the same file, byte for byte, after every step.
 
 use panorama::unseen::{Marks, Tracker};
-use panorama_core::model::{Agent, Orchestrator, Status, Swarm, Thread};
+use panorama_core::model::{Agent, Root, Status, Swarm};
 use serde_json::{Value, json};
 use std::path::Path;
 
@@ -27,18 +27,17 @@ fn swarm(spec: &Value) -> Swarm {
                     ..Agent::default()
                 })
                 .collect();
-            let thread: Thread = serde_json::from_value(json!({"id": "t1", "name": "t", "source": "turn"})).unwrap();
-            let mut o: Orchestrator = serde_json::from_value(json!({
+            let mut o: Root = serde_json::from_value(json!({
                 "pane_id": x["pane"], "tab_id": "t", "tab_label": "o", "session_id": "s", "focused": x["focused"],
                 "machine": x["machine"], "machine_id": x["machine_id"],
             }))
             .unwrap();
-            o.threads = vec![Thread { agents, ..thread }];
+            o.agents = agents;
             o
         })
         .collect();
     Swarm {
-        orchestrators,
+        roots: orchestrators,
         ..Swarm::default()
     }
 }

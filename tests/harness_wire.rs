@@ -13,25 +13,19 @@ fn harness_identity_defaults_only_when_missing_and_roundtrips_every_serializer()
         if let Some(h) = harness {
             orch["harness"] = json!(h);
         }
-        let sw: Swarm = serde_json::from_value(json!({"orchestrators":[orch]})).unwrap();
+        let sw: Swarm = serde_json::from_value(json!({"roots":[orch]})).unwrap();
         let expected = harness.unwrap_or("claude");
-        assert_eq!(sw.orchestrators[0].harness, expected);
+        assert_eq!(sw.roots[0].harness, expected);
         assert_eq!(
-            serde_json::to_value(&sw).unwrap()["orchestrators"][0]["harness"],
+            serde_json::to_value(&sw).unwrap()["roots"][0]["harness"],
             expected
         );
         let snapshot: Value = serde_json::from_str(&render(&sw, Format::Json, 0.0)).unwrap();
-        assert_eq!(snapshot["orchestrators"][0]["harness"], expected);
+        assert_eq!(snapshot["roots"][0]["harness"], expected);
         let msg = state_message(&sw, &Marks::default(), &Published::default(), None);
-        assert_eq!(
-            msg["state"]["swarm"]["orchestrators"][0]["harness"],
-            expected
-        );
+        assert_eq!(msg["state"]["swarm"]["roots"][0]["harness"], expected);
         let state = State::read(msg["state"].as_object().unwrap()).unwrap();
-        assert_eq!(state.swarm.orchestrators[0].harness, expected);
-        assert_eq!(
-            cleaned_swarm(state.swarm).orchestrators[0].harness,
-            expected
-        );
+        assert_eq!(state.swarm.roots[0].harness, expected);
+        assert_eq!(cleaned_swarm(state.swarm).roots[0].harness, expected);
     }
 }

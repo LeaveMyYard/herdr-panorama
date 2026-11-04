@@ -1,5 +1,5 @@
 //! What a view supplies to the shared input (Python: what `PanelApp` overrides in
-//! `SwarmApp`): when its keys and clicks act, its docked list, where Enter on an orchestrator
+//! `SwarmApp`): when its keys and clicks act, its docked list, where Enter on a root
 //! leads, and the actions whose IO differs (going to a pane, a new agent, the filter).
 
 use super::effect::Effect;
@@ -19,7 +19,7 @@ pub trait Host: DerefMut<Target = Graph> {
     /// The docked list: one column.
     fn dock(&self) -> bool;
 
-    /// Enter on an orchestrator goes to its pane (the home view and the panels); in a popup
+    /// Enter on a root goes to its pane (the home view and the panels); in a popup
     /// it opens the next column.
     fn enter_goes_to_pane(&self) -> bool;
 
@@ -35,8 +35,8 @@ pub trait Host: DerefMut<Target = Graph> {
         true
     }
 
-    /// g (and Enter on an orchestrator): to the selected orchestrator's pane; `switch`: from
-    /// the docked list onto another orchestrator.
+    /// g (and Enter on a root): to the selected root's pane; `switch`: from
+    /// the docked list onto another root.
     fn goto(&mut self, switch: bool, now: Instant) -> Vec<Effect>;
 
     /// n: + New agent.

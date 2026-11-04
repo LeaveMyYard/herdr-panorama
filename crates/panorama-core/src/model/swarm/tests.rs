@@ -1,13 +1,16 @@
-//! The model against what the Python code captured (tests/fixtures/README.md): the wire form
-//! of the model-built swarms (`inputs/swarm-*.json`, `protocol.swarm_to_wire`) and the model
-//! goldens (`model/*.json`, `panorama snapshot --json`, whose orchestrators are the same
-//! dataclasses as on the wire, plus Python's `counts`).
+//! The model against its fixtures: the Python-captured swarms (`inputs/swarm-*.json`, panel
+//! protocol 1.x) read as 2.x through `tests/v1_wire`, and the Rust model goldens
+//! (`rust/model/*.json`, `panorama snapshot --json`, whose roots are the model's fields, plus
+//! its `counts`).
 
 use super::*;
 use crate::model::Status;
 use serde_json::Value;
 use std::fs;
 use std::path::PathBuf;
+
+#[path = "../../../../../tests/v1_wire/mod.rs"]
+mod v1_wire;
 
 fn fixtures(dir: &str) -> Vec<(String, Value)> {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -30,19 +33,19 @@ fn fixtures(dir: &str) -> Vec<(String, Value)> {
     out
 }
 
-/// Every captured swarm on the wire, by name.
+/// Every captured swarm on the wire, by name, in the 2.x form.
 fn wire_swarms() -> Vec<(String, Value)> {
     fixtures("inputs")
         .into_iter()
         .filter(|(name, _)| name.starts_with("swarm-"))
-        .map(|(name, v)| (name, v["swarm"].clone()))
+        .map(|(name, v)| (name, v1_wire::swarm(v["swarm"].clone())))
         .collect()
 }
 
-/// Every snapshot of every model golden, by name, with its `counts` taken out.
+/// Every snapshot of every Rust model golden, by name, with its `counts` taken out.
 fn snapshots() -> Vec<(String, Value, Value)> {
     let mut out = vec![];
-    for (name, golden) in fixtures("model") {
+    for (name, golden) in fixtures("rust/model") {
         for (at, snap) in golden["snapshots"].as_object().unwrap() {
             let mut snap = snap.clone();
             let counts = snap.as_object_mut().unwrap().remove("counts").unwrap();
@@ -55,34 +58,32 @@ fn snapshots() -> Vec<(String, Value, Value)> {
 
 #[test]
 fn every_captured_swarm_reads_and_writes_back_unchanged() {
-    // nothing dropped, renamed or retyped: the model holds every field Python sends
+    // nothing dropped, renamed or retyped: the model holds every field sent
     for (name, mut wire) in wire_swarms() {
         let swarm: Swarm =
             serde_json::from_value(wire.clone()).unwrap_or_else(|e| panic!("{name}: {e}"));
-        assert!(!swarm.orchestrators.is_empty(), "{name}");
-        for o in wire["orchestrators"].as_array_mut().unwrap() {
+        assert!(!swarm.roots.is_empty(), "{name}");
+        for o in wire["roots"].as_array_mut().unwrap() {
             o["harness"] = Value::String("claude".into());
+            o["hidden_finished"] = 0.into();
         }
         assert_eq!(serde_json::to_value(&swarm).unwrap(), wire, "{name}");
     }
-    for (name, mut snap, _) in snapshots() {
+    for (name, snap, _) in snapshots() {
         let swarm: Swarm =
             serde_json::from_value(snap.clone()).unwrap_or_else(|e| panic!("{name}: {e}"));
         let mut back = serde_json::to_value(&swarm).unwrap();
-        // a snapshot carries no stale_after (`Swarm.to_json` leaves it out): the default is written
+        // a snapshot carries no stale_after: the default is written
         assert_eq!(
             back.as_object_mut().unwrap().remove("stale_after"),
             Some(STALE_AFTER.into())
         );
-        for o in snap["orchestrators"].as_array_mut().unwrap() {
-            o["harness"] = Value::String("claude".into());
-        }
         assert_eq!(back, snap, "{name}");
     }
 }
 
 #[test]
-fn counts_are_pythons() {
+fn counts_are_the_goldens() {
     for (name, snap, want) in snapshots() {
         let swarm: Swarm = serde_json::from_value(snap).unwrap();
         assert_eq!(
@@ -96,22 +97,17 @@ fn counts_are_pythons() {
 #[test]
 fn missing_fields_take_model_pys_defaults_and_unknown_ones_are_ignored() {
     let swarm: Swarm = serde_json::from_str(
-        r#"{"orchestrators": [{"pane_id": "w1:p1", "tab_id": null, "tab_label": "x",
-            "session_id": null, "a_newer_field": 1,
-            "threads": [{"id": "t", "name": "n", "source": "turn",
-                         "agents": [{"id": "a"}], "phases": [{"name": "p", "state": "now"}]}]}],
+        r#"{"roots": [{"pane_id": "w1:p1", "tab_id": null, "tab_label": "x",
+            "session_id": null, "a_newer_field": 1, "agents": [{"id": "a"}]}],
             "from_a_newer_minor": {"x": 1}}"#,
     )
     .unwrap();
     assert!(swarm.herdr_ok && !swarm.inbox_ok);
     assert_eq!(swarm.stale_after, STALE_AFTER);
-    let o = &swarm.orchestrators[0];
+    let o = &swarm.roots[0];
     assert_eq!(o.herdr_status, HerdrStatus::Unknown);
-    assert_eq!(o.flavour, "agents");
-    let t = &o.threads[0];
-    assert_eq!(t.status, ThreadStatus::Active);
-    assert!(!t.is_done());
-    let a = &t.agents[0];
+    assert_eq!((o.harness.as_str(), o.hidden_finished), ("claude", 0));
+    let a = &o.agents[0];
     assert_eq!(
         (a.role.as_str(), &a.status, a.depth),
         ("agent", &Status::Running, 1)
@@ -123,7 +119,6 @@ fn missing_fields_take_model_pys_defaults_and_unknown_ones_are_ignored() {
             ..Agent::default()
         }
     );
-    assert_eq!(o.agents().count(), 1);
 }
 
 #[test]
@@ -138,23 +133,10 @@ fn a_zero_or_null_stale_after_reads_as_the_default() {
 }
 
 #[test]
-fn an_agent_without_an_id_or_a_thread_without_its_source_does_not_read() {
-    // model.py makes these required: Python's swarm_from_wire raises on them
+fn an_agent_without_an_id_or_a_root_without_its_pane_does_not_read() {
     assert!(serde_json::from_str::<Agent>(r#"{"role": "x"}"#).is_err());
-    assert!(serde_json::from_str::<Thread>(r#"{"id": "t", "name": "n"}"#).is_err());
-}
-
-#[test]
-fn done_means_done_or_cancelled() {
-    for (status, done) in [
-        ("active", false),
-        ("done", true),
-        ("failed", false),
-        ("cancelled", true),
-    ] {
-        let t: Thread = serde_json::from_value(serde_json::json!(
-            {"id": "t", "name": "n", "source": "turn", "status": status}))
-        .unwrap();
-        assert_eq!(t.is_done(), done, "{status}");
-    }
+    assert!(
+        serde_json::from_str::<Root>(r#"{"tab_id": null, "tab_label": "x", "session_id": null}"#)
+            .is_err()
+    );
 }

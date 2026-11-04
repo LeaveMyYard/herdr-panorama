@@ -3,7 +3,7 @@ use crate::view::state::FIN_CARD;
 use serde_json::{Value, json};
 
 fn swarm(orchs: Value) -> Swarm {
-    serde_json::from_value(json!({ "orchestrators": orchs })).unwrap()
+    serde_json::from_value(json!({ "roots": orchs })).unwrap()
 }
 
 fn orch(pane: &str, extra: Value) -> Value {
@@ -16,13 +16,10 @@ fn orch(pane: &str, extra: Value) -> Value {
 
 /// A root with the uniform tree's one thread holding `agents`.
 fn root(pane: &str, agents: Value) -> Value {
-    orch(
-        pane,
-        json!({"threads": [{"id": "agents", "name": pane, "source": "session", "agents": agents}]}),
-    )
+    orch(pane, json!({"agents": agents}))
 }
 
-fn root_of(agents: Value) -> Orchestrator {
+fn root_of(agents: Value) -> Root {
     serde_json::from_value(root("p", agents)).unwrap()
 }
 
@@ -69,11 +66,7 @@ fn columns_list_the_roots_then_the_selected_roots_tree_by_depth() {
 fn every_thread_of_an_older_producer_is_one_tree() {
     let sw = swarm(json!([orch(
         "p1",
-        json!({"threads": [
-            {"id": "t1", "name": "t1", "source": "turn", "agents": [{"id": "a", "status": "run"}]},
-            {"id": "t2", "name": "t2", "source": "turn",
-             "agents": [{"id": "b", "status": "run", "parent": "a"}]},
-        ]})
+        json!({"agents": [{"id": "a", "status": "run"}, {"id": "b", "status": "run", "parent": "a"}]})
     )]));
     let v = View {
         orch: Some("p1".into()),

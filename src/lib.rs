@@ -29,3 +29,8 @@ pub mod settings;
 pub mod snapshot;
 pub mod ui;
 pub mod unseen;
+
+/// Python-captured 1.x swarms read as 2.x, for the unit tests (`tests/v1_wire`).
+#[cfg(test)]
+#[path = "../tests/v1_wire/mod.rs"]
+pub(crate) mod v1_wire;

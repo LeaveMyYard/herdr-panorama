@@ -35,11 +35,11 @@ pub enum Effect {
     /// The operator chose this filter here: tell the core (`filter`). If it does not go out,
     /// the actor calls `Panel::filter_not_sent`.
     SendFilter(panorama_core::view::Filter),
-    /// Switch to the tab of the orchestrator in `pane` (Python `PanelApp._dock`): onto that
+    /// Switch to the tab of the root in `pane` (Python `PanelApp._dock`): onto that
     /// tab's panel when `keep_focus` (after announcing it), else into the agent. The actor
     /// calls `Panel::switched` when it is done.
     Switch { pane: String, keep_focus: bool },
-    /// Go to the orchestrator in `pane` if herdr still has it (else say `label` is gone): its
+    /// Go to the root in `pane` if herdr still has it (else say `label` is gone): its
     /// agents are then seen (`Panel::seen_now`), then [`Effect::Switch`].
     Goto {
         pane: String,
