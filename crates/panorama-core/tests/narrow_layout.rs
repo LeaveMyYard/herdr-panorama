@@ -8,16 +8,15 @@ use panorama_core::model::Status;
 use panorama_core::view::filter::visible_orchs;
 use panorama_core::view::nav::nav;
 use panorama_core::view::orch_state::{Ages, orch_state};
-use panorama_core::view::state::{DONE_CARD, FIN_CARD, NEW_ROW};
+use panorama_core::view::state::{FIN_CARD, NEW_ROW};
 use panorama_core::view::{Filter, View, render_narrow};
 use serde_json::json;
 use support::{NO_SESSIONS, fixture, wire_swarm};
 
 fn demo_view() -> View {
-    // test_render.py `view()`: the demo's first orchestrator, thread and agent
+    // test_render.py `view()`: the demo's first root and agent
     View {
         orch: Some("w1:p1".into()),
-        thread: Some("ref:#42".into()),
         agent: Some("a2f81c0".into()),
         now: fixture("inputs/swarm-demo.json")["now"].as_f64().unwrap(),
         ..View::default()
@@ -33,7 +32,6 @@ fn the_narrow_layout_is_an_indented_list_with_only_the_selected_orchestrator_ope
     // test_render.py::test_narrow_layout_is_an_indented_list_with_only_the_selected_orchestrator_open
     let v = View {
         orch: Some("w1:p2".into()),
-        thread: Some("wf:wf_search".into()),
         agent: Some("j1a2b3c".into()),
         ..demo_view()
     };
@@ -67,33 +65,22 @@ fn the_narrow_layout_is_an_indented_list_with_only_the_selected_orchestrator_ope
 
 #[test]
 fn nav_lists_identities_per_column() {
-    // test_render.py::test_nav_lists_identities_per_column
+    // test_render.py::test_nav_lists_identities_per_column, by depth since the uniform tree
+    // (plan `uniform-agent-tree.md` U4): the root's agents of every thread are one tree
     let sw = demo();
     let cols = nav(&sw, &demo_view());
     assert_eq!(cols[0], ["w1:p1", "w1:p2", "w1:p3", "w1:p4", NEW_ROW]); // the + row is always last
+    // live and failed by start time, then the folded card
+    let fin = format!("{FIN_CARD}w1:p1");
     assert_eq!(
         cols[1],
-        [
-            "ref:#42",
-            "ref:#44",
-            "ref:#48",
-            &format!("{DONE_CARD}w1:p1")
-        ]
-    );
-    // live by start time, then the folded card
-    assert_eq!(
-        cols[2],
-        ["a1c3d90", "a2f81c0", &format!("{FIN_CARD}ref:#42")]
+        ["a1c3d90", "a2f81c0", "b3a9c41", "c1d2e3f", fin.as_str()]
     );
     let mut v = demo_view();
-    v.done_open.insert("w1:p1".into());
-    v.fin_open.insert("ref:#42".into());
+    v.fin_open.insert("w1:p1".into());
     let cols = nav(&sw, &v);
-    assert_eq!(cols[1].last().unwrap(), "ref:#40");
-    assert_eq!(
-        cols[2][cols[2].len() - 3..],
-        ["a3e1b22", "a4d0e11", "a5b7f02"]
-    );
+    assert_eq!(cols[1].len(), 5 + 8);
+    assert_eq!(cols[1][5], "e1a2b3c"); // the folded ones, oldest first
 }
 
 /// tests/design_deep.py: `NOW`, `TID`; the view with the cursor on `sel` (test_deep.py
@@ -107,10 +94,9 @@ fn deep_view(sel: &str) -> View {
     };
     View {
         orch: Some("w1:p3".into()),
-        thread: Some("x:deep".into()),
         agent: Some(sel.into()),
         now: DEEP_NOW,
-        focus: 1 + depth,
+        focus: depth,
         ..View::default()
     }
 }
@@ -121,10 +107,10 @@ fn nav_has_one_column_per_depth_in_screen_order() {
     let sw = wire_swarm("inputs/swarm-deep.json", None);
     let cols = nav(&sw, &deep_view("c1"));
     let fin = |id: &str| format!("{FIN_CARD}{id}");
-    assert_eq!(cols[2], ["l1", "v1"]);
-    assert_eq!(cols[3], ["r1".to_owned(), "b1".into(), fin("l1")]);
+    assert_eq!(cols[1], ["l1", "v1"]);
+    assert_eq!(cols[2], ["r1".to_owned(), "b1".into(), fin("l1")]);
     assert_eq!(
-        cols[4],
+        cols[3],
         [
             "r2".to_owned(),
             "f1".into(),
@@ -137,12 +123,12 @@ fn nav_has_one_column_per_depth_in_screen_order() {
             fin("b1")
         ]
     );
-    assert_eq!(cols[5], ["c1"]);
-    assert_eq!(cols[6], ["p1".to_owned(), fin("c1")]);
-    assert_eq!(cols.len(), 7);
+    assert_eq!(cols[4], ["c1"]);
+    assert_eq!(cols[5], ["p1".to_owned(), fin("c1")]);
+    assert_eq!(cols.len(), 6);
     let mut v = deep_view("c1");
     v.fin_open.insert("b1".into());
-    let col4 = &nav(&sw, &v)[4];
+    let col4 = &nav(&sw, &v)[3];
     assert_eq!(
         col4[col4.len() - 4..],
         [fin("b1"), "s3".into(), "s4".into(), "s5".into()]
@@ -158,10 +144,10 @@ fn the_needs_filter_keeps_the_path_to_an_agent_that_needs_you() {
         ..deep_view("c1")
     };
     let cols = nav(&sw, &v);
-    assert_eq!(cols[2], ["l1"]);
-    assert_eq!(cols[3], ["r1", "b1"]);
-    assert!(cols[5].contains(&"c1".to_owned()));
-    assert!(!cols[2].contains(&"v1".to_owned()) && !cols[4].contains(&"s1".to_owned()));
+    assert_eq!(cols[1], ["l1"]);
+    assert_eq!(cols[2], ["r1", "b1"]);
+    assert!(cols[4].contains(&"c1".to_owned()));
+    assert!(!cols[1].contains(&"v1".to_owned()) && !cols[3].contains(&"s1".to_owned()));
 }
 
 #[test]

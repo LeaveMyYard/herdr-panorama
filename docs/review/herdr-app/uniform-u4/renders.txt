@@ -1,0 +1,281 @@
+===== 160 Billing API, depth 2 (160-billing-api-depth-2.png)
+ herdr panorama    all   running   needs me                                                                                              ? 2  ! 1  ✗ 2    08:00
+
+
+  ╭────────────────────────────────────────╮       ╭──────────────────────────────────────────╮       ╭──────────────────────────────────────────╮
+  ┃  ✗  Claude Code · Billing API       ?2 ├───┬───┨  »  Review PR #42 round 2   Bash(Diff t… ├───┬───┨  ⠋  Check currency codes         running │
+  ┃     failed · working · 4/8             │   │   ╰────────────────── opus ─ 21m ─ 52 calls ─╯   │   ┃                                          │
+  ╰━────────────────────────── tab 1 ─ 0m ─╯   │                                                  │   ┃   agent a1c1 · haiku                     │
+                                               │   ╭──────────────────────────────────────────╮   │   ┃   now  Grep(ISO 4217 in billing/)        │
+  ╭────────────────────────────────────────╮   ├───┨  ✗  Fix CI for PR #44   stopped after t… │   │   ┃                                          │
+  ┃  ✗  Codex · Search refactor         ?1 │   │   ╰──────────────── sonnet ─ 15m ─ 23 calls ─╯   │   ┃   g open pane   t transcript   a answer  │
+  ┃     failed · working · 7/8             │   │                                                  │   ╰━──────────────────────── 10m ─ 14 calls ─╯
+  ╰━────────────────────────── tab 2 ─ 0m ─╯   │   ╭──────────────────────────────────────────╮   │
+                                               ├───┨  ?  Draft retry banner copy   ask_op… ?1 │   │   ╭──────────────────────────────────────────╮
+  ╭────────────────────────────────────────╮   │   ╰───────────────── sonnet ─ 11m ─ 2 calls ─╯   ╰───┤  ✓   1 finished · Re-run the totals f… ▸ │
+  ┃  !  Claude Code · Docs site            │   │                                                      ╰──────────────────────────────────────────╯
+  ┃     blocked · working · 1/1            │   │   ╭──────────────────────────────────────────╮
+  ╰━────────────────────────── tab 3 ─ 0m ─╯   ╰───┤  ✓   ✓   ✓   3 finished · +2 older · … ▸ │
+                                                   ╰──────────────────────────────────────────╯
+  ╭────────────────────────────────────────╮
+  │  ○  Claude Code · Release notes        │
+  │     idle                               │
+  ╰────────────────────────── tab 4 ─ 15m ─╯
+
+  ╭────────────────────────────────────────╮
+  │ +  New agent                         n │
+  ╰────────────────────────────────────────╯
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ✓  done   ✓? done?   ⠋  running   »  review   ⠁  waiting   ○  queued   ◌  stale   ?  question   !  blocked   ✗  failed   ~  lost
+
+ ↑↓ move   → open   ← back   enter details   g go to pane   a answer   i inbox   f filter   ? help
+
+===== 160 Billing API, the root (160-billing-api-the-root.png)
+ herdr panorama    all   running   needs me                                                                                              ? 2  ! 1  ✗ 2    08:00
+
+
+  ╭────────────────────────────────────────╮       ╭──────────────────────────────────────────╮       ╭──────────────────────────────────────────╮
+  ┃  ✗  Claude Code · Billing API       ?2 ├───┬───┨  »  Review PR #42 round 2      reviewing ├───┬───┨  ⠋  Check currency codes   Grep(ISO 421… │
+  ┃     failed · working · 4/8             │   │   ┃                                          │   │   ╰━──────────────── haiku ─ 10m ─ 14 calls ─╯
+  ┃                                        │   │   ┃   reviewer a1c0 · opus                   │   │
+  ┃   ? Merge PR #41 with a merge commit   │   │   ┃   now  Bash(Diff totals.py against roun… │   │   ╭──────────────────────────────────────────╮
+  ┃     or squash?                         │   │   ┃   “Round 1 High is fixed. Checking the   │   ╰───┤  ✓   1 finished · Re-run the totals f… ▸ │
+  ┃   +2 older finished, hidden            │   │   ┃   Medium on currency codes next.”        │       ╰──────────────────────────────────────────╯
+  ┃                                        │   │   ┃                                          │
+  ┃   g open pane  t transcript  a answer  │   │   ┃   g open pane   t transcript   a answer  │
+  ╰━────────────────────────── tab 1 ─ 0m ─╯   │   ╰───────────────────────── 21m ─ 52 calls ─╯
+                                               │
+  ╭────────────────────────────────────────╮   │   ╭──────────────────────────────────────────╮
+  ┃  ✗  Codex · Search refactor         ?1 │   ├───┨  ✗  Fix CI for PR #44   stopped after t… │
+  ┃     failed · working · 7/8             │   │   ╰──────────────── sonnet ─ 15m ─ 23 calls ─╯
+  ╰━────────────────────────── tab 2 ─ 0m ─╯   │
+                                               │   ╭──────────────────────────────────────────╮
+  ╭────────────────────────────────────────╮   ├───┨  ?  Draft retry banner copy   ask_op… ?1 │
+  ┃  !  Claude Code · Docs site            │   │   ╰───────────────── sonnet ─ 11m ─ 2 calls ─╯
+  ┃     blocked · working · 1/1            │   │
+  ╰━────────────────────────── tab 3 ─ 0m ─╯   │   ╭──────────────────────────────────────────╮
+                                               ╰───┤  ✓   ✓   ✓   3 finished · +2 older · … ▸ │
+  ╭────────────────────────────────────────╮       ╰──────────────────────────────────────────╯
+  │  ○  Claude Code · Release notes        │
+  │     idle                               │
+  ╰────────────────────────── tab 4 ─ 15m ─╯
+
+  ╭────────────────────────────────────────╮
+  │ +  New agent                         n │
+  ╰────────────────────────────────────────╯
+
+
+
+
+
+
+
+
+
+
+  ✓  done   ✓? done?   ⠋  running   »  review   ⠁  waiting   ○  queued   ◌  stale   ?  question   !  blocked   ✗  failed   ~  lost
+
+ ↑↓ move   → open   ← back   enter details   g go to pane   a answer   i inbox   f filter   ? help
+
+===== 160 Release notes, all finished (160-release-notes-all-finished.png)
+ herdr panorama    all   running   needs me                                                                                              ? 2  ! 1  ✗ 2    08:00
+
+
+  ╭────────────────────────────────────────╮         no subagents in the last hours
+  ┃  ✗  Claude Code · Billing API       ?2 │
+  ┃     failed · working · 4/8             │
+  ╰━────────────────────────── tab 1 ─ 0m ─╯
+
+  ╭────────────────────────────────────────╮
+  ┃  ✗  Codex · Search refactor         ?1 │
+  ┃     failed · working · 7/8             │
+  ╰━────────────────────────── tab 2 ─ 0m ─╯
+
+  ╭────────────────────────────────────────╮
+  ┃  !  Claude Code · Docs site            │
+  ┃     blocked · working · 1/1            │
+  ╰━────────────────────────── tab 3 ─ 0m ─╯
+
+  ╭────────────────────────────────────────╮
+  │  ○  Claude Code · Release notes        │
+  │     idle                               │
+  │                                        │
+  │   +3 older finished, hidden            │
+  │                                        │
+  │   g open pane  t transcript  a answer  │
+  ╰────────────────────────── tab 4 ─ 15m ─╯
+
+  ╭────────────────────────────────────────╮
+  │ +  New agent                         n │
+  ╰────────────────────────────────────────╯
+
+
+
+
+
+
+
+
+
+
+
+
+  ✓  done   ✓? done?   ⠋  running   »  review   ⠁  waiting   ○  queued   ◌  stale   ?  question   !  blocked   ✗  failed   ~  lost
+
+ ↑↓ move   → open   ← back   enter details   g go to pane   a answer   i inbox   f filter   ? help
+
+===== 240 Docs site, the root (240-docs-site-the-root.png)
+ herdr panorama    all   running   needs me                                                                                                                                                                              ? 2  ! 1  ✗ 2    08:00
+
+
+  ╭──────────────────────────────────────────╮       ╭──────────────────────────────────────────────────────╮
+  ┃  ✗  Claude Code · Billing API         ?2 │   ╭───┨  ⠋  Write the migration guide                running │
+  ┃     failed · working · 4/8               │   │   ┃                                                      │
+  ╰━──────────────────────────── tab 1 ─ 0m ─╯   │   ┃   agent w100 · sonnet                                │
+                                                 │   ┃   now  Bash(Build the docs site)                     │
+  ╭──────────────────────────────────────────╮   │   ┃                                                      │
+  ┃  ✗  Codex · Search refactor           ?1 │   │   ┃   g open pane   t transcript   a answer              │
+  ┃     failed · working · 7/8               │   │   ╰━──────────────────────────────────── 33m ─ 33 calls ─╯
+  ╰━──────────────────────────── tab 2 ─ 0m ─╯   │
+                                                 │
+  ╭──────────────────────────────────────────╮   │
+  ┃  !  Claude Code · Docs site              ├───╯
+  ┃     blocked · working · 1/1              │
+  ┃                                          │
+  ┃   ! Publish the v2 docs now or after the │
+  ┃     release?                             │
+  ┃   ⠈ bash    mkdocs serve --strict   10m  │
+  ┃                                          │
+  ┃   g open pane   t transcript   a answer  │
+  ╰━──────────────────────────── tab 3 ─ 0m ─╯
+
+  ╭──────────────────────────────────────────╮
+  │  ○  Claude Code · Release notes          │
+  │     idle                                 │
+  ╰──────────────────────────── tab 4 ─ 15m ─╯
+
+  ╭──────────────────────────────────────────╮
+  │ +  New agent                           n │
+  ╰──────────────────────────────────────────╯
+
+
+
+
+
+
+
+
+
+
+  ✓  done   ✓? done?   ⠋  running   »  review   ⠁  waiting   ○  queued   ◌  stale   ?  question   !  blocked   ✗  failed   ~  lost
+
+ ↑↓ move   → open   ← back   enter details   g go to pane   a answer   i inbox   f filter   ? help
+
+===== 240 Search refactor, depth 1 (240-search-refactor-depth-1.png)
+ herdr panorama    all   running   needs me                                                                                                                                                                              ? 2  ! 1  ✗ 2    08:00
+
+                                                                                                                                                                                                                  Depth 4–5  2 columns right ›
+  ╭──────────────────────────────────────────╮       ╭──────────────────────────────────────────────────────╮       ╭──────────────────────────────────────────────────────╮       ╭──────────────────────────────────────────────────────╮
+  ┃  ✗  Claude Code · Billing API         ?2 │   ╭───┨  ⠋  Index plugin loaders   splitting PluginLoa… ✗ ?1 ├───┬───┨  ⠋  Trace the manifest cache            ✗ ?1 running ├───┬───┨  ⠋  Check cache invalidation   cargo test ca… ?1 › 1 │
+  ┃     failed · working · 4/8               │   │   ╰━──────────────────────────── gpt-5 ─ 40m ─ 40 calls ─╯   │   ┃                                                      │   │   ╰━──────────────────────────── gpt-5 ─ 20m ─ 11 calls ─╯
+  ╰━──────────────────────────── tab 1 ─ 0m ─╯   │                                                              │   ┃   agent s110 · gpt-5                                 │   │
+                                                 │                                                              │   ┃   now  reading cache/manifest.rs                     │   │   ╭──────────────────────────────────────────────────────╮
+  ╭──────────────────────────────────────────╮   │                                                              │   ┃                                                      │   ╰───┨  ✗  Fix the parse error   failed                     │
+  ┃  ✗  Codex · Search refactor           ?1 ├───╯                                                              │   ┃   g open pane   t transcript   a answer              │       ╰─────────────────────────────── gpt-5 ─ 8m ─ 6 calls ─╯
+  ┃     failed · working · 7/8               │                                                                  │   ╰━──────────────────────────────────── 30m ─ 22 calls ─╯
+  ╰━──────────────────────────── tab 2 ─ 0m ─╯                                                                  │
+                                                                                                                │   ╭──────────────────────────────────────────────────────╮
+  ╭──────────────────────────────────────────╮                                                                  ├───┨  ⠋  Shard loaders a–f   indexing loaders/a…f         │
+  ┃  !  Claude Code · Docs site              │                                                                  │   ╰━──────────────────────────── gpt-5 ─ 15m ─ 12 calls ─╯
+  ┃     blocked · working · 1/1              │                                                                  │
+  ╰━──────────────────────────── tab 3 ─ 0m ─╯                                                                  │   ╭──────────────────────────────────────────────────────╮
+                                                                                                                ╰───┤  ✓   1 finished · Shard loaders g–m                ▸ │
+  ╭──────────────────────────────────────────╮                                                                      ╰──────────────────────────────────────────────────────╯
+  │  ○  Claude Code · Release notes          │
+  │     idle                                 │
+  ╰──────────────────────────── tab 4 ─ 15m ─╯
+
+  ╭──────────────────────────────────────────╮
+  │ +  New agent                           n │
+  ╰──────────────────────────────────────────╯
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ✓  done   ✓? done?   ⠋  running   »  review   ⠁  waiting   ○  queued   ◌  stale   ?  question   !  blocked   ✗  failed   ~  lost
+
+ ↑↓ move   → open   ← back   shift+wheel scroll   enter details   g go to pane   a answer   i inbox   f filter   ? help
+
+===== 240 Search refactor, depth 4 (240-search-refactor-depth-4.png)
+ herdr panorama    all   running   needs me                                                                                                                                                                              ? 2  ! 1  ✗ 2    08:00
+
+  ‹ Search refactor › Index plugin loaders   2 columns left
+    ╭──────────────────────────────────────────────────────╮       ╭──────────────────────────────────────────────────────╮       ╭──────────────────────────────────────────────────────╮       ╭───────────────────────────────────────────╮
+─┬──┨  ⠋  Trace the manifest cache   reading cache/m… ✗ ?1 ├───┬───┨  ⠋  Check cache invalidation   cargo test cache:: ?1 ├───────┨  ?  Ask about the lockfile   needs answer         ?1 ├───────┨  ⠋  Probe the notify crate        running │
+ │  ╰━──────────────────────────── gpt-5 ─ 30m ─ 22 calls ─╯   │   ╰━──────────────────────────── gpt-5 ─ 20m ─ 11 calls ─╯       ╰────────────────────────────── gpt-5 ─ 11m ─ 3 calls ─╯       ┃                                           │
+ │                                                             │                                                                                                                                 ┃   agent s113 · gpt-5                      │
+ │  ╭──────────────────────────────────────────────────────╮   │   ╭──────────────────────────────────────────────────────╮                                                                      ┃   now  cargo tree -i notify               │
+ ├──┨  ⠋  Shard loaders a–f   indexing loaders/a…f         │   ╰───┨  ✗  Fix the parse error   failed                     │                                                                      ┃                                           │
+ │  ╰━──────────────────────────── gpt-5 ─ 15m ─ 12 calls ─╯       ╰─────────────────────────────── gpt-5 ─ 8m ─ 6 calls ─╯                                                                      ┃   g open pane   t transcript   a answer   │
+ │                                                                                                                                                                                               ╰━─────────────────────────── 6m ─ 4 calls ─╯
+ │  ╭──────────────────────────────────────────────────────╮
+ ╰──┤  ✓   1 finished · Shard loaders g–m                ▸ │
+    ╰──────────────────────────────────────────────────────╯
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ✓  done   ✓? done?   ⠋  running   »  review   ⠁  waiting   ○  queued   ◌  stale   ?  question   !  blocked   ✗  failed   ~  lost
+
+ ↑↓ move   → open   ← back   shift+wheel scroll   enter details   g go to pane   a answer   i inbox   f filter   ? help

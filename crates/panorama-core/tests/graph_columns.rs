@@ -1,376 +1,242 @@
-//! The wide graph's columns, each drawn on its own, against the cells the design's renders
-//! and the app-screen goldens show for them (`design_8.json` turn 8's 2a views,
-//! `screens/demo-wide.json`, `screens/deep.json`). The links between the columns are drawn
-//! by the page (P4 PR 4b): where a link joins a border, the golden's tee is compared as the
-//! plain border.
+//! The wide graph's columns and cards, each drawn on its own: the roots' column (depth 0)
+//! and the uniform card at every depth (plan `uniform-agent-tree.md` §4).
+//!
+//! The design's and Python's columns are orchestrators and threads, so since the uniform tree
+//! (U4, D5) the columns are compared with Rust's own reviewed renders,
+//! `tests/fixtures/rust/screens/graph-columns.json` (`PANORAMA_BLESS=1`), and their rules are
+//! checked on their own. The links between the columns are drawn by the page.
 
 mod support;
 
-use panorama_core::model::Swarm;
+use panorama_core::model::{Orchestrator, Swarm, TreeKids};
 use panorama_core::view::graph::agent_card::{AgentCtx, agent_card};
 use panorama_core::view::graph::column::{Column, Place};
 use panorama_core::view::graph::orchs::orch_column;
-use panorama_core::view::graph::threads::thread_column;
-use panorama_core::view::nav::{default_children, find_agent, find_orch, find_thread};
-use panorama_core::view::state::BG_CARD;
-use panorama_core::view::{Filter, Screen, View};
-use serde_json::Value;
-use std::ops::Range;
+use panorama_core::view::graph::root_card::loose_questions;
+use panorama_core::view::nav::{default_children, find_agent, find_orch};
+use panorama_core::view::{Filter, Screen, Target, View};
+use serde_json::json;
+use support::owned::check_owned;
 use support::states::{NOW, states_swarm};
-use support::{Shown, assert_same, cells, fixture, golden, wire_swarm};
+use support::{fixture, wire_swarm};
 
-/// The golden's cell with a link's tee on a card border read as the border.
-fn unjoined(c: &Shown) -> Shown {
-    let ch = match c.ch {
-        '├' | '┤' => '│',
-        '┨' | '┠' => '┃',
-        ch => ch,
-    };
-    Shown { ch, ..c.clone() }
+const FILE: &str = "graph-columns.json";
+
+/// The first `h` rows of a column's tall canvas.
+fn crop(canvas: &Screen, h: i32) -> Screen {
+    let mut s = Screen::new(canvas.w(), h);
+    s.blit(canvas, 0, 0, 0, h);
+    s
 }
 
-/// Compares `canvas` (drawn at `(x0, top)` on the page, not scrolled) with `want` over the
-/// page cells `xs` × `ys`.
-fn assert_at(
-    name: &str,
-    want: &[Vec<Shown>],
-    canvas: &Screen,
-    (x0, top): (usize, usize),
-    xs: Range<usize>,
-    ys: &[usize],
-) {
-    let got = cells(canvas);
-    let mut d = vec![];
-    for &y in ys {
-        for x in xs.clone() {
-            let w = unjoined(&want[y][x]);
-            let g = &got[y - top][x - x0];
-            if &w != g {
-                d.push(format!("({x},{y}) want {w:?} got {g:?}"));
-            }
-        }
-    }
-    assert!(
-        d.is_empty(),
-        "{name}: {} cells differ, first:\n{}",
-        d.len(),
-        d[..d.len().min(5)].join("\n")
-    );
-}
-
-// -- turn 8 (tests/test_states.py's 2a cases) --------------------------------------------
-
-/// test_states.py `graph`'s view: the keyboard in the agents' column.
-fn states_view(frame: f64, sel: (&str, Option<&str>, Option<&str>), filter: Filter) -> View {
-    View {
-        orch: Some(sel.0.into()),
-        thread: sel.1.map(Into::into),
-        agent: sel.2.map(Into::into),
-        focus: 2,
-        frame,
-        now: NOW,
-        filter,
-        ..View::default()
-    }
-}
-
-/// The orchestrator cards: tabs 5-8 (rows 23-42) whole; the earlier four keep what the app
-/// drew before turn 8, so only their state lines are compared (test_states.py `ORCH_Y`).
-fn orch_rows(last: usize) -> Vec<usize> {
-    [5, 10, 15, 20].into_iter().chain(23..last).collect()
-}
-
-fn turn_8() -> (Swarm, Vec<(String, Value)>) {
-    let eight = fixture("design_8.json");
-    let frames = eight["frames"]
-        .as_object()
-        .unwrap()
-        .clone()
-        .into_iter()
-        .collect();
-    (states_swarm(&eight["data"]), frames)
-}
-
-#[test]
-fn turn_8_orchestrator_column_and_background_card() {
-    let (swarm, frames) = turn_8();
-    let bg = format!("{BG_CARD}w1:p5");
-    for (key, panes) in frames {
-        let view = states_view(
-            key.parse().unwrap(),
-            ("w1:p5", Some(&bg), None),
-            Filter::All,
-        );
-        let want = golden(&panes["A"]);
-        let orchs = orch_column(&swarm, &view, 28);
-        assert_at(
-            &format!("A orchestrators {key}"),
-            &want,
-            &orchs.canvas,
-            (2, 3),
-            2..30,
-            &orch_rows(43),
-        );
-        let o = find_orch(&swarm, Some("w1:p5")).unwrap();
-        let threads = thread_column(o, &view, 50);
-        assert_at(
-            &format!("A background {key}"),
-            &want,
-            &threads.canvas,
-            (36, 3),
-            36..86,
-            &[3, 4, 5, 6, 7],
-        );
-    }
-}
-
-#[test]
-fn turn_8_waiting_agent_card() {
-    let (swarm, frames) = turn_8();
-    for (key, panes) in frames {
-        let view = states_view(
-            key.parse().unwrap(),
-            ("w1:p4", Some("p214"), Some("n1")),
-            Filter::All,
-        );
-        let want = golden(&panes["B"]);
-        let orchs = orch_column(&swarm, &view, 28);
-        assert_at(
-            &format!("B orchestrators {key}"),
-            &want,
-            &orchs.canvas,
-            (2, 3),
-            2..30,
-            &orch_rows(43),
-        );
-        let t = find_thread(find_orch(&swarm, Some("w1:p4")), Some("p214")).unwrap();
-        let n1 = find_agent(Some(t), Some("n1")).unwrap();
-        let mut cv = Screen::new(44, 20);
-        let place = Place {
-            x: 0,
-            y: 0,
-            w: 44,
-            is_sel: true,
-            focus: true,
-        };
-        let ctx = AgentCtx {
-            t,
-            inbox_ok: swarm.inbox_ok,
-            on_path: false,
-            kids_off: 0,
-        };
-        let h = agent_card(&mut cv, place, n1, ctx, &view);
-        assert_eq!(h, 10, "B frame {key}: the card's rows");
-        assert_at(
-            &format!("B n1 {key}"),
-            &want,
-            &cv,
-            (93, 3),
-            93..137,
-            &(3..13).collect::<Vec<_>>(),
-        );
-    }
-}
-
-#[test]
-fn turn_8_running_filter_keeps_waiting_and_drops_stale() {
-    let (swarm, frames) = turn_8();
-    for (key, panes) in frames {
-        let view = states_view(
-            key.parse().unwrap(),
-            ("w1:p4", Some("p214"), Some("n1")),
-            Filter::Running,
-        );
-        let orchs = orch_column(&swarm, &view, 28);
-        // 6 cards: the stale ones are gone
-        assert_at(
-            &format!("R {key}"),
-            &golden(&panes["R"]),
-            &orchs.canvas,
-            (2, 3),
-            2..30,
-            &orch_rows(33),
-        );
-    }
-}
-
-// -- the app's first wide screen and the deep thread ---------------------------------------
-
-/// A screen golden's run: the screen, its swarm (a captured wire swarm), and the view with
-/// the unseen marks it was drawn with.
-fn screen(file: &str, snap: &str) -> (Vec<Vec<Shown>>, Swarm, View) {
-    let f = fixture(&format!("screens/{file}"));
-    let run = &f["runs"][0];
-    let swarm = wire_swarm(run["input"].as_str().unwrap(), None);
-    let view = View {
-        orch: run["focus_pane"].as_str().map(Into::into),
-        now: run["now"].as_f64().unwrap(),
-        unseen: serde_json::from_value(f["unseen"][snap].clone()).unwrap(),
+/// The keyboard on the root `pane` (its card unfolded) or in its tree (`focus` > 0).
+fn view_on(swarm: &Swarm, pane: &str, focus: usize, now: f64) -> View {
+    let mut v = View {
+        orch: Some(pane.into()),
+        focus,
+        now,
         ..View::default()
     };
-    (golden(&f["screens"][snap]), swarm, view)
+    default_children(swarm, &mut v);
+    v
 }
 
-fn page_rows() -> Vec<usize> {
-    (3..41).collect() // between the line above the columns and the legend
-}
-
-#[test]
-fn the_demos_orchestrator_and_thread_columns() {
-    let (want, swarm, mut view) = screen("demo-wide.json", "initial");
-    default_children(&swarm, &mut view);
-    let orchs: Column = orch_column(&swarm, &view, 28);
-    assert!(orchs.height <= 38, "the column fits: not scrolled");
-    assert_at(
-        "demo orchestrators",
-        &want,
-        &orchs.canvas,
-        (2, 3),
-        2..30,
-        &page_rows(),
-    );
-    let o = find_orch(&swarm, view.orch.as_deref()).unwrap();
-    let threads = thread_column(o, &view, 50);
-    assert_at(
-        "demo threads",
-        &want,
-        &threads.canvas,
-        (36, 3),
-        36..86,
-        &page_rows(),
-    );
-}
-
-#[test]
-fn the_deep_thread_column() {
-    let (want, swarm, mut view) = screen("deep.json", "thread");
-    view.thread = Some("x:deep".into());
-    view.focus = 1;
-    let o = find_orch(&swarm, Some("w1:p3")).unwrap();
-    let threads = thread_column(o, &view, 50);
-    assert_at(
-        "deep thread",
-        &want,
-        &threads.canvas,
-        (36, 3),
-        36..86,
-        &page_rows(),
-    );
-    assert_eq!(threads.anchors, [1]);
-    assert_eq!((threads.sel, threads.sel_anchor), (Some((0, 10)), Some(1)));
-}
-
-#[test]
-fn the_deep_threads_first_agent_folded_with_its_children_off_to_the_right() {
-    // only depth 1 fits at 160 columns with the focus on the thread: l1's card says how many
-    // agents it spawned, off to the right
-    let (want, swarm, mut view) = screen("deep.json", "thread");
-    view.thread = Some("x:deep".into());
-    view.focus = 1;
-    let t = find_thread(find_orch(&swarm, Some("w1:p3")), Some("x:deep")).unwrap();
-    let l1 = find_agent(Some(t), Some("l1")).unwrap();
-    let kids = t
-        .agents
-        .iter()
-        .filter(|a| a.parent.as_deref() == Some("l1"))
-        .count();
-    let mut cv = Screen::new(44, 3);
+/// `a`'s card drawn alone, 44 wide (`sel`: unfolded), with its root's tree.
+fn agent_alone(o: &Orchestrator, id: &str, view: &View, sel: bool, kids_off: usize) -> Screen {
+    let kids = TreeKids::of_root(o);
+    let a = find_agent(Some(o), Some(id)).unwrap();
+    let mut cv = Screen::new(44, 24);
     let place = Place {
         x: 0,
         y: 0,
         w: 44,
-        is_sel: false,
-        focus: false,
+        is_sel: sel,
+        focus: sel,
     };
     let ctx = AgentCtx {
-        t,
-        inbox_ok: swarm.inbox_ok,
-        on_path: false,
-        kids_off: kids,
-    };
-    assert_eq!(agent_card(&mut cv, place, l1, ctx, &view), 3);
-    assert_at("deep l1", &want, &cv, (93, 3), 93..137, &[3, 4, 5]);
-    assert!(cv.text().contains(&format!("› {kids}")));
-}
-
-// -- the columns' rules on a swarm built for them (tests/fixtures/graph_rules.json) ------
-
-/// The first `golden.len()` rows of a canvas against them, cell for cell.
-fn assert_rows(name: &str, want: &Value, canvas: &Screen) {
-    let want = golden(want);
-    let got = cells(canvas);
-    assert_same(name, &want, &got[..want.len()]);
-}
-
-#[test]
-fn the_columns_rules_draw_what_python_drew() {
-    // captured by tests/fixtures/capture_graph_rules.py from Python's own columns
-    let rules = fixture("graph_rules.json");
-    let swarm: Swarm = serde_json::from_value(rules["swarm"].clone()).unwrap();
-    let mut view = View {
-        orch: Some("w1:p1".into()),
-        thread: Some("t1".into()),
-        agent: Some("n1".into()),
-        focus: 2,
-        now: rules["now"].as_f64().unwrap(),
-        unseen: serde_json::from_value(rules["unseen"].clone()).unwrap(),
-        ..View::default()
-    };
-    view.done_open.insert("w1:p1".into());
-    // questions no agent filed (?2), a long name cut, active/live counts without the
-    // session's thread and its own agent (1/11)
-    let orchs = orch_column(&swarm, &view, 28);
-    assert_eq!(orchs.height as usize, golden(&rules["orchs"]).len());
-    assert_rows("orchestrators", &rules["orchs"], &orchs.canvas);
-    // the background card without a turn end, pods past the room (+2), nested ones
-    // (+1 nested), a thread never started (queued), the done threads unfolded (▾) with an
-    // unseen finished agent (the folded card's quiet pulse)
-    let o = find_orch(&swarm, Some("w1:p1")).unwrap();
-    let threads = thread_column(o, &view, 50);
-    assert_eq!(threads.height as usize, golden(&rules["threads"]).len());
-    assert_rows("threads", &rules["threads"], &threads.canvas);
-    // waiting on its oldest background task (30m), its phase counted from the end
-    let t = find_thread(Some(o), Some("t1")).unwrap();
-    let mut cv = Screen::new(44, 20);
-    let place = Place {
-        x: 0,
-        y: 0,
-        w: 44,
-        is_sel: true,
-        focus: true,
-    };
-    let ctx = AgentCtx {
-        t,
+        o,
+        kids: &kids,
         inbox_ok: true,
         on_path: false,
-        kids_off: 0,
+        kids_off,
     };
-    let h = agent_card(
-        &mut cv,
-        place,
-        find_agent(Some(t), Some("n1")).unwrap(),
-        ctx,
-        &view,
+    let h = agent_card(&mut cv, place, a, ctx, view);
+    crop(&cv, h)
+}
+
+#[test]
+fn turn_8_roots_column_the_selected_one_unfolded() {
+    // design 8's roots: waiting, stale and blocked ones; the keyboard on Deploy Watch, which
+    // has only its own background tasks: its card lists them
+    let swarm = states_swarm(&fixture("design_8.json")["data"]);
+    let view = view_on(&swarm, "w1:p5", 0, NOW);
+    let col = orch_column(&swarm, &view, 42);
+    let s = crop(&col.canvas, col.height);
+    let text = s.text();
+    assert!(text.contains("waiting · 2 bg"), "{text}");
+    assert!(text.contains("g open pane"), "{text}");
+    assert_eq!(col.anchors.len(), 8); // a card a root: its link joins its first line
+    check_owned(FILE, "turn 8 roots", &s);
+    // the running filter drops the stale roots
+    let running = View {
+        filter: Filter::Running,
+        ..view.clone()
+    };
+    assert_eq!(orch_column(&swarm, &running, 42).anchors.len(), 6);
+}
+
+#[test]
+fn the_demos_roots_column_fits_and_links_from_the_selected_card() {
+    let swarm = wire_swarm("inputs/swarm-demo.json", None);
+    let now = fixture("inputs/swarm-demo.json")["now"].as_f64().unwrap();
+    let view = view_on(&swarm, "w1:p1", 1, now); // the keyboard in the tree: folded
+    let col: Column = orch_column(&swarm, &view, 42);
+    assert!(col.height <= 38, "the column fits: not scrolled");
+    assert_eq!((col.sel, col.sel_anchor), (Some((0, 4)), Some(1)));
+    check_owned(FILE, "demo roots", &crop(&col.canvas, col.height));
+}
+
+#[test]
+fn a_roots_own_questions_and_prompt_are_in_its_unfolded_card() {
+    // the interim U3 lost the "waiting on you" card of a root's own questions: the root card
+    // carries them, with the prompt it blocks on and its answer hint
+    let swarm = wire_swarm("inputs/swarm-uniform.json", None);
+    let now = fixture("inputs/swarm-uniform.json")["now"]
+        .as_f64()
+        .unwrap();
+    let o = find_orch(&swarm, Some("w1:p1")).unwrap();
+    assert_eq!(
+        loose_questions(o),
+        ["Merge PR #41 with a merge commit or squash?"]
     );
-    assert_eq!(h as usize, golden(&rules["n1"]).len());
-    assert_rows("n1", &rules["n1"], &cv);
+    let view = view_on(&swarm, "w1:p1", 0, now);
+    let col = orch_column(&swarm, &view, 42);
+    let s = crop(&col.canvas, col.height);
+    let text = s.text();
+    assert!(
+        text.contains("? Merge PR #41 with a merge commit")
+            && text.contains("+2 older finished, hidden"),
+        "{text}"
+    );
+    for t in [
+        Target::GotoOrch("w1:p1".into()),
+        Target::TranscriptOrch("w1:p1".into()),
+        Target::AnswerOrch("w1:p1".into()),
+    ] {
+        assert!(s.targets.iter().any(|h| h.target == t), "{t:?}\n{text}");
+    }
+    check_owned(FILE, "uniform roots, Billing API open", &s);
+    let view = view_on(&swarm, "w1:p3", 0, now);
+    let col = orch_column(&swarm, &view, 42);
+    let s = crop(&col.canvas, col.height);
+    let text = s.text();
+    assert!(
+        text.contains("! Publish the v2 docs now or after")
+            && text.contains("mkdocs serve")
+            && text.contains("answer"),
+        "{text}"
+    );
+    check_owned(FILE, "uniform roots, Docs site open", &s);
+}
+
+#[test]
+fn an_agent_card_carries_its_subtrees_marks_and_its_hidden_children() {
+    let swarm = wire_swarm("inputs/swarm-uniform.json", None);
+    let now = fixture("inputs/swarm-uniform.json")["now"]
+        .as_f64()
+        .unwrap();
+    let o = find_orch(&swarm, Some("w1:p2")).unwrap();
+    let view = view_on(&swarm, "w1:p2", 1, now);
+    // folded, its children's column off to the right: `› n`, and the ✗ and ?1 below it
+    let s = agent_alone(o, "s110", &view, false, 2);
+    let row = s.text().lines().nth(1).unwrap().to_owned();
+    assert!(row.contains("Trace the manifest cache"), "{row}");
+    assert!(row.contains("✗ ?1 › 2"), "{row}");
+    check_owned(FILE, "s110 folded", &s);
+    // unfolded: its role, id and model on an `agent` line, its state on the right
+    let s = agent_alone(o, "s112", &view, true, 0);
+    let text = s.text();
+    assert!(
+        text.contains("agent s112 · gpt-5") && text.contains("? Bump Cargo.lock"),
+        "{text}"
+    );
+    check_owned(FILE, "s112 open", &s);
+}
+
+#[test]
+fn the_deep_trees_first_agent_folded_with_its_children_off_to_the_right() {
+    let swarm = wire_swarm("inputs/swarm-deep.json", None);
+    let o = find_orch(&swarm, Some("w1:p3")).unwrap();
+    let kids = o
+        .agents()
+        .filter(|a| a.parent.as_deref() == Some("l1"))
+        .count();
+    let view = view_on(&swarm, "w1:p3", 0, 1_800_000_000.0);
+    let s = agent_alone(o, "l1", &view, false, kids);
+    assert_eq!(s.h(), 3);
+    assert!(s.text().contains(&format!("› {kids}")), "{}", s.text());
+    check_owned(FILE, "deep l1 folded", &s);
+}
+
+#[test]
+fn the_columns_rules_on_a_swarm_built_for_them() {
+    // tests/fixtures/graph_rules.json: questions no agent filed (?2), a long name cut, the
+    // root's own background task without a turn end, a waiting agent's oldest background
+    // task (30m), a card on the selected agent's path
+    let rules = fixture("graph_rules.json");
+    let swarm: Swarm = serde_json::from_value(rules["swarm"].clone()).unwrap();
+    let mut view = view_on(&swarm, "w1:p1", 0, rules["now"].as_f64().unwrap());
+    view.unseen = serde_json::from_value(rules["unseen"].clone()).unwrap();
+    let col = orch_column(&swarm, &view, 42);
+    let s = crop(&col.canvas, col.height);
+    let text = s.text();
+    assert!(text.contains("?2") && text.contains('…'), "{text}");
+    assert!(text.contains("Monitor") && text.contains("watch"), "{text}");
+    check_owned(FILE, "rules roots", &s);
+    let o = find_orch(&swarm, Some("w1:p1")).unwrap();
+    view.focus = 1;
+    view.agent = Some("n1".into());
+    let s = agent_alone(o, "n1", &view, true, 0);
+    assert!(s.text().contains("waiting 30m"), "{}", s.text());
+    check_owned(FILE, "rules n1", &s);
     // a card on the selected agent's path: its title and border as selected
+    let kids = TreeKids::of_root(o);
     let mut cv = Screen::new(44, 3);
     let place = Place {
+        x: 0,
+        y: 0,
+        w: 44,
         is_sel: false,
         focus: false,
-        ..place
     };
     let ctx = AgentCtx {
+        o,
+        kids: &kids,
+        inbox_ok: true,
         on_path: true,
-        ..ctx
+        kids_off: 0,
     };
-    agent_card(
-        &mut cv,
-        place,
-        find_agent(Some(t), Some("a0")).unwrap(),
-        ctx,
-        &view,
-    );
-    assert_rows("a0 on the path", &rules["a0"], &cv);
+    let a0 = find_agent(Some(o), Some("a0")).unwrap();
+    agent_card(&mut cv, place, a0, ctx, &view);
+    check_owned(FILE, "rules a0 on the path", &cv);
+}
+
+#[test]
+fn an_older_producers_threads_are_one_tree() {
+    // a Python core's threads: every agent of every thread in one tree below its root
+    let swarm: Swarm = serde_json::from_value(json!({"orchestrators": [{
+        "pane_id": "p", "tab_id": "t", "tab_label": "o", "session_id": "s",
+        "threads": [
+            {"id": "t1", "name": "one", "source": "turn", "agents": [{"id": "a", "status": "run"}]},
+            {"id": "t2", "name": "two", "source": "turn",
+             "agents": [{"id": "b", "status": "run", "parent": "a"}, {"id": "c", "status": "run"}]},
+        ],
+    }]}))
+    .unwrap();
+    let kids = TreeKids::of_root(&swarm.orchestrators[0]);
+    let ids = |p: Option<&str>| -> Vec<String> {
+        kids.children(p).iter().map(|a| a.id.clone()).collect()
+    };
+    assert_eq!(ids(None), ["a", "c"]);
+    assert_eq!(ids(Some("a")), ["b"]);
 }

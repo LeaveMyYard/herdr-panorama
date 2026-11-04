@@ -120,6 +120,20 @@ by hand, and reviewed as a diff:
 - `rust/model/*.json`: `panorama snapshot --json` at the times and conditions of `model/*.json`.
 - `rust/screens/scenario-*.json`: the screens of the `screens/scenario-*.json` runs (the runs
   and their `unseen` marks are still read from the capture).
+- The wide graph's screens since U4 (D5): its columns are depths (the roots, then their agent
+  tree), not orchestrators and threads, so no design reference or Python capture matches it.
+  - `rust/screens/{demo-wide,deep,remote-wide,demo-home,demo-narrow}.json`: the screens of those
+    captures' runs (`app_screens`; `crates/panorama-core/tests/wide_screens.rs` reads them too).
+    The narrow capture is here while its layout walks the same depth columns (U5 replaces it).
+  - `rust/screens/design-{5d-wide,7,6-wide,smooth-wide,8-wide}.json`: the graph at the frames and
+    views of `design_5d.json`, `design_7.json`, `design_6.json`, `design_smooth.json` and
+    `design_8.json`; `rust/screens/graph-columns.json`: the roots' column and cards drawn alone;
+    `rust/screens/uniform-wide.json`: the U4 review renders at 160 and 240 columns. Written by
+    `PANORAMA_BLESS=1 cargo test -p panorama-core --test design_wide --test design_unseen
+    --test design_states --test graph_columns --test wide_screens`.
+  - `inputs/swarm-uniform.json`: a synthetic swarm in the uniform shape (one `agents` thread per
+    root, titles, a root's own questions, prompt and background work, a tree five deep) for
+    those renders, written once by a script and kept as data.
 - `collect/agent-ids-pre-u3.json`: every root's agents (id, status, end, parent) as the collector
   built them before U3, over every scenario at the model times, a wide window and no inbox. It is
   the baseline of `tests/collect_agent_ids.rs`; it is not regenerated.

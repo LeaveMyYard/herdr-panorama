@@ -183,7 +183,6 @@ fn collected_history_renders_through_existing_navigation_and_graph() {
     let swarm = panorama::proto::state::cleaned_swarm(ready(&mut collector, &snapshot()));
     let view = View {
         orch: Some("codex-a".into()),
-        thread: Some(panorama_core::model::TREE_THREAD.into()),
         now: panorama::snapshot::now(),
         ..View::default()
     };

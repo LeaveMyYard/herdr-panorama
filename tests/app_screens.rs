@@ -11,6 +11,8 @@
 //! `uniform-agent-tree.md` U3, R3): the collector no longer groups threads as Python's did, so
 //! their runs are still the capture's but their screens are `tests/fixtures/rust/screens/`,
 //! rewritten by `PANORAMA_BLESS=1 cargo test --test app_screens` and reviewed as a diff.
+//! The wide graph's captures ([`RUST_GRAPHS`]) are Rust's too since U4 (D5): its columns are
+//! depths, no longer orchestrators and threads.
 
 mod collect_support;
 mod screen_support;
@@ -54,13 +56,23 @@ fn swarm_of(run: &Value) -> Swarm {
     cleaned_swarm(swarm) // what the app's collect worker hands it
 }
 
+/// The captured wire-swarm runs whose screens are Rust's own since U4 (D5): the wide graph's,
+/// and the narrow layout's while it walks the same depth columns.
+const RUST_GRAPHS: [&str; 5] = [
+    "demo-wide.json",
+    "deep.json",
+    "remote-wide.json",
+    "demo-home.json",
+    "demo-narrow.json",
+];
+
 /// Every run of `file` played; its snaps compared (but `skip`'s, and the steps after them).
 fn check(file: &str, skip: &[&str]) {
     let golden_file = fixture(&format!("screens/{file}"));
     let owned = format!("rust/screens/{file}");
-    let rust = file.starts_with("scenario-");
+    let rust = file.starts_with("scenario-") || RUST_GRAPHS.contains(&file);
     if rust && blessing() {
-        return bless(file, &golden_file, &owned);
+        return bless(file, &golden_file, &owned, skip);
     }
     let screens = if rust {
         fixture(&owned)["screens"].clone()
@@ -84,17 +96,22 @@ fn check(file: &str, skip: &[&str]) {
             snapped += 1;
         }
     }
-    // every snap the file holds, but the skipped ones
-    let held = screens.as_object().unwrap().len();
-    assert_eq!(snapped, held - skip.len(), "{file}: snaps compared");
+    // every snap the file holds, but the skipped ones (a Rust-owned file holds none of them)
+    let held = screens
+        .as_object()
+        .unwrap()
+        .keys()
+        .filter(|k| !skip.contains(&k.as_str()))
+        .count();
+    assert_eq!(snapped, held, "{file}: snaps compared");
 }
 
-/// Rewrite the Rust-owned screens of `file`'s runs.
-fn bless(file: &str, golden_file: &Value, owned: &str) {
+/// Rewrite the Rust-owned screens of `file`'s runs (but `skip`'s, and the steps after them).
+fn bless(file: &str, golden_file: &Value, owned: &str, skip: &[&str]) {
     let mut screens = serde_json::Map::new();
     for run in golden_file["runs"].as_array().unwrap() {
         let player = Player::new(run, &golden_file["unseen"], swarm_of(run));
-        for (name, screen) in player.play(&[]) {
+        for (name, screen) in player.play(skip) {
             screens.insert(name, runs(&screen));
         }
     }

@@ -85,7 +85,11 @@ pub fn root_card(cv: &mut Screen, p: RootPlace, o: &Orchestrator, view: &View, a
     } else {
         vec![]
     };
-    let hh = if open { 7 + lines.len() as i32 } else { 4 };
+    let hh = match (open, lines.len() as i32) {
+        (false, _) => 4,
+        (true, 0) => 6,
+        (true, n) => 7 + n,
+    };
     let card = Area { x: 0, y, w, h: hh };
     let look = Look {
         target: Target::Orch(o.pane_id.clone()),
@@ -124,7 +128,7 @@ pub fn root_card(cv: &mut Screen, p: RootPlace, o: &Orchestrator, view: &View, a
         cv.segs(4, y + 4 + i as i32, l);
     }
     if open {
-        hints(cv, 4, y + hh - 2, o, p.inbox_ok);
+        hints(cv, (4, y + hh - 2), w - 6, o, p.inbox_ok);
     }
     let tab = o.tab_no.map(|n| format!("tab {n}"));
     let age = o
@@ -160,14 +164,19 @@ fn state_line(o: &Orchestrator, st: &OrchState, w: i32) -> [Seg; 2] {
     ]
 }
 
-/// The root's `g open pane`, `t transcript` and `a answer` (blocked: in its pane), each
-/// enabled one a click target.
-fn hints(cv: &mut Screen, x: i32, y: i32, o: &Orchestrator, inbox_ok: bool) {
+/// The root's `g open pane`, `t transcript` and `a answer` (blocked: in its pane) from `at`,
+/// each enabled one a click target; in `room` cells (closer, then "answer", as an agent's).
+fn hints(cv: &mut Screen, at: (i32, i32), room: i32, o: &Orchestrator, inbox_ok: bool) {
     let blocked = o.herdr_status == HerdrStatus::Blocked;
-    let answer = if blocked { "answer in pane" } else { "answer" };
     let can_answer = blocked || (inbox_ok && !o.inbox.is_empty());
     let pane = o.pane_id.clone();
-    let mut xx = x;
+    let full = if blocked { "answer in pane" } else { "answer" };
+    let width = |gap: i32, answer: &str| 25 + answer.chars().count() as i32 + 2 * gap;
+    let (gap, answer) = [(3, full), (2, full), (3, "answer")]
+        .into_iter()
+        .find(|(g, a)| width(*g, a) <= room)
+        .unwrap_or((2, "answer"));
+    let (mut xx, y) = at;
     for (k, lab, target) in [
         ("g", "open pane", Some(Target::GotoOrch(pane.clone()))),
         (
@@ -190,6 +199,6 @@ fn hints(cv: &mut Screen, x: i32, y: i32, o: &Orchestrator, inbox_ok: bool) {
         if let Some(t) = target {
             cv.target(xx, end, y, t);
         }
-        xx = end + 3;
+        xx = end + gap;
     }
 }

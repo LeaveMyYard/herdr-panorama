@@ -1,17 +1,22 @@
 //! The wide graph's layout rules on the demo, deep and wide data: Python's
 //! tests/test_render.py, tests/test_deep.py, tests/test_wide.py, tests/test_states.py and
-//! tests/test_current_card.py cases for the 2a graph (the design goldens are in
+//! tests/test_current_card.py cases for the 2a graph (the page goldens are in
 //! design_wide.rs, design_states.rs and design_unseen.rs).
+//!
+//! Since the uniform tree (plan `uniform-agent-tree.md` U4, D5) the columns are depths: the
+//! roots' (x 2, 42 wide below 220 columns), then depth 1 at x 51, depth 2 at x 102, … (7
+//! apart). The rows and columns asserted are Rust's reviewed renders, no longer Python's.
 
 mod support;
 
-use panorama_core::model::{Orchestrator, Status, Swarm, Thread};
+use panorama_core::model::{Agent, Orchestrator, Status, Swarm};
+use panorama_core::view::cards::edge::sweep_pos;
 use panorama_core::view::nav::nav;
 use panorama_core::view::palette::{FAINT, HI, status};
-use panorama_core::view::state::{BG_CARD, NEW_ROW};
+use panorama_core::view::state::{FIN_CARD, NEW_ROW};
 use panorama_core::view::{Filter, Marks, Rgb, Screen, Unseen, View, render_graph};
 use serde_json::json;
-use support::tree_design::{NOW as DEEP_NOW, TID, tree_swarm};
+use support::tree_design::{NOW as DEEP_NOW, tree_swarm};
 use support::{NO_SESSIONS, fixture, wire_swarm};
 
 fn demo() -> Swarm {
@@ -22,11 +27,11 @@ fn demo_now() -> f64 {
     fixture("inputs/swarm-demo.json")["now"].as_f64().unwrap()
 }
 
-/// test_render.py `view()`: the demo's first orchestrator, thread and agent.
+/// test_render.py `view()`: the demo's first root, the reviewer selected below it, the
+/// keyboard on the root.
 fn demo_view() -> View {
     View {
         orch: Some("w1:p1".into()),
-        thread: Some("ref:#42".into()),
         agent: Some("a2f81c0".into()),
         now: demo_now(),
         ..View::default()
@@ -54,9 +59,17 @@ fn has(text: &str, want: &str) {
     assert!(text.contains(want), "missing {want:?}\n{text}");
 }
 
+/// The first row holding `want`.
+fn row_of(s: &Screen, want: &str) -> usize {
+    let text = s.text();
+    text.lines()
+        .position(|r| r.contains(want))
+        .unwrap_or_else(|| panic!("missing {want:?}\n{text}"))
+}
+
 #[test]
-fn the_wide_layout_has_the_three_columns_and_links() {
-    // test_render.py::test_wide_layout_has_the_three_columns_and_links
+fn the_wide_layout_has_the_depth_columns_and_links() {
+    // test_render.py::test_wide_layout_has_the_three_columns_and_links, by depth
     let s = render(&demo(), &demo_view(), 160, 45);
     let text = s.text();
     let r = rows(&s);
@@ -68,43 +81,34 @@ fn the_wide_layout_has_the_three_columns_and_links() {
             .unwrap()
             .ends_with("? 1  ! 1  ✗ 1    10:04")
     );
-    // orchestrator cards at x=2, width 28
-    assert_eq!(seg(&r, 3, 2..30), format!("╭{}╮", "─".repeat(26)));
+    // root cards at x=2, width 42; the selected one, the keyboard on it, unfolded
+    assert_eq!(seg(&r, 3, 2..44), format!("╭{}╮", "─".repeat(40)));
     assert_eq!(seg(&r, 4, 2..5), "┃  ");
     let row = |y: usize| r[y].iter().collect::<String>();
-    assert!(row(4).contains("✗  Claude Code · Bi") && seg(&r, 4, 0..31).contains("?1"));
-    assert!(row(5).contains("failed · working"));
-    assert!(seg(&r, 6, 2..30).ends_with("─ pr-review ─╯"));
-    assert!(row(14).contains("!  Claude Code · Do") && row(15).contains("blocked"));
-    // the selected thread unfolds into its steps with times
-    assert!(row(4).contains("» PR #42 invoice export"));
-    assert!(row(5).contains("review r2 · 21m"));
+    assert!(row(4).contains("✗  Claude Code · Billing API") && seg(&r, 4, 0..44).contains("?1"));
+    assert!(row(5).contains("failed · working · 4/12"));
+    assert!(row(7).contains("g open pane"));
+    assert!(row(11).contains("⠸  Claude Code · Search refactor"));
+    // depth 1: every agent of the root's threads, the selected one unfolded, live ones as
+    // cards, finished ones folded
     for want in [
-        "✓ author       09:02–09:20",
-        "» review r2    since 09:43 · 21m   0B 1H 2M",
-        "· CI",
-        "· merge",
-        // other active threads collapse; done threads fold into one card
-        "✗ PR #44 health badge",
-        "? PR #48 retry banner copy",
-        "✓ 1 complete  PR #40 currency codes",
-        // the agents: the selected one opened, live ones as cards, finished ones folded
         "reviewer a2f81c0 · opus",
         "reviewing",
         "now  Bash(Diff totals.py against roun…",
         "g open pane   t transcript   a answer",
         "author a1c3d90 · opus",
-        "3 finished · explorer ×3",
+        "fixer b3a9c41 · sonnet",
+        "author c1d2e3f · sonnet",
+        "8 finished · aut",
     ] {
         has(&text, want);
     }
+    for gone in ["PR #42 invoice export", "complete", "pr-review"] {
+        assert!(!text.contains(gone), "a thread's {gone:?}\n{text}");
+    }
     // solid links: the borders become tees, the trunk branches
     assert_eq!(
-        [ch(&r, 29, 4), ch(&r, 32, 4), ch(&r, 36, 4)],
-        ['├', '┬', '┨']
-    );
-    assert_eq!(
-        [ch(&r, 85, 4), ch(&r, 89, 4), ch(&r, 93, 4)],
+        [ch(&r, 43, 4), ch(&r, 47, 4), ch(&r, 51, 4)],
         ['├', '┬', '┤']
     );
     // legend and keys
@@ -119,57 +123,58 @@ fn the_wide_layout_has_the_three_columns_and_links() {
 
 #[test]
 fn question_and_blocked_detail_lines() {
-    // test_render.py::test_question_and_blocked_detail_lines
+    // test_render.py::test_question_and_blocked_detail_lines: an agent's question, and a
+    // root's own blocking prompt in its unfolded card
     let sw = demo();
     let v = View {
-        thread: Some("ref:#48".into()),
         agent: Some("c1d2e3f".into()),
+        focus: 1,
         ..demo_view()
     };
     let text = render(&sw, &v, 160, 45).text();
     has(&text, "? Use \"Retrying…\" or \"Reconnecting…\"");
-    has(&text, "  for the banner? The design doc and");
     has(&text, "needs answer");
     let v = View {
         orch: Some("w1:p3".into()),
-        thread: Some("main:w1:p3".into()),
-        agent: Some("main:w1:p3".into()),
+        agent: None,
+        focus: 0,
         ..demo_view()
     };
     let text = render(&sw, &v, 160, 45).text();
-    has(&text, "! Publish the v2 docs now or after the");
-    has(&text, "  release?");
-    has(&text, "g open pane  t transcript  a answer    │"); // the hints fit the card
+    has(&text, "! Publish the v2 docs now or after");
+    has(&text, "release?");
+    has(&text, "g open pane  t transcript  a answer"); // the hints fit the card
 }
 
 #[test]
-fn an_explicit_thread_shows_its_pct_and_worktree() {
-    // test_render.py::test_explicit_thread_shows_pct_and_worktree
+fn an_untitled_agent_reads_role_id_and_model() {
+    // test_render.py::test_explicit_thread_shows_pct_and_worktree's agent (its thread's
+    // phase and worktree went with the thread card)
     let v = View {
         orch: Some("w1:p3".into()),
-        thread: Some("x:docs-v2".into()),
         agent: Some("d1e2f3a".into()),
+        focus: 1,
         ..demo_view()
     };
-    let text = render(&demo(), &v, 160, 45).text();
-    has(&text, "write · 33m · 60%");
-    has(&text, "wt/docs-v2");
-    has(&text, "writer d1e2f3a · sonnet");
+    has(
+        &render(&demo(), &v, 160, 45).text(),
+        "writer d1e2f3a · sonnet",
+    );
 }
 
 #[test]
 fn filters() {
-    // test_render.py::test_filters
+    // test_render.py::test_filters, on the root's depth-1 agents
     let sw = demo();
     let v = |filter| View {
         filter,
         ..demo_view()
     };
     assert_eq!(nav(&sw, &v(Filter::Needs))[0], ["w1:p1", "w1:p3", NEW_ROW]);
-    assert_eq!(nav(&sw, &v(Filter::Needs))[1], ["ref:#44", "ref:#48"]);
+    assert_eq!(nav(&sw, &v(Filter::Needs))[1], ["b3a9c41", "c1d2e3f"]);
     assert_eq!(
         nav(&sw, &v(Filter::Running))[1],
-        ["ref:#42", "ref:#44", "ref:#48"]
+        ["a1c3d90", "a2f81c0", "b3a9c41", "c1d2e3f"]
     );
     has(&render(&sw, &v(Filter::Needs), 160, 45).text(), "needs me");
 }
@@ -179,23 +184,22 @@ fn long_columns_scroll_to_keep_the_selection_visible() {
     // test_render.py::test_long_columns_scroll_to_keep_the_selection_visible
     let mut sw = demo();
     for i in 0..12 {
-        let t: Thread = serde_json::from_value(json!({
-            "id": format!("t{i}"), "name": format!("Thread {i}"), "source": "turn",
-            "status": "active", "started": demo_now() - f64::from(i),
+        let a: Agent = serde_json::from_value(json!({
+            "id": format!("x{i}"), "role": "extra", "status": "run",
+            "started": demo_now() + f64::from(i),
         }))
         .unwrap();
-        sw.orchestrators[0].threads.insert(0, t);
+        sw.orchestrators[0].threads[0].agents.push(a);
     }
     let v = View {
-        thread: Some("ref:#48".into()),
-        agent: Some("c1d2e3f".into()),
+        agent: Some("x11".into()),
         focus: 1,
         ..demo_view()
     };
     let s = render(&sw, &v, 160, 30);
-    has(&s.text(), "PR #48 retry banner copy");
-    let threads = s.columns.iter().find(|c| c.column == 1).unwrap();
-    assert!(threads.offset > 0);
+    has(&s.text(), "extra x11");
+    let agents = s.columns.iter().find(|c| c.column == 1).unwrap();
+    assert!(agents.offset > 0);
 }
 
 #[test]
@@ -207,11 +211,11 @@ fn inferred_and_lost_agents_are_marked() {
     t.agents[3].status = Status::Lost;
     let (inf, lost) = (t.agents[2].id.clone(), t.agents[3].id.clone());
     let mut v = View {
-        focus: 2,
+        focus: 1,
         agent: Some(inf),
         ..demo_view()
     };
-    v.fin_open.insert("ref:#42".into());
+    v.fin_open.insert("w1:p1".into());
     let text = render(&sw, &v, 160, 45).text();
     has(&text, " ✓?"); // pod
     has(&text, "done?"); // status label
@@ -221,11 +225,13 @@ fn inferred_and_lost_agents_are_marked() {
     has(&text, "lost");
 }
 
+/// The demo at frame `f`, the keyboard in the tree (the root cards folded).
 fn frame(f: f64) -> Screen {
     render(
         &demo(),
         &View {
             frame: f,
+            focus: 1,
             ..demo_view()
         },
         160,
@@ -239,11 +245,11 @@ fn animation_frames_step_the_bar_blink_and_spinner_without_changing_widths() {
     let frames: Vec<Screen> = (0..8).map(|f| frame(f64::from(f))).collect();
     for (f, s) in frames.iter().enumerate() {
         assert_eq!(s.w(), 160);
-        // the working bar on Billing API's bottom border (row 6): p = f % (26 + 6) - 3
-        let bar: Vec<i32> = (3..29).filter(|x| s.cell(*x, 6).ch == '━').collect();
-        let p = f as i32 % 32 - 3;
+        // the working bar on Billing API's bottom border (row 6), seed 0, 40 cells
+        let bar: Vec<i32> = (3..43).filter(|x| s.cell(*x, 6).ch == '━').collect();
+        let p = sweep_pos(f as f64, 0, 40) as i32;
         let want: Vec<i32> = (p..p + 4)
-            .filter(|i| (0..26).contains(i))
+            .filter(|i| (0..40).contains(i))
             .map(|i| 3 + i)
             .collect();
         assert_eq!(bar, want, "frame {f}");
@@ -256,9 +262,9 @@ fn animation_frames_step_the_bar_blink_and_spinner_without_changing_widths() {
     let fail = status(&Status::Failed);
     let blink: Vec<Rgb> = (0..4).map(|f| frames[f].cell(2, 4).fg).collect();
     assert_eq!(blink, [fail, fail, FAINT, FAINT]);
-    // a running agent's spinner turns one frame per tick
+    // a running root's spinner turns one frame per tick
     assert_ne!(frames[0].cell(5, 9).ch, frames[1].cell(5, 9).ch);
-    // nothing else moves: text outside the animated cells is identical
+    // nothing else moves: only the rows of the animated cells change
     let (a, b) = (frames[0].text(), frames[1].text());
     let moved: Vec<usize> = a
         .lines()
@@ -267,21 +273,26 @@ fn animation_frames_step_the_bar_blink_and_spinner_without_changing_widths() {
         .filter(|(_, (x, y))| x != y)
         .map(|(i, _)| i)
         .collect();
-    assert_eq!(moved, [6, 9, 11, 16]);
+    assert_eq!(moved, MOVED);
 }
 
+/// The rows frames 0 and 1 differ in: Billing API's bar, Search refactor's spinner, and the
+/// depth-1 cards' bars and spinners (Rust's render, reviewed).
+const MOVED: [usize; 4] = [6, 9, 11, 16];
+
 #[test]
-fn quiet_orchestrators_do_not_animate() {
+fn quiet_roots_do_not_animate() {
     // test_render.py::test_quiet_orchestrators_do_not_animate (Release notes is all done: no
     // edge, no bar, the same in every frame)
     let (f0, f2) = (frame(0.0).text(), frame(2.0).text());
     let lines = |t: &str| {
         t.lines()
-            .skip(19)
-            .take(3)
+            .skip(18)
+            .take(4)
             .map(str::to_owned)
             .collect::<Vec<_>>()
     };
+    assert!(lines(&f0)[1].contains("Release notes"));
     assert_eq!(lines(&f0), lines(&f2));
     assert_eq!(frame(0.0).cell(2, 19).ch, '│');
     assert!(!panorama_core::view::moving::animated(
@@ -292,20 +303,21 @@ fn quiet_orchestrators_do_not_animate() {
 
 #[test]
 fn every_card_has_an_animated_edge() {
-    // test_render.py::test_r4_thread_and_agent_cards_have_animated_edges: the thread column
-    // at x=36: PR #42 (reviewing, steady), PR #44 (failed, blinks), PR #48 (question, blinks)
+    // test_render.py::test_r4_thread_and_agent_cards_have_animated_edges, on the depth-1
+    // column at x=51: the reviewer (steady), the failed fixer and the asking author (blink),
+    // the queued author none
     let (f0, f2) = (frame(0.0), frame(2.0));
+    let at = |label: &str| row_of(&f0, label) as i32;
     let rev = status(&Status::Reviewing);
+    let y = at("reviewer a2f81c0");
     assert!(
-        "┃┨".contains(f0.cell(36, 4).ch) && f0.cell(36, 4).fg == rev && f2.cell(36, 4).fg == rev
+        "┃┨".contains(f0.cell(51, y).ch) && f0.cell(51, y).fg == rev && f2.cell(51, y).fg == rev
     );
-    assert!(f0.cell(36, 18).fg == status(&Status::Failed) && f2.cell(36, 18).fg == FAINT);
-    assert!(f0.cell(36, 25).fg == status(&Status::Waiting) && f2.cell(36, 25).fg == FAINT);
-    // the agent column at x=93: the reviewing agent's card has an edge; the queued author none
-    let text = f0.text();
-    let row_of = |w: &str| text.lines().position(|r| r.contains(w)).unwrap() as i32;
-    assert!("┃┨".contains(f0.cell(93, row_of("reviewer a2f81c0")).ch));
-    assert!("│┤".contains(f0.cell(93, row_of("author a1c3d90")).ch));
+    let y = at("fixer b3a9c41");
+    assert!(f0.cell(51, y).fg == status(&Status::Failed) && f2.cell(51, y).fg == FAINT);
+    let y = at("author c1d2e3f");
+    assert!(f0.cell(51, y).fg == status(&Status::Waiting) && f2.cell(51, y).fg == FAINT);
+    assert!("│┤".contains(f0.cell(51, at("author a1c3d90")).ch));
 }
 
 #[test]
@@ -314,8 +326,8 @@ fn sweeps_are_all_running_colour_and_offset_per_card() {
     // test_render.py::test_r4_sweeps_are_all_running_colour_and_offset_per_card
     let v = View {
         orch: Some("w1:p2".into()),
-        thread: Some("wf:wf_search".into()),
         agent: Some("j1a2b3c".into()),
+        focus: 1,
         frame: f64::from(FRAME),
         ..demo_view()
     };
@@ -329,20 +341,14 @@ fn sweeps_are_all_running_colour_and_offset_per_card() {
             bars.push(cells);
         }
     }
-    // the design's offsets at frame 5: p = (frame + seed * 7) % lap * (n + 6) / lap - 3
-    let orch: std::collections::BTreeSet<i32> =
-        bars.iter().map(|c| c[0]).filter(|x| *x < 30).collect();
-    assert_eq!(orch, [2 + 1 + (FRAME % 32 - 3)].into()); // seed 0, all in step
-    // the first thread: seed 1; a 50-column card laps in at most 48 frames
-    let thread = bars
-        .iter()
-        .find(|c| c.iter().any(|x| (36..86).contains(x)))
-        .unwrap();
-    let first = thread.iter().find(|x| (36..86).contains(*x)).unwrap();
-    assert_eq!(*first, 36 + 1 + ((FRAME + 7) % 48 * 54 / 48 - 3));
+    // the roots: seed 0, all in step
+    let roots: std::collections::BTreeSet<i32> =
+        bars.iter().map(|c| c[0]).filter(|x| *x < 44).collect();
+    let p = sweep_pos(f64::from(FRAME), 0, 40) as i32;
+    assert_eq!(roots, [3 + p.max(0)].into());
     let agents: std::collections::BTreeSet<i32> = bars
         .iter()
-        .filter_map(|c| c.iter().filter(|x| **x >= 93).min().copied())
+        .filter_map(|c| c.iter().filter(|x| **x >= 51).min().copied())
         .collect();
     assert_eq!(agents.len(), 2); // the two running agents: their own seeds
 }
@@ -350,16 +356,15 @@ fn sweeps_are_all_running_colour_and_offset_per_card() {
 #[test]
 fn links_join_animated_edges() {
     // test_render.py::test_r4_links_join_animated_edges (its narrow half is narrow_layout.rs's)
-    let r = rows(&frame(0.0));
-    assert_eq!(ch(&r, 29, 4), '├'); // Billing API is selected: the link leaves right
-    assert_eq!(ch(&r, 36, 4), '┨'); // into PR #42's edged border
-    assert!("┨┃".contains(ch(&r, 36, 18)));
+    let f = frame(0.0);
+    let r = rows(&f);
+    assert_eq!(ch(&r, 43, 4), '├'); // Billing API is selected: the link leaves right
+    assert_eq!(ch(&r, 51, row_of(&f, "fixer b3a9c41")), '┨'); // into an edged border
 }
 
 fn deep_view(agent: Option<&str>, focus: usize) -> View {
     View {
         orch: Some("w1:p3".into()),
-        thread: Some(TID.into()),
         agent: agent.map(Into::into),
         focus,
         now: DEEP_NOW,
@@ -375,11 +380,14 @@ fn deep() -> Swarm {
 fn columns_keep_their_width_and_align_left() {
     // test_deep.py::test_columns_keep_their_width_and_align_left: a column never stretches
     // into the space left on the right (a stretched card's sweep ran too long)
-    let r = rows(&render(&deep(), &deep_view(None, 1), 160, 45));
-    assert!(
-        ch(&r, 93, 4) == '┨' && ch(&r, 136, 4) == '│' && seg(&r, 4, 137..160).trim().is_empty()
-    );
-    let r = rows(&render(&deep(), &deep_view(Some("b1"), 3), 160, 45));
+    let r = rows(&render(&deep(), &deep_view(Some("l1"), 0), 160, 45));
+    let tops: Vec<char> = [2, 43, 51, 94, 102, 145]
+        .iter()
+        .map(|x| ch(&r, *x, 3))
+        .collect();
+    assert_eq!(tops, ['╭', '╮', '╭', '╮', '╭', '╮']);
+    assert!(seg(&r, 3, 146..160).trim().is_empty());
+    let r = rows(&render(&deep(), &deep_view(Some("b1"), 2), 160, 45));
     let tops: Vec<char> = [4, 47, 55, 98, 106, 149]
         .iter()
         .map(|x| ch(&r, *x, 3))
@@ -391,14 +399,14 @@ fn columns_keep_their_width_and_align_left() {
 #[test]
 fn a_narrow_screen_shrinks_the_last_column_and_keeps_the_focus_and_its_parents() {
     // test_deep.py::test_narrow_screens_shrink_the_last_column_and_keep_the_focus_and_its_parents
-    let s = render(&deep(), &deep_view(Some("c1"), 5), 120, 45);
+    let s = render(&deep(), &deep_view(Some("c1"), 4), 120, 45);
     let text = s.text();
     let r: Vec<&str> = text.lines().collect();
     has(
         r[2],
-        "‹ Core Library › Refactor: plugin loader › lead l1 › researcher r1   4 columns left",
+        "‹ Core Library › lead l1 › researcher r1   3 columns left",
     );
-    has(r[2], "depth 5  1 column right ›"); // c1's children did not fit
+    has(r[2], "Depth 5  1 column right ›"); // c1's children did not fit
     has(&text, "checker c1");
     has(r[4], "researcher r2");
     let last = r[3]
@@ -408,17 +416,14 @@ fn a_narrow_screen_shrinks_the_last_column_and_keeps_the_focus_and_its_parents()
         .map(|(i, _)| i)
         .last();
     assert!(last.is_some_and(|x| x < 118));
-    assert_eq!(s.hlo, 4);
+    assert_eq!(s.hlo, 3);
 }
 
 #[test]
-fn a_flat_thread_draws_like_2a_without_the_scroll_line() {
+fn a_flat_tree_draws_without_the_scroll_line() {
     // test_deep.py::test_a_flat_thread_draws_like_2a_without_the_scroll_line
     let v = View {
-        orch: Some("w1:p1".into()),
-        thread: Some("ref:#42".into()),
-        agent: Some("a2f81c0".into()),
-        focus: 2,
+        focus: 1,
         ..demo_view()
     };
     let s = render(&demo(), &v, 160, 45);
@@ -427,39 +432,38 @@ fn a_flat_thread_draws_like_2a_without_the_scroll_line() {
         r[2].iter().all(|c| *c == ' ')
             && !s.text().lines().nth(44).unwrap().contains("shift+wheel")
     );
-    assert_eq!([ch(&r, 85, 4), ch(&r, 93, 4)], ['├', '┤']);
+    assert_eq!([ch(&r, 43, 4), ch(&r, 51, 4)], ['├', '┤']);
 }
 
 #[test]
 fn a_sideways_scroll_shows_its_hint_and_fixes_the_first_column() {
     // the key hint test_deep.py's sideways tests read, and View.hcol (Python's sideways scroll)
-    let s = render(&deep(), &deep_view(Some("c1"), 5), 160, 45);
+    let s = render(&deep(), &deep_view(Some("c1"), 4), 160, 45);
     has(
         s.text().lines().nth(44).unwrap(),
         "← back   shift+wheel scroll   enter details",
     );
     let v = View {
         hcol: Some(0),
-        ..deep_view(Some("c1"), 5)
+        ..deep_view(Some("c1"), 4)
     };
     let s = render(&deep(), &v, 160, 45);
     assert_eq!(s.hlo, 0);
     has(
         s.text().lines().nth(2).unwrap(),
-        "depth 2–5  4 columns right ›",
+        "Depth 3–5  3 columns right ›",
     );
     let v = View {
         hcol: Some(99),
-        ..deep_view(Some("c1"), 5)
+        ..deep_view(Some("c1"), 4)
     };
-    assert_eq!(render(&deep(), &v, 160, 45).hlo, 6); // clamped to the last column
+    assert_eq!(render(&deep(), &v, 160, 45).hlo, 5); // clamped to the last column
 }
 
 /// test_wide.py `r1_id`: the depth-2 agent tracing the manifest cache.
 fn r1(sw: &Swarm) -> String {
-    let t = &sw.orchestrators[0].threads[0];
-    t.agents
-        .iter()
+    sw.orchestrators[0]
+        .agents()
         .find(|a| a.depth == 2 && a.activity.starts_with("tracing"))
         .unwrap()
         .id
@@ -472,7 +476,7 @@ fn the_full_title_fits_from_240_columns() {
     let sw = tree_swarm(&fixture("design_7.json"));
     let sel = r1(&sw);
     for (w, whole) in [(160, false), (240, true), (320, true)] {
-        let text = render(&sw, &deep_view(Some(&sel), 3), w, 45).text();
+        let text = render(&sw, &deep_view(Some(&sel), 2), w, 45).text();
         assert_eq!(
             text.contains(&format!("general-purpose {sel} · opus 4.5")),
             whole,
@@ -482,11 +486,12 @@ fn the_full_title_fits_from_240_columns() {
 }
 
 #[test]
-fn the_background_card_is_selectable_in_the_thread_column() {
-    // test_states.py::test_the_background_card_is_selectable_in_the_thread_column
+fn a_roots_background_work_is_in_its_card_not_a_column() {
+    // test_states.py::test_the_background_card_is_selectable_in_the_thread_column: the
+    // background card went with the thread column; the root's card lists the tasks
     let o: Orchestrator = serde_json::from_value(json!({
         "pane_id": "p", "tab_id": "t", "tab_label": "o", "session_id": "s",
-        "bg": [{"id": "b", "kind": "Bash", "description": "w", "started": DEEP_NOW}],
+        "bg": [{"id": "b", "kind": "Bash", "description": "watch the build", "started": DEEP_NOW}],
     }))
     .unwrap();
     let sw = Swarm {
@@ -495,9 +500,11 @@ fn the_background_card_is_selectable_in_the_thread_column() {
     };
     let v = View {
         orch: Some("p".into()),
+        now: DEEP_NOW,
         ..View::default()
     };
-    assert_eq!(nav(&sw, &v)[1][0], format!("{BG_CARD}p"));
+    assert!(nav(&sw, &v)[1].is_empty());
+    has(&render(&sw, &v, 160, 45).text(), "watch the build");
 }
 
 /// test_current_card.py: the top border colour of the card titled `label`.
@@ -574,86 +581,86 @@ fn without_a_pulse_the_selection_is_unchanged() {
 }
 
 #[test]
-fn scrolled_off_orchestrators_link_their_threads_in_from_the_left() {
-    // the focus on depth 1 of the deep thread: the orchestrators are off to the left, the
-    // thread card's link comes in from the screen's edge (captured from Python's render)
-    let s = render(&deep(), &deep_view(Some("l1"), 2), 160, 45);
+fn scrolled_off_roots_link_their_tree_in_from_the_left() {
+    // the focus on depth 2 of the deep tree: the roots are off to the left, the depth-1
+    // cards' link comes in from the screen's edge
+    let s = render(&deep(), &deep_view(Some("r1"), 2), 160, 45);
     let text = s.text();
     let r: Vec<&str> = text.lines().collect();
-    let left: Vec<String> = (2..9).map(|y| r[y].chars().take(8).collect()).collect();
-    assert_eq!(
-        left,
-        [
-            "  ‹ Core",
-            "    ╭───",
-            "────┨ ✗ ",
-            "    ┃   ",
-            "    ┃   ",
-            "    ┃   ",
-            "    ┃   "
-        ]
+    let left: Vec<String> = (2..6).map(|y| r[y].chars().take(8).collect()).collect();
+    assert_eq!(left, ["  ‹ Core", "    ╭───", "─┬──┨  ⠇", " │  ╰───"]);
+    assert!(
+        r[2].starts_with("  ‹ Core Library   1 column left"),
+        "{}",
+        r[2]
     );
-    let line = "  ‹ Core Library   1 column left                                                                                                  depth 3–5  3 columns right ›";
-    assert_eq!(r[2], line);
+    assert!(r[2].ends_with("Depth 4–5  2 columns right ›"), "{}", r[2]);
     assert_eq!(s.hlo, 1);
 }
 
 #[test]
 fn a_tree_taller_than_the_screen_says_more_below() {
-    // captured from Python's render at 14 rows
-    let s = render(&deep(), &deep_view(Some("v1"), 2), 160, 14);
-    let want = format!("{}↓ more below", " ".repeat(63));
+    let s = render(&deep(), &deep_view(Some("v1"), 1), 160, 14);
+    let want = format!("{}↓ more below", " ".repeat(53));
     assert_eq!(s.text().lines().nth(10).unwrap(), want);
 }
 
 #[test]
 fn a_selected_agent_in_a_column_scrolled_off_does_not_unfold() {
     // r1 (depth 2) is selected but its column is scrolled off to the left: it keeps a folded
-    // card's height, so b1's children below it stay where Python drew them
-    let v = View {
-        hcol: Some(4),
-        ..deep_view(Some("r1"), 3)
+    // card's height, so the cards below it stay where they are with nothing selected there
+    let rows_of = |agent: Option<&str>| {
+        let v = View {
+            hcol: Some(3),
+            ..deep_view(agent, 2)
+        };
+        let s = render(&deep(), &v, 160, 45);
+        assert_eq!(s.hlo, 3);
+        let text = s.text();
+        ["checker c1", "shard s1", "shard s8", "3 finished"]
+            .map(|w| text.lines().position(|r| r.contains(w)))
     };
-    let s = render(&deep(), &v, 160, 45);
-    assert_eq!(s.hlo, 4);
-    let text = s.text();
-    let row = |w: &str| text.lines().position(|r| r.contains(w));
-    let rows: Vec<Option<usize>> = ["checker c1", "shard s1", "shard s8", "3 finished"]
-        .map(row)
-        .into();
-    assert_eq!(rows, [Some(4), Some(16), Some(32), Some(36)]); // captured from Python's render
+    let selected = rows_of(Some("r1"));
+    assert!(selected.iter().all(Option::is_some), "{selected:?}");
+    assert_eq!(selected, rows_of(Some("v1")));
 }
 
 #[test]
 fn more_below_shows_only_when_the_tree_is_taller_than_the_column() {
-    // the boundary, from Python's render: at 42 rows the tree is one row taller than the
-    // column; at 43 it fits exactly
+    // the boundary: one row taller than the column, then exactly fitting
     let more = |h| {
-        render(&deep(), &deep_view(Some("l1"), 2), 160, h)
+        render(&deep(), &deep_view(Some("l1"), 1), 160, h)
             .text()
             .contains("more below")
     };
-    assert!(more(42));
-    assert!(!more(43));
+    assert!(more(MORE_H));
+    assert!(!more(MORE_H + 1));
 }
+
+/// The deep tree's height with l1 unfolded, as the screen height it fits in, less one.
+const MORE_H: i32 = 42;
 
 #[test]
 fn the_path_above_the_columns_cuts_each_name_at_28() {
-    // a 29-character tab label: 27 characters and "…" (captured from Python's render)
+    // a 29-character tab label: 27 characters and "…"
     let mut sw = deep();
     sw.orchestrators[0].tab_label = "Core Library of plugins 12345".into();
-    let s = render(&sw, &deep_view(Some("c1"), 5), 160, 45);
-    let want = "  ‹ Core Library of plugins 123… › Refactor: plugin loader › lead l1 › researcher r1   4 columns left";
-    assert!(s.text().lines().nth(2).unwrap().starts_with(want));
+    let s = render(&sw, &deep_view(Some("c1"), 4), 160, 45);
+    let want = "  ‹ Core Library of plugins 123… › lead l1 › researcher r1   3 columns left";
+    assert!(
+        s.text().lines().nth(2).unwrap().starts_with(want),
+        "{}",
+        s.text()
+    );
 }
 
 #[test]
 fn a_selected_agent_scrolled_off_keeps_a_folded_height_for_the_cards_below_it() {
     // a spawned x (selected) and y, y spawned z; only z's column is shown: x keeps three
-    // rows, so y and z start right below it (z's row captured from Python's render)
+    // rows, so y and z start right below it
     let o: Orchestrator = serde_json::from_value(json!({
         "pane_id": "p", "tab_id": "tt", "tab_label": "o", "session_id": null,
-        "threads": [{"id": "t", "name": "n", "source": "turn", "status": "active", "agents": [
+        "threads": [{"id": "agents", "name": "n", "source": "session", "agents": [
             {"id": "a", "status": "run", "started": 1.0},
             {"id": "x", "parent": "a", "status": "run", "started": 2.0, "activity": "long ".repeat(20)},
             {"id": "y", "parent": "a", "status": "run", "started": 3.0},
@@ -667,15 +674,14 @@ fn a_selected_agent_scrolled_off_keeps_a_folded_height_for_the_cards_below_it() 
     };
     let v = View {
         orch: Some("p".into()),
-        thread: Some("t".into()),
         agent: Some("x".into()),
-        focus: 3,
-        hcol: Some(4),
+        focus: 2,
+        hcol: Some(3),
         now: 10.0,
         ..View::default()
     };
     let s = render(&sw, &v, 160, 45);
-    assert_eq!(s.hlo, 4);
+    assert_eq!(s.hlo, 3);
     let text = s.text();
     let z = text.lines().position(|r| r.contains("agent z"));
     assert_eq!(z, Some(8));
@@ -684,5 +690,28 @@ fn a_selected_agent_scrolled_off_keeps_a_folded_height_for_the_cards_below_it() 
             .nth(8)
             .unwrap()
             .starts_with("────┨  ⠋  agent z   running")
+    );
+}
+
+#[test]
+fn the_roots_own_finished_group_folds_by_its_pane() {
+    let v = View {
+        agent: Some(format!("{FIN_CARD}w1:p1")),
+        focus: 1,
+        ..demo_view()
+    };
+    let mut open = v.clone();
+    open.fin_open.insert("w1:p1".into());
+    let (folded, unfolded) = (
+        render(&demo(), &v, 160, 45).text(),
+        render(&demo(), &open, 160, 45).text(),
+    );
+    assert!(
+        folded.contains("8 finished") && folded.contains('▸'),
+        "{folded}"
+    );
+    assert!(
+        unfolded.contains('▾') && unfolded.contains("author e1a2b3c"),
+        "{unfolded}"
     );
 }

@@ -1,0 +1,343 @@
+{
+  "source": "synthetic, written by gen_uniform.py for the U4 graph renders (plan uniform-agent-tree.md U4, D5): one uniform tree per root",
+  "now": 1800000000.0,
+  "swarm": {
+    "generated_at": 1800000000.0,
+    "herdr_ok": true,
+    "inbox_ok": true,
+    "stale_after": 1800.0,
+    "orchestrators": [
+      {
+        "pane_id": "w1:p1",
+        "tab_id": "w1:t1",
+        "tab_label": "Billing API",
+        "tab_no": 1,
+        "title": "Billing API",
+        "title_source": "tab",
+        "session_id": "s-w1:p1",
+        "harness": "claude",
+        "herdr_status": "working",
+        "last_activity": 1799999970.0,
+        "threads": [
+          {
+            "id": "agents",
+            "name": "Billing API",
+            "source": "session",
+            "agents": [
+              {
+                "id": "a1c0",
+                "title": "Review PR #42 round 2",
+                "title_source": "spawner",
+                "role": "reviewer",
+                "model": "opus",
+                "status": "rev",
+                "started": 1799998740.0,
+                "parent": null,
+                "tool_calls": 52,
+                "activity": "Bash(Diff totals.py against round 1)",
+                "last_message": "Round 1 High is fixed. Checking the Medium on currency codes next."
+              },
+              {
+                "id": "a1c1",
+                "title": "Check currency codes",
+                "title_source": "spawner",
+                "role": "",
+                "model": "haiku",
+                "status": "run",
+                "started": 1799999400.0,
+                "parent": "a1c0",
+                "tool_calls": 14,
+                "activity": "Grep(ISO 4217 in billing/)"
+              },
+              {
+                "id": "a1c2",
+                "title": "Re-run the totals fixture",
+                "title_source": "spawner",
+                "role": "",
+                "model": "haiku",
+                "status": "done",
+                "started": 1799999100.0,
+                "parent": "a1c0",
+                "tool_calls": 6,
+                "activity": "",
+                "ended": 1799999940.0
+              },
+              {
+                "id": "b2f0",
+                "title": "Fix CI for PR #44",
+                "title_source": "spawner",
+                "role": "",
+                "model": "sonnet",
+                "status": "fail",
+                "started": 1799999100.0,
+                "parent": null,
+                "tool_calls": 23,
+                "activity": "stopped after the test run",
+                "ended": 1799999940.0,
+                "error": "tests/badge_test.py::test_colour failed"
+              },
+              {
+                "id": "c3e0",
+                "title": "Draft retry banner copy",
+                "title_source": "spawner",
+                "role": "",
+                "model": "sonnet",
+                "status": "wait",
+                "started": 1799999340.0,
+                "parent": null,
+                "tool_calls": 2,
+                "activity": "ask_operator",
+                "question_ids": [
+                  8
+                ],
+                "questions": [
+                  "Use “Retrying…” or “Reconnecting…” for the banner?"
+                ]
+              },
+              {
+                "id": "d4a0",
+                "title": "Explore billing schema",
+                "title_source": "spawner",
+                "role": "",
+                "model": "haiku",
+                "status": "done",
+                "started": 1799997000.0,
+                "parent": null,
+                "tool_calls": 31,
+                "activity": "",
+                "ended": 1799997600.0
+              },
+              {
+                "id": "d4a1",
+                "title": "Explore billing schema",
+                "title_source": "spawner",
+                "role": "",
+                "model": "haiku",
+                "status": "done",
+                "started": 1799997100.0,
+                "parent": null,
+                "tool_calls": 12,
+                "activity": "",
+                "ended": 1799997700.0
+              },
+              {
+                "id": "d4a2",
+                "title": "Summarise invoice export",
+                "title_source": "spawner",
+                "role": "",
+                "model": "haiku",
+                "status": "done",
+                "started": 1799997200.0,
+                "parent": null,
+                "tool_calls": 9,
+                "activity": "",
+                "ended": 1799997800.0
+              }
+            ]
+          }
+        ],
+        "inbox": [
+          7,
+          8
+        ],
+        "inbox_texts": [
+          "Merge PR #41 with a merge commit or squash?",
+          "Use “Retrying…” or “Reconnecting…” for the banner?"
+        ],
+        "hidden_finished": 2,
+        "transcript": "/home/op/.claude/projects/billing/s1.jsonl"
+      },
+      {
+        "pane_id": "w1:p2",
+        "tab_id": "w1:t2",
+        "tab_label": "Search refactor",
+        "tab_no": 2,
+        "title": "Search refactor",
+        "title_source": "tab",
+        "session_id": "s-w1:p2",
+        "harness": "codex",
+        "herdr_status": "working",
+        "last_activity": 1799999970.0,
+        "threads": [
+          {
+            "id": "agents",
+            "name": "Search refactor",
+            "source": "session",
+            "agents": [
+              {
+                "id": "s100",
+                "title": "Index plugin loaders",
+                "title_source": "spawner",
+                "role": "",
+                "model": "gpt-5",
+                "status": "run",
+                "started": 1799997600.0,
+                "parent": null,
+                "tool_calls": 40,
+                "activity": "splitting PluginLoader::load into stages"
+              },
+              {
+                "id": "s110",
+                "title": "Trace the manifest cache",
+                "title_source": "spawner",
+                "role": "",
+                "model": "gpt-5",
+                "status": "run",
+                "started": 1799998200.0,
+                "parent": "s100",
+                "tool_calls": 22,
+                "activity": "reading cache/manifest.rs"
+              },
+              {
+                "id": "s111",
+                "title": "Check cache invalidation",
+                "title_source": "spawner",
+                "role": "",
+                "model": "gpt-5",
+                "status": "run",
+                "started": 1799998800.0,
+                "parent": "s110",
+                "tool_calls": 11,
+                "activity": "cargo test cache::"
+              },
+              {
+                "id": "s112",
+                "title": "Ask about the lockfile",
+                "title_source": "spawner",
+                "role": "",
+                "model": "gpt-5",
+                "status": "wait",
+                "started": 1799999300.0,
+                "parent": "s111",
+                "tool_calls": 3,
+                "activity": "",
+                "question_ids": [
+                  9
+                ],
+                "questions": [
+                  "Bump Cargo.lock for notify, or pin 6.1?"
+                ]
+              },
+              {
+                "id": "s113",
+                "title": "Probe the notify crate",
+                "title_source": "spawner",
+                "role": "",
+                "model": "gpt-5",
+                "status": "run",
+                "started": 1799999600.0,
+                "parent": "s112",
+                "tool_calls": 4,
+                "activity": "cargo tree -i notify"
+              },
+              {
+                "id": "s120",
+                "title": "Shard loaders a–f",
+                "title_source": "spawner",
+                "role": "",
+                "model": "gpt-5",
+                "status": "run",
+                "started": 1799999100.0,
+                "parent": "s100",
+                "tool_calls": 12,
+                "activity": "indexing loaders/a…f"
+              },
+              {
+                "id": "s121",
+                "title": "Shard loaders g–m",
+                "title_source": "spawner",
+                "role": "",
+                "model": "gpt-5",
+                "status": "done",
+                "started": 1799999100.0,
+                "parent": "s100",
+                "tool_calls": 9,
+                "activity": "",
+                "ended": 1799999940.0
+              },
+              {
+                "id": "s130",
+                "title": "Fix the parse error",
+                "title_source": "spawner",
+                "role": "",
+                "model": "gpt-5",
+                "status": "fail",
+                "started": 1799999500.0,
+                "parent": "s110",
+                "tool_calls": 6,
+                "activity": "",
+                "ended": 1799999940.0,
+                "error": "parse error in loaders/x.rs"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "pane_id": "w1:p3",
+        "tab_id": "w1:t3",
+        "tab_label": "Docs site",
+        "tab_no": 3,
+        "title": "Docs site",
+        "title_source": "tab",
+        "session_id": "s-w1:p3",
+        "harness": "claude",
+        "herdr_status": "blocked",
+        "last_activity": 1799999970.0,
+        "threads": [
+          {
+            "id": "agents",
+            "name": "Docs site",
+            "source": "session",
+            "agents": [
+              {
+                "id": "w100",
+                "title": "Write the migration guide",
+                "title_source": "spawner",
+                "role": "",
+                "model": "sonnet",
+                "status": "run",
+                "started": 1799998020.0,
+                "parent": null,
+                "tool_calls": 33,
+                "activity": "Bash(Build the docs site)"
+              }
+            ]
+          }
+        ],
+        "pending": [
+          "Publish the v2 docs now or after the release?"
+        ],
+        "bg": [
+          {
+            "id": "bg1",
+            "kind": "bash",
+            "description": "mkdocs serve --strict",
+            "started": 1799999400.0
+          }
+        ]
+      },
+      {
+        "pane_id": "w1:p4",
+        "tab_id": "w1:t4",
+        "tab_label": "Release notes",
+        "tab_no": 4,
+        "title": "Release notes",
+        "title_source": "tab",
+        "session_id": "s-w1:p4",
+        "harness": "claude",
+        "herdr_status": "idle",
+        "last_activity": 1799999100.0,
+        "threads": [
+          {
+            "id": "agents",
+            "name": "Release notes",
+            "source": "session",
+            "agents": []
+          }
+        ],
+        "hidden_finished": 3
+      }
+    ]
+  }
+}

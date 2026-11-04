@@ -39,11 +39,10 @@ fn the_selected_title_stops_before_the_state() {
                            "started": 0.0, "ended": ended});
             let v = View {
                 orch: Some("w1:p1".into()),
-                thread: Some("t".into()),
                 agent: Some("a6c8a7b1".into()),
-                focus: 2,
+                focus: 1,
                 now: 3600.0,
-                fin_open: ["t".to_owned()].into(),
+                fin_open: ["w1:p1".to_owned()].into(),
                 ..View::default()
             };
             let rows = rows(&swarm_with(a), &v, w);
@@ -76,9 +75,8 @@ fn an_unselected_title_is_cut_too() {
         let a = json!({"id": "a6c8a7b1", "role": "general-purpose-very-long-agent-type", "model": "sonnet 4.5", "status": "run"});
         let v = View {
             orch: Some("w1:p1".into()),
-            thread: Some("t".into()),
             agent: Some("b2c3d4e".into()),
-            focus: 2,
+            focus: 1,
             now: 3600.0,
             ..View::default()
         };
@@ -162,9 +160,8 @@ fn titled() -> Swarm {
 fn titled_view(agent: &str) -> View {
     View {
         orch: Some("w1:p1".into()),
-        thread: Some("t".into()),
         agent: Some(agent.into()),
-        focus: 2,
+        focus: 1,
         now: 3600.0,
         ..View::default()
     }
@@ -174,7 +171,7 @@ fn titled_view(agent: &str) -> View {
 fn a_titled_card_leads_with_its_title_and_keeps_role_id_and_model_secondary() {
     let rows = rows(&titled(), &titled_view("a6c8a7b1"), 200);
     let text = rows.join("\n");
-    assert!(text.contains("Claude Code · Bill…"), "{text}"); // the title, not `orch`
+    assert!(text.contains("Claude Code · Billing API"), "{text}"); // the title, not `orch`
     let at = rows
         .iter()
         .position(|r| r.contains("Author the invoice export"))

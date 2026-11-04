@@ -16,7 +16,7 @@ pub fn tier(w: i32) -> (i32, i32) {
     } else if w >= 220 {
         (44, 56)
     } else {
-        (40, DW)
+        (42, DW)
     }
 }
 
