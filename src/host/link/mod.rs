@@ -74,6 +74,9 @@ impl Linker {
         else {
             return Signal::Absent;
         };
+        if address.contains('/') {
+            return Signal::Absent;
+        }
         let Some(before) = table.start(pid) else {
             return Signal::Absent;
         };
@@ -85,8 +88,7 @@ impl Linker {
             .as_ref()
             .and_then(Environment::claude_dir)
             .is_some_and(|own| &own == config);
-        if address.contains('/')
-            || first_claude([(pid, comm.as_str(), cmdline.as_slice())]).is_none()
+        if first_claude([(pid, comm.as_str(), cmdline.as_slice())]).is_none()
             || name.as_deref() != Some(comm.as_str())
             || argv.map(|a| a.into_iter().filter(|s| !s.is_empty()).collect::<Vec<_>>())
                 != Some(cmdline)

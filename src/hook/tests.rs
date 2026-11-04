@@ -382,12 +382,12 @@ fn setup_prints_the_three_hooks_with_the_binary_quoted_for_sh() {
     assert_eq!(start["matcher"], "startup|resume|clear|compact|fork");
     assert_eq!(
         start["hooks"][0]["command"],
-        r"'/opt/it'\''s here/panorama' hook session-start"
+        r"'/opt/it'\''s here/panorama' hook session-start >/dev/null 2>&1; exit 0"
     );
     assert_eq!(start["hooks"][0]["type"], "command");
     assert_eq!(
         hooks["SubagentStop"][0]["hooks"][0]["command"],
-        r"'/opt/it'\''s here/panorama' hook subagent-stop"
+        r"'/opt/it'\''s here/panorama' hook subagent-stop >/dev/null 2>&1; exit 0"
     );
     // The same matcher the plugin's own hooks file uses.
     let shipped: serde_json::Value =

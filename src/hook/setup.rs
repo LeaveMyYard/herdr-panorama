@@ -5,10 +5,12 @@ fn entry(matcher: &str, command: String) -> Value {
     json!([{ "matcher": matcher, "hooks": [{ "type": "command", "command": command, "timeout": 10 }] }])
 }
 
-/// The `{"hooks": …}` object for `binary` (an absolute path). The binary is quoted for `sh`.
+/// The `{"hooks": …}` object for `binary` (an absolute path). The binary is quoted for `sh`;
+/// Claude Code runs a command hook's string through the shell.
 pub fn snippet(binary: &str) -> Value {
     let quoted = format!("'{}'", binary.replace('\'', r"'\''"));
-    let run = |kind: &str| format!("{quoted} hook {kind}");
+    // Like the shipped hooks file: silent and exit 0 even if the binary moves later.
+    let run = |kind: &str| format!("{quoted} hook {kind} >/dev/null 2>&1; exit 0");
     json!({ "hooks": {
         "SessionStart": entry("startup|resume|clear|compact|fork", run("session-start")),
         "SubagentStart": entry(".+", run("subagent-start")),
