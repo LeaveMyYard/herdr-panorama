@@ -14,7 +14,7 @@ from pathlib import Path
 from check import check_mods
 from fs import Home, digest
 from keys import bindings, decoded, merge, render, undo
-from manifest import BASE_FILES, BINARY, MANIFEST, MODS, MOD_DATA_DIRS, parents, validate
+from manifest import BASE_FILES, BINARY, MANIFEST, METADATA_FILES, MODS, MOD_DATA_DIRS, parents, validate
 import runtime
 import frontend
 import preferences
@@ -55,6 +55,26 @@ def preflight(home, files):
         if home.exists(directory):
             with home.parent(directory + '/.probe'):
                 pass
+
+
+def write_metadata(home, path, value, on_publish):
+    # A running host writes its editor metadata into each newly created mod
+    # directory. Adopt only the exact planned (checker-generated) bytes as
+    # already installed; any other content is still an occupied destination.
+    published = []
+    def publish():
+        published.append(True)
+        on_publish()
+    for attempt in range(2):
+        current = home.read(path)
+        expected = current if current is not None and current[0] == value[0] else None
+        try:
+            return home.write(path, *value, expected=expected, on_publish=publish)
+        except (OSError, ValueError):
+            # Retry only a pre-publication race with the host's identical write.
+            again = None if attempt or published else home.read(path)
+            if again is None or again[0] != value[0]:
+                raise
 
 
 def remove_files(home, manifest, removed=None):
@@ -132,7 +152,11 @@ def install(home, args):
             raise ValueError('Install receipt exceeds 1 MiB')
         home.write(MANIFEST, *manifest_written, on_publish=lambda: published.update(manifest=True))
         for path, value in files.items():
-            home.write(path, *value, on_publish=lambda p=path: written.update({p: manifest['files'][p]}))
+            record = lambda p=path: written.update({p: manifest['files'][p]})
+            if path in METADATA_FILES:
+                write_metadata(home, path, value, record)
+            else:
+                home.write(path, *value, on_publish=record)
         if change:
             home.write('keys.json', decoded(change['after']), change['mode'], expected=original_keys,
                        on_publish=lambda: published.update(keys=True))

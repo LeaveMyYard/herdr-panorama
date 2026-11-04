@@ -307,3 +307,23 @@ test('receipt size cap refuses a large key merge without leaving an uninstallabl
   const before = tree(s.home), result = s.run('install'); fail(result); assert.match(result.stderr, /receipt exceeds 1 MiB/);
   assert.deepEqual(tree(s.home), before);
 });
+
+test('running-host editor metadata identical to the planned copy is adopted and recorded', t => {
+  const s = sandbox(t); personal(s); const before = tree(s.home);
+  const result = spawnSync('python3', [join(root, 'app/tests/host-race.py'), root, s.home, s.packageDir, s.checker, 'identical'], { env: s.env, encoding: 'utf8' });
+  ok(result); assert.match(result.stdout, /Installed panorama/);
+  const manifest = JSON.parse(readFileSync(s.manifest));
+  const metadata = Object.keys(manifest.files).filter(path => path.endsWith('/gpui-kit.d.ts') || path.endsWith('/jsconfig.json'));
+  assert.equal(metadata.length, 12);
+  for (const path of metadata) assert.equal(lstatSync(join(s.home, path)).mode & 0o777, manifest.files[path].mode);
+  const removal = s.run('uninstall'); ok(removal); assert.doesNotMatch(removal.stdout, /Preserved/);
+  assert.deepEqual(tree(s.home), before);
+});
+
+test('running-host editor metadata with different content still refuses as occupied', t => {
+  const s = sandbox(t); personal(s);
+  const result = spawnSync('python3', [join(root, 'app/tests/host-race.py'), root, s.home, s.packageDir, s.checker, 'different'], { env: s.env, encoding: 'utf8' });
+  fail(result); assert.match(result.stderr, /destination occupied: mods\/panorama[a-z-]*\/jsconfig\.json/);
+  assert.equal(readFileSync(join(s.home, 'mods/panorama/jsconfig.json'), 'utf8'), '{"host":"other"}');
+  assert.equal(existsSync(s.manifest), false);
+});
