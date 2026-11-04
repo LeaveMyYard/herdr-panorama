@@ -24,13 +24,13 @@ const narrow = () => (find(layout(), 'sidebar')?.size?.px ?? Infinity) < 160;
 const stop = (_event, cx) => cx.stop_propagation();
 const DOCK = { fg: '#c3c7cd', hi: '#eceef1', number: '#4d535c', need: '#ffb547', fail: '#ff6b6b', hover: '#1c1e23' };
 const SECTION = { 4: stateOf('wait').hue, 3: stateOf('done').hue, 2: stateOf('run').hue };
-// V10 card state (TUI dock_state order, aligned with the priority sections):
-// failed > permission > done > working > needs answer > idle.
+// V10 card state, aligned with the priority sections (groups()): failed > permission >
+// done (own status, no needs) > working > needs answer > idle.
 function cardState(item) {
   const kinds = item.aggregate.kinds;
   if (kinds.includes('fail')) return 'fail';
   if (kinds.includes('blk')) return 'blk';
-  if (item.status === 'done' && !item.aggregate.working) return 'done';
+  if (item.status === 'done') return 'done';
   if (item.aggregate.working) return 'run';
   return kinds.includes('wait') ? 'wait' : 'idle';
 }
@@ -63,7 +63,9 @@ function headerTotals(items, spaceId) {
   for (const entity of entities) {
     const agents = entity.root.threads.flatMap(thread => thread.agents);
     total.fail += agents.filter(agent => agent.status === 'fail').length + entity.root.threads.filter(thread => !thread.agents.length && thread.status === 'failed').length;
-    total.blk += agents.filter(agent => agent.status === 'blk').length + (entity.status === 'blocked' ? 1 : 0);
+    // An orchestrator blocked on its own agent's permission is one request, not two.
+    const asked = agents.filter(agent => agent.status === 'blk').length;
+    total.blk += asked || (entity.status === 'blocked' ? 1 : 0);
   }
   return total;
 }
@@ -112,7 +114,7 @@ export default class Panorama extends View {
     const count = item.root.threads.length + item.nativeChildren.length;
     if (compact) return h_flex().id(`root-${item.key}`).h(26).px(8).flex_none().items_center().gap(4).hover(el => el.bg(t.hover))
       .when(Boolean(item.terminal), el => el.on_click(() => run(rootTarget(item).name, rootTarget(item).args)))
-      .child(div().flex_1().min_w(0).text_right().text_color(t.muted).child(String(index + 1)))
+      .child(div().flex_1().min_w(0).text_right().text_color(t.muted).child(String(item.stock?.tab_index ?? index + 1)))
       .child(mark(t, item.aggregate.kinds.length ? 'blk' : item.status, item.aggregate.questions, true));
     // V10: one graph-style card per orchestrator. Line 1: tab number, harness icon, title,
     // ?N (when not already the wait badge), state badge. Line 2: thread tiles and counts.
@@ -141,7 +143,7 @@ export default class Panorama extends View {
       .on_hover((on, cx) => { this.hovered = on ? item.key : (this.hovered === item.key ? null : this.hovered); cx.notify(); })
       .when(Boolean(item.terminal), el => el.cursor_pointer().on_click(() => run(rootTarget(item).name, rootTarget(item).args)))
       .child(v_flex().absolute().left(3).right(0).top(0).bottom(0).rounded_r(7).bg(fill).child(head).child(tail))
-      .children(sweep(item.aggregate.sweep, now)));
+      .children(sweep(state === 'run' && item.aggregate.sweep, now)));
   }
   detailRow(item, row, now, cx) {
     const t = theme(), agent = row.agent;
@@ -203,7 +205,7 @@ export default class Panorama extends View {
         .when(!open, el => el.child(svg('mods/workspace-chrome/chevron-right.svg').size(11).text_color(SURFACE.dim))), heading);
       if (!open && !compact) continue;
       for (const item of section.roots) {
-        append(this.rootRow(item, items.indexOf(item), compact, now, cx), compact ? 26 : 52, !compact && item.aggregate.sweep);
+        append(this.rootRow(item, items.indexOf(item), compact, now, cx), compact ? 26 : 52, !compact && cardState(item) === 'run' && item.aggregate.sweep);
         if (!compact) {
           const open = isOpen(this.folds, item.key, rootSignature(item), item.aggregate.priority === 4 || item.aggregate.priority === 2);
           for (const row of rows(item.root, this.folds, open)) append(this.detailRow(item, row, now, cx), 26, row.kind === 'agent' && needs(row.agent.status));
