@@ -21,6 +21,9 @@ fn main() {
             Some(answer) => println!("{answer}"),
             None => std::process::exit(2),
         },
+        Some("hook") if std::env::args().nth(2).as_deref() == Some("setup") => {
+            std::process::exit(panorama::hook::setup::main())
+        }
         Some("hook") => std::process::exit(panorama::hook::main(
             std::env::args().nth(2).as_deref().unwrap_or(""),
         )),

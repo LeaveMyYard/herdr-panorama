@@ -1,4 +1,5 @@
 use super::*;
+use crate::host::link::{Link, combine};
 use herdr_agent_kit::agent_procs::fake::FakeProcesses;
 use serde_json::json;
 
@@ -10,6 +11,7 @@ fn record(session: &str) -> Record {
         pid: 20,
         start: "boot-1".into(),
         pidns: None,
+        ts: 1.0,
     }
 }
 
@@ -19,21 +21,22 @@ fn recorded_terminal_and_current_owned_process_select_one_exact_session() {
     let mut table = FakeProcesses::default();
     table.insert(20, 1, "claude", "boot-1", &["claude"]);
     assert_eq!(
-        claude_session(&[record("session-a")], "t2", &info, &table).as_deref(),
-        Some("session-a")
+        claude_session(&[record("session-a")], "t2", &info, &table),
+        Signal::Names("session-a".into())
     );
-    assert!(claude_session(&[record("session-a")], "t3", &info, &table).is_none());
-    assert!(
+    assert!(claude_session(&[record("session-a")], "t3", &info, &table) == Signal::Absent);
+    // Two sessions with one clock reading cannot be ordered: ambiguous, never a guess.
+    assert_eq!(
         claude_session(
             &[record("session-a"), record("session-b")],
             "t2",
             &info,
             &table
-        )
-        .is_none()
+        ),
+        Signal::Ambiguous
     );
     table.insert(20, 1, "claude", "reused-pid", &["claude"]);
-    assert!(claude_session(&[record("session-a")], "t2", &info, &table).is_none());
+    assert!(claude_session(&[record("session-a")], "t2", &info, &table) == Signal::Absent);
 }
 
 #[test]
@@ -73,9 +76,41 @@ fn foreign_namespace_cannot_match_a_local_pid_and_start_token() {
     table.insert(20, 1, "claude", "boot-1", &["claude"]);
     let mut rec = record("session-a");
     rec.pidns = Some("pid:[foreign-namespace]".into());
-    assert!(claude_session(&[rec], "t2", &info, &table).is_none());
+    assert!(claude_session(&[rec], "t2", &info, &table) == Signal::Absent);
     assert!(namespace_matches(None));
     if let Some(mine) = herdr_agent_kit::agent_procs::own_pidns() {
         assert!(namespace_matches(Some(&mine)));
     }
+}
+
+#[test]
+fn several_sessions_of_one_process_keep_only_the_newest_for_corroboration() {
+    let info = json!({"process_info":{"pane_id":"core:t2","foreground_processes":[{"pid":20}]}});
+    let mut table = FakeProcesses::default();
+    table.insert(20, 1, "claude", "boot-1", &["claude"]);
+    let mut newer = record("session-b");
+    newer.ts = 2.0;
+    let hook = claude_session(&[record("session-a"), newer.clone()], "t2", &info, &table);
+    assert_eq!(hook, Signal::Newest("session-b".into()));
+    // Alone it never links: the hook may have dropped a later record.
+    assert_eq!(combine(&[hook.clone(), Signal::Absent]), Link::Unavailable);
+    assert_eq!(
+        combine(&[hook.clone(), Signal::Names("session-b".into())]),
+        Link::Linked("session-b".into())
+    );
+    assert_eq!(
+        combine(&[hook, Signal::Names("session-a".into())]),
+        Link::Conflict
+    );
+    let mut unordered = record("session-c");
+    unordered.ts = f64::NAN;
+    assert_eq!(
+        claude_session(
+            &[record("session-a"), newer, unordered],
+            "t2",
+            &info,
+            &table
+        ),
+        Signal::Ambiguous
+    );
 }

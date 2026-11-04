@@ -1,5 +1,5 @@
 //! Read only recorded addresses; cwd, labels and recency never select a session.
-use super::{Core, context::pane_key, core::owns};
+use super::{Core, context::pane_key, core::owns, link::Signal};
 use herdr_agent_kit::{
     agent_procs::{ProcessTable, SystemProcesses},
     agent_session::SessionId,
@@ -7,6 +7,7 @@ use herdr_agent_kit::{
 use serde_json::Value;
 use std::{collections::HashSet, io::Read, path::Path};
 
+#[derive(Clone)]
 pub struct Record {
     pub session: String,
     pub terminal: String,
@@ -14,6 +15,8 @@ pub struct Record {
     pub pid: u32,
     pub start: String,
     pub pidns: Option<String>,
+    /// The hook's clock; NaN when missing. Orders one process's records only (§3 H).
+    pub ts: f64,
 }
 
 pub fn load(dir: &Path) -> Vec<Record> {
@@ -83,19 +86,28 @@ pub fn load(dir: &Path) -> Vec<Record> {
                 pid: pid as u32,
                 start: start.into(),
                 pidns,
+                ts: v["ts"]
+                    .as_f64()
+                    .filter(|t| t.is_finite())
+                    .unwrap_or(f64::NAN),
             });
         }
     }
     records
 }
 
+/// Evidence H (session-linking.md §3): the sessions named by root SessionStart records of the
+/// terminal's current Claude process. Several are ambiguous; the newest is kept only so that
+/// Claude's own per-process record can corroborate it.
 pub fn claude_session(
     records: &[Record],
     address: &str,
     info: &Value,
     table: &dyn ProcessTable,
-) -> Option<String> {
+) -> Signal {
     let mut ids = HashSet::new();
+    let mut newest: Option<&Record> = None;
+    let (mut ordered, mut tie) = (true, false);
     for r in records
         .iter()
         .filter(|r| r.terminal == address && r.harness == "claude")
@@ -113,9 +125,20 @@ pub fn claude_session(
             && owns(info, &pane_key(address), r.pid, &r.start, table)
         {
             ids.insert(&r.session);
+            ordered &= !r.ts.is_nan();
+            match newest {
+                Some(n) if r.ts == n.ts => tie |= r.session != n.session,
+                Some(n) if r.ts < n.ts => {}
+                _ => (newest, tie) = (Some(r), false),
+            }
         }
     }
-    (ids.len() == 1).then(|| (*ids.into_iter().next().unwrap()).clone())
+    match (ids.len(), newest) {
+        (_, None) => Signal::Absent,
+        (1, Some(r)) => Signal::Names(r.session.clone()),
+        (_, Some(r)) if ordered && !tie => Signal::Newest(r.session.clone()),
+        _ => Signal::Ambiguous,
+    }
 }
 
 pub fn has_live_core(dir: &Path, core: &Core) -> bool {
@@ -134,8 +157,10 @@ pub fn has_live_core(dir: &Path, core: &Core) -> bool {
                     .process(&r.terminal)
                     .is_some_and(|info| {
                         if r.harness == "claude" {
-                            claude_session(std::slice::from_ref(r), &r.terminal, &info, &table)
-                                .is_some()
+                            matches!(
+                                claude_session(std::slice::from_ref(r), &r.terminal, &info, &table),
+                                Signal::Names(_)
+                            )
                         } else {
                             crate::codex::identity::core_owns_record(
                                 &info,

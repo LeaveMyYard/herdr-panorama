@@ -22,7 +22,7 @@ A refused root is never attached to a guessed conversation.
 |---|---|---|
 | TUI `herdr api snapshot` | yes: `agent_session.value` per agent | unchanged TUI path (DESIGN.md "Orchestrators") |
 | `hc ls --json` (hc 0.1.17) | no: `{address,agent,cwd,state,status,turn,where}` | roots only |
-| `hc get --json tN` | no: it only adds `foreground: {pid,name,argv,cwd}` | the process to prove against |
+| `hc get --json tN` (hc 0.1.17) | no. It adds `foreground: {pid,name,argv,cwd}`, and `records` keyed by Claude's in-process agent ids (`{app,state,title}`), with no session id | the process to prove against; `tests/fixtures/hc-get-foreground.json` |
 | herdr-app 0.1.12 `herdr.d.ts` `agents()` / `AgentInfo` | no: address, pane, space/tab names, status, `app`, title, seq | not used for identity |
 
 herdr-core exposes no per-terminal session, so the core path has to derive it from the
@@ -44,20 +44,23 @@ this machine. The gate passes only if all of these hold:
    evidence. This is the kit's `start_token`, the same wire token that hook records carry.
 3. Panorama's uid owns `/proc/P`.
 4. `/proc/P` is Claude by the kit's `first_claude` test.
-5. Its `comm` equals hc's `foreground.name`, and its `cmdline` equals hc's
-   `foreground.argv`. Herdr-core terminal numbering is per instance. This check stops a PID
+5. Its `comm` equals hc's `foreground.name` exactly, and its NUL-split `cmdline` equals
+   hc's `foreground.argv`, with empty arguments dropped on both sides (the kit drops them
+   from `cmdline`). hc 0.1.17 fills `name` from `comm` and `argv` from `cmdline`; the
+   recorded shape is in `tests/fixtures/hc-get-foreground.json`. Herdr-core terminal numbering is per instance. This check stops a PID
    from another PID namespace, or from a second core instance, from matching an unrelated
    local process that happens to sit in its own `tN`.
 6. **Terminal environment.** `/proc/P/environ` contains `HC_TERMINAL_ID=tN` exactly once.
-   - Only two keys are read: `HC_TERMINAL_ID` and `CLAUDE_CONFIG_DIR`. The buffer is
+   - Only three keys are read: `HC_TERMINAL_ID`, `CLAUDE_CONFIG_DIR` and `HOME`. The buffer is
      bounded (256 KiB) and dropped at once. It is never logged, stored, or compared with
      anything else.
    - If the environment is larger than the bound, or unreadable, the gate refuses. That is
      the safe direction.
    - A process started in another terminal, or in a container, does not carry this value.
-   - If the process has its own `CLAUDE_CONFIG_DIR` and it differs from Panorama's, the gate
-     refuses: the evidence and the transcripts would be in a directory Panorama does not
-     read.
+   - The process's effective config dir, `${CLAUDE_CONFIG_DIR:-$HOME/.claude}` from its own
+     exec environment, must equal Panorama's, in either direction; otherwise, or when
+     neither key is set, the gate refuses. Paths compare by component (a trailing slash is
+     the same dir); symlinks are not resolved, so an alias refuses.
 7. Panorama reads the evidence (§3, P).
 8. Panorama reads start token S2 **after** the evidence. If S1 ≠ S2, or the process has
    vanished, the gate refuses (the PID was reused during the read).
@@ -97,6 +100,13 @@ executable. The registration code read from its embedded JavaScript does the fol
 `<config dir>` is `${CLAUDE_CONFIG_DIR:-$HOME/.claude}` as Panorama resolves it, and §2.6
 makes it equal to the process's own.
 
+Anchors in 2.1.318, for re-checking a later version: registration runs only behind the
+concurrent-sessions gate (`f_()`); when it is off there is no file and P is absent. The
+rewrite is the subscriber on the session-id change signal (`liveSessionId`, then
+`updatePidFile({sessionId, parkedJobId, updatedAt})`), and that signal is emitted by the
+clear path and by the switch path, whose reasons include resume, fork, cd, remote_attach,
+hydrate, spare_claim and startup_custom_id.
+
 Panorama reads the file under these conditions:
 - read-only, opened `O_NOFOLLOW`;
 - a regular file owned by our uid, with `nlink == 1`, ≤ 16 KiB;
@@ -106,6 +116,8 @@ P names `sessionId` only when all of these hold:
 - `pid` equals P;
 - `procStart` is a string equal to S. This is the exact PID-reuse proof: a file left behind
   by an earlier process with the same PID has another token;
+- `kind` is `"interactive"` (the other values, `bg`, `daemon` and `daemon-worker`, are not
+  the plain terminal session this design reasons about);
 - `sessionId` passes `SessionId::parse`.
 
 Unknown fields are ignored. Panorama never logs or copies them. If the file is missing or
@@ -195,6 +207,8 @@ A stale link cannot outlive its process. Coverage:
 | In-process `/resume` or `/clear` | P is rewritten. Until the H record lands, or if it is lost, H and P disagree → refuse |
 | Switch read before Claude's asynchronous record rewrite lands | P names the previous session for at most that window (milliseconds, on Claude's write chain). The next collect corrects it. With the hook configured, the new H record conflicts → refuse. Accepted and stated. |
 | Codex in-process `/new` (deferred rollout) | rollouts are not evidence; B only |
+| Claude's record rewrite fails after a switch (`updatePidFile` logs and returns, e.g. ENOSPC) | the old `sessionId` stays with a matching `procStart`. With P alone nothing contradicts it: **accepted residual**. With the hook configured, the new H record conflicts → refuse |
+| A hook write is lost after a switch and only the older SessionStart record remains | H alone names the old session (the existing A1 behaviour): **accepted residual** where P is unavailable. Where P is present, it names the new one → conflict → refuse |
 | Process with its own `CLAUDE_CONFIG_DIR` | it differs from Panorama's → refuse |
 | Hook record forged by another local user | the hooks dir is per-user state, and the record must still match the live P, S and terminal; another uid's process fails the gate |
 | Symlinked or hard-linked per-process record | `O_NOFOLLOW`, `nlink == 1` and the uid check → absent |

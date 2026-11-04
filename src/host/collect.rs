@@ -41,6 +41,7 @@ fn source_full(env: PluginEnv, core: Core, wait: bool) -> impl FnMut() -> Collec
         core: core.clone(),
         env: env.clone(),
         hooks_dir: hooks_dir(&env),
+        link: super::link::Linker::system(&env),
     };
     let mut config = ConfigFile::resolve(&env, || None);
     let projects = ProjectsRoot::from_env()
