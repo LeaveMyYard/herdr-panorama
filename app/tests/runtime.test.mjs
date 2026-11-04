@@ -42,12 +42,14 @@ test('v2 installs reserve fresh generation/control/lock; reinstall never reuses 
   ok(s.run('uninstall')); assert.deepEqual(Object.keys(tree(s.home)), ['keys.json']);
 });
 
-for (const state of ['committed', 'after-rename', 'pending-temp']) {
+const ledger = (s, failures = 2) => writeManaged(join(s.generation, 'start.json'), { v: 1, install_id: s.receipt.install_id, failures, retry_at_ms: 1793717546321 });
+for (const state of ['committed', 'after-rename', 'pending-temp', 'start-ledger']) {
   test(`used runtime ${state} cleans only recorded committed/pending bytes`, t => {
     const s = setup(t);
     if (state === 'committed') used(s);
     if (state === 'after-rename') used(s, { pending: 'new bytes\n', feed: 'new bytes\n' });
     if (state === 'pending-temp') used(s, { pending: 'new bytes\n', temp: 'new bytes\n' });
+    if (state === 'start-ledger') { used(s); ledger(s); }
     ok(s.run('uninstall')); assert.deepEqual(Object.keys(tree(s.home)), ['keys.json']);
   });
 }
@@ -61,7 +63,7 @@ test('edited private binary is preserved after original-receipt runtime cleanup 
   assert.match(readFileSync(binary, 'utf8'), /SHOULD_NEVER_EXECUTE/); assert.doesNotMatch(result.stdout, /^SHOULD_NEVER_EXECUTE$/m);
 });
 
-for (const mutation of ['feed-edited', 'ownership-foreign', 'ownership-invalid-pid', 'ownership-oversize', 'ownership-wrong-mode', 'ownership-temp', 'control-temp', 'generation-note', 'other-generation', 'foreign-feed-temp', 'partial-feed-temp']) {
+for (const mutation of ['feed-edited', 'ownership-foreign', 'ownership-invalid-pid', 'ownership-oversize', 'ownership-wrong-mode', 'ownership-temp', 'control-temp', 'generation-note', 'other-generation', 'foreign-feed-temp', 'partial-feed-temp', 'start-ledger-invalid', 'start-temp']) {
   test(`runtime ambiguity ${mutation} preserves all payloads and retains disabled receipt`, t => {
     const s = setup(t), record = used(s);
     if (mutation === 'feed-edited') writeManaged(s.feed, 'personal feed');
@@ -74,6 +76,8 @@ for (const mutation of ['feed-edited', 'ownership-foreign', 'ownership-invalid-p
     if (mutation === 'generation-note') writeManaged(join(s.generation, 'personal.txt'), 'personal');
     if (mutation === 'other-generation') mkdirSync(join(s.runtime, 'other'));
     if (mutation === 'foreign-feed-temp') writeManaged(join(s.home, 'data/panorama/.feed-foreign.tmp'), 'personal');
+    if (mutation === 'start-ledger-invalid') ledger(s, 8);
+    if (mutation === 'start-temp') writeManaged(join(s.generation, '.start.tmp'), '{partial');
     if (mutation === 'partial-feed-temp') writeManaged(join(s.home, `data/panorama/.feed-${s.receipt.install_id}.tmp`), '{partial');
     const before = tree(s.home), receiptBytes = readFileSync(s.manifest); const result = s.run('uninstall'); fail(result);
     assert.deepEqual(withoutControl(tree(s.home), s), withoutControl(before, s));

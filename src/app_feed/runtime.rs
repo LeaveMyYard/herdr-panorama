@@ -52,8 +52,17 @@ pub fn watch(home: Home, r: Receipt, _lifetime: std::fs::File) -> Result<()> {
                 env.xdg_state_home().join("herdr-panorama/codex-bindings"),
             ],
         );
-        println!("READY {}", r.id);
-        std::io::stdout().flush().map_err(|e| e.to_string())?;
+        // Test-only startup latency; release builds have no such knob.
+        #[cfg(debug_assertions)]
+        if let Some(ms) = std::env::var("PANORAMA_TEST_READY_DELAY_MS")
+            .ok()
+            .and_then(|s| s.parse().ok())
+        {
+            std::thread::sleep(Duration::from_millis(ms));
+        }
+        // A parent that stopped waiting has closed the pipe; that is not a writer failure.
+        let mut out = std::io::stdout();
+        let _ = writeln!(out, "READY {}", r.id).and_then(|()| out.flush());
         let start = Instant::now();
         let mut idle = Idle::default();
         let mut app = State::Unknown;

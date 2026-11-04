@@ -144,7 +144,13 @@ impl Receipt {
             return Err("unknown runtime generation; preserved".into());
         }
         for name in home.names(&self.generation())? {
-            if !(["control.json", "writer.lock", "ownership.json"].contains(&name.as_str())
+            if !([
+                "control.json",
+                "writer.lock",
+                "ownership.json",
+                super::start::LEDGER,
+            ]
+            .contains(&name.as_str())
                 || busy && name == ".ownership.tmp")
             {
                 return Err(format!("ambiguous runtime entry {name}; preserved"));

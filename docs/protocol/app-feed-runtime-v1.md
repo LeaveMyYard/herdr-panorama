@@ -64,7 +64,7 @@ Symlinks, unsafe types and unexpected replacements refuse.
 
 | Lock | Inode | Holders and lifetime |
 |---|---|---|
-| Lifecycle | Existing app-home directory FD, flock EX | Installer install/uninstall and ensure validation/start; bounded acquisition for ensure. Existing installer lock has this identity. |
+| Lifecycle | Existing app-home directory FD, flock EX | Installer install/uninstall and ensure validation/start; ensure waits at most 10 s for it (one concurrent ensure's acknowledgement window plus its stop wait). Existing installer lock has this identity. |
 | Writer | Generation's `writer.lock` file FD, flock EX | One writer for its whole life; parent ensure reserves it before spawn and hands the same open-file description to the child on stdin. |
 
 Writer exit never acquires the lifecycle lock. Uninstall keeps the lifecycle
@@ -125,9 +125,11 @@ receipt cannot adopt an old generation directory or preexisting feed.
 |---|---|---|
 | `data/panorama/install.json` | Installer | v2 receipt above; removed last under lifecycle lock. |
 | `data/panorama/bin/panorama` | Installer | Exact fingerprinted private binary. |
-| `G/control.json` | Installer / failed-start ensure | Control below; false initially, true on uninstall/failed start. |
+| `G/control.json` | Installer / failed-start ensure | Control below; false initially, true on uninstall or a permanent start failure (see Starting). |
 | `G/writer.lock` | Installer | Empty regular 0600 file; never truncated/replaced while in use. |
 | `G/ownership.json` | Writer | Ownership below; generation and binary fingerprint must match receipt. |
+| `G/start.json` | Ensure | Optional transient-start ledger below; created/replaced only while no writer runs, removed by ensure after a proven start and by uninstall cleanup. |
+| `G/.start.tmp` | Ensure | Exclusive-create staging for the ledger; leftover is ambiguous and preserved/refused. |
 | `G/.ownership.tmp` | Writer | Exclusive-create staging; any leftover is ambiguous and preserved/refused. |
 | `G/.control.tmp` | Installer / failed-start ensure | Exclusive-create staging for control replacement; leftover is ambiguous and preserved/refused. |
 | `data/panorama/feed.json` | Writer | Atomic full feed v1; bytes must match a recorded ownership digest before replacement/removal. |
@@ -163,12 +165,29 @@ Control:
 {"v":1,"install_id":"0123456789abcdef0123456789abcdef","disabled":false}
 ```
 
-The installer or an ensure operation whose child start failed after validation
-changes disabled to true under the lifecycle lock, atomically via `.control.tmp`.
+The installer, or an ensure operation whose start failed permanently (see
+Starting), changes disabled to true under the lifecycle lock, atomically via
+`.control.tmp`. A transient start failure never changes control.
 A validation failure never adopts or changes an ambiguous control.
 Ensure and writer refuse disabled, absent, foreign-generation or malformed
 control. A writer that idles out leaves false control, so a later app start can
 ensure again in the same installation. Uninstall never re-enables control.
+
+Transient-start ledger (optional; absent means no recorded failures):
+
+```json
+{"v":1,"install_id":"0123456789abcdef0123456789abcdef","failures":2,"retry_at_ms":1793717546321}
+```
+
+`failures` is the count of consecutive transient start failures, an integer in
+[1, 7]; `retry_at_ms` is the Unix-epoch millisecond time before which ensure
+defers a new spawn. Control keeps exactly its three keys: frontends read control
+strictly, so the ledger is a separate file rather than control fields. A
+malformed, foreign or out-of-range ledger, or a leftover `.start.tmp`, is
+ambiguous: ensure refuses before spawn and uninstall preserves/refuses, as for
+other runtime staging. This file was added after the first v1 text; it is an
+additive runtime path, and control, ownership, receipt and feed schemas are
+unchanged.
 
 Ownership:
 
@@ -236,11 +255,32 @@ a delayed old-client request into a new writer or navigation request.
 Ensure holds the lifecycle lock, validates the receipt/artifact/control/state,
 reserves the lifetime lock, and spawns only the exact private executable. Child
 stdin carries the reserved lock FD; child validates its inode and ownership.
-The parent waits at most 2 s for a generation-specific ready acknowledgement;
+The parent waits at most 5 s for a generation-specific ready acknowledgement;
 the child registers ownership before acknowledgement, before slow collection.
-Failure after a validated spawn disables this generation and returns an error;
-no PID is killed. A
-ready acknowledgement does not promise that the first feed is already collected.
+A ready acknowledgement does not promise that the first feed is already
+collected. No PID is ever signalled. Outcomes after a validated spawn:
+
+| Outcome | Classification | Effect |
+|---|---|---|
+| `READY <install_id>` | Started | Remove the ledger; exit 0. |
+| No acknowledgement within 5 s, but ownership names this exact child and its PID/start/namespace/command are live | Started (late acknowledgement) | Same busy-writer proof a concurrent ensure accepts; remove the ledger; exit 0. The writer ignores a closed acknowledgement pipe. |
+| No acknowledgement within 5 s and no such registration | Still starting | Exit 1; control and ledger unchanged; the child is left to register or give up. A later ensure proves it busy or finds its lock free. |
+| Spawn error | Transient | Record the next ledger failure; exit 1. |
+| Child exits before acknowledging, and a fresh lifetime-lock description is acquired within 2 s | Transient | Record the next ledger failure; exit 1. |
+| Child exits before acknowledging, lock still held after 2 s | Permanent | Disable; exit 1; receipt retained. |
+| Any other acknowledgement bytes (other generation, garbage, > 256 bytes) | Provenance failure, permanent | Disable, wait 2 s for cooperative stop; exit 1. |
+
+Recording failure n sets `retry_at_ms` to now + min(5 s × 2^(n−1), 160 s).
+While that time is in the future (and at most 160 s away, so a clock moved
+backwards cannot defer indefinitely), ensure exits 1 before spawn without
+changing anything. The failure that would be the 8th consecutive one, or a
+ledger write that fails, disables the generation instead; only a reinstall
+recovers from that, as before. Validation and provenance failures before
+spawn (receipt, generation, binary hash/mode/path, control, runtime names,
+journal/ownership proof, ledger) never spawn and never change control; they
+refuse on every ensure while the condition holds. Debug builds of the binary
+accept a test-only `PANORAMA_TEST_READY_DELAY_MS` writer delay before the
+acknowledgement; release builds have no such knob.
 
 Writer control checks run independently of collection at most 100 ms apart.
 Disabled/removed receipt or control requests cooperative shutdown; collection
@@ -263,12 +303,13 @@ The frontend conservatively projects a retained collection as stale when its
 `generated_at` is missing/nonfinite, future, or older than 15 s (three normal
 polls), independently of its advisory frontend lease. It retains data and age.
 This view policy is not writer-death proof, a heartbeat guarantee, or membership
-authority. Only after prior successful startup may the current owner use its
+authority. After its startup ensure has run (successful or transiently failed), the current owner may use its
 existing verified current-G bridge to idempotently re-ensure an aged feed, at
 most once per existing 5 s heartbeat with one pending attempt and owner/epoch
 guards after awaits. Ensure success alone never refreshes old collection time;
 consumers independently age cached packets. Missing/changed/disabled authority
-remains a permanent client stop; no new runtime key, schema or CLI is involved.
+remains a permanent client stop; a non-disabled ensure error (including a
+deferred start) is transient and may be retried at that cadence.
 
 ## Shared evidence
 

@@ -1,8 +1,9 @@
 //! Startup is serialized with installation; only a reserved lifetime FD reaches the child.
 use super::{
-    fs::{self, Home, Result},
+    fs::{self, Home, Known, Result},
     journal::Journal,
     receipt::{BINARY, Ownership, Receipt},
+    start::{LEDGER, Ledger, MAX_FAILURES},
 };
 use std::{
     fs::File,
@@ -15,44 +16,92 @@ use std::{
     time::{Duration, Instant},
 };
 
-fn ready(child: &mut Child, id: &str) -> Result<()> {
-    let mut stdout = child
-        .stdout
-        .take()
-        .ok_or("writer acknowledgement unavailable")?;
+/// Generation-specific acknowledgement window; generous because startup under
+/// heavy load can exceed seconds while still being a healthy writer.
+pub const ACK: Duration = Duration::from_secs(5);
+/// Covers a concurrent ensure's acknowledgement window plus its stop wait.
+pub const LIFECYCLE_WAIT: Duration = Duration::from_secs(10);
+const STOP_WAIT: Duration = Duration::from_secs(2);
+
+enum Ack {
+    Ready,
+    /// Provenance failure: the child answered with another generation's bytes.
+    Foreign,
+    /// The child is gone before acknowledging; its lock may still be held by helpers.
+    Exited(&'static str),
+    /// No acknowledgement yet (or unreadable); the child may still be starting.
+    Pending(String),
+}
+
+fn ready(child: &mut Child, id: &str) -> Ack {
+    let Some(mut stdout) = child.stdout.take() else {
+        return Ack::Pending("writer acknowledgement unavailable".into());
+    };
     use rustix::fs::{OFlags, fcntl_getfl, fcntl_setfl};
-    fcntl_getfl(&stdout)
-        .and_then(|f| fcntl_setfl(&stdout, f | OFlags::NONBLOCK))
-        .map_err(|e| e.to_string())?;
-    let deadline = Instant::now() + Duration::from_secs(2);
+    if let Err(e) = fcntl_getfl(&stdout).and_then(|f| fcntl_setfl(&stdout, f | OFlags::NONBLOCK)) {
+        return Ack::Pending(e.to_string());
+    }
+    let deadline = Instant::now() + ACK;
     let mut bytes = Vec::new();
     loop {
         let mut chunk = [0_u8; 256];
         match stdout.read(&mut chunk) {
-            Ok(0) => return Err("writer exited before acknowledgement".into()),
+            Ok(0) => return Ack::Exited("writer exited before acknowledgement"),
             Ok(n) => bytes.extend_from_slice(&chunk[..n]),
             Err(e) if e.kind() == ErrorKind::WouldBlock => {}
-            Err(e) => return Err(e.to_string()),
+            Err(e) => return Ack::Pending(e.to_string()),
         }
-        if bytes.ends_with(b"\n") {
+        if bytes.ends_with(b"\n") || bytes.len() > 256 {
             return if bytes == format!("READY {id}\n").as_bytes() {
-                Ok(())
+                Ack::Ready
             } else {
-                Err("foreign writer acknowledgement".into())
+                Ack::Foreign
             };
         }
-        if bytes.len() > 256 || Instant::now() >= deadline {
-            return Err("writer acknowledgement timed out".into());
+        if Instant::now() >= deadline {
+            return Ack::Pending("writer acknowledgement timed out".into());
         }
-        if child.try_wait().map_err(|e| e.to_string())?.is_some() {
-            return Err("writer exited during startup".into());
+        match child.try_wait() {
+            Ok(Some(_)) => return Ack::Exited("writer exited during startup"),
+            Ok(None) => {}
+            Err(e) => return Ack::Pending(e.to_string()),
         }
         std::thread::sleep(Duration::from_millis(10));
     }
 }
 
+/// The child registers before acknowledging, so a late acknowledgement from
+/// this exact child is the same busy-writer proof a concurrent ensure accepts.
+fn registered(home: &Home, r: &Receipt, pid: u32) -> bool {
+    Ownership::read(home, r)
+        .ok()
+        .flatten()
+        .is_some_and(|(owner, _)| owner.writer_pid == pid && owner.live(home))
+}
+
+/// A transient failure with no running writer: count it, back off, and disable
+/// only once the bound is reached or the count cannot be recorded.
+fn transient(home: &Home, r: &Receipt, ledger: Option<&(Ledger, Known)>, error: &str) -> String {
+    let failures = ledger.map_or(0, |(l, _)| l.failures) + 1;
+    if failures >= MAX_FAILURES {
+        let disabled = r.disable(home);
+        return format!(
+            "{error}; {failures} consecutive transient start failures; generation disabled: {disabled:?}"
+        );
+    }
+    match Ledger::record(home, r, failures, ledger.map(|(_, k)| k)) {
+        Ok(wait) => format!(
+            "{error}; transient start failure {failures}/{MAX_FAILURES}; retry after {wait} ms"
+        ),
+        Err(e) => {
+            let disabled = r.disable(home);
+            format!("{error}; start ledger unavailable ({e}); generation disabled: {disabled:?}")
+        }
+    }
+}
+
 pub fn ensure(home: Home, expected: Option<&str>) -> Result<()> {
-    fs::lock(&home.fd, Duration::from_secs(2))?;
+    fs::lock(&home.fd, LIFECYCLE_WAIT)?;
     let r = Receipt::read(&home)?;
     r.require_generation(expected)?;
     r.check_artifact(&home)?;
@@ -74,7 +123,17 @@ pub fn ensure(home: Home, expected: Option<&str>) -> Result<()> {
         }
         Err(e) => return Err(format!("writer lock failed: {e}")),
     }
-    let mut child = Command::new(home.path.join(BINARY))
+    let ledger = Ledger::read(&home, &r)?;
+    if let Some((l, _)) = &ledger
+        && let Some(wait) = l.deferred_ms()
+    {
+        return Err(format!(
+            "writer start deferred {wait} ms after {} transient start failures",
+            l.failures
+        ));
+    }
+    // A spawn error drops the reservation with the command; no writer can run.
+    let spawned = Command::new(home.path.join(BINARY))
         .args(["app-feed", "--watch", "--app-home"])
         .arg(&home.path)
         .args(["--install-id", r.id.as_str()])
@@ -83,25 +142,53 @@ pub fn ensure(home: Home, expected: Option<&str>) -> Result<()> {
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
         .process_group(0)
-        .spawn()
-        .map_err(|e| {
-            let disabled = r.disable(&home);
-            format!("cannot start owned writer: {e}; generation stop: {disabled:?}")
-        })?;
-    if let Err(error) = ready(&mut child, &r.id) {
-        r.disable(&home)?;
-        // Cooperate through control; never signal a stored/guessed watcher PID.
-        let lock = r.lock_file(&home)?;
-        let stopped = fs::lock(&lock, Duration::from_secs(2));
-        let _ = child.try_wait();
-        return Err(format!(
-            "{error}; generation disabled; {}",
-            if stopped.is_ok() {
-                "writer stopped"
-            } else {
-                "stop timeout; receipt retained"
+        .spawn();
+    let mut child = match spawned {
+        Ok(child) => child,
+        Err(e) => {
+            let error = format!("cannot start owned writer: {e}");
+            return Err(transient(&home, &r, ledger.as_ref(), &error));
+        }
+    };
+    match ready(&mut child, &r.id) {
+        Ack::Ready => {}
+        Ack::Pending(_) if registered(&home, &r, child.id()) => {}
+        Ack::Pending(error) => {
+            // Not registered yet: leave it starting. A later ensure proves it busy,
+            // or finds its lock free once it gives up. Nothing is disabled or killed.
+            return Err(format!("{error}; writer still starting; retry later"));
+        }
+        Ack::Exited(error) => {
+            // Never signal; quiescence is a fresh description of the lifetime lock.
+            let lock = r.lock_file(&home)?;
+            let _ = child.try_wait();
+            if fs::lock(&lock, STOP_WAIT).is_ok() {
+                return Err(transient(&home, &r, ledger.as_ref(), error));
             }
-        ));
+            r.disable(&home)?;
+            return Err(format!(
+                "{error}; stop timeout; generation disabled; receipt retained"
+            ));
+        }
+        Ack::Foreign => {
+            r.disable(&home)?;
+            // Cooperate through control; never signal a stored/guessed watcher PID.
+            let lock = r.lock_file(&home)?;
+            let stopped = fs::lock(&lock, STOP_WAIT);
+            let _ = child.try_wait();
+            return Err(format!(
+                "foreign writer acknowledgement; generation disabled; {}",
+                if stopped.is_ok() {
+                    "writer stopped"
+                } else {
+                    "stop timeout; receipt retained"
+                }
+            ));
+        }
+    }
+    if let Some((_, known)) = &ledger {
+        // Advisory reset after a proven start; a changed ledger is left for review.
+        let _ = home.remove(&r.path(LEDGER), known);
     }
     Ok(())
 }

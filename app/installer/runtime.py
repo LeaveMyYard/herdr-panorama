@@ -45,6 +45,20 @@ def control(home, receipt):
     return current, value
 
 
+def start_ledger(home, receipt):
+    """Ensure's bounded transient-start ledger; removable only in its exact shape."""
+    path = generation(receipt) + '/start.json'
+    current = managed(home, path)
+    if current is None:
+        return None
+    value = loads(current[0])
+    if (not isinstance(value, dict) or set(value) != {'v', 'install_id', 'failures', 'retry_at_ms'}
+            or not integer(value['v'], 1, 1) or value['install_id'] != receipt['install_id']
+            or not integer(value['failures'], 1, 7) or not integer(value['retry_at_ms'], 0, 2 ** 64 - 1)):
+        raise ValueError(f'Ambiguous start ledger: {path}')
+    return current
+
+
 def reserve(home, receipt, created):
     existing = set(home.list(ROOT)) - {'bin', 'runtime'}
     if existing:
@@ -132,7 +146,7 @@ def preflight_cleanup(home, receipt):
     directory = generation(receipt)
     if set(home.list(RUNTIME)) != {receipt['install_id']}:
         raise ValueError(f'Unknown runtime generation; preserved: {RUNTIME}')
-    expected = {'control.json', 'writer.lock', 'ownership.json'}
+    expected = {'control.json', 'writer.lock', 'ownership.json', 'start.json'}
     unknown = set(home.list(directory)) - expected
     if unknown:
         raise ValueError(f'Unknown or staged runtime artifact; preserved: {directory}/{sorted(unknown)[0]}')
@@ -152,6 +166,7 @@ def preflight_cleanup(home, receipt):
     removals = [(temp_path, temp), (FEED, feed)]
     if record:
         removals.append((directory + '/ownership.json', record[0]))
+    removals.append((directory + '/start.json', start_ledger(home, receipt)))
     removals.extend(((directory + '/control.json', control(home, receipt)[0]),
                      (directory + '/writer.lock', managed(home, directory + '/writer.lock', 0))))
     return removals
