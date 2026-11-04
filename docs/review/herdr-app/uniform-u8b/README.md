@@ -1,6 +1,6 @@
 # U8b evidence: the uniform agent graph (panorama-graph on feed v2)
 
-These are the author's captures of source `6148630e5f73e0d8e036b41afa67bbfb6bc08cdd`, drawn by the native herdr-app renderer. The setup is isolated: a temporary `HERDR_APP_HOME`, its own HOME/XDG dirs and a private `hc` core. The data is the synthetic `SW2`/`DEEP` dataset from `state-refresh-v11/fixture.js` (titles from its `NAME` table), mapped onto the feed v2 fixture shape. Root terminals are synthetic OSC reporters in the private core. A scratch-only wrapper publishes the packet through the sidebar and seeds the graph's selection: `Review PR #144 r2` at depth 1 (D) and `Check the Gemini tile tint` at depth 4 (D2). Every card, the layout, the window and the navigation are drawn by the product source. There is no operator content, and no live install, layout switch of the operator's app or config edit. File hashes and isolation facts are in [capture.json](capture.json); app status was `errors: []`.
+These are the author's captures of source `50e17cf79256d614efba14745bb2fccc042ff058`, drawn by the native herdr-app renderer. The setup is isolated: a temporary `HERDR_APP_HOME`, its own HOME/XDG dirs and a private `hc` core. The data is the synthetic `SW2`/`DEEP` dataset from `state-refresh-v11/fixture.js` (titles from its `NAME` table), mapped onto the feed v2 fixture shape. Root terminals are synthetic OSC reporters in the private core. A scratch-only wrapper publishes the packet through the sidebar and seeds the graph's selection: `Review PR #144 r2` at depth 1 (D) and `Check the Gemini tile tint` at depth 4 (D2). Every card, the layout, the window and the navigation are drawn by the product source. There is no operator content, and no live install, layout switch of the operator's app or config edit. File hashes and isolation facts are in [capture.json](capture.json); app status was `errors: []`.
 
 | | |
 |---|---|
@@ -23,3 +23,5 @@ Known differences and limits:
 - **Scale and font** as in V10: zoom 1.0 against a larger design export, and the host UI font draws semibold lighter than Inter.
 - **Motion.** Still frames; running glyphs spin, needs-you tiles breathe and the edge pulse and sweep animate natively.
 - **Click guard.** Not visible in a still; covered by the unchanged `ClickGuard` deadlines test in `app/tests/b3-graph.test.mjs`.
+
+Reviewer captures (independent, round 1): [reviewer-d.png](reviewer-d.png), [reviewer-d2.png](reviewer-d2.png), [reviewer-d2-manual.png](reviewer-d2-manual.png).
