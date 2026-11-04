@@ -66,6 +66,9 @@ fn validate(world: &World) -> Result<(), String> {
         if !world.swarm.inbox_ok && !root.inbox.is_empty() {
             return Err("unavailable inbox has questions".into());
         }
+        if root.hidden_finished < 0 {
+            return Err("negative hidden_finished".into());
+        }
         let mut agents = HashSet::new();
         for a in &root.agents {
             if a.id.is_empty() || !agents.insert(&a.id) || a.tool_calls < 0 || a.resumes < 0 {

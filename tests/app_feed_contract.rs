@@ -399,6 +399,28 @@ fn additive_fields_unknown_vocabulary_dangling_parents_and_scoped_ids_remain_com
     feed["roots"][0]["agents"][6]["parent"] = json!("no-such-agent");
     feed["roots"][0]["agents"][10]["parent"] = json!("agent-10");
     validate(&feed).unwrap();
+    // So is a two-node cycle: the model's tree still reaches every agent exactly once.
+    feed["roots"][0]["agents"][11]["parent"] = json!("agent-12");
+    feed["roots"][0]["agents"][12]["parent"] = json!("agent-11");
+    validate(&feed).unwrap();
+    let swarm = model(&feed).unwrap();
+    let tree = TreeKids::of(&swarm.roots[0]);
+    let mut seen = Vec::new();
+    let mut todo: Vec<Option<&str>> = vec![None];
+    while let Some(p) = todo.pop() {
+        for a in tree.children(p) {
+            seen.push(a.id.as_str());
+            todo.push(Some(a.id.as_str()));
+        }
+    }
+    seen.sort_unstable();
+    let mut want: Vec<&str> = swarm.roots[0]
+        .agents
+        .iter()
+        .map(|a| a.id.as_str())
+        .collect();
+    want.sort_unstable();
+    assert_eq!(seen, want);
     // The same agent ids are safe in a different root. Question ids are scoped too.
     feed["roots"][1]["agents"] = feed["roots"][0]["agents"].clone();
     feed["roots"][1]["inbox"] = feed["roots"][0]["inbox"].clone();

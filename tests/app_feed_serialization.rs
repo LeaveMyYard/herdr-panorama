@@ -109,4 +109,7 @@ fn unsafe_counts_and_duplicate_roots_are_rejected() {
     let mut bad = world(&feed);
     bad.roots[1].terminal = Some("t2".into());
     assert!(serialize::bytes(&bad).is_err());
+    let mut bad = world(&feed);
+    bad.swarm.roots[0].hidden_finished = -1;
+    assert!(serialize::bytes(&bad).is_err());
 }
