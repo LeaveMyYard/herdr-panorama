@@ -80,7 +80,7 @@ export default class Graph extends View {
   canAnswer(node) { const intent = answerIntent(this.lastModel?.item, node); return intent?.kind === 'permission' || (intent?.kind === 'question' && !this.inbox.busy && this.inbox.canOpen(intent.question)); }
   actionButton(t, action, label, node, primary = false, enabled = true) {
     return div().id(`${node.key}-${action}`).h(24).px(9).rounded(6).flex_none().flex().items_center().text_size(11.5)
-      .text_color(!enabled ? t.dim : primary ? t.solid_foreground : t.foreground).bg(primary ? t.solid : t.raised)
+      .text_color(!enabled ? t.dim : primary ? '#17191d' : t.foreground).bg(primary ? '#eeeeef' : '#ffffff0d')
       .on_mouse_down('left', (_e, cx) => cx.stop_propagation())
       .on_click((_e, cx) => { cx.stop_propagation(); if (enabled && this.guard.allows(node.key, Date.now())) this.act(action, node, cx); }).child(label);
   }
