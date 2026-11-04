@@ -4,7 +4,6 @@ use super::actions::actions;
 use super::boxes::jn;
 use super::details::agent_detail_lines;
 use super::edge::sweep_pos;
-use super::phases::cur_idx;
 use super::pods::{Pods, pods_row};
 use crate::model::{Agent, Thread};
 use crate::view::palette::LINE;
@@ -24,63 +23,11 @@ fn agent(v: Value) -> Agent {
     serde_json::from_value(v).unwrap()
 }
 
-fn phases(states: &[&str]) -> Value {
-    states
-        .iter()
-        .enumerate()
-        .map(|(i, s)| json!({"name": format!("p{i}"), "state": s}))
-        .collect()
-}
-
 fn text(lines: &[Vec<crate::view::seg::Seg>]) -> Vec<String> {
     lines
         .iter()
         .map(|l| l.iter().map(|s| s.text.as_str()).collect())
         .collect()
-}
-
-#[test]
-fn a_current_phase_with_an_end_still_counts_from_its_start() {
-    // Python's phase_sub: `now` uses now - start even when an end is set
-    let t =
-        thread(json!({"phases": [{"name": "p", "state": "now", "start": 100.0, "end": 200.0}]}));
-    assert_eq!(
-        super::phases::phase_sub(
-            &t,
-            &View {
-                now: 1000.0,
-                ..View::default()
-            }
-        ),
-        "p · 15m"
-    );
-}
-
-#[test]
-fn the_current_phase() {
-    assert_eq!(cur_idx(&thread(json!({}))), None);
-    assert_eq!(
-        cur_idx(&thread(json!({"phases": phases(&["done", "now", "next"])}))),
-        Some(1)
-    );
-    assert_eq!(
-        cur_idx(&thread(
-            json!({"phases": phases(&["done", "failed", "now"])})
-        )),
-        Some(1)
-    );
-    assert_eq!(
-        cur_idx(&thread(
-            json!({"phases": phases(&["done", "skipped", "done"])})
-        )),
-        Some(2)
-    );
-    assert_eq!(
-        cur_idx(&thread(
-            json!({"phases": phases(&["done", "next", "next"])})
-        )),
-        Some(0)
-    );
 }
 
 #[test]
@@ -126,7 +73,7 @@ fn pods_show_live_first_and_fold_the_finished_when_short_of_room() {
         &mut s,
         0,
         0,
-        &t,
+        &t.agents.iter().collect::<Vec<_>>(),
         &View::default(),
         Pods {
             max_n: 6,
@@ -140,7 +87,7 @@ fn pods_show_live_first_and_fold_the_finished_when_short_of_room() {
         &mut s,
         0,
         0,
-        &t,
+        &t.agents.iter().collect::<Vec<_>>(),
         &View::default(),
         Pods {
             max_n: 2,
@@ -321,7 +268,14 @@ fn pods_are_click_targets_selecting_their_agent() {
         sel_agent: Some("a"),
         orch: Some("p"),
     };
-    pods_row(&mut s, 1, 0, &t, &View::default(), p);
+    pods_row(
+        &mut s,
+        1,
+        0,
+        &t.agents.iter().collect::<Vec<_>>(),
+        &View::default(),
+        p,
+    );
     assert_eq!(s.text(), "[ ⠋ ] ✓");
     let agents: Vec<(i32, i32, String)> = s
         .targets

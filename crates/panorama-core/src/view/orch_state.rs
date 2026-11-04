@@ -5,7 +5,7 @@
 use super::anim::{clock, glyph, spin};
 use super::state::View;
 use super::text::ago;
-use crate::model::{Agent, BgTask, HerdrStatus, Orchestrator, Status, Swarm, Thread, ThreadSource};
+use crate::model::{Agent, BgTask, HerdrStatus, Orchestrator, Status, Swarm};
 
 /// The clock the ages are judged by: now, and how long idle reads "stale".
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -169,18 +169,7 @@ pub fn orch_state(o: &Orchestrator, frame: f64, ages: Option<Ages>) -> OrchState
         .filter(|_| !codex || o.herdr_status == HerdrStatus::Idle)
         .filter(|a| a.is_stale(o))
         .and_then(|a| o.last_activity.map(|t| format!("stale {}", ago(a.now - t))));
-    // Codex's synthetic main agent mirrors herdr. Child/report attention is
-    // meaningful, but neither its session card nor its history decides runtime.
-    let agents: Vec<&Agent> = o
-        .threads
-        .iter()
-        .flat_map(|thread| {
-            thread
-                .agents
-                .iter()
-                .filter(move |agent| !codex_root(o, thread, agent))
-        })
-        .collect();
+    let agents: Vec<&Agent> = o.agents().collect();
     let extras = Extras {
         working: o.herdr_status == HerdrStatus::Working,
         blocked: o.herdr_status == HerdrStatus::Blocked,
@@ -213,17 +202,6 @@ pub fn orch_state(o: &Orchestrator, frame: f64, ages: Option<Ages>) -> OrchState
         }
     }
     state
-}
-
-/// Only the collector's exact associated session/root pair mirrors pane runtime.
-/// A child or report may share its role, name or even a main-prefixed ID.
-pub(super) fn codex_root(o: &Orchestrator, thread: &Thread, agent: &Agent) -> bool {
-    o.harness == "codex"
-        && thread.source == ThreadSource::Session
-        && o.session_id
-            .as_ref()
-            .is_some_and(|id| thread.id == format!("codex:{id}"))
-        && agent.id == format!("main:codex:{}", o.pane_id)
 }
 
 #[cfg(test)]

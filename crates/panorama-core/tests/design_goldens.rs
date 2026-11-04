@@ -1,14 +1,17 @@
-//! The docked panel against the design's own renders (tests/fixtures/README.md, "Design
+//! The docked panel at the design's frames and views (tests/fixtures/README.md, "Design
 //! references"), cell for cell: design 9e (`design_9.json`, plain and with turn 6's unseen
 //! marks) and turn 10 (`design_10.json`, focused and not, in two herdr themes). Python's
-//! tests/test_tiles.py and tests/test_focus_theme.py, ported.
+//! tests/test_tiles.py and tests/test_focus_theme.py, ported. The design's renders list
+//! threads, so the screens are Rust's own since the uniform agent tree (plan
+//! `uniform-agent-tree.md` U5, D5): `rust/screens/design-*.json`, `PANORAMA_BLESS=1`.
 
 mod support;
 
 use panorama_core::view::palette::{BG, DIM, DOCK_HOV, FAINT, FG};
 use panorama_core::view::theme::{OwnColours, PanelSettings, Tokens, panel_look};
 use panorama_core::view::{Marks, Target, Unseen, View, render_dock};
-use support::{NO_SESSIONS, assert_same, cells, fixture, golden, wire_swarm};
+use support::owned::check_owned;
+use support::{NO_SESSIONS, fixture, wire_swarm};
 
 /// The design's dataset in wire form, docked next to tab 3, as in the design.
 fn design_swarm() -> panorama_core::model::Swarm {
@@ -57,11 +60,7 @@ fn design_9e_cell_for_cell() {
     let swarm = design_swarm();
     for (key, frame) in frames(&nine) {
         let got = render_dock(&swarm, &design_view(frame), 46, 45, None, NO_SESSIONS);
-        assert_same(
-            &format!("9e frame {key}"),
-            &golden(&nine["frames"][&key]["E"]),
-            &cells(&got),
-        );
+        check_owned("design-9e.json", &format!("E@{key}"), &got);
     }
 }
 
@@ -75,11 +74,7 @@ fn design_9e_unseen_tiles_pulse_like_the_design() {
             ..design_view(frame)
         };
         let got = render_dock(&swarm, &view, 46, 45, None, NO_SESSIONS);
-        assert_same(
-            &format!("9e unseen frame {key}"),
-            &golden(&nine["frames"][&key]["U"]),
-            &cells(&got),
-        );
+        check_owned("design-9e.json", &format!("U@{key}"), &got);
     }
 }
 
@@ -96,11 +91,7 @@ fn design_9e_glides_like_the_design_between_frames() {
                 ..design_view(frame)
             };
             let got = render_dock(&swarm, &view, 46, 45, None, NO_SESSIONS);
-            assert_same(
-                &format!("9e smooth frame {key} {look}"),
-                &golden(&smooth["frames"][&key][look]),
-                &cells(&got),
-            );
+            check_owned("design-9e-smooth.json", &format!("{look}@{key}"), &got);
         }
     }
 }
@@ -157,12 +148,7 @@ fn design_10_focused_and_not_in_two_themes_cell_for_cell() {
                     ..design_view(frame)
                 };
                 let got = render_dock(&swarm, &view, 46, 45, None, NO_SESSIONS);
-                let want = golden(&ten["frames"][&key][format!("{theme}{mode}")]);
-                assert_same(
-                    &format!("turn 10 frame {key} {theme}{mode}"),
-                    &want,
-                    &cells(&got),
-                );
+                check_owned("design-10.json", &format!("{theme}{mode}@{key}"), &got);
             }
         }
     }

@@ -1,21 +1,21 @@
-//! The narrow layout's orchestrator rows: an unselected one is a pod, its name and state,
-//! and its marks; the selected one opens its thread cards below it (Python `_narrow`).
+//! The narrow layout's root rows: an unselected one is a pod, its name and state, and its
+//! marks; the selected one opens a card per direct subagent below it (Python `_narrow`, the
+//! uniform tree of plan `uniform-agent-tree.md` §4).
 
-use super::card::{CardCtx, done_card, thread_card};
+use super::card::{CardCtx, agent_card, fin_card};
 use super::links::join;
-use crate::model::ThreadSource;
-use crate::model::{HerdrStatus, Orchestrator, Status, Swarm, Thread};
+use crate::model::{Agent, HerdrStatus, Orchestrator, Status, Swarm, TreeKids};
 use crate::view::cards::boxes::HOVER;
 use crate::view::cards::marks::{marks_of, marks_right};
 use crate::view::colour::Rgb;
 use crate::view::filter::Filter;
-use crate::view::nav::find_agent;
+use crate::view::nav::{find_agent, path_ids, tree_entries};
 use crate::view::orch_state::{Ages, OrchState, orch_state};
 use crate::view::palette::{DIM, FAINT, FG, HI, status};
 use crate::view::pod::pod;
 use crate::view::screen::Screen;
 use crate::view::seg::Seg;
-use crate::view::state::View;
+use crate::view::state::{FIN_CARD, View};
 use crate::view::target::Target;
 use crate::view::text::trunc;
 
@@ -67,8 +67,8 @@ pub struct Opened {
     pub sel: Option<(i32, i32)>,
 }
 
-/// The selected orchestrator at row `y`: its line, then its thread cards (and the done
-/// card), joined to it by lines.
+/// The selected root at row `y`: its line, then a card per direct subagent (and the fold of
+/// its finished ones), in the depth-1 column's order, joined to it by lines.
 pub fn open_orch(
     cv: &mut Screen,
     y: i32,
@@ -88,7 +88,6 @@ pub fn open_orch(
     let segs = [
         Seg::new(name, HI).bold(),
         Seg::new(format!("  {}", st.label), state_colour(&st)),
-        Seg::new(format!("  {}", o.flavour), FAINT),
     ];
     cv.segs(5, y, &segs);
     let mut sel = None;
@@ -96,25 +95,41 @@ pub fn open_orch(
         cv.put(0, y, "▌", HI, None, false);
         sel = Some((y, y + 1));
     }
-    let (active, done) = split_threads(o, view.filter);
-    let mut cards: Vec<Option<&Thread>> = active.iter().map(|t| Some(*t)).collect();
-    if !done.is_empty() {
-        cards.push(None);
-    }
-    // interim, until U5 replaces narrow: the thread holding the selected agent opens, else
-    // the first
-    let picked = find_agent(Some(o), view.agent.as_deref());
-    let open = active
-        .iter()
-        .position(|t| picked.is_some_and(|a| t.agents.iter().any(|b| b.id == a.id)))
-        .unwrap_or(0);
+    let kids = TreeKids::of_root(o);
+    // the depth-1 agent holding the selection (its fold card: the root's own)
+    let picked = view.agent.as_deref().map(|id| {
+        let id = id.strip_prefix(FIN_CARD).unwrap_or(id);
+        path_ids(Some(o), Some(id)).first().cloned()
+    });
     let ctx = CardCtx { o, swarm, view, w };
     let (top_y, mut y) = (y, y + 2);
     let mut anchors = vec![];
-    for (i, card) in cards.into_iter().enumerate() {
-        let placed = match card {
-            None => done_card(cv, y, &ctx, &done),
-            Some(t) => thread_card(cv, y, &ctx, t, (anchors.len() as i64 + 1, i == open)),
+    let entries: Vec<_> = tree_entries(o, view)
+        .into_iter()
+        .filter(|e| e.depth == 1)
+        .collect();
+    // the done window dropped every finished one: the fold still says how many
+    // (a filter folds nothing, so it shows no fold either)
+    let older_only = view.filter == Filter::All
+        && o.hidden_finished > 0
+        && !entries.iter().any(|e| e.ident.starts_with(FIN_CARD));
+    for e in entries {
+        let placed = if e.ident.starts_with(FIN_CARD) {
+            let fin: Vec<&Agent> = e
+                .fin
+                .iter()
+                .filter_map(|id| find_agent(Some(o), Some(id)))
+                .collect();
+            fin_card(cv, y, &ctx, &fin, Some(&e.ident))
+        } else {
+            let Some(a) = find_agent(Some(o), Some(&e.ident)) else {
+                continue;
+            };
+            let open = picked
+                .as_ref()
+                .is_some_and(|p| p.as_deref() == Some(a.id.as_str()));
+            let seed = anchors.len() as i64 + 1;
+            agent_card(cv, y, &ctx, a, &kids.descendants(&a.id), (seed, open))
         };
         if placed.sel.is_some() {
             sel = placed.sel;
@@ -122,43 +137,11 @@ pub fn open_orch(
         anchors.push(placed.anchor);
         y += placed.height;
     }
+    if older_only {
+        let placed = fin_card(cv, y, &ctx, &[], None);
+        anchors.push(placed.anchor);
+        y += placed.height;
+    }
     join(cv, top_y, &anchors);
     Opened { end: y, sel }
-}
-
-/// An orchestrator's threads as narrow shows them (interim, the former `nav::split_threads`,
-/// until U5 replaces narrow): the active ones (a failed one stays with them), and the done
-/// ones it folds.
-fn split_threads(o: &Orchestrator, filter: Filter) -> (Vec<&Thread>, Vec<&Thread>) {
-    use crate::model::ThreadStatus;
-    let is_active = |t: &Thread| {
-        (!t.is_done() && t.status != ThreadStatus::Failed) || t.source == ThreadSource::Session
-    };
-    let threads = || {
-        o.threads
-            .iter()
-            .filter(|t| !t.is_tree() || !t.agents.is_empty())
-    };
-    let mut active: Vec<&Thread> = threads().filter(|t| is_active(t)).collect();
-    let rest = threads().filter(|t| !is_active(t));
-    let (failed, done): (Vec<&Thread>, Vec<&Thread>) =
-        rest.partition(|t| t.status == ThreadStatus::Failed);
-    active.extend(failed);
-    match filter {
-        Filter::Needs => {
-            let needs = |t: &&Thread| {
-                t.agents.iter().any(|a| a.status.needs_operator())
-                    || t.status == ThreadStatus::Failed
-            };
-            (active.into_iter().filter(needs).collect(), vec![])
-        }
-        Filter::Running => (
-            active
-                .into_iter()
-                .filter(|t| t.status == ThreadStatus::Active)
-                .collect(),
-            vec![],
-        ),
-        Filter::All => (active, done),
-    }
 }

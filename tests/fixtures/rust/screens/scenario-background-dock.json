@@ -191,20 +191,14 @@
           false
         ],
         [
-          " ⠁ ",
-          "#e6def8",
-          "#3b3159",
-          true
-        ],
-        [
-          " Release                            ",
-          "#c3c7cd",
+          "⠁ ",
+          "#b39ddb",
           "#14161b",
           false
         ],
         [
-          "⠁ ",
-          "#b39ddb",
+          "Check the canary metrics               ",
+          "#c3c7cd",
           "#14161b",
           false
         ]
@@ -799,20 +793,14 @@
           false
         ],
         [
-          " ⠁ ",
-          "#e6def8",
-          "#3b3159",
-          true
-        ],
-        [
-          " Release                            ",
-          "#c3c7cd",
+          "⠁ ",
+          "#b39ddb",
           "#14161b",
           false
         ],
         [
-          "⠁ ",
-          "#b39ddb",
+          "Check the canary metrics               ",
+          "#c3c7cd",
           "#14161b",
           false
         ]

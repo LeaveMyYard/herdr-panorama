@@ -73,14 +73,8 @@
           true
         ],
         [
-          "waiting  ",
+          "waiting                                   ",
           "#b39ddb",
-          "#101215",
-          false
-        ],
-        [
-          "agents                           ",
-          "#4d535c",
           "#101215",
           false
         ]
@@ -121,13 +115,13 @@
           false
         ],
         [
-          "⠋ ",
-          "#68c2b5",
+          "⠁ ",
+          "#b39ddb",
           "#101215",
           true
         ],
         [
-          "Release                                                      ",
+          "Check the canary metrics                                     ",
           "#eceef1",
           "#101215",
           true
@@ -141,45 +135,13 @@
       ],
       [
         [
-          "   ┃  ",
+          "   ┃                                                    ",
           "#b39ddb",
           "#101215",
           false
         ],
         [
-          "[",
-          "#eceef1",
-          "#101215",
-          true
-        ],
-        [
-          " ⠁ ",
-          "#e6def8",
-          "#3b3159",
-          true
-        ],
-        [
-          "]                                                  ",
-          "#eceef1",
-          "#101215",
-          true
-        ],
-        [
-          "active │ ",
-          "#80868f",
-          "#101215",
-          false
-        ]
-      ],
-      [
-        [
-          "   ┃                                                                ",
-          "#b39ddb",
-          "#101215",
-          false
-        ],
-        [
-          "│ ",
+          "sonnet · 8m │ ",
           "#80868f",
           "#101215",
           false
@@ -213,13 +175,13 @@
           true
         ],
         [
-          " Check the canary metrics ",
+          " general-purpose ",
           "#eceef1",
           "#101215",
           true
         ],
         [
-          "general-purpose g1canar · so…   │ ",
+          "g1canar · sonnet · 8m · 1 calls          │ ",
           "#80868f",
           "#101215",
           false
@@ -427,6 +389,14 @@
         [
           "n                                                    ",
           "#4d535c",
+          "#101215",
+          false
+        ]
+      ],
+      [
+        [
+          "                                                                      ",
+          null,
           "#101215",
           false
         ]

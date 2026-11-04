@@ -159,12 +159,13 @@ fn bare_codex_preserves_authoritative_runtime_without_inventing_completion() {
 }
 
 #[test]
-fn codex_history_age_and_synthetic_main_do_not_replace_root_runtime() {
+fn codex_history_age_does_not_replace_root_runtime_but_a_live_child_does() {
+    // the uniform tree (U3): the root's runtime is herdr's, on the root; no main agent
     let mut o: Orchestrator = serde_json::from_value(serde_json::json!({
         "pane_id":"p", "tab_id":null, "tab_label":"Codex", "session_id":"root",
         "harness":"codex", "herdr_status":"done", "last_activity":1,
-        "threads":[{"id":"codex:root", "name":"History", "source":"session", "status":"active",
-            "agents":[{"id":"main:codex:p", "status":"run"}, {"id":"child", "status":"unknown"}]}]
+        "threads":[{"id":crate::model::TREE_THREAD, "name":"agents", "source":"session",
+            "status":"active", "agents":[{"id":"child", "status":"unknown"}]}]
     }))
     .unwrap();
     let ages = Some(Ages {
@@ -180,10 +181,7 @@ fn codex_history_age_and_synthetic_main_do_not_replace_root_runtime() {
     o.herdr_status = HerdrStatus::Idle;
     assert_eq!(orch_state(&o, 0.0, ages).st, Status::Stale);
     o.herdr_status = HerdrStatus::Done;
-    o.threads[0].id = "another-session".into();
-    assert_eq!(orch_state(&o, 0.0, ages).st, Status::Running);
-    o.threads[0].id = "codex:root".into();
-    o.threads[0].source = ThreadSource::Explicit;
+    o.threads[0].agents[0].status = Status::Running;
     assert_eq!(orch_state(&o, 0.0, ages).st, Status::Running);
 }
 

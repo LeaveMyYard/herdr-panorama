@@ -1,6 +1,8 @@
 //! The narrow layout and the navigation it walks, on the demo and deep data: Python's
 //! tests/test_render.py, tests/test_deep.py and tests/test_states.py cases for what P3 draws
-//! (the wide graph's own cases come with it in P4).
+//! (the wide graph's own cases come with it in P4). Since the uniform agent tree (plan
+//! `uniform-agent-tree.md` §4, U4 and U5) a root's agents are one tree whatever threads an
+//! older producer grouped them in: the columns are depths and the cards are its subagents.
 
 mod support;
 
@@ -14,7 +16,7 @@ use serde_json::json;
 use support::{NO_SESSIONS, fixture, wire_swarm};
 
 fn demo_view() -> View {
-    // test_render.py `view()`: the demo's first root and agent
+    // test_render.py `view()`: the demo's first orchestrator and agent
     View {
         orch: Some("w1:p1".into()),
         agent: Some("a2f81c0".into()),
@@ -33,6 +35,7 @@ fn the_narrow_layout_is_an_indented_list_with_only_the_selected_orchestrator_ope
     let v = View {
         orch: Some("w1:p2".into()),
         agent: Some("j1a2b3c".into()),
+        focus: 1,
         ..demo_view()
     };
     let s = render_narrow(&demo(), &v, 70, 45, None, NO_SESSIONS);
@@ -41,50 +44,52 @@ fn the_narrow_layout_is_an_indented_list_with_only_the_selected_orchestrator_ope
     assert!(rows.iter().all(|r| r.chars().count() <= 70));
     for want in [
         "✗  Claude Code · Billing API  failed · working",
-        "Search refactor  working  workflow",
+        "Claude Code · Search refactor  working",
         "!  Claude Code · Docs site  blocked",
         "✓  Claude Code · Release notes  all done",
-        "search-index-rebuild",
-        "Build · 22m",
-        "✓ Plan         09:20–09:41",
-        "author j1a2b3c · sonnet",
+        "author j1a2b3c · sonnet · 22m · 97 calls",
         "now  Read(src/search/tokenize.rs)",
         "✓ done ✓? done? ⠋ run » rev ○ queue ? ask ! block ✗ fail ~ lost",
     ] {
         assert!(text.contains(want), "missing {want:?}\n{text}");
     }
     assert!(rows[2].contains("✗ ?1"), "{}", rows[2]);
+    // a card per live subagent (no thread, no phases), then the fold of the finished ones
+    let row = |want: &str| rows.iter().position(|r| r.contains(want)).unwrap();
+    let first = row("┨ ⠸ author j1a2b3c");
     assert!(
-        rows[5].starts_with(" │") && rows[7].starts_with(" ╰─┨"),
-        "{}\n{}",
-        rows[5],
-        rows[7]
+        rows[first].starts_with(" ├─┨") && rows[first - 2] == " │",
+        "{text}"
+    );
+    assert!(rows[row("author j4d5e6f")].starts_with(" ├─┨"), "{text}");
+    let fin = row("2 finished · planner j2b3c4d, explorer j3c4d5e");
+    assert!(rows[fin].starts_with(" ╰─  ✓"), "{text}");
+    assert!(
+        !text.contains("search-index-rebuild") && !text.contains("✓ Plan"),
+        "{text}"
     );
     assert!(rows[44].starts_with(" ↑↓ move   → open   g pane   a answer   f filter   ? help"));
 }
 
 #[test]
 fn nav_lists_identities_per_column() {
-    // test_render.py::test_nav_lists_identities_per_column, by depth since the uniform tree
-    // (plan `uniform-agent-tree.md` U4): the root's agents of every thread are one tree
+    // test_render.py::test_nav_lists_identities_per_column
     let sw = demo();
     let cols = nav(&sw, &demo_view());
     assert_eq!(cols[0], ["w1:p1", "w1:p2", "w1:p3", "w1:p4", NEW_ROW]); // the + row is always last
-    // live and failed by start time, then the folded card
+    // the root's live subagents by start time, then the folded card
     let fin = format!("{FIN_CARD}w1:p1");
-    assert_eq!(
-        cols[1],
-        ["a1c3d90", "a2f81c0", "b3a9c41", "c1d2e3f", fin.as_str()]
-    );
+    assert_eq!(cols[1], ["a1c3d90", "a2f81c0", "b3a9c41", "c1d2e3f", &fin]);
+    assert_eq!(cols.len(), 2);
     let mut v = demo_view();
     v.fin_open.insert("w1:p1".into());
     let cols = nav(&sw, &v);
-    assert_eq!(cols[1].len(), 5 + 8);
-    assert_eq!(cols[1][5], "e1a2b3c"); // the folded ones, oldest first
+    assert_eq!(cols[1].len(), 13); // unfolded after its card
+    assert_eq!(cols[1][4], fin);
+    assert_eq!(cols[1][10], "a5b7f02");
 }
 
-/// tests/design_deep.py: `NOW`, `TID`; the view with the cursor on `sel` (test_deep.py
-/// `view_for`).
+/// tests/design_deep.py: `NOW`; the view with the cursor on `sel` (test_deep.py `view_for`).
 const DEEP_NOW: f64 = 1_800_000_000.0;
 
 fn deep_view(sel: &str) -> View {
@@ -128,9 +133,9 @@ fn nav_has_one_column_per_depth_in_screen_order() {
     assert_eq!(cols.len(), 6);
     let mut v = deep_view("c1");
     v.fin_open.insert("b1".into());
-    let col4 = &nav(&sw, &v)[3];
+    let col3 = &nav(&sw, &v)[3];
     assert_eq!(
-        col4[col4.len() - 4..],
+        col3[col3.len() - 4..],
         [fin("b1"), "s3".into(), "s4".into(), "s5".into()]
     ); // unfolded after its card
 }
@@ -148,6 +153,21 @@ fn the_needs_filter_keeps_the_path_to_an_agent_that_needs_you() {
     assert_eq!(cols[2], ["r1", "b1"]);
     assert!(cols[4].contains(&"c1".to_owned()));
     assert!(!cols[1].contains(&"v1".to_owned()) && !cols[3].contains(&"s1".to_owned()));
+}
+
+#[test]
+fn a_deep_selection_opens_its_depth_1_card_with_its_details() {
+    // the narrow layout shows a root's direct subagents as cards; a deeper agent is a pod in
+    // its depth-1 ancestor's card, which opens with its details
+    let sw = wire_swarm("inputs/swarm-deep.json", None);
+    let text = render_narrow(&sw, &deep_view("c1"), 70, 45, None, NO_SESSIONS).text();
+    let rows: Vec<&str> = text.lines().collect();
+    let lead = rows.iter().position(|r| r.contains("┨ ⠇ lead l1")).unwrap();
+    assert!(rows[lead].ends_with("✗ ?1 │"), "{text}");
+    assert!(rows[lead + 1].contains("[ ? ]"), "the selected pod: {text}");
+    assert!(rows[lead + 3].contains("checker c1 · sonnet"), "{text}");
+    let rev = rows.iter().position(|r| r.contains("reviewer v1")).unwrap();
+    assert!(rows[rev].starts_with(" ╰─┨"), "{text}");
 }
 
 #[test]

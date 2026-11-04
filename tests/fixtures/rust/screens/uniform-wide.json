@@ -7375,5 +7375,5 @@
       ]
     ]
   },
-  "source": "Rust's docked-panel screens, written by PANORAMA_BLESS=1 cargo test -p panorama-core (plan uniform-agent-tree.md U5, D5); the runs and views are the tests' own"
+  "source": "Rust's own screens, written by PANORAMA_BLESS=1 cargo test (plan uniform-agent-tree.md, D5)"
 }

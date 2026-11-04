@@ -81,7 +81,35 @@ impl<'a> TreeKids<'a> {
     pub fn has_children(&self, parent: &str) -> bool {
         !self.children(Some(parent)).is_empty()
     }
+
+    /// Everything below agent `id`, depth first (cut at [`MAX_DEPTH`] levels, a guard: loops
+    /// are already cut).
+    pub fn descendants(&self, id: &str) -> Vec<&'a Agent> {
+        let mut out = vec![];
+        self.walk(id, 0, &mut out);
+        out
+    }
+
+    /// `a` and everything below it.
+    pub fn subtree(&self, a: &'a Agent) -> Vec<&'a Agent> {
+        let mut out = vec![a];
+        self.walk(&a.id, 0, &mut out);
+        out
+    }
+
+    fn walk(&self, id: &str, depth: usize, out: &mut Vec<&'a Agent>) {
+        if depth > MAX_DEPTH {
+            return;
+        }
+        for k in self.children(Some(id)) {
+            out.push(k);
+            self.walk(&k.id, depth + 1, out);
+        }
+    }
 }
+
+/// How deep [`TreeKids::descendants`] walks.
+pub const MAX_DEPTH: usize = 64;
 
 #[cfg(test)]
 mod tests;

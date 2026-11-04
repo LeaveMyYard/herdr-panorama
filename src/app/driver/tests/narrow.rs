@@ -77,7 +77,14 @@ fn the_narrow_layout_in_a_side_split() {
     assert!(
         text.contains("Billing API  failed · working") && text.contains("Search refactor  working")
     );
-    assert!(text.contains("PR #42 invoice export"));
+    // the selected root's subagents as cards, its finished ones folded
+    assert!(text.contains("┨ » reviewer a2f81c0"), "{text}");
+    assert!(text.contains("8 finished · author e1a2b3c"), "{text}");
     r.key(Key::Move(1), r.t0);
-    assert!(r.text().lines().nth(4).unwrap().starts_with("▌ ")); // the focus mark on Search refactor
+    let text = r.text();
+    let row = text
+        .lines()
+        .find(|l| l.contains("Search refactor"))
+        .unwrap();
+    assert!(row.starts_with("▌ "), "{text}"); // the focus mark on Search refactor
 }

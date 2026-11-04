@@ -1,11 +1,11 @@
 //! One orchestrator's entry in the docked list (swarm-dock.js `vA` with 9e's tiles, turn 8's
 //! waiting and stale; Python `render.dock_row`): its background, line 1 (tab number, state
-//! tile, name, `?N` and its state), line 2 (its threads' tiles and counts, or for the docked
-//! entry only the counts), and the docked entry's list below (`items`).
+//! tile, name, `?N` and its state), line 2 (its direct subagents' tiles and counts, or for
+//! the docked entry only the counts), and the docked entry's list below (`items`).
 
 use super::items::{Item, ItemCtx, draw_item, items_of};
 use super::state::{DockState, dock_state, state_colour};
-use super::tiles::{fit_tiles, thread_tiles, tile};
+use super::tiles::{child_tiles, fit_tiles, tile};
 use crate::model::{Orchestrator, Status};
 use crate::view::anim::tint;
 use crate::view::orch_state::Ages;
@@ -79,6 +79,7 @@ pub fn dock_row(
     let x_name = first_line(cv, &e, view);
     second_line(cv, &e, view, x_name);
     let ctx = ItemCtx {
+        o,
         view,
         d: &e.d,
         xr: e.xr(),
@@ -176,8 +177,8 @@ fn first_line(cv: &mut Screen, e: &Entry, view: &View) -> i32 {
     x_name
 }
 
-/// Line 2: the threads' tiles then the counts; for the docked entry (whose list shows the
-/// thread tiles) only the counts (9e).
+/// Line 2: a tile per active direct subagent then the counts; for the docked entry (whose
+/// list shows those subagents) only the counts (9e, V11).
 fn second_line(cv: &mut Screen, e: &Entry, view: &View, x_name: i32) {
     let d = &e.d;
     let extra = if d.st == Status::Background {
@@ -191,7 +192,7 @@ fn second_line(cv: &mut Screen, e: &Entry, view: &View, x_name: i32) {
         cv.segs(x_name, e.y + 1, &[Seg::new(trunc(&counts, room), FAINT)]);
         return;
     }
-    let tiles = thread_tiles(d, view.frame);
+    let tiles = child_tiles(d, view.frame);
     let lead = if tiles.is_empty() { "" } else { "  " };
     cv.segs(
         x_name,

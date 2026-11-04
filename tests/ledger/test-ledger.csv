@@ -234,9 +234,9 @@ tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V5-b1-0-4],tests/te
 tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V6-c1-0-0],tests/test_deep.py,crates/panorama-core/tests/design_wide.rs::design_5d_views,mapped,,P4
 tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V6-c1-0-1],tests/test_deep.py,crates/panorama-core/tests/design_wide.rs::design_5d_views,mapped,,P4
 tests/test_deep.py::test_5d_matches_the_design_cell_for_cell[V6-c1-0-4],tests/test_deep.py,crates/panorama-core/tests/design_wide.rs::design_5d_views,mapped,,P4
-tests/test_deep.py::test_docked_panel_tree_rows_match_the_design[0],tests/test_deep.py,crates/panorama-core/tests/design_deep.rs::the_docked_tree_rows_are_the_designs,mapped,,P3
-tests/test_deep.py::test_docked_panel_tree_rows_match_the_design[1],tests/test_deep.py,crates/panorama-core/tests/design_deep.rs::the_docked_tree_rows_are_the_designs,mapped,,P3
-tests/test_deep.py::test_docked_panel_tree_rows_match_the_design[4],tests/test_deep.py,crates/panorama-core/tests/design_deep.rs::the_docked_tree_rows_are_the_designs,mapped,,P3
+tests/test_deep.py::test_docked_panel_tree_rows_match_the_design[0],tests/test_deep.py,crates/panorama-core/tests/design_deep.rs::the_docked_tree_rows_are_two_layers_of_the_roots_agents,mapped,,P3
+tests/test_deep.py::test_docked_panel_tree_rows_match_the_design[1],tests/test_deep.py,crates/panorama-core/tests/design_deep.rs::the_docked_tree_rows_are_two_layers_of_the_roots_agents,mapped,,P3
+tests/test_deep.py::test_docked_panel_tree_rows_match_the_design[4],tests/test_deep.py,crates/panorama-core/tests/design_deep.rs::the_docked_tree_rows_are_two_layers_of_the_roots_agents,mapped,,P3
 tests/test_deep.py::test_nav_has_one_column_per_depth_in_screen_order,tests/test_deep.py,crates/panorama-core/tests/narrow_layout.rs::nav_has_one_column_per_depth_in_screen_order,mapped,,P3
 tests/test_deep.py::test_columns_keep_their_width_and_align_left,tests/test_deep.py,crates/panorama-core/tests/wide_layout.rs::columns_keep_their_width_and_align_left,mapped,,P4
 tests/test_deep.py::test_narrow_screens_shrink_the_last_column_and_keep_the_focus_and_its_parents,tests/test_deep.py,crates/panorama-core/tests/wide_layout.rs::a_narrow_screen_shrinks_the_last_column_and_keeps_the_focus_and_its_parents,mapped,,P4
@@ -353,11 +353,11 @@ tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 160 f3-],tests/test_g
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[demo 240 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
 tests/test_glyph_spacing.py::test_no_two_glyphs_touch[deep 240 f3-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_two_glyphs_touch,mapped,,P4
 tests/test_glyph_spacing.py::test_the_docked_rows_space_their_glyphs,tests/test_glyph_spacing.py,crates/panorama-core/tests/design_goldens.rs::design_9e_cell_for_cell,mapped,,P3
-tests/test_glyph_spacing.py::test_review_m_many_threads_keep_the_counts_whole[36-15],tests/test_glyph_spacing.py,crates/panorama-core/tests/dock_layout.rs::many_threads_keep_the_counts_whole,mapped,,P3
-tests/test_glyph_spacing.py::test_review_m_many_threads_keep_the_counts_whole[36-30],tests/test_glyph_spacing.py,crates/panorama-core/tests/dock_layout.rs::many_threads_keep_the_counts_whole,mapped,,P3
-tests/test_glyph_spacing.py::test_review_m_many_threads_keep_the_counts_whole[46-15],tests/test_glyph_spacing.py,crates/panorama-core/tests/dock_layout.rs::many_threads_keep_the_counts_whole,mapped,,P3
-tests/test_glyph_spacing.py::test_review_m_many_threads_keep_the_counts_whole[46-30],tests/test_glyph_spacing.py,crates/panorama-core/tests/dock_layout.rs::many_threads_keep_the_counts_whole,mapped,,P3
-tests/test_glyph_spacing.py::test_a_few_threads_show_every_glyph,tests/test_glyph_spacing.py,crates/panorama-core/tests/dock_layout.rs::a_few_threads_show_every_glyph,mapped,,P3
+tests/test_glyph_spacing.py::test_review_m_many_threads_keep_the_counts_whole[36-15],tests/test_glyph_spacing.py,crates/panorama-core/tests/dock_layout.rs::many_subagents_keep_the_counts_whole,mapped,,P3
+tests/test_glyph_spacing.py::test_review_m_many_threads_keep_the_counts_whole[36-30],tests/test_glyph_spacing.py,crates/panorama-core/tests/dock_layout.rs::many_subagents_keep_the_counts_whole,mapped,,P3
+tests/test_glyph_spacing.py::test_review_m_many_threads_keep_the_counts_whole[46-15],tests/test_glyph_spacing.py,crates/panorama-core/tests/dock_layout.rs::many_subagents_keep_the_counts_whole,mapped,,P3
+tests/test_glyph_spacing.py::test_review_m_many_threads_keep_the_counts_whole[46-30],tests/test_glyph_spacing.py,crates/panorama-core/tests/dock_layout.rs::many_subagents_keep_the_counts_whole,mapped,,P3
+tests/test_glyph_spacing.py::test_a_few_threads_show_every_glyph,tests/test_glyph_spacing.py,crates/panorama-core/tests/dock_layout.rs::a_few_subagents_show_every_glyph,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[dock 46 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[dock 60 f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
 tests/test_glyph_spacing.py::test_no_half_circle_glyphs_anywhere[deep dock f0-],tests/test_glyph_spacing.py,crates/panorama-core/tests/glyph_spacing.rs::no_half_circle_glyphs_anywhere,mapped,,P3
