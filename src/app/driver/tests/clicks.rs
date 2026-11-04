@@ -33,9 +33,9 @@ fn wide_cards_select_and_a_second_click_goes_to_the_pane() {
 
 #[test]
 fn a_roots_own_hints_act_on_it() {
+    // the keyboard on the root: its card is unfolded with its own hints
     let mut r = Run::new(wire("demo"), "w1:p1", true, WIDE);
     let now = r.settled();
-    r.key(Key::Right, now); // the keyboard off the root
     let out = r.click(&Target::TranscriptOrch("w1:p1".into()), now);
     assert_eq!(r.sel().0, 0);
     assert!(

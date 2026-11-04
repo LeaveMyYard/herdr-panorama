@@ -72,7 +72,7 @@ fn enter_unfolds_the_roots_finished_card() {
 fn answer_on_a_blocked_session_goes_to_the_pane() {
     let mut r = Run::demo("w1:p3", WIDE);
     assert_eq!(r.sel(), (0, Some("w1:p3"), Some("d1e2f3a"))); // the keys act on the root
-    assert!(r.text().contains("! Publish the v2 docs now or after the"));
+    assert!(r.text().contains("! Publish the v2 docs now or after"));
     let now = r.settled();
     let out = r.key(Key::Answer, now);
     assert!(goes_to(&out, "w1:p3"));
