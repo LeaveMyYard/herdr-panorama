@@ -35,7 +35,7 @@ in another language, such as Rust or ratatui, can speak it.
 
 ### Viewer → core
 
-- `{"hello": {"protocol": "1.3", "role": "panel", "pane_id": "<herdr pane>", "tab_id": "<herdr tab>"}}`.
+- `{"hello": {"protocol": "1.4", "role": "panel", "pane_id": "<herdr pane>", "tab_id": "<herdr tab>"}}`.
   This is the first message. `pane_id` is a claim. The core trusts it only when herdr reports
   that pane's foreground process as the connecting process itself (its pid), running
   `panorama panel`. It never uses it as authority to close anything.
@@ -61,9 +61,9 @@ Any message before `hello` closes the connection.
 
 ### Core → viewer
 
-- `{"welcome": {"protocol": "1.3"}}`: the answer to a compatible `hello`. The last `state`
+- `{"welcome": {"protocol": "1.4"}}`: the answer to a compatible `hello`. The last `state`
   follows at once, if there is one.
-- `{"error": {"message": "protocol", "protocol": "1.3"}}`: an incompatible `hello`. The
+- `{"error": {"message": "protocol", "protocol": "1.4"}}`: an incompatible `hello`. The
   connection then closes.
 - `{"state": {...}}`: always a full snapshot (no deltas in v1). It is sent after every collect
   (~1.5 s), on focus and tab changes, and right after `welcome`.
@@ -77,9 +77,10 @@ Any message before `hello` closes the connection.
 
 | field | meaning |
 |---|---|
-| `protocol` | `"1.3"` |
+| `protocol` | `"1.4"` |
 | `swarm.generated_at`, `swarm.herdr_ok`, `swarm.inbox_ok`, `swarm.errors`, `swarm.stale_after` | as `model.Swarm` |
 | `swarm.orchestrators[]` | `model.Orchestrator` fields, with `threads[]` (`model.Thread`, with `phases[]` and `agents[]`) and `bg[]`, field for field. `model.py` documents each field. |
+| `swarm.orchestrators[].title`, `.title_source`, `…agents[].title`, `.title_source` | (1.4) what the views call the orchestrator or agent, and which rule gave it (`docs/plans/uniform-agent-tree.md` §2.2): `pane`, `tab`, `session`, `prompt` or `id` for an orchestrator, `spawner`, `prompt`, `type` or `id` for an agent. Left out when there is none (a 1.3 core, the Python core, or a harness without titles yet); a viewer then names an orchestrator by `tab_label` and an agent by its role and short id. The source drives no logic. |
 | `unseen` | `{agent id: "fail" \| "wait" \| "done"}`, the unseen marks |
 | `focused_pane` | the pane herdr last reported focused, or `null` |
 | `panels` | (1.1) `{tab id: pane id}` of the per-tab panels: where a switch to that tab puts the keyboard |

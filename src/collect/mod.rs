@@ -28,6 +28,7 @@ pub mod py;
 pub mod sessions;
 pub mod text;
 pub mod threads;
+pub mod title;
 
 pub use orchestrator::pending_prompt;
 
@@ -242,6 +243,10 @@ impl Collector {
             }) {
                 Ok(mut o) => {
                     o.tab_no = tab_no(&tab_of(a));
+                    if o.title.is_empty() && o.harness != "codex" {
+                        let (t, src) = title::root_fallback(&o.harness, o.tab_no, &o.pane_id);
+                        (o.title, o.title_source) = (t, src.to_owned());
+                    }
                     swarm.orchestrators.push(o);
                 }
                 Err(e) => swarm.errors.push(e),

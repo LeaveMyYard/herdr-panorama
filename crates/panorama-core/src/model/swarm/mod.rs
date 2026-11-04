@@ -98,6 +98,14 @@ pub struct Orchestrator {
     pub harness: String,
     pub tab_id: Option<String>,
     pub tab_label: String,
+    /// What the views call it (plan §2.2): the operator's herdr name, else the session's
+    /// title, first prompt or telling terminal title, else its tab or pane. Empty from a
+    /// producer that predates titles: views fall back to `tab_label` ([`Self::name`]).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub title: String,
+    /// Which rule gave the title (`pane`, `tab`, `session`, `prompt`, `id`); drives no logic.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub title_source: String,
     pub session_id: Option<String>,
     /// What herdr reports for the pane's agent.
     #[serde(default)]
@@ -151,6 +159,15 @@ fn agents_flavour() -> String {
 }
 
 impl Orchestrator {
+    /// The name the views show: its title, else (an older producer) its tab label.
+    pub fn name(&self) -> &str {
+        if self.title.is_empty() {
+            &self.tab_label
+        } else {
+            &self.title
+        }
+    }
+
     /// Every agent of every thread, in order (Python `Orchestrator.agents()`).
     pub fn agents(&self) -> impl Iterator<Item = &Agent> {
         self.threads.iter().flat_map(|t| t.agents.iter())

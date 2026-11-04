@@ -1,6 +1,7 @@
 //! The model goldens (plan §5.2 item 3): `panorama snapshot --json` over each captured
 //! scenario at the capture's times, byte for byte the golden file `tools/capture_goldens.py`
-//! wrote from the Python (`tests/fixtures/model/*.json`).
+//! wrote from the Python (`tests/fixtures/model/*.json`), but for the Rust-only additions
+//! (`harness`, and the titles of plan `uniform-agent-tree.md` U1a).
 
 mod collect_support;
 
@@ -46,6 +47,22 @@ fn snapshot(sc: &Scenario, now: f64, env: Option<&Value>) -> J {
         render(&swarm, Format::Json, 0.0),
         pyjson::dumps(&json::swarm(&swarm), 2) + "\n"
     );
+    // `snapshot --json` names every orchestrator and agent (the session's own `main:` card
+    // has no title of its own)
+    for o in &swarm.orchestrators {
+        assert!(
+            !o.title.is_empty() && !o.title_source.is_empty(),
+            "{}",
+            o.pane_id
+        );
+        for a in o.agents().filter(|a| !a.id.starts_with("main:")) {
+            assert!(
+                !a.title.is_empty() && !a.title_source.is_empty(),
+                "{}",
+                a.id
+            );
+        }
+    }
     json::swarm(&swarm).replace_in_strings(&sc.root().to_string_lossy(), "<root>")
 }
 
@@ -102,7 +119,16 @@ fn check(name: &str, minutes: &[i64]) {
         ("conditions", conditions),
         ("snapshots", J::Obj(snaps)),
     ]);
-    let written = pyjson::dumps(&doc, 1) + "\n";
+    // Additive Rust titles (U1a): Python's snapshots have none; every one is checked above.
+    let written = (pyjson::dumps(&doc, 1) + "\n")
+        .lines()
+        .filter(|l| {
+            let key = l.trim_start();
+            !key.starts_with("\"title\": ") && !key.starts_with("\"title_source\": ")
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+        + "\n";
     if written != golden_text {
         let line = written
             .lines()

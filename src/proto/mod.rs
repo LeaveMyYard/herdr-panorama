@@ -18,8 +18,8 @@ pub mod socket;
 pub mod state;
 
 /// The protocol this viewer speaks: 1.1 the panels map and open, 1.2 focusing, 1.3 the
-/// shared filter.
-pub const PROTOCOL: &str = "1.3";
+/// shared filter, 1.4 the agents' and orchestrators' titles.
+pub const PROTOCOL: &str = "1.4";
 
 /// A longer line is refused and the connection closed.
 pub const MAX_LINE: usize = 4 * 1024 * 1024;

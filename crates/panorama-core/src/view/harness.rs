@@ -22,11 +22,11 @@ pub fn title(o: &Orchestrator, icons: HarnessIcons) -> String {
         _ => None,
     };
     if let Some(icon) = icon {
-        return format!("{icon} {}", o.tab_label);
+        return format!("{icon} {}", o.name());
     }
     let name = HARNESSES
         .iter()
         .find(|h| h.id == o.harness)
         .map_or(o.harness.as_str(), |h| h.name);
-    format!("{name} · {}", o.tab_label)
+    format!("{name} · {}", o.name())
 }

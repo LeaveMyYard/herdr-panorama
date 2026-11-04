@@ -126,6 +126,15 @@ guarantee. A stopped writer leaves a stale file; readers must retain its age.
 | seq | integer | Stable collector index, usable as deterministic tie-breaker. |
 | bg | [Background] | Agent's background work still in flight. |
 
+Additive titles (`docs/plans/uniform-agent-tree.md` §2.2, slice U1a). Writers from U1a on
+also emit, on every Orchestrator and every Agent, `title` (string: the cleaned display name,
+at most 80 characters) and `title_source` (string: which rule gave it; `pane`, `tab`,
+`session`, `prompt` or `id` for a root, `spawner`, `prompt`, `type` or `id` for an agent;
+unknown strings stay valid). They are not in the tables above because readers must not
+require them: an older writer omits them, and an empty `title` means none was found (a
+harness without title rules yet). A reader then falls back to `tab_label` or `role`.
+`title_source` drives no logic.
+
 ## Phase
 
 | Field | Type | Meaning |

@@ -6,6 +6,7 @@
 use super::py::{chars, or_time, py_int, py_splitlines, py_str, str_of, truthy, truthy_time};
 use super::text::{paragraph, short_model};
 use super::threads::roles::role_of;
+use super::title;
 use herdr_agent_kit::agent_procs::Liveness;
 use herdr_agent_kit::agent_session::claude::fold::BgLaunch;
 use herdr_agent_kit::agent_session::claude::{Owner, Session};
@@ -77,6 +78,15 @@ fn build(cx: &Ctx, seq: usize, aid: &str, keep_old: bool) -> Option<Agent> {
         Some(v) if truthy(v) => Some(py_str(v)),
         _ => sp.and_then(|s| s.subagent_type.clone()),
     };
+    let meta_desc = meta.get("description").filter(|v| truthy(v)).map(py_str);
+    let (name, source) = title::claude_agent(
+        meta_desc.as_deref(),
+        sp.map(|s| s.description.as_str()),
+        || title::first_prompt(&rec.transcript),
+        ag.agent_type.as_deref(),
+        aid,
+    );
+    (ag.title, ag.title_source) = (name, source.to_owned());
     let model = [
         str_of(meta, "model"),
         ack.and_then(|a| a.model.as_deref()),

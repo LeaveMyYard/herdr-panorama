@@ -1,5 +1,6 @@
 //! The model as `panorama snapshot --json` prints it (Python `Swarm.to_json`, which is
-//! `dataclasses.asdict`): every field in the dataclass's order.
+//! `dataclasses.asdict`): every field in the dataclass's order, plus the Rust-only additive
+//! `harness` and the titles (`title`, `title_source`, plan `uniform-agent-tree.md` U1a).
 
 use super::pyjson::J;
 use panorama_core::model::{Agent, BgTask, Counts, Orchestrator, Phase, Swarm, Thread};
@@ -31,6 +32,8 @@ fn bg(items: &[BgTask]) -> J {
 fn agent(a: &Agent) -> J {
     J::obj([
         ("id", J::str(&a.id)),
+        ("title", J::str(&a.title)),
+        ("title_source", J::str(&a.title_source)),
         ("description", J::str(&a.description)),
         ("role", J::str(&a.role)),
         ("agent_type", J::opt_str(a.agent_type.clone())),
@@ -90,6 +93,8 @@ fn orchestrator(o: &Orchestrator) -> J {
         ("harness", J::str(&o.harness)),
         ("tab_id", J::opt_str(o.tab_id.clone())),
         ("tab_label", J::str(&o.tab_label)),
+        ("title", J::str(&o.title)),
+        ("title_source", J::str(&o.title_source)),
         ("session_id", J::opt_str(o.session_id.clone())),
         ("herdr_status", J::str(o.herdr_status.code())),
         ("workspace_id", J::opt_str(o.workspace_id.clone())),

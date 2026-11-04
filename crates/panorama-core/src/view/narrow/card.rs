@@ -196,8 +196,20 @@ fn agent_block(cv: &mut Screen, mut r: i32, c: &CardCtx, t: &Thread, a: &Agent, 
         .filter(|m| !m.is_empty())
         .map_or(String::new(), |m| format!(" · {m}"));
     let age = age_of(a, view.now).unwrap_or_else(|| "-".into());
-    let role = role_label(a);
-    let about = format!(" {}{model} · {age} · {} calls", short_id(a), a.tool_calls);
+    // titled: the title, then `role id · model` with the rest; else the role, then the id
+    let (role, lead) = if a.title.is_empty() {
+        (role_label(a).to_owned(), String::new())
+    } else {
+        (
+            trunc(&a.title, (w - 18).max(8)),
+            format!(" {}", role_label(a)),
+        )
+    };
+    let about = format!(
+        "{lead} {}{model} · {age} · {} calls",
+        short_id(a),
+        a.tool_calls
+    );
     let room = w - 16 - role.chars().count() as i32;
     cv.segs(
         11,

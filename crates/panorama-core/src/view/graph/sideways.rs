@@ -3,7 +3,7 @@
 
 use super::layout::{Columns, col_label};
 use crate::model::{Orchestrator, Thread};
-use crate::view::agent_text::{role_label, short_id};
+use crate::view::agent_text::name;
 use crate::view::nav::find_agent;
 use crate::view::palette::{DIM, FAINT, FG};
 use crate::view::screen::Screen;
@@ -23,13 +23,13 @@ pub fn line(
     let (lo, hi, n) = (cols.lo, cols.hi, cols.len());
     if lo > 0 {
         let mut names = vec![
-            o.map_or(String::new(), |o| o.tab_label.clone()),
+            o.map_or(String::new(), |o| o.name().to_owned()),
             t.map_or(String::new(), |t| t.name.clone()),
         ];
         names.extend(
             path.iter()
                 .filter_map(|id| find_agent(t, Some(id)))
-                .map(|a| format!("{} {}", role_label(a), short_id(a))),
+                .map(name),
         );
         names.truncate(lo);
         let mut segs = vec![Seg::new("‹ ", DIM).bold()];

@@ -455,3 +455,123 @@ fn a_non_ascii_model_in_a_meta_file_is_read_as_python_reads_it() {
         .unwrap();
     assert_eq!(a3.model.as_deref(), Some("opus 4"));
 }
+
+#[test]
+fn roots_and_agents_carry_their_titles() {
+    let sw = demo(0.0, 6.0 * H);
+    let billing = by_label(&sw, "Billing API");
+    assert_eq!(
+        (billing.title.as_str(), billing.title_source.as_str()),
+        ("Billing API", "tab")
+    );
+    let author = agents(billing)
+        .into_iter()
+        .find(|a| a.id.starts_with("a1author"))
+        .unwrap();
+    assert_eq!(
+        (author.title.as_str(), author.title_source.as_str()),
+        ("Author PR #42 invoice export", "spawner")
+    );
+}
+
+/// The demo's a3explore agent after `edit` changed its files.
+fn explore_after(edit: impl FnOnce(&Scenario)) -> Agent {
+    let sc = Scenario::new("demo");
+    edit(&sc);
+    let sw = collect(&sc, &mut sc.collector(), sc.now(), 6.0 * H, true);
+    sw.orchestrators
+        .iter()
+        .flat_map(agents)
+        .find(|a| a.id.starts_with("a3explore"))
+        .unwrap()
+        .clone()
+}
+
+fn replace_in(path: PathBuf, from: &str, to: &str) {
+    let text = std::fs::read_to_string(&path).unwrap();
+    assert!(text.contains(from), "{from} in {}", path.display());
+    std::fs::write(&path, text.replace(from, to)).unwrap();
+}
+
+fn subagent(sc: &Scenario, file: &str) -> PathBuf {
+    sc.projects()
+        .join("-home-user-project")
+        .join(S1)
+        .join("subagents")
+        .join(file)
+}
+
+#[test]
+fn an_agent_without_descriptions_is_named_by_its_prompt_then_its_type() {
+    let no_meta = |sc: &Scenario| {
+        let meta = subagent(sc, "agent-a3explore000000001.meta.json");
+        replace_in(
+            meta,
+            "\"description\": \"Explore invoice call sites\", ",
+            "",
+        );
+    };
+    let a = explore_after(no_meta);
+    assert_eq!(
+        (a.title.as_str(), a.title_source.as_str()),
+        ("Explore invoice call sites", "spawner"),
+        "the spawn's own description"
+    );
+    let no_spawn = |sc: &Scenario| {
+        no_meta(sc);
+        let parent = subagent(sc, "agent-a1author0000000001.jsonl");
+        replace_in(
+            parent,
+            "\"description\":\"Explore invoice call sites\",",
+            "",
+        );
+    };
+    let a = explore_after(no_spawn);
+    assert_eq!(
+        (a.title.as_str(), a.title_source.as_str()),
+        ("brief", "prompt")
+    );
+    let a = explore_after(|sc| {
+        no_spawn(sc);
+        let own = subagent(sc, "agent-a3explore000000001.jsonl");
+        replace_in(own, "\"content\":\"brief\"", "\"content\":[]");
+    });
+    assert_eq!(
+        (a.title.as_str(), a.title_source.as_str()),
+        ("Explore a3explo", "type")
+    );
+}
+
+#[test]
+fn a_neutral_tab_label_leaves_the_root_to_its_session_and_a_pane_name_wins() {
+    let sc = Scenario::new("demo");
+    let mut snap = sc.snapshot().clone();
+    for tab in snap["tabs"].as_array_mut().unwrap() {
+        if tab["tab_id"] == "w1:t1" {
+            tab["label"] = "claude".into(); // what herdr or Panorama itself would write
+        }
+    }
+    let qs = sc.questions();
+    let title_of = |snap: &Value| {
+        let sw = sc
+            .collector()
+            .collect(Some(snap), Some(qs.as_slice()), sc.now(), 6.0 * H, STALE);
+        let o = sw
+            .orchestrators
+            .iter()
+            .find(|o| o.pane_id == "w1:p1")
+            .unwrap();
+        (o.title.clone(), o.title_source.clone())
+    };
+    let prompt = "Take PR #42 and PR #44 through review";
+    assert_eq!(title_of(&snap), (prompt.into(), "prompt".into()));
+    let ai =
+        format!(r#"{{"type":"ai-title","aiTitle":"Invoice export reviews","sessionId":"{S1}"}}"#);
+    append(&s1_root(&sc), &format!("{ai}\n"));
+    assert_eq!(
+        title_of(&snap),
+        ("Invoice export reviews".into(), "session".into())
+    );
+    snap["agents"][0]["name"] = "billing lead".into();
+    assert_eq!(title_of(&snap), ("billing lead".into(), "pane".into()));
+}
