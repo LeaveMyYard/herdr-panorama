@@ -8,7 +8,7 @@
   "name": null,
   "parent": null,
   "pid": 19,
-  "records": {"a0000000000000001": {"app": "claude-code", "state": "working", "title": "fixture"}},
+  "records": {"agent-fixture": {"app": "claude-code", "state": "working", "title": "fixture"}},
   "reported": true,
   "state": "live",
   "status": "working",
