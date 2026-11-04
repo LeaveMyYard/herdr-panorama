@@ -308,9 +308,9 @@ test('receipt size cap refuses a large key merge without leaving an uninstallabl
   assert.deepEqual(tree(s.home), before);
 });
 
-test('running-host editor metadata identical to the planned copy is adopted and recorded', t => {
+for (const scenario of ['identical', 'retry']) test(`running-host editor metadata identical to the planned copy is adopted and recorded (${scenario})`, t => {
   const s = sandbox(t); personal(s); const before = tree(s.home);
-  const result = spawnSync('python3', [join(root, 'app/tests/host-race.py'), root, s.home, s.packageDir, s.checker, 'identical'], { env: s.env, encoding: 'utf8' });
+  const result = spawnSync('python3', [join(root, 'app/tests/host-race.py'), root, s.home, s.packageDir, s.checker, scenario], { env: s.env, encoding: 'utf8' });
   ok(result); assert.match(result.stdout, /Installed panorama/);
   const manifest = JSON.parse(readFileSync(s.manifest));
   const metadata = Object.keys(manifest.files).filter(path => path.endsWith('/gpui-kit.d.ts') || path.endsWith('/jsconfig.json'));

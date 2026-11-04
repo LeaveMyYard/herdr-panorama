@@ -62,9 +62,7 @@ def write_metadata(home, path, value, on_publish):
     # directory. Adopt only the exact planned (checker-generated) bytes as
     # already installed; any other content is still an occupied destination.
     published = []
-    def publish():
-        published.append(True)
-        on_publish()
+    publish = lambda: (published.append(True), on_publish())
     for attempt in range(2):
         current = home.read(path)
         expected = current if current is not None and current[0] == value[0] else None
