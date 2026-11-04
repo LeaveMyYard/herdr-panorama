@@ -79,7 +79,8 @@ Any message before `hello` closes the connection.
 |---|---|
 | `protocol` | `"1.4"` |
 | `swarm.generated_at`, `swarm.herdr_ok`, `swarm.inbox_ok`, `swarm.errors`, `swarm.stale_after` | as `model.Swarm` |
-| `swarm.orchestrators[]` | `model.Orchestrator` fields, with `threads[]` (`model.Thread`, with `phases[]` and `agents[]`) and `bg[]`, field for field. `model.py` documents each field. |
+| `swarm.orchestrators[]` | `model.Orchestrator` fields, with `threads[]` (`model.Thread`, with `phases[]` and `agents[]`) and `bg[]`, field for field. `model.py` documents each field. A uniform-tree core (`docs/plans/uniform-agent-tree.md` U3) sends exactly one thread per orchestrator: id `agents`, source `session`, no phases, every agent of the orchestrator (its tree by `parent`, `null` meaning the orchestrator's own child). It sends no `main:` session card: the orchestrator's own state is on the orchestrator. A viewer leaves that thread out while it holds no agent. |
+| `swarm.orchestrators[].hidden_finished` | (U3, additive) finished agents (done, failed, cancelled) the done window left out of the orchestrator's tree. Left out when 0, and by older cores; a viewer then reads 0. |
 | `swarm.orchestrators[].title`, `.title_source`, `…agents[].title`, `.title_source` | (1.4) what the views call the orchestrator or agent, and which rule gave it (`docs/plans/uniform-agent-tree.md` §2.2): `pane`, `tab`, `session`, `prompt` or `id` for an orchestrator, `spawner`, `prompt`, `type` or `id` for an agent. Left out when there is none (a 1.3 core, the Python core, or a harness without titles yet); a viewer then names an orchestrator by `tab_label` and an agent by its role and short id. The source drives no logic. |
 | `unseen` | `{agent id: "fail" \| "wait" \| "done"}`, the unseen marks |
 | `focused_pane` | the pane herdr last reported focused, or `null` |

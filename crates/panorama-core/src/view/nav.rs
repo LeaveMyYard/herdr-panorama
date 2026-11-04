@@ -16,8 +16,14 @@ pub fn split_threads(o: &Orchestrator, filter: Filter) -> (Vec<&Thread>, Vec<&Th
     let is_active = |t: &Thread| {
         (!t.is_done() && t.status != ThreadStatus::Failed) || t.source == ThreadSource::Session
     };
-    let mut active: Vec<&Thread> = o.threads.iter().filter(|t| is_active(t)).collect();
-    let rest = o.threads.iter().filter(|t| !is_active(t));
+    // the uniform tree's one thread shows while it holds agents, as a session card does
+    let threads = || {
+        o.threads
+            .iter()
+            .filter(|t| !t.is_tree() || !t.agents.is_empty())
+    };
+    let mut active: Vec<&Thread> = threads().filter(|t| is_active(t)).collect();
+    let rest = threads().filter(|t| !is_active(t));
     let (failed, done): (Vec<&Thread>, Vec<&Thread>) =
         rest.partition(|t| t.status == ThreadStatus::Failed);
     active.extend(failed);

@@ -7,7 +7,6 @@ use serde_json::json;
 fn collector(dir: &std::path::Path) -> Collector {
     Collector::new(Options {
         projects: dir.to_path_buf(),
-        events_dir: dir.join("events"),
         hooks_dir: dir.join("hooks"),
         procs: false,
         pane_pid: Box::new(|_| None),
@@ -132,7 +131,7 @@ fn codex_without_history_keeps_exact_identity_and_never_reads_claude_history() {
     assert_eq!(x.cwd.as_deref(), Some("/synthetic"));
     assert_eq!(x.workspace_id.as_deref(), Some("w"));
     for x in &sw.orchestrators[1..] {
-        assert!(x.transcript.is_none() && x.threads.is_empty() && x.last_activity.is_none());
+        assert!(x.transcript.is_none() && x.agents().next().is_none() && x.last_activity.is_none());
     }
     assert!(sw.orchestrators[2].session_id.is_none());
     assert!(sw.orchestrators[3].session_id.is_none());

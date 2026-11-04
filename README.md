@@ -322,7 +322,7 @@ plugin root has the Rust binary built.
 `config.toml` in the plugin's config dir (`herdr plugin config-dir leavemyyard.herdr-panorama`):
 
 ```toml
-done_window = "1h"   # how long finished threads stay visible (seconds, or "90m", "2h30m")
+done_window = "1h"   # how long finished (done or failed) agents stay visible (seconds, or "90m", "2h30m")
 home_tab = true      # panorama in its own first tab (false: the key opens a popup)
 cockpit = false      # experimental: a panorama panel left of every orchestrator (see above)
 cockpit_width = 46   # the panels' width

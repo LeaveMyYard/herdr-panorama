@@ -4,10 +4,7 @@ use super::{
     source::{CoreSource, SnapshotSource},
 };
 use crate::{
-    collect::{
-        Collector, Options,
-        paths::{events_dir, hooks_dir},
-    },
+    collect::{Collector, Options, paths::hooks_dir},
     settings::durations::{done_window, stale_after},
 };
 use herdr_agent_kit::{
@@ -50,7 +47,6 @@ fn source_full(env: PluginEnv, core: Core, wait: bool) -> impl FnMut() -> Collec
         .map_or_else(|| "~/.claude/projects".into(), |r| r.path().to_path_buf());
     let mut collector = Collector::new(Options {
         projects,
-        events_dir: events_dir(&env),
         hooks_dir: hooks_dir(&env),
         procs: true,
         pane_pid: Box::new(move |pane| {

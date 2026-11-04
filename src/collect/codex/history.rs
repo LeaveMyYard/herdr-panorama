@@ -1,67 +1,13 @@
 //! Persisted Codex history in the existing display vocabulary. A completed turn is
-//! a completed phase, never proof that its session or child agent has finished.
+//! never proof that its session or child agent has finished.
 
 use crate::codex::{Thread, TurnStatus};
 use crate::collect::py::chars;
 use crate::collect::title;
-use panorama_core::model::{Agent, HerdrStatus, Phase, PhaseState, Status, ThreadStatus};
+use panorama_core::model::{Agent, Status};
 
 pub(super) fn time(value: f64) -> Option<f64> {
     (value.is_finite() && value > 0.0).then_some(value)
-}
-
-pub(super) fn runtime(status: &HerdrStatus) -> Status {
-    match status {
-        HerdrStatus::Working => Status::Running,
-        HerdrStatus::Blocked => Status::Blocked,
-        HerdrStatus::Idle => Status::Queued,
-        HerdrStatus::Done => Status::Done,
-        _ => Status::from_code("unknown"),
-    }
-}
-
-pub(super) fn session_status(status: &HerdrStatus) -> ThreadStatus {
-    match status {
-        HerdrStatus::Done => ThreadStatus::Done,
-        HerdrStatus::Working | HerdrStatus::Blocked | HerdrStatus::Idle => ThreadStatus::Active,
-        _ => ThreadStatus::from_code("unknown"),
-    }
-}
-
-/// Chronological phases. Only the newest, recorded in-progress turn can be
-/// current, and only when herdr independently reports the root working/blocked.
-pub(super) fn phases(thread: &Thread, runtime: &HerdrStatus) -> Vec<Phase> {
-    thread
-        .turns
-        .iter()
-        .enumerate()
-        .rev()
-        .map(|(index, turn)| Phase {
-            name: chars(
-                if turn.prompt.is_empty() {
-                    &turn.id
-                } else {
-                    &turn.prompt
-                },
-                240,
-            ),
-            state: match turn.status {
-                TurnStatus::Completed => PhaseState::Done,
-                TurnStatus::Failed => PhaseState::Failed,
-                TurnStatus::Interrupted => PhaseState::Skipped,
-                TurnStatus::InProgress
-                    if index == 0
-                        && matches!(runtime, HerdrStatus::Working | HerdrStatus::Blocked) =>
-                {
-                    PhaseState::Now
-                }
-                _ => PhaseState::from_code("unknown"),
-            },
-            start: turn.started_at.and_then(time),
-            end: turn.completed_at.and_then(time),
-            note: (!turn.summary.is_empty()).then(|| chars(&turn.summary, 500)),
-        })
-        .collect()
 }
 
 /// Persisted turn outcomes do not establish whether a child is still alive.

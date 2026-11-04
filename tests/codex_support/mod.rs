@@ -2,7 +2,7 @@
 
 use panorama::codex;
 use panorama::collect::{Collector, Options};
-use panorama_core::model::Swarm;
+use panorama_core::model::{Orchestrator, Swarm};
 use serde_json::{Value, json};
 use std::path::Path;
 use std::time::{Duration, Instant};
@@ -65,7 +65,6 @@ impl Fixture {
     pub fn collector(&self, enabled: bool) -> Collector {
         let collector = Collector::new(Options {
             projects: self.root().join("projects"),
-            events_dir: self.root().join("events"),
             hooks_dir: self.root().join("hooks"),
             procs: false,
             pane_pid: Box::new(|_| {
@@ -101,7 +100,6 @@ impl Fixture {
             .env("HERDR_BIN_PATH", "/nonexistent/herdr")
             .env("HERDR_PLUGIN_CONFIG_DIR", self.root().join("config"))
             .env("HERDR_INBOX_DB", self.root().join("missing.db"))
-            .env("PANORAMA_EVENTS_DIR", self.root().join("events"))
             .env("PANORAMA_HOOKS_DIR", self.root().join("hooks"));
         command
     }
@@ -156,4 +154,15 @@ pub fn ready(collector: &mut Collector, snapshot: &Value) -> Swarm {
         );
         std::thread::sleep(Duration::from_millis(10));
     }
+}
+
+/// The root's own history was read: only an exact root observation sets its last activity
+/// (its agents are its children; the root thread is the root, no agent).
+pub fn observed(o: &Orchestrator) -> bool {
+    o.last_activity.is_some()
+}
+
+/// Nothing of the root's history shows: no last activity, no agents.
+pub fn unobserved(o: &Orchestrator) -> bool {
+    o.last_activity.is_none() && o.agents().next().is_none()
 }

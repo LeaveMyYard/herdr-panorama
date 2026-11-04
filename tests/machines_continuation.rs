@@ -92,7 +92,6 @@ fn a_remote_continuation_is_mirrored_and_followed_in_one_refresh() {
     });
     let collector = Collector::new(Options {
         projects: mirror_root(&state, &machine),
-        events_dir: dir.path().join("events"),
         hooks_dir: dir.path().join("hooks"),
         procs: false,
         pane_pid: Box::new(|_| panic!("never asked for another machine")),

@@ -81,10 +81,20 @@ pub struct Thread {
     pub flavour: Option<String>,
 }
 
+/// The id of the one thread a uniform-tree producer (plan `uniform-agent-tree.md` U3) gives
+/// every orchestrator on the 1.x wires: source `session`, no phases, all its agents.
+pub const TREE_THREAD: &str = "agents";
+
 impl Thread {
     /// Finished: done or cancelled (Python `Thread.done`; a failed thread is not).
     pub fn is_done(&self) -> bool {
         matches!(self.status, ThreadStatus::Done | ThreadStatus::Cancelled)
+    }
+
+    /// The uniform tree's one thread ([`TREE_THREAD`]), not a grouping of its own: views
+    /// leave it out while it holds no agent.
+    pub fn is_tree(&self) -> bool {
+        self.id == TREE_THREAD && self.source == ThreadSource::Session
     }
 }
 
@@ -133,6 +143,11 @@ pub struct Orchestrator {
     /// Done threads older than the window.
     #[serde(default)]
     pub hidden_done: i64,
+    /// Finished agents (done, failed, cancelled) older than the done window, left out of its
+    /// tree (plan `uniform-agent-tree.md` §2.4). Left out when 0, and missing from an older
+    /// producer: 0.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub hidden_finished: i64,
     /// The tab's position in its workspace, 1-based (herdr's tab number).
     #[serde(default)]
     pub tab_no: Option<i64>,
@@ -148,6 +163,10 @@ pub struct Orchestrator {
     /// The newest transcript timestamp of the session or its agents.
     #[serde(default)]
     pub last_activity: Option<f64>,
+}
+
+fn is_zero(n: &i64) -> bool {
+    *n == 0
 }
 
 fn claude_harness() -> String {

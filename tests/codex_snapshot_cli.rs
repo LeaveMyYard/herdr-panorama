@@ -46,8 +46,10 @@ fn one_shot_snapshot_warms_history_once_and_preserves_exact_mixed_identity() {
     let codex = &model["orchestrators"][1];
     assert_eq!(codex["harness"], "codex");
     assert_eq!(codex["session_id"], ROOT_A);
-    assert_eq!(codex["threads"][0]["id"], format!("codex:{ROOT_A}"));
-    assert_eq!(codex["threads"][0]["agents"].as_array().unwrap().len(), 3);
+    assert!(codex["last_activity"].is_number());
+    // the root's child and grandchild; the root thread itself is the root, no agent
+    assert_eq!(codex["threads"][0]["id"], panorama_core::model::TREE_THREAD);
+    assert_eq!(codex["threads"][0]["agents"].as_array().unwrap().len(), 2);
     let calls = fake.calls();
     assert_eq!(
         calls
@@ -83,7 +85,11 @@ fn timeout_keeps_panes_and_reaps_the_owned_app_server_before_cli_exit() {
             .as_array()
             .unwrap()
             .iter()
-            .all(|orchestrator| orchestrator["threads"].as_array().unwrap().is_empty())
+            .all(|orchestrator| orchestrator["last_activity"].is_null()
+                && orchestrator["threads"][0]["agents"]
+                    .as_array()
+                    .unwrap()
+                    .is_empty())
     );
     let pid = std::fs::read_to_string(fixture.root().join("pid")).unwrap();
     #[cfg(target_os = "linux")]

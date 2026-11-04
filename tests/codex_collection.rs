@@ -1,7 +1,8 @@
 mod codex_support;
 
 use codex_support::{
-    CHILD, FOREIGN, Fixture, GRANDCHILD, REPLACEMENT, ROOT_A, ROOT_B, collect, ready, snapshot,
+    CHILD, FOREIGN, Fixture, GRANDCHILD, REPLACEMENT, ROOT_A, ROOT_B, collect, observed, ready,
+    snapshot, unobserved,
 };
 use panorama_core::model::{HerdrStatus, Status};
 use serde_json::json;
@@ -26,20 +27,25 @@ fn mixed_collection_enriches_exact_ids_and_preserves_panes_and_hierarchy() {
     let a = find("codex-a");
     assert_eq!(a.harness, "codex");
     assert_eq!(a.session_id.as_deref(), Some(ROOT_A));
-    assert_eq!(a.threads[0].id, format!("codex:{ROOT_A}"));
+    assert!(observed(a));
+    // the root's runtime stays the root's: no agent stands for its thread
     assert_eq!(a.herdr_status, HerdrStatus::Working);
-    assert_eq!(a.threads[0].agents[0].status, Status::Running);
-    assert!(a.agents().any(|agent| agent.id == CHILD));
+    assert!(a.agents().all(|agent| !agent.id.starts_with("main:")));
+    let child = a.agents().find(|agent| agent.id == CHILD).unwrap();
+    assert_eq!((child.parent.as_deref(), child.depth), (None, 1));
     let grandchild = a.agents().find(|agent| agent.id == GRANDCHILD).unwrap();
     assert_eq!(grandchild.parent.as_deref(), Some(CHILD));
     assert_eq!(grandchild.depth, 2);
     assert_eq!(grandchild.status, Status::from_code("unknown"));
     assert!(!a.agents().any(|agent| agent.id == FOREIGN));
     let b = find("codex-b");
-    assert_eq!(b.threads[0].id, format!("codex:{ROOT_B}"));
+    assert!(observed(b));
+    assert_eq!(b.session_id.as_deref(), Some(ROOT_B));
     assert_eq!(b.herdr_status, HerdrStatus::Blocked);
     assert!(!b.agents().any(|agent| agent.id == CHILD));
-    assert!(find("unbound").threads.is_empty());
+    assert!(unobserved(find("unbound")));
+    // every root has its one thread on the wire
+    assert!(swarm.orchestrators.iter().all(|o| o.threads.len() == 1));
     let wire = serde_json::to_value(&swarm).unwrap();
     let decoded: panorama_core::model::Swarm = serde_json::from_value(wire.clone()).unwrap();
     assert_eq!(decoded.orchestrators[1].harness, "codex");
@@ -64,14 +70,14 @@ fn unresponsive_or_missing_codex_keeps_mixed_panes_and_returns_immediately() {
     let swarm = collect(&mut collector, &snapshot());
     assert!(start.elapsed() < Duration::from_millis(500));
     assert_eq!(swarm.orchestrators.len(), 4);
-    assert!(swarm.orchestrators.iter().all(|o| o.threads.is_empty()));
+    assert!(swarm.orchestrators.iter().all(unobserved));
     drop(collector);
     let mut options = fixture.options();
     options.executable = fixture.root().join("missing-codex");
     let mut collector = fixture.collector(false).with_codex(options);
     let swarm = ready(&mut collector, &snapshot());
     assert_eq!(swarm.orchestrators.len(), 4);
-    assert!(swarm.orchestrators.iter().all(|o| o.threads.is_empty()));
+    assert!(swarm.orchestrators.iter().all(unobserved));
 }
 
 #[test]
@@ -80,22 +86,20 @@ fn changed_binding_never_uses_cached_same_cwd_or_shared_group_history() {
     let mut collector = fixture.collector(true);
     let mut snapshot = snapshot();
     let original = ready(&mut collector, &snapshot);
-    assert_eq!(
-        original.orchestrators[1].threads[0].id,
-        format!("codex:{ROOT_A}")
+    assert!(observed(&original.orchestrators[1]));
+    assert!(
+        original.orchestrators[1]
+            .agents()
+            .any(|agent| agent.id == CHILD)
     );
     snapshot["agents"][1]["agent_session"]["value"] = json!(REPLACEMENT);
     let immediate = collect(&mut collector, &snapshot);
     let replaced = &immediate.orchestrators[1];
     assert_eq!(replaced.session_id.as_deref(), Some(REPLACEMENT));
-    assert!(
-        replaced.threads.is_empty() || replaced.threads[0].id == format!("codex:{REPLACEMENT}")
-    );
+    // never the old root's children, whether or not the new history is read yet
+    assert!(!replaced.agents().any(|agent| agent.id == CHILD));
     let updated = ready(&mut collector, &snapshot);
-    assert_eq!(
-        updated.orchestrators[1].threads[0].id,
-        format!("codex:{REPLACEMENT}")
-    );
+    assert!(observed(&updated.orchestrators[1]));
     assert!(
         !updated.orchestrators[1]
             .agents()
@@ -116,7 +120,7 @@ fn mirror_collectors_leave_codex_visible_without_starting_local_history() {
     let snapshot = serde_json::from_value(snapshot()).unwrap();
     let swarm = mirror.collect(&snapshot);
     assert_eq!(swarm.orchestrators.len(), 4);
-    assert!(swarm.orchestrators.iter().all(|o| o.threads.is_empty()));
+    assert!(swarm.orchestrators.iter().all(unobserved));
     assert!(fixture.calls().is_empty());
 }
 
@@ -142,7 +146,7 @@ fn foreign_or_missing_session_source_cannot_enrich_a_codex_pane() {
         let swarm = ready(&mut collector, &snapshot);
         assert_eq!(swarm.orchestrators.len(), 1);
         assert!(swarm.orchestrators[0].session_id.is_none());
-        assert!(swarm.orchestrators[0].threads.is_empty());
+        assert!(unobserved(&swarm.orchestrators[0]));
     }
     assert!(fixture.calls().is_empty());
 }
@@ -162,12 +166,12 @@ fn missing_native_kind_defaults_to_id_but_explicit_other_kind_is_rejected() {
         .remove("kind");
     let swarm = ready(&mut collector, &snapshot);
     assert_eq!(swarm.orchestrators[0].session_id.as_deref(), Some(ROOT_A));
-    assert!(!swarm.orchestrators[0].threads.is_empty());
+    assert!(observed(&swarm.orchestrators[0]));
     let before = fixture.calls().len();
     snapshot["agents"][0]["agent_session"]["kind"] = json!("path");
     let swarm = ready(&mut collector, &snapshot);
     assert!(swarm.orchestrators[0].session_id.is_none());
-    assert!(swarm.orchestrators[0].threads.is_empty());
+    assert!(unobserved(&swarm.orchestrators[0]));
     assert_eq!(fixture.calls().len(), before);
 }
 
@@ -179,7 +183,7 @@ fn collected_history_renders_through_existing_navigation_and_graph() {
     let swarm = panorama::proto::state::cleaned_swarm(ready(&mut collector, &snapshot()));
     let view = View {
         orch: Some("codex-a".into()),
-        thread: Some(format!("codex:{ROOT_A}")),
+        thread: Some(panorama_core::model::TREE_THREAD.into()),
         now: panorama::snapshot::now(),
         ..View::default()
     };
@@ -190,11 +194,11 @@ fn collected_history_renders_through_existing_navigation_and_graph() {
     let text = render_graph(&swarm, &view, 300, 70, None, "empty").text();
     assert!(text.contains("Claude Code"), "{text}");
     assert!(text.contains("Codex"), "{text}");
-    assert!(text.contains("Synthetic prompt"), "{text}");
-    assert_eq!(
-        swarm.orchestrators[1].threads[0].agents[0].activity,
-        "command"
-    );
+    let child = swarm.orchestrators[1]
+        .agents()
+        .find(|agent| agent.id == CHILD)
+        .unwrap();
+    assert_eq!(child.activity, "command");
     assert!(text.contains("command"), "{text}");
 }
 
@@ -237,8 +241,6 @@ fn codex_roots_and_subagents_are_titled_by_herdr_names_then_spawner_then_codex()
         titled(GRANDCHILD),
         ("Lovelace".into(), "session".into(), "worker".into())
     );
-    // The root's own card is named by the root, not again by its thread.
-    assert_eq!(titled("main:codex:codex-a").0, "");
     // An operator-named pane beats the Codex thread's name.
     snapshot["agents"][1]["name"] = json!("Billing API");
     let a = find(&ready(&mut collector, &snapshot), "codex-a");

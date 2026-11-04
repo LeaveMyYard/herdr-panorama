@@ -8,7 +8,7 @@ pub mod pyjson;
 pub(crate) mod warmup;
 
 use crate::collect::liveness::claude_pid;
-use crate::collect::paths::{events_dir, hooks_dir};
+use crate::collect::paths::hooks_dir;
 use crate::collect::{Collector, Options};
 use crate::settings::durations::{done_window, stale_after};
 use herdr_agent_kit::agent_session::claude::io::ProjectsRoot;
@@ -107,7 +107,6 @@ fn source_mode(
     let lookup = herdr.clone();
     let mut collector = Collector::new(Options {
         projects,
-        events_dir: events_dir(&env),
         hooks_dir: hooks_dir(&env),
         procs: true,
         pane_pid: Box::new(move |pane| claude_pid(&lookup, pane)),

@@ -70,7 +70,6 @@ fn a_valid_codex_association_survives_earlier_claude_work_over_100ms() {
     let called = slow.clone();
     let mut collector = Collector::new(Options {
         projects: sc.projects(),
-        events_dir: sc.root().join("events"),
         hooks_dir: sc.root().join("hooks"),
         procs: true,
         pane_pid: Box::new(move |_| {

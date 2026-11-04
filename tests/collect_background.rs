@@ -19,7 +19,6 @@ fn collector(
 ) -> Collector {
     Collector::new(Options {
         projects: sc.projects(),
-        events_dir: sc.root().join("events"),
         hooks_dir: sc.root().join("hooks"),
         procs,
         pane_pid: Box::new(move |pane| {
@@ -117,7 +116,6 @@ fn one_broken_session_never_hides_the_others() {
     let sc = Scenario::new("background");
     let mut c = Collector::new(Options {
         projects: sc.projects(),
-        events_dir: sc.root().join("events"),
         hooks_dir: sc.root().join("hooks"),
         procs: true,
         pane_pid: Box::new(|pane| panic!("no process table for {pane}")),

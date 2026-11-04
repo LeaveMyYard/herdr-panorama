@@ -1,7 +1,8 @@
 //! The swarm model from herdr's snapshot and the transcripts (Python `collect.py`): which
 //! sessions are live or blocked (herdr), one kit [`Scanner`] per Claude Code session (agents,
-//! statuses, nesting), thread grouping, the explicit thread channel, and herdr-inbox's open
-//! questions.
+//! statuses, nesting) built into one agent tree per root ([`tree`]), and herdr-inbox's open
+//! questions. The explicit thread channel's files are no longer read (plan
+//! `uniform-agent-tree.md` §6).
 //!
 //! A [`Collector`] lives as long as the view; each [`Collector::collect`] stats unchanged
 //! files and reads only the appended bytes of changed ones.
@@ -19,20 +20,19 @@
 
 pub mod agents;
 mod codex;
-pub mod events;
 pub mod liveness;
 pub mod mirror;
 mod orchestrator;
 pub mod paths;
 pub mod py;
+pub mod roles;
 pub mod sessions;
 pub mod text;
-pub mod threads;
 pub mod title;
+pub mod tree;
 
 pub use orchestrator::pending_prompt;
 
-use events::Channel;
 use herdr_agent_kit::internal::inbox_contract::sqlite::OpenQuestion;
 use liveness::{PanePid, PanePids};
 use panorama_core::model::Swarm;
@@ -40,15 +40,12 @@ use py::str_of;
 use serde_json::{Map, Value};
 use sessions::Sessions;
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 /// Where a collector reads, and how.
 pub struct Options {
     /// Claude Code's `projects` dir (or a remote machine's mirror of it).
     pub projects: PathBuf,
-    /// The explicit thread channel's dir.
-    pub events_dir: PathBuf,
     /// The hook records' dir.
     pub hooks_dir: PathBuf,
     /// Whether background tasks can be checked against this machine's processes (false for
@@ -58,13 +55,11 @@ pub struct Options {
     pub pane_pid: Box<PanePid>,
 }
 
-/// The collector: its sessions, channels and pane processes, kept across collects.
+/// The collector: its sessions and pane processes, kept across collects.
 pub struct Collector {
     codex: Option<codex::Details>,
     codex_identity: Option<codex::identity::LocalIdentity>,
     sessions: Sessions,
-    channels: HashMap<String, Channel>,
-    events_dir: PathBuf,
     procs: bool,
     pids: RefCell<PanePids>,
     window: f64,
@@ -117,8 +112,6 @@ impl Collector {
             codex: None,
             codex_identity: None,
             sessions: Sessions::new(options.projects, options.hooks_dir),
-            channels: HashMap::new(),
-            events_dir: options.events_dir,
             procs: options.procs,
             pids: RefCell::new(PanePids::new(options.pane_pid)),
             window: 0.0,
@@ -136,7 +129,7 @@ impl Collector {
     /// Enable local Codex observations explicitly. Remote mirrors and bare test
     /// collectors never discover or read this machine's Codex home implicitly.
     pub fn with_codex(mut self, options: crate::codex::Options) -> Self {
-        self.codex = Some(codex::Details::new(options, self.events_dir.clone()));
+        self.codex = Some(codex::Details::new(options));
         self
     }
 
@@ -168,7 +161,7 @@ impl Collector {
     }
 
     /// The swarm at `now`: herdr's `snapshot` (`None`: herdr is down), the inbox's open
-    /// questions (`None`: no inbox), finished threads shown for `window` seconds, idle
+    /// questions (`None`: no inbox), finished agents shown for `window` seconds, idle
     /// orchestrators stale after `stale_after`.
     pub fn collect(
         &mut self,
@@ -184,9 +177,6 @@ impl Collector {
         }
         if let Some(identity) = self.codex_identity.as_mut() {
             identity.begin_collect();
-        }
-        if let Some(details) = self.codex.as_mut() {
-            details.begin_collect();
         }
         let mut swarm = Swarm {
             generated_at: now,
@@ -241,12 +231,13 @@ impl Collector {
             match contain(&pane, || {
                 self.orchestrator(a, tab, n, open_qs.unwrap_or(&[]), now)
             }) {
-                Ok(mut o) => {
+                Ok((mut o, agents)) => {
                     o.tab_no = tab_no(&tab_of(a));
                     if o.title.is_empty() {
                         let (t, src) = title::root_fallback(&o.harness, o.tab_no, &o.pane_id);
                         (o.title, o.title_source) = (t, src.to_owned());
                     }
+                    tree::adapt(&mut o, agents);
                     swarm.orchestrators.push(o);
                 }
                 Err(e) => swarm.errors.push(e),

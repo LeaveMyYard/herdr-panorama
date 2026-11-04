@@ -42,12 +42,19 @@ fn label(st: &Status) -> &'static str {
     }
 }
 
-/// Codex keeps its default child hierarchy in the session thread. Claude session
-/// placeholders stay suppressed, as before.
+/// The threads the entry counts. Codex keeps its default child hierarchy in the session
+/// thread. Claude session placeholders (the legacy main card) stay suppressed, as before. The
+/// uniform tree's one thread counts while it holds agents.
+fn counted(o: &Orchestrator, t: &Thread) -> bool {
+    if t.is_tree() {
+        !t.agents.is_empty()
+    } else {
+        o.harness == "codex" || t.source != ThreadSource::Session
+    }
+}
+
 fn threads(o: &Orchestrator) -> impl Iterator<Item = &Thread> {
-    o.threads
-        .iter()
-        .filter(|t| o.harness == "codex" || t.source != ThreadSource::Session)
+    o.threads.iter().filter(|t| counted(o, t))
 }
 
 /// The entry's state. herdr reporting the session working counts as working, blocked as
@@ -57,7 +64,7 @@ pub fn dock_state<'a>(o: &'a Orchestrator, frame: f64, ages: Ages) -> DockState<
     let agents: Vec<&Agent> = o
         .threads
         .iter()
-        .filter(|t| codex || t.source != ThreadSource::Session)
+        .filter(|t| counted(o, t))
         .flat_map(|thread| {
             thread.agents.iter().filter(move |agent| {
                 if codex {

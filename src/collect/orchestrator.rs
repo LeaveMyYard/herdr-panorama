@@ -1,17 +1,17 @@
 //! One orchestrator from one herdr agent (Python `Collector._orchestrator`): its ids and
 //! herdr's word on it, the session it lives in now, its inbox questions, its label, and,
-//! when its transcript is found, its background work, pending prompt and threads.
+//! when its transcript is found, its background work, pending prompt and agent tree. Its own
+//! state (herdr's status, the pending prompt, inbox questions, background work) stays on the
+//! root itself: no agent stands for the session.
 
 use super::Collector;
-use super::agents::{Ctx, bg_tasks};
-use super::events::Channel;
+use super::agents::{Ctx, agents_of, bg_tasks};
 use super::liveness::PaneLiveness;
-use super::paths::events_path;
 use super::py::{py_str, str_of, truthy, truthy_str};
 use super::sessions::since;
 use super::text::strip_inbox_mark;
-use super::threads::{finish::flavour, main_card::main_session_thread, threads_of};
 use super::title;
+use super::tree::Tree;
 use herdr_agent_kit::agent_procs::{Liveness, NoProcs};
 use herdr_agent_kit::agent_session::Ts;
 use herdr_agent_kit::agent_session::claude::wire::{self, ToolCall};
@@ -71,6 +71,7 @@ fn bare(a: &Map<String, Value>, sid: Option<&Value>) -> Orchestrator {
         inbox_texts: Vec::new(),
         threads: Vec::new(),
         hidden_done: 0,
+        hidden_finished: 0,
         tab_no: None,
         machine: None,
         machine_id: None,
@@ -133,7 +134,7 @@ fn root_title(
 }
 
 impl Collector {
-    /// The orchestrator of herdr agent `a` in `tab`.
+    /// The orchestrator of herdr agent `a` in `tab`, and its agents.
     pub(super) fn orchestrator(
         &mut self,
         a: &Map<String, Value>,
@@ -141,7 +142,7 @@ impl Collector {
         per_tab: usize,
         open_qs: &[OpenQuestion],
         now: f64,
-    ) -> Orchestrator {
+    ) -> (Orchestrator, Tree) {
         let empty = Map::new();
         let info = a
             .get("agent_session")
@@ -170,16 +171,16 @@ impl Collector {
                     None => native.map(str::to_owned),
                 }
             };
-            let seen = self
+            let (seen, tree) = self
                 .codex
                 .as_mut()
-                .map(|details| details.enrich(&mut o, now, self.window))
+                .map(|details| details.enrich(&mut o))
                 .unwrap_or_default();
             let session = [seen.name.as_deref(), None, None];
             if let Some((t, src)) = root_title(a, tab, per_tab, session, seen.prompt.as_deref()) {
                 (o.title, o.title_source) = (t, src.to_owned());
             }
-            return o;
+            return (o, tree);
         }
         let since = since(now, self.window);
         let cwd = str_of(a, "cwd");
@@ -214,14 +215,9 @@ impl Collector {
             (o.title, o.title_source) = (t, src.to_owned());
         }
         let (Some(key), Some(scanner)) = (key.clone(), scanner) else {
-            return o;
+            return (o, Tree::default());
         };
         o.transcript = Some(scanner.root().to_string_lossy().into_owned());
-        let channel = self
-            .channels
-            .entry(key.clone())
-            .or_insert_with(|| Channel::new(events_path(&self.events_dir, &key)));
-        channel.update();
         let qtext: HashMap<i64, String> = mine.iter().map(|q| (q.id, q.question.clone())).collect();
         let pane = o.pane_id.clone();
         let pane_live = PaneLiveness::new(&pane, now, &self.pids);
@@ -245,16 +241,7 @@ impl Collector {
             window: self.window,
             live,
         };
-        let (drafts, mut arena, hidden) = threads_of(&cx, &self.channels[&key]);
-        o.hidden_done = hidden;
-        o.flavour = flavour(&drafts);
-        let card = main_session_thread(&o, &drafts, &arena, sess);
-        let mut threads: Vec<_> = drafts.into_iter().map(|d| d.into_thread(&arena)).collect();
-        if let Some((d, ag)) = card {
-            arena.insert(ag.id.clone(), ag);
-            threads.insert(0, d.into_thread(&arena));
-        }
-        o.threads = threads;
-        o
+        let (arena, hidden) = agents_of(&cx);
+        (o, Tree::new(arena.into_values(), hidden))
     }
 }

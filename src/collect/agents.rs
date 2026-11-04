@@ -1,11 +1,12 @@
 //! A session's agents as the views show them (Python `Collector._agents`, `_agent`): each
 //! agent's status (an inferred done reads `inf`, never a plain done), its model, counts, last
-//! words, questions and role; an agent that finished outside the done window is left out,
-//! unless an agent it spawned is shown (subagents nest at any depth).
+//! words, questions and role; an agent that finished (done, cancelled or failed: plan
+//! `uniform-agent-tree.md` D4) outside the done window is left out, and counted, unless an
+//! agent it spawned is shown (subagents nest at any depth).
 
 use super::py::{chars, or_time, py_int, py_splitlines, py_str, str_of, truthy, truthy_time};
+use super::roles::role_of;
 use super::text::{paragraph, short_model};
-use super::threads::roles::role_of;
 use super::title;
 use herdr_agent_kit::agent_procs::Liveness;
 use herdr_agent_kit::agent_session::claude::fold::BgLaunch;
@@ -54,6 +55,12 @@ fn status_of(cx: &Ctx, aid: &str) -> (Status, Option<f64>, bool) {
     (status, st.ended.map(Ts::secs), st.inferred)
 }
 
+/// Finished, for the done window: not live, or failed (D4: a failed agent ages out like a
+/// done one, from its end, else its last record).
+fn finished(status: &Status) -> bool {
+    !status.is_live() || *status == Status::Failed
+}
+
 /// One agent; `None` when it finished outside the done window and `keep_old` is false.
 fn build(cx: &Ctx, seq: usize, aid: &str, keep_old: bool) -> Option<Agent> {
     let sess = cx.sess;
@@ -61,7 +68,7 @@ fn build(cx: &Ctx, seq: usize, aid: &str, keep_old: bool) -> Option<Agent> {
     let f = sess.file_of(aid);
     let (status, ended, inferred) = status_of(cx, aid);
     let last = sess.last_ts(aid).map(Ts::secs);
-    if !keep_old && !status.is_live() && or_time(ended, last).unwrap_or(0.0) < cx.now - cx.window {
+    if !keep_old && finished(&status) && or_time(ended, last).unwrap_or(0.0) < cx.now - cx.window {
         return None;
     }
     let (sp, ack) = (sess.parentage().spawn_of(aid), sess.parentage().ack(aid));
@@ -208,9 +215,10 @@ fn finish(cx: &Ctx, ag: &mut Agent, run: Option<&str>, last: Option<f64>) {
     }
 }
 
-/// The agents shown, by seq (sorted ids give the seq). An agent outside the window still
-/// shows while an agent it spawned does, and so does every agent between them.
-pub fn agents_of(cx: &Ctx) -> Arena {
+/// The agents shown, by seq (sorted ids give the seq), and how many the window left out. An
+/// agent outside the window still shows while an agent it spawned does, and so does every
+/// agent between them.
+pub fn agents_of(cx: &Ctx) -> (Arena, i64) {
     let mut out = Arena::new();
     let mut old: HashMap<String, usize> = HashMap::new();
     let mut ids: Vec<&str> = cx.sess.agents().map(|(id, _)| id).collect();
@@ -242,6 +250,7 @@ pub fn agents_of(cx: &Ctx) -> Arena {
             cur = cx.sess.parentage().parent_of(&c);
         }
     }
+    let hidden = old.keys().filter(|id| !out.contains_key(*id)).count() as i64;
     out.sort_by(|_, a, _, b| a.seq.cmp(&b.seq));
-    out
+    (out, hidden)
 }

@@ -444,7 +444,9 @@ fix for all three.
 
 An append-only JSONL file per orchestrator session:
 `${XDG_STATE_HOME:-~/.local/state}/herdr-panorama/events/<session_id>.jsonl`
-(override `PANORAMA_EVENTS_DIR`). Each line is one object; later lines update
+(override `PANORAMA_EVENTS_DIR`). The Rust collector no longer reads these files
+(plan `uniform-agent-tree.md` §6, slice U3) and ignores `PANORAMA_EVENTS_DIR`;
+existing files are left in place and can be deleted. Each line is one object; later lines update
 earlier ones field by field (`phases` and `agents` replace, they do not
 append). Unknown fields are ignored; unknown `v` lines are skipped.
 
@@ -1957,7 +1959,7 @@ transcripts change far more often than herdr events and need polling anyway.
 changes; the same pattern as herdr-inbox's `tab_prefix`:
 
 ```toml
-done_window = "1h"   # how long finished threads stay visible: seconds or "90m", "2h30m"
+done_window = "1h"   # how long finished (done or failed) agents stay visible: seconds or "90m", "2h30m"
 stale_after = "12h"  # an orchestrator idle this long reads "stale" (PANORAMA_STALE_AFTER overrides)
 home_tab = true      # the home tab (false: the key opens the popup)
 cockpit = false      # experimental: a panel left of every orchestrator (see Per-tab panels)
@@ -1969,8 +1971,10 @@ animation_fps = 20   # the colour tick, 2..30 (see Smooth animation); read when 
 ```
 
 Default 1 hour. `PANORAMA_DONE_WINDOW` (seconds or a duration) overrides it.
-Done threads that ended earlier are dropped; the rest fold into the
-"✓ n complete" card.
+The Rust collector (plan `uniform-agent-tree.md` U3) drops a finished agent,
+done or failed, that ended earlier, unless an agent it spawned is still shown,
+and counts it in its root's `hidden_finished`. The Python collector still
+drops done and failed threads that ended earlier.
 
 ## Safety rules
 
