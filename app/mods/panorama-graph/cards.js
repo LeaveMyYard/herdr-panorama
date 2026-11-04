@@ -55,7 +55,7 @@ export function card(view, cx, t, node, model, window, path, now) {
   const { edge, sweep } = cardMotion(node); let body, status;
   if (node.kind === 'fold') {
     status = 'done';
-    const label = `${node.fold.length} finished · ${node.fold.map(agentTitle).join(', ')}${node.older ? ` · +${node.older} older` : ''}`;
+    const label = [node.fold.length ? `${node.fold.length} finished` : null, node.fold.map(agentTitle).join(', ') || null, node.older ? `+${node.older} older` : null].filter(Boolean).join(' · ');
     // Finished-fold pods are ✓ tiles; #a8cbb2 is the design's fold title tint.
     body = h_flex().h_full().pl(12).pr(10).gap(4).items_center()
       .children(node.fold.slice(0, 4).map(agent => tile(agent.status, 16, null, { still: true })))

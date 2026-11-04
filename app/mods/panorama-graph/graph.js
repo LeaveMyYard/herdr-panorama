@@ -80,19 +80,20 @@ export function treeLayout(item, selected = null, expanded = new Set()) {
       const height = fold ? 40 : source.kind === 'native' ? (selected === source.key ? 100 : 54) : agentHeight(source.agent, selected === source.key);
       const y = Math.max(cur[depth] ?? 0, group.parentY, children ? (trunk[depth + 1] ?? -100) - 27 + 16 : 0);
       const node = fold
-        ? { kind: 'fold', key: JSON.stringify(['finished', group.key]), group: group.key, fold: source.map(node => node.agent), owner: source[0].owner, older: group.parent ? 0 : item.root.hidden_finished ?? 0 }
+        ? { kind: 'fold', key: JSON.stringify(['finished', group.key]), group: group.key, fold: source.map(node => node.agent), owner: source[0]?.owner ?? item, older: group.older }
         : { kind: source.kind, key: source.key, agent: source.agent ?? null, item: source.item, owner: source.owner, children: source.children.length };
       Object.assign(node, { depth, column: depth, parent: group.parent, y, height, mid: fold ? 20 : 27 });
       nodes.push(node); cur[depth] = y + height + 10; group.ys.push(y + node.mid);
       if (children) work.push({ kind: 'group', list: source.children, depth: depth + 1, parent: node, parentY: y, key: node.key });
       continue;
     }
-    const group = { depth: task.depth, parent: task.parent, parentY: task.parentY, key: task.key, ys: [] }, open = expanded.has(group.key);
+    // The writer's `+N older` (aged-out finished agents) rides on the root-level fold, even alone.
+    const group = { depth: task.depth, parent: task.parent, parentY: task.parentY, key: task.key, ys: [], older: task.parent ? 0 : item.root.hidden_finished ?? 0 }, open = expanded.has(group.key);
     groups.push(group);
     // Finished siblings fold per parent into one `N finished · titles` card after the live ones.
     const done = task.list.filter(node => !node.shown), show = task.list.filter(node => node.shown || open);
     work.push({ kind: 'end', group });
-    if (done.length && !open) work.push({ kind: 'node', source: done, group });
+    if ((done.length && !open) || group.older) work.push({ kind: 'node', source: open ? [] : done, group });
     for (const source of show.slice().reverse()) work.push({ kind: 'node', source, group });
   }
   return { nodes, groups, depth: nodes.reduce((depth, node) => Math.max(depth, node.depth), 0) };

@@ -86,7 +86,7 @@ export default class Graph extends View {
     node = this.resolveNode(node, model); if (!node) return;
     // The owner is the root or native terminal whose feed root holds this node's agent.
     const item = node.owner;
-    if (node.kind === 'fold' && action === 'open') { this.state.expanded.add(node.group); this.state.agent = agentKey(item.root, node.fold[0]); return; }
+    if (node.kind === 'fold' && action === 'open') { if (node.fold.length) { this.state.expanded.add(node.group); this.state.agent = agentKey(item.root, node.fold[0]); } return; }
     if (action === 'root') { const target = rootTarget(node.kind === 'root' ? item : model.item); if (target) run(target.name, target.args); return; }
     if (action === 'answer') {
       const intent = answerIntent(item, node);

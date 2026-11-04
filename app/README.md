@@ -13,7 +13,7 @@ keyboard navigation and selected-card details. Depth 0 holds the space's roots;
 deeper columns hold the selected root's whole agent tree, its transcript agents
 merged with its proven same-space native-terminal children, one card at every depth
 and finished siblings folded per parent. Pane-less detail rows open Peek with supplied
-status, error and last message; Enter opens a verified live owning orchestrator.
+status, error and last message; Enter focuses the verified live owning root pane.
 Transcript (t) opens a readonly native viewer using the current pinned installation
 and feed scope. It reads supplied absolute producer-local paths through existing
 local line paging, preferring the agent transcript then the root transcript.

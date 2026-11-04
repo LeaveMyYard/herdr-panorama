@@ -10,7 +10,7 @@ const state = () => ({ root: item.key, agent: null, focus: 0, expanded: new Set(
 const sourceAgent = feed.roots.flatMap(root => root.agents)[0];
 const agent = (id, status, parent = null, extra = {}) => ({ ...sourceAgent, id, parent, role: id, title: `Task ${id}`, status, questions: [], question_ids: [], activity: '', error: null, ...extra });
 function scenario() {
-  const root = structuredClone(item);
+  const root = structuredClone(item); root.root.hidden_finished = 0;
   root.root.agents = [
     agent('reviewer','rev'), agent('author','done'), agent('researcher','run','reviewer'),
     agent('batch','run','reviewer'), agent('done-explorer','done','reviewer'),
@@ -55,10 +55,14 @@ test('finished siblings fold per parent with titles; live descendants keep finis
   const fold=result.nodes.find(node=>node.fold?.some(a=>a.id==='done-explorer'));
   assert.equal(fold.parent.key,reviewer.key); assert.equal(fold.group,reviewer.key); assert.equal(fold.older,0);
   const top=result.nodes.find(node=>node.fold?.some(a=>a.id==='author'));
-  assert.equal(top.parent,null); assert.equal(top.older,root.root.hidden_finished);
+  assert.equal(top.parent,null); assert.equal(top.older,0);
   const opened=treeLayout(root,null,new Set([reviewer.key]));
   assert.ok(opened.nodes.some(node=>node.agent?.id==='done-explorer'));
-  assert.equal(new Set(opened.nodes.map(node=>node.key)).size,opened.nodes.length);
+  assert.equal(new Set(opened.nodes.map(node=>node.key)).size,opened.nodes.length);  root.root.agents=root.root.agents.filter(a=>a.status!=='done'||a.parent);root.root.hidden_finished=4;
+  const older=treeLayout(root).nodes.find(node=>node.kind==='fold'&&!node.parent);
+  assert.deepEqual([older.fold,older.older,older.owner],[[],4,root]);
+  const expanded=treeLayout(root,null,new Set([root.key])).nodes.find(node=>node.kind==='fold'&&!node.parent);
+  assert.deepEqual([expanded.fold,expanded.older],[[],4]);
 });
 test('arrow navigation traverses parents from depth 0 and remembers each child selection', () => {
   const root=scenario(), s=state();let model=graphModel([root],s);
