@@ -7,11 +7,12 @@
 use super::card::{Line, Look, draw_frame, line, own_out};
 use crate::model::{HerdrStatus, Orchestrator, Status};
 use crate::view::cards::Area;
+use crate::view::cards::actions::hint_row;
 use crate::view::cards::details::bg_row;
 use crate::view::cards::marks::marks_of;
 use crate::view::cards::tags::tags;
 use crate::view::orch_state::{Ages, OrchState, orch_state};
-use crate::view::palette::{DIM, FAINT, FG, HI, KEY, status};
+use crate::view::palette::{DIM, FAINT, FG, HI, status};
 use crate::view::pod::pod;
 use crate::view::screen::Screen;
 use crate::view::seg::Seg;
@@ -68,7 +69,13 @@ pub fn root_detail_lines(o: &Orchestrator, w: i32, view: &View) -> Vec<Vec<Seg>>
     for (i, b) in o.bg.iter().enumerate() {
         out.push(bg_row(b, w - 1, view.now, view.frame, i));
     }
-    if o.hidden_finished > 0 {
+    // the root's own fold says it (`+N older`) when there is one
+    let folded = || {
+        crate::view::nav::tree_entries(o, view)
+            .iter()
+            .any(|e| !e.fin.is_empty() && e.key == o.pane_id)
+    };
+    if o.hidden_finished > 0 && !folded() {
         let text = format!("+{} older finished, hidden", o.hidden_finished);
         out.push(vec![Seg::new(trunc(&text, w), FAINT)]);
     }
@@ -165,40 +172,16 @@ fn state_line(o: &Orchestrator, st: &OrchState, w: i32) -> [Seg; 2] {
 }
 
 /// The root's `g open pane`, `t transcript` and `a answer` (blocked: in its pane) from `at`,
-/// each enabled one a click target; in `room` cells (closer, then "answer", as an agent's).
+/// in `room` cells, each enabled one a click target.
 fn hints(cv: &mut Screen, at: (i32, i32), room: i32, o: &Orchestrator, inbox_ok: bool) {
     let blocked = o.herdr_status == HerdrStatus::Blocked;
     let can_answer = blocked || (inbox_ok && !o.inbox.is_empty());
-    let pane = o.pane_id.clone();
-    let full = if blocked { "answer in pane" } else { "answer" };
-    let width = |gap: i32, answer: &str| 25 + answer.chars().count() as i32 + 2 * gap;
-    let (gap, answer) = [(3, full), (2, full), (3, "answer")]
-        .into_iter()
-        .find(|(g, a)| width(*g, a) <= room)
-        .unwrap_or((2, "answer"));
-    let (mut xx, y) = at;
-    for (k, lab, target) in [
-        ("g", "open pane", Some(Target::GotoOrch(pane.clone()))),
-        (
-            "t",
-            "transcript",
-            Some(Target::TranscriptOrch(pane.clone())),
-        ),
-        (
-            "a",
-            answer,
-            can_answer.then(|| Target::AnswerOrch(pane.clone())),
-        ),
-    ] {
-        let on = target.is_some();
-        let segs = [
-            Seg::new(k, if on { KEY } else { FAINT }).bold(),
-            Seg::new(format!(" {lab}"), if on { FG } else { FAINT }),
-        ];
-        let end = cv.segs(xx, y, &segs);
-        if let Some(t) = target {
-            cv.target(xx, end, y, t);
-        }
-        xx = end + gap;
-    }
+    let pane = &o.pane_id;
+    let hints = [
+        (true, Some(Target::GotoOrch(pane.clone()))),
+        (true, Some(Target::TranscriptOrch(pane.clone()))),
+        (can_answer, Some(Target::AnswerOrch(pane.clone()))),
+    ];
+    let answer = if blocked { "answer in pane" } else { "answer" };
+    hint_row(cv, at, hints, answer, Some(room));
 }

@@ -15,7 +15,7 @@ pub struct Placed {
     pub h: i32,
 }
 
-/// A group of siblings: the card that spawned them (`None`: the thread's own), their depth,
+/// A group of siblings: the card that spawned them (`None`: the root's own), their depth,
 /// and the row each card's link joins.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Group {

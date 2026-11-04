@@ -12,7 +12,7 @@
 
 mod support;
 
-use panorama_core::view::nav::default_children;
+use panorama_core::view::nav::{agent_depth, default_children, find_orch};
 use panorama_core::view::{Filter, View, render_graph};
 use support::{NO_SESSIONS, assert_same, cells, fixture, golden, wire_swarm};
 
@@ -157,25 +157,14 @@ fn the_uniform_tree_at_160_and_240_columns() {
     let rel = "rust/inputs/swarm-uniform.json";
     let swarm = wire_swarm(rel, None);
     let now = fixture(rel)["now"].as_f64().unwrap();
-    for (name, w, pane, agent, focus) in [
-        ("160 Billing API, the root", 160, "w1:p1", None, 0),
-        ("160 Billing API, depth 2", 160, "w1:p1", Some("a1c1"), 2),
-        ("160 Release notes, all finished", 160, "w1:p4", None, 0),
-        (
-            "240 Search refactor, depth 1",
-            240,
-            "w1:p2",
-            Some("s110"),
-            1,
-        ),
-        (
-            "240 Search refactor, depth 4",
-            240,
-            "w1:p2",
-            Some("s113"),
-            4,
-        ),
-        ("240 Docs site, the root", 240, "w1:p3", None, 0),
+    // the keyboard on the root, or on an agent at its own depth (as the keys leave it)
+    for (name, w, pane, agent) in [
+        ("160 Billing API, the root", 160, "w1:p1", None),
+        ("160 Billing API, depth 2", 160, "w1:p1", Some("a1c1")),
+        ("160 Release notes, all finished", 160, "w1:p4", None),
+        ("240 Search refactor, depth 2", 240, "w1:p2", Some("s110")),
+        ("240 Search refactor, depth 5", 240, "w1:p2", Some("s113")),
+        ("240 Docs site, the root", 240, "w1:p3", None),
     ] {
         let mut view = View {
             orch: Some(pane.into()),
@@ -185,8 +174,8 @@ fn the_uniform_tree_at_160_and_240_columns() {
         default_children(&swarm, &mut view);
         if let Some(a) = agent {
             view.agent = Some(a.into());
+            view.focus = agent_depth(find_orch(&swarm, Some(pane)), Some(a));
         }
-        view.focus = focus;
         let got = render_graph(&swarm, &view, w, 45, None, NO_SESSIONS);
         support::owned::check_owned("uniform-wide.json", name, &got);
     }

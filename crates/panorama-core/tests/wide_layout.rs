@@ -89,13 +89,15 @@ fn the_wide_layout_has_the_depth_columns_and_links() {
     assert!(row(5).contains("failed · working · 4/12"));
     assert!(row(7).contains("g open pane"));
     assert!(row(11).contains("⠸  Claude Code · Search refactor"));
-    // depth 1: every agent of the root's threads, the selected one unfolded, live ones as
-    // cards, finished ones folded
+    // depth 1: every agent of the root's threads, live ones as cards, finished ones folded;
+    // with the keyboard on the root the agent chosen below it stays folded, so the only hint
+    // row is the root's (its keys act on the root)
+    assert!(
+        !text.contains("g open pane   t transcript   a answer"),
+        "{text}"
+    );
     for want in [
         "reviewer a2f81c0 · opus",
-        "reviewing",
-        "now  Bash(Diff totals.py against roun…",
-        "g open pane   t transcript   a answer",
         "author a1c3d90 · opus",
         "fixer b3a9c41 · sonnet",
         "author c1d2e3f · sonnet",
@@ -105,6 +107,24 @@ fn the_wide_layout_has_the_depth_columns_and_links() {
     }
     for gone in ["PR #42 invoice export", "complete", "pr-review"] {
         assert!(!text.contains(gone), "a thread's {gone:?}\n{text}");
+    }
+    // the keyboard in the tree: the chosen agent unfolds with its hints
+    let open = render(
+        &demo(),
+        &View {
+            focus: 1,
+            ..demo_view()
+        },
+        160,
+        45,
+    )
+    .text();
+    for want in [
+        "reviewing",
+        "now  Bash(Diff totals.py against roun…",
+        "g open pane   t transcript   a answer",
+    ] {
+        has(&open, want);
     }
     // solid links: the borders become tees, the trunk branches
     assert_eq!(

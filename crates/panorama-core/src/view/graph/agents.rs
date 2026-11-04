@@ -37,13 +37,17 @@ impl TreeCtx<'_> {
         self.cols.shown(d)
     }
 
+    /// Whether `e` is the selected agent's card, unfolded: the keyboard is in the tree (on a
+    /// root, the root's own card is open instead, its keys act on it).
+    fn open(&self, e: &TreeEntry) -> bool {
+        self.view.focus >= 1 && self.view.agent.as_deref() == Some(e.ident.as_str())
+    }
+
     /// An entry's height: the selected agent unfolds in a shown column.
     fn card_h(&self, e: &TreeEntry) -> i32 {
         let agent = find_agent(Some(self.o), Some(&e.ident));
         match agent {
-            Some(a)
-                if self.view.agent.as_deref() == Some(e.ident.as_str()) && self.vis(e.depth) =>
-            {
+            Some(a) if self.open(e) && self.vis(e.depth) => {
                 let w = self.cols.w(e.depth) - 6;
                 6 + detail_lines(a, w, self.view).len() as i32
             }
@@ -110,7 +114,9 @@ fn cards(cv: &mut Screen, c: &TreeCtx, tree: &Tree) -> Option<(i32, i32)> {
             continue;
         }
         let col = e.depth;
-        let is_sel = c.view.agent.as_deref() == Some(e.ident.as_str());
+        let chosen = c.view.agent.as_deref() == Some(e.ident.as_str());
+        // a fold never unfolds: it reads selected whenever it is chosen
+        let is_sel = if e.fin.is_empty() { c.open(e) } else { chosen };
         let place = Place {
             x: c.cols.x(col),
             y: p.y,
@@ -126,13 +132,14 @@ fn cards(cv: &mut Screen, c: &TreeCtx, tree: &Tree) -> Option<(i32, i32)> {
                     o: c.o,
                     kids: &kids,
                     inbox_ok: c.inbox_ok,
-                    on_path: on_path.contains(&a.id),
+                    // with the keyboard on the root, the agent below it still reads as chosen
+                    on_path: on_path.contains(&a.id) || chosen,
                     kids_off: if c.vis(e.depth + 1) { 0 } else { n },
                 };
                 agent_card(cv, place, a, ctx, c.view);
             }
         }
-        if is_sel {
+        if chosen {
             sel = Some((p.y, p.y + p.h));
         }
     }

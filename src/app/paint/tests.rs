@@ -183,6 +183,7 @@ fn untrusted_text_is_stripped_of_control_characters() {
         Instant::now(),
     );
     app.view.agent = Some("a2f81c0".into()); // test_render.py's view: its details show it whole
+    app.view.focus = 1; // the keyboard in the tree: the chosen agent's card is open
     let run = &f["runs"][0];
     let text = app
         .paint(160, 45, &frame(run["now"].as_f64().unwrap()))

@@ -113,9 +113,9 @@ fn a_roots_own_questions_and_prompt_are_in_its_unfolded_card() {
     let col = orch_column(&swarm, &view, 42);
     let s = crop(&col.canvas, col.height);
     let text = s.text();
+    // its hidden finished agents are counted in its own fold (`+2 older`), not twice
     assert!(
-        text.contains("? Merge PR #41 with a merge commit")
-            && text.contains("+2 older finished, hidden"),
+        text.contains("? Merge PR #41 with a merge commit") && !text.contains("older finished"),
         "{text}"
     );
     for t in [
@@ -137,6 +137,11 @@ fn a_roots_own_questions_and_prompt_are_in_its_unfolded_card() {
         "{text}"
     );
     check_owned(FILE, "uniform roots, Docs site open", &s);
+    // a root with no fold of its own says what the window hid in its card
+    let view = view_on(&swarm, "w1:p4", 0, now);
+    let col = orch_column(&swarm, &view, 42);
+    let text = crop(&col.canvas, col.height).text();
+    assert!(text.contains("+3 older finished, hidden"), "{text}");
 }
 
 #[test]

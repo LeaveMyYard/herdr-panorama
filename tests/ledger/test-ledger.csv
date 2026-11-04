@@ -677,7 +677,7 @@ tests/test_plugin_copy.py::test_mcp_server_runs_from_the_copy,tests/test_plugin_
 tests/test_render.py::test_wide_layout_has_the_three_columns_and_links,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::the_wide_layout_has_the_depth_columns_and_links,mapped,,P4
 tests/test_render.py::test_narrow_layout_is_an_indented_list_with_only_the_selected_orchestrator_open,tests/test_render.py,crates/panorama-core/tests/narrow_layout.rs::the_narrow_layout_is_an_indented_list_with_only_the_selected_orchestrator_open,mapped,,P3
 tests/test_render.py::test_question_and_blocked_detail_lines,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::question_and_blocked_detail_lines,mapped,,P4
-tests/test_render.py::test_explicit_thread_shows_pct_and_worktree,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::an_untitled_agent_reads_role_id_and_model,mapped,,P4
+tests/test_render.py::test_explicit_thread_shows_pct_and_worktree,tests/test_render.py,,retired,"The thread card's phase percentage and worktree went with the thread column (docs/plans/uniform-agent-tree.md §4, slice U4).",P4
 tests/test_render.py::test_nav_lists_identities_per_column,tests/test_render.py,crates/panorama-core/tests/narrow_layout.rs::nav_lists_identities_per_column,mapped,,P3
 tests/test_render.py::test_filters,tests/test_render.py,crates/panorama-core/tests/wide_layout.rs::filters,mapped,,P4
 tests/test_render.py::test_untrusted_text_is_stripped_of_control_characters,tests/test_render.py,src/app/paint/tests.rs::untrusted_text_is_stripped_of_control_characters,mapped,,P4
