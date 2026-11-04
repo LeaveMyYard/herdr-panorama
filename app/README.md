@@ -239,7 +239,8 @@ approved retaining exactly data/panorama-spaces/store.json and
 data/panorama-tabs/store.json plus their necessary parents: these preserve stock
 machine folding/reconnection recovery and panel selection across restart and
 reinstall. The spaces store also holds the sidebar's `agents.scope` ("all", or
-absent for This space), written by panorama-spaces on the sidebar's command. Those exact parents may preexist without entering the new receipt's
+absent for This space), written by panorama-spaces on the sidebar's command.
+Those exact parents may preexist without entering the new receipt's
 created-directory list or granting deletion authority. A known store must be a
 no-follow regular single-link mode-0600 file, at most 1 MiB, containing a strict
 UTF-8 JSON string-map with supported consumed preference shapes. Unsafe known

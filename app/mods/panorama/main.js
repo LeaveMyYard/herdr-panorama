@@ -234,7 +234,7 @@ export default class Panorama extends View {
       .when(!compact, el => el.child(h_flex().px(16).h(41).pt(14).pb(5).flex_none().items_center().justify_between()
         .child(h_flex().gap(6).items_center().child(div().text_size(11.5).font_medium().text_color(t.dim).child('Agents'))
           .child(h_flex().id('ag-scope').h(18).px(5).rounded(4).items_center().text_size(11).text_color(everySpace ? t.foreground : DOCK.number).cursor_pointer()
-            .hover(el => el.bg(t.hover).text_color(t.foreground)).tooltip(everySpace ? 'Showing agents from every space' : 'Showing agents from this space')
+            .hover(el => el.bg(t.hover).text_color(t.foreground))
             .on_click((_event, cx) => this.setScope(everySpace ? 'space' : 'all', cx))
             .child(everySpace ? 'All spaces' : 'This space')))
         .child(h_flex().gap(8).items_center()

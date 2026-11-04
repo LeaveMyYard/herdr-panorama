@@ -30,7 +30,7 @@ def machine(value, name):
 
 def valid(key, value):
     if key == 'agents.scope':
-        return value in ('all', 'space')
+        return value == 'all'
     if key == 'panels':
         return record(value) and all(item is None or isinstance(item, str) for item in value.values())
     if key == 'machines.folded':
