@@ -47,6 +47,10 @@ Conflicting automatic bindings remain unavailable; an operator can explicitly
 choose `panorama codex-bind THREAD_ID --terminal ADDRESS` when needed. This
 change does not run that command for existing sessions. Remote binding is refused.
 
+Automatic linking from the foreground process (Claude per-process record, Codex
+open rollout) and the hook ordering rule are specified in
+[session-linking.md](session-linking.md).
+
 Missing proof yields a plain supported core root and an availability error;
 source failures are `errors[]` data. Existing live sessions may have no new
 terminal-aware record or verified core binding. Their rich-session enrichment

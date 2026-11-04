@@ -62,12 +62,18 @@ cannot start transcript enrichment; oversized debug builds may also be unavailab
 ## Session coverage
 
 Rich Claude/Codex data requires an exact current core-terminal/session association
-and a supported local transcript/history source. The installer does not enable or
-configure hooks or bind old sessions. Unverified sessions remain basic native roots;
-a matching folder/title does not establish ownership. Claude core-session proof
-comes from the separately configured opt-in `panorama hook session-start` running
-under that session's actual Claude process. Existing local Codex sessions can be
-bound explicitly when current ownership can be verified:
+and a supported local transcript/history source. Panorama links a core terminal
+automatically when its current foreground agent process proves its own session: a
+Claude Code per-process session record or `panorama hook session-start` record from
+that exact process, or the open rollout of an embedded (`codex --no-daemon`) Codex.
+Sessions already running when Panorama starts are covered by the process evidence.
+Missing, ambiguous or disagreeing evidence leaves a basic native root; a matching
+folder/title never establishes ownership. Rules: [session linking](../docs/protocol/session-linking.md).
+
+The Claude hook is the stronger signal and is optional. `panorama hook setup` prints the
+exact JSON to merge into `~/.claude/settings.json`; Panorama never edits it. A
+shared-daemon Codex TUI holds no rollout of its own; bind it explicitly when its
+current ownership can be verified:
 
 ```sh
 /absolute/app/home/data/panorama/bin/panorama codex-bind THREAD_ID --terminal tN
@@ -76,9 +82,10 @@ bound explicitly when current ownership can be verified:
 Replace both identities with the actual local session/terminal. This verifies root
 metadata and the terminal's current foreground process; it is your chosen association,
 not detection of which conversation a shared-daemon TUI displays. Rebind after an
-in-process root switch. See [feed identity rules](../docs/protocol/app-feed-v1.md)
-and [Codex setup](../docs/codex.md). Synthetic previews do not prove natural rich
-session ingestion.
+in-process root switch (a binding that disagrees with the process evidence refuses).
+See [feed identity rules](../docs/protocol/app-feed-v1.md) and
+[Codex setup](../docs/codex.md). Synthetic previews do not prove natural rich session
+ingestion.
 
 ## Uninstall and troubleshoot
 
