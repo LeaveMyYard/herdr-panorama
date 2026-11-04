@@ -8,8 +8,8 @@ use super::state::DockState;
 use super::tiles::{agent_glyphs, glyph_colour, tile};
 use crate::model::{Agent, BgTask, Orchestrator, Status};
 use crate::view::agent_text::name;
-use crate::view::anim::{clock, glyph};
-use crate::view::palette::{DIM, FAINT, FG, LINE};
+use crate::view::anim::{clock, glyph, pulse};
+use crate::view::palette::{BG, DIM, FAINT, FG, LINE};
 use crate::view::screen::Screen;
 use crate::view::seg::{Seg, width};
 use crate::view::state::View;
@@ -74,7 +74,7 @@ pub fn draw_item(cv: &mut Screen, yy: i32, item: &Item, i: usize, ctx: &ItemCtx)
         }
         let branch = if *last { "└" } else { "├" };
         let x = cv.segs(5, yy, &[Seg::new(branch, LINE)]) + 1;
-        agent_row(cv, x, yy, a, &agent_glyphs(below, view.frame, 6), view, xr);
+        agent_row(cv, (x, yy), a, below, 6, ctx);
         return;
     }
     let branch = if Some(i) == ctx.last_head {
@@ -86,25 +86,41 @@ pub fn draw_item(cv: &mut Screen, yy: i32, item: &Item, i: usize, ctx: &ItemCtx)
     match item {
         Item::Bg(t) => draw_bg(cv, yy, t, i, view, xr),
         Item::Fin => draw_fin(cv, yy, ctx),
-        Item::Agent(a, fin) => {
-            let run = agent_glyphs(fin, view.frame, 0);
-            agent_row(cv, 5, yy, a, &run, view, xr);
-        }
+        Item::Agent(a, fin) => agent_row(cv, (5, yy), a, fin, 0, ctx),
         Item::Sub(..) => {}
     }
 }
 
-/// The one agent row: its own glyph at `x`, its title, and `run` on the right.
-fn agent_row(cv: &mut Screen, x: i32, yy: i32, a: &Agent, run: &[Seg], view: &View, xr: i32) {
+/// The one agent row: its own glyph at `x`, its title, and on the right the run of
+/// `below` (`n` live glyphs at most). An unseen mark on the agent or in its run pulses the
+/// glyph's background, as a tile's does.
+fn agent_row(
+    cv: &mut Screen,
+    (x, yy): (i32, i32),
+    a: &Agent,
+    below: &[&Agent],
+    n: usize,
+    ctx: &ItemCtx,
+) {
+    let (view, xr) = (ctx.view, ctx.xr);
+    let run = agent_glyphs(below, view.frame, n);
     let g = glyph(a, view.frame);
-    let room = (xr - width(run) - 1 - (x + g.chars().count() as i32 + 1)).max(1);
+    let room = (xr - width(&run) - 1 - (x + g.chars().count() as i32 + 1)).max(1);
     let att = a.status.needs_operator();
-    let glyph_seg = Seg::new(g, glyph_colour(&a.status, view.frame))
+    let m = mark_of(
+        std::iter::once(a).chain(below.iter().copied()),
+        &view.unseen,
+        true,
+    );
+    let mut glyph_seg = Seg::new(g, glyph_colour(&a.status, view.frame))
         .bold_if(att)
         .fg_moving(att);
+    if let Some(m) = m {
+        glyph_seg = glyph_seg.on(pulse(view.frame, m, BG, 1.0)).bg_moving(true);
+    }
     let title = Seg::new(trunc(&name(a), room), FG);
     cv.segs(x, yy, &[glyph_seg, Seg::plain(" "), title]);
-    cv.segs_right(xr, yy, run);
+    cv.segs_right(xr, yy, &run);
 }
 
 /// A background task: its clock tile, what it does, and its kind and age on the right.
@@ -140,11 +156,7 @@ fn draw_bg(cv: &mut Screen, yy: i32, t: &BgTask, i: usize, view: &View, xr: i32)
 /// those the done window dropped; unseen, its tile pulses.
 fn draw_fin(cv: &mut Screen, yy: i32, ctx: &ItemCtx) {
     let (d, view) = (ctx.d, ctx.view);
-    let below = d.done.iter().flat_map(|a| {
-        let mut all = d.tree.descendants(a);
-        all.insert(0, a);
-        all
-    });
+    let below = d.done.iter().flat_map(|a| d.tree.subtree(a));
     let fm = mark_of(below, &view.unseen, true);
     let older = ctx.o.hidden_finished;
     let right = if older > 0 {

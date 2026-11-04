@@ -2,12 +2,10 @@
 //! whom across the whole root, and which agents are still going: live, or with a live
 //! descendant. The root's direct children are layer 1, theirs layer 2.
 
+use crate::model::tree::MAX_DEPTH;
 use crate::model::{Agent, Orchestrator, Status, TreeKids};
 use crate::view::anim::glyph;
 use std::collections::HashSet;
-
-/// Deeper than this, a tree is cut (a guard; parent loops are already cut by `TreeKids`).
-const MAX_DEPTH: usize = 64;
 
 /// One root's agents as a tree, with the ids of those still going.
 #[derive(Debug)]
@@ -46,27 +44,19 @@ impl<'a> Tree<'a> {
 
     /// Everything below `a`, depth first.
     pub fn descendants(&self, a: &Agent) -> Vec<&'a Agent> {
-        let mut out = vec![];
-        self.walk(&a.id, 0, &mut out);
-        out
+        self.kids.descendants(&a.id)
     }
 
-    fn walk(&self, id: &str, depth: usize, out: &mut Vec<&'a Agent>) {
-        if depth > MAX_DEPTH {
-            return;
-        }
-        for k in self.kids.children(Some(id)) {
-            out.push(k);
-            self.walk(&k.id, depth + 1, out);
-        }
+    /// `a` and everything below it.
+    pub fn subtree(&self, a: &'a Agent) -> Vec<&'a Agent> {
+        self.kids.subtree(a)
     }
 
     /// The glyph and status `a`'s subtree shows (V11 `tState`): its most urgent live agent,
     /// itself included, else idle.
     pub fn state(&self, a: &'a Agent, frame: f64) -> (String, Status) {
-        let mut all = self.descendants(a);
-        all.insert(0, a);
-        match all
+        match self
+            .subtree(a)
             .into_iter()
             .filter(|a| a.status.is_live())
             .min_by_key(|a| a.status.urgency())

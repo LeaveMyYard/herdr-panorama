@@ -40,23 +40,31 @@ pub struct Placed {
 }
 
 /// The root's finished subagents folded into one line, `✓ N finished · names`, and
-/// `+N older` for those the done window dropped; `ident` is its id in the depth-1 column.
-pub fn fin_card(cv: &mut Screen, y: i32, c: &CardCtx, fin: &[&Agent], ident: &str) -> Placed {
-    let target = Target::Fin {
-        pane: c.o.pane_id.clone(),
-        group: None,
-    };
-    cv.area(3, c.w - 1, y, y + 1, target);
+/// `+N older` for those the done window dropped. `ident`: its id in the depth-1 column; `None`
+/// when the window dropped them all, and the line only counts them.
+pub fn fin_card(
+    cv: &mut Screen,
+    y: i32,
+    c: &CardCtx,
+    fin: &[&Agent],
+    ident: Option<&str>,
+) -> Placed {
+    if ident.is_some() {
+        let target = Target::Fin {
+            pane: c.o.pane_id.clone(),
+            group: None,
+        };
+        cv.area(3, c.w - 1, y, y + 1, target);
+    }
     let names: Vec<String> = fin.iter().map(|a| name(a)).collect();
-    let older = c.o.hidden_finished;
-    let mut text = String::new();
+    let mut parts = vec![];
+    if c.o.hidden_finished > 0 {
+        parts.push(format!("+{} older", c.o.hidden_finished));
+    }
     if !names.is_empty() {
-        text = format!(" {} finished · {}", names.len(), names.join(", "));
+        parts.push(format!("{} finished · {}", names.len(), names.join(", ")));
     }
-    if older > 0 {
-        text = format!(" +{older} older ·{text}");
-    }
-    let text = trunc(&text, c.w - 9);
+    let text = trunc(&format!(" {}", parts.join(" · ")), c.w - 9);
     cv.segs(
         5,
         y,
@@ -66,7 +74,7 @@ pub fn fin_card(cv: &mut Screen, y: i32, c: &CardCtx, fin: &[&Agent], ident: &st
         ],
     );
     let mut sel = None;
-    if c.view.agent.as_deref() == Some(ident) {
+    if ident.is_some() && c.view.agent.as_deref() == ident {
         let focused = c.view.focus == 1;
         cv.put(3, y, "▸", if focused { HI } else { DIM }, None, false);
         if focused {
@@ -133,7 +141,7 @@ pub fn agent_card(
     let mut sel = None;
     if open {
         if let Some(p) = picked {
-            agent_block(cv, y + 4, c, p, &det);
+            agent_block(cv, y + 4, c, (p, p.id == a.id), &det);
         }
         if view.focus >= 1 {
             sel = Some((y, y + height));
@@ -180,9 +188,16 @@ fn head(
     );
 }
 
-/// The selected agent at row `r`: its pod, title, then `role id · model · age · calls`, its
-/// detail lines `det`, and its action hints.
-fn agent_block(cv: &mut Screen, mut r: i32, c: &CardCtx, a: &Agent, det: &[Vec<Seg>]) {
+/// The selected agent at row `r`: its pod, title (not when it is the card's `own` agent,
+/// whose head already shows it), then `role id · model · age · calls`, its detail lines
+/// `det`, and its action hints.
+fn agent_block(
+    cv: &mut Screen,
+    mut r: i32,
+    c: &CardCtx,
+    (a, own): (&Agent, bool),
+    det: &[Vec<Seg>],
+) {
     let (view, w) = (c.view, c.w);
     let ident = AgentRef {
         pane: c.o.pane_id.clone(),
@@ -203,7 +218,7 @@ fn agent_block(cv: &mut Screen, mut r: i32, c: &CardCtx, a: &Agent, det: &[Vec<S
         .map_or(String::new(), |m| format!(" · {m}"));
     let age = age_of(a, view.now).unwrap_or_else(|| "-".into());
     // titled: the title, then `role id · model` with the rest; else the role, then the id
-    let (role, lead) = if a.title.is_empty() {
+    let (role, lead) = if a.title.is_empty() || own {
         (role_label(a).to_owned(), String::new())
     } else {
         (

@@ -55,15 +55,15 @@ pub fn spaced(segs: Vec<Seg>) -> Vec<Seg> {
 }
 
 /// An entry's second line (V11 sidebar): a tile per active direct subagent, its subtree's
-/// most urgent state, and one `✓n` tile for the finished ones.
+/// most urgent state, most urgent first (so a cut keeps the tiles that need you), and one
+/// `✓n` tile for the finished ones.
 pub fn child_tiles(d: &DockState, frame: f64) -> Vec<Seg> {
-    let mut tiles: Vec<Seg> = d
-        .active
+    let mut states: Vec<(String, Status)> =
+        d.active.iter().map(|a| d.tree.state(a, frame)).collect();
+    states.sort_by_key(|(_, st)| st.urgency());
+    let mut tiles: Vec<Seg> = states
         .iter()
-        .map(|a| {
-            let (g, st) = d.tree.state(a, frame);
-            tile(&st, &g, frame, None)
-        })
+        .map(|(g, st)| tile(st, g, frame, None))
         .collect();
     if !d.done.is_empty() {
         let n = if d.done.len() > 1 {

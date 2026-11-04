@@ -95,11 +95,6 @@ pub fn open_orch(
         sel = Some((y, y + 1));
     }
     let kids = TreeKids::of_root(o);
-    let below = |a: &Agent| {
-        let mut out = vec![];
-        descend(&kids, &a.id, 0, &mut out);
-        out
-    };
     // the depth-1 agent holding the selection (its fold card: the root's own)
     let picked = view.agent.as_deref().map(|id| {
         let id = id.strip_prefix(FIN_CARD).unwrap_or(id);
@@ -108,14 +103,21 @@ pub fn open_orch(
     let ctx = CardCtx { o, swarm, view, w };
     let (top_y, mut y) = (y, y + 2);
     let mut anchors = vec![];
-    for e in tree_entries(o, view).into_iter().filter(|e| e.depth == 1) {
+    let entries: Vec<_> = tree_entries(o, view)
+        .into_iter()
+        .filter(|e| e.depth == 1)
+        .collect();
+    // the done window dropped every finished one: the fold still says how many
+    let older_only =
+        o.hidden_finished > 0 && !entries.iter().any(|e| e.ident.starts_with(FIN_CARD));
+    for e in entries {
         let placed = if e.ident.starts_with(FIN_CARD) {
             let fin: Vec<&Agent> = e
                 .fin
                 .iter()
                 .filter_map(|id| find_agent(Some(o), Some(id)))
                 .collect();
-            fin_card(cv, y, &ctx, &fin, &e.ident)
+            fin_card(cv, y, &ctx, &fin, Some(&e.ident))
         } else {
             let Some(a) = find_agent(Some(o), Some(&e.ident)) else {
                 continue;
@@ -124,7 +126,7 @@ pub fn open_orch(
                 .as_ref()
                 .is_some_and(|p| p.as_deref() == Some(a.id.as_str()));
             let seed = anchors.len() as i64 + 1;
-            agent_card(cv, y, &ctx, a, &below(a), (seed, open))
+            agent_card(cv, y, &ctx, a, &kids.descendants(&a.id), (seed, open))
         };
         if placed.sel.is_some() {
             sel = placed.sel;
@@ -132,17 +134,11 @@ pub fn open_orch(
         anchors.push(placed.anchor);
         y += placed.height;
     }
+    if older_only {
+        let placed = fin_card(cv, y, &ctx, &[], None);
+        anchors.push(placed.anchor);
+        y += placed.height;
+    }
     join(cv, top_y, &anchors);
     Opened { end: y, sel }
-}
-
-/// Everything below agent `id`, depth first (a guard cuts it at 64 levels).
-fn descend<'a>(kids: &TreeKids<'a>, id: &str, depth: usize, out: &mut Vec<&'a Agent>) {
-    if depth > 64 {
-        return;
-    }
-    for k in kids.children(Some(id)) {
-        out.push(k);
-        descend(kids, &k.id, depth + 1, out);
-    }
 }

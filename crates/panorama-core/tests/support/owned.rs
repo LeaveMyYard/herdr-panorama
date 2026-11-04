@@ -1,5 +1,5 @@
-//! Rust-owned screen goldens (plan `uniform-agent-tree.md` U5, D5): the docked panel's
-//! design references encode threads, so since the uniform tree its screens are Rust's own,
+//! Rust-owned screen goldens (plan `uniform-agent-tree.md`, D5): the design references and
+//! Python captures encode threads, so since the uniform tree these screens are Rust's own,
 //! `tests/fixtures/rust/screens/<file>`, written by `PANORAMA_BLESS=1` and reviewed as a diff.
 
 use super::{assert_same, cells, fixture, golden};
@@ -30,10 +30,10 @@ pub fn check_owned(file: &str, name: &str, got: &Screen) {
         .ok()
         .and_then(|t| serde_json::from_str(&t).ok())
         .unwrap_or_else(|| json!({ "screens": {} }));
-    doc["source"] = json!(format!(
-        "Rust's docked-panel screens, written by PANORAMA_BLESS=1 cargo test -p panorama-core \
-         (plan uniform-agent-tree.md U5, D5); the runs and views are the tests' own"
-    ));
+    doc["source"] = json!(
+        "Rust's own screens, written by PANORAMA_BLESS=1 cargo test (plan uniform-agent-tree.md, \
+         D5)"
+    );
     let screens = doc["screens"].as_object_mut().unwrap();
     screens.insert(name.to_owned(), runs(got));
     let sorted: Map<String, Value> = std::mem::take(screens).into_iter().collect();
