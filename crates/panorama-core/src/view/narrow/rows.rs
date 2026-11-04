@@ -8,6 +8,7 @@ use crate::model::{Agent, HerdrStatus, Orchestrator, Status, Swarm, TreeKids};
 use crate::view::cards::boxes::HOVER;
 use crate::view::cards::marks::{marks_of, marks_right};
 use crate::view::colour::Rgb;
+use crate::view::filter::Filter;
 use crate::view::nav::{find_agent, path_ids, tree_entries};
 use crate::view::orch_state::{Ages, OrchState, orch_state};
 use crate::view::palette::{DIM, FAINT, FG, HI, status};
@@ -108,8 +109,10 @@ pub fn open_orch(
         .filter(|e| e.depth == 1)
         .collect();
     // the done window dropped every finished one: the fold still says how many
-    let older_only =
-        o.hidden_finished > 0 && !entries.iter().any(|e| e.ident.starts_with(FIN_CARD));
+    // (a filter folds nothing, so it shows no fold either)
+    let older_only = view.filter == Filter::All
+        && o.hidden_finished > 0
+        && !entries.iter().any(|e| e.ident.starts_with(FIN_CARD));
     for e in entries {
         let placed = if e.ident.starts_with(FIN_CARD) {
             let fin: Vec<&Agent> = e

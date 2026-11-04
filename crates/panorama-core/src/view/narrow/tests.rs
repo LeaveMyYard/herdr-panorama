@@ -96,6 +96,37 @@ fn the_fold_selected_and_unfolded() {
 }
 
 #[test]
+fn the_window_dropping_every_finished_one_still_counts_them_unless_filtered() {
+    let mut sw = tree();
+    for a in &mut sw.orchestrators[0].threads[0].agents {
+        if a.status == crate::model::Status::Done && a.parent.is_none() {
+            a.status = crate::model::Status::Running;
+        }
+    }
+    let view = View {
+        orch: Some("p1".into()),
+        ..View::default()
+    };
+    let (s, r) = rows(&sw, &view);
+    let older = r.iter().position(|l| l.contains("older")).unwrap();
+    assert_eq!(r[older], " ╰─  ✓ +2 older", "{r:#?}");
+    // a count, not a fold: nothing to select or unfold
+    let fin =
+        |t: &crate::view::target::Target| matches!(t, crate::view::target::Target::Fin { .. });
+    assert!(!s.targets.iter().any(|h| fin(&h.target)));
+    for filter in [crate::view::Filter::Running, crate::view::Filter::Needs] {
+        let (_, r) = rows(
+            &sw,
+            &View {
+                filter,
+                ..view.clone()
+            },
+        );
+        assert!(!r.iter().any(|l| l.contains("older")), "{filter:?}: {r:#?}");
+    }
+}
+
+#[test]
 fn a_long_list_scrolls_to_the_selection() {
     let orchs: Vec<Value> = (0..30).map(|i| orch(&format!("q{i}"), json!({}))).collect();
     let swarm: Swarm = serde_json::from_value(json!({ "orchestrators": orchs })).unwrap();
