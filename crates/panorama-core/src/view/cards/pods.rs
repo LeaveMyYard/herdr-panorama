@@ -1,7 +1,7 @@
-//! A row of a thread's agent pods (Python `render.pods_row`): live and failed agents first
+//! A row of agent pods (Python `render.pods_row`): live and failed agents first
 //! (most urgent first), finished ones while there is room, then `+N done` for the rest.
 
-use crate::model::{Agent, Status, Thread};
+use crate::model::{Agent, Status};
 use crate::view::palette::FAINT;
 use crate::view::pod::apod;
 use crate::view::screen::Screen;
@@ -20,14 +20,14 @@ pub struct Pods<'a> {
     pub orch: Option<&'a str>,
 }
 
-/// `t`'s pods from `(x, y)`.
-pub fn pods_row(s: &mut Screen, x: i32, y: i32, t: &Thread, view: &View, p: Pods) {
+/// The pods of `agents` from `(x, y)`.
+pub fn pods_row(s: &mut Screen, x: i32, y: i32, agents: &[&Agent], view: &View, p: Pods) {
     let Pods {
         max_n,
         sel_agent,
         orch,
     } = p;
-    let mut ags: Vec<&Agent> = t.agents.iter().collect();
+    let mut ags: Vec<&Agent> = agents.to_vec();
     let start = |a: &&Agent| a.started.unwrap_or(0.0);
     ags.sort_by(|a, b| {
         (a.status.urgency(), start(a))

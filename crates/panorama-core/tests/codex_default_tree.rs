@@ -28,7 +28,6 @@ fn swarm(harness: &str) -> Swarm {
 fn view() -> View {
     View {
         orch: Some("pane".into()),
-        thread: Some("agents".into()),
         agent: Some("older01-child".into()),
         ..View::default()
     }
@@ -93,15 +92,23 @@ fn narrow_and_wide_graphs_retain_full_default_hierarchy_and_identity() {
     let sw = swarm("codex");
     let v = view();
     let tree = nav(&sw, &v);
-    assert_eq!(tree[1], ["agents"]);
+    assert_eq!(tree[1], ["older01-child", "younger-child"]);
     for width in [90, 240] {
         let mut v = v.clone();
-        v.focus = 3;
+        v.focus = 2;
         let screen = render_graph(&sw, &v, width, 60, None, "empty");
         let text = screen.text();
-        assert_eq!(text.matches("Session work").count(), 1, "{width}: {text}");
+        assert!(
+            !text.contains("Session work"),
+            "no thread card: {width}: {text}"
+        );
         for id in ["older01-child", "grand01-child"] {
-            assert!(screen.targets.iter().any(|t| matches!(&t.target, Target::Agent(a) if a.agent == id && a.pane == "pane" && a.thread == "agents")), "{width} missing {id}: {text}");
+            assert!(
+                screen.targets.iter().any(
+                    |t| matches!(&t.target, Target::Agent(a) if a.agent == id && a.pane == "pane")
+                ),
+                "{width} missing {id}: {text}"
+            );
         }
         if width >= 120 {
             for label in ["review auth", "Fix the flaky test"] {

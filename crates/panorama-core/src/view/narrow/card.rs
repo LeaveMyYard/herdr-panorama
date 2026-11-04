@@ -1,16 +1,18 @@
-//! The narrow layout's cards under the selected orchestrator (Python `_narrow`): a thread's
-//! card (opened when it is the selected thread: its phases and its selected agent's
-//! details), and the "n complete" card for the done threads.
+//! The narrow layout's cards under the selected root (plan `uniform-agent-tree.md` §4): one
+//! per direct subagent, the same card at any depth (its glyph, title and the marks of its
+//! subtree; a pod per descendant; its model and age). The card holding the selected agent is
+//! opened: that agent's details and actions. The root's finished subagents fold into one
+//! `✓ N finished · names` line.
 
-use crate::model::{Agent, Orchestrator, Status, Swarm, Thread};
-use crate::view::agent_text::{age_of, role_label, short_id};
+use crate::model::{Agent, Orchestrator, Status, Swarm};
+use crate::view::agent_text::{age_of, name, role_label, short_id};
+use crate::view::anim::glyph;
 use crate::view::cards::Area;
 use crate::view::cards::actions::actions;
 use crate::view::cards::boxes::{border, rbox};
 use crate::view::cards::details::agent_detail_lines;
 use crate::view::cards::edge::edge;
 use crate::view::cards::marks::{marks_of, marks_right};
-use crate::view::cards::phases::{phase_sub, step_line, thread_glyph};
 use crate::view::cards::pods::{Pods, pods_row};
 use crate::view::nav::find_agent;
 use crate::view::orch_state::{Extras, state_of};
@@ -22,7 +24,7 @@ use crate::view::state::View;
 use crate::view::target::{AgentRef, Target};
 use crate::view::text::trunc;
 
-/// What every card under one orchestrator shares.
+/// What every card under one root shares.
 pub struct CardCtx<'a> {
     pub o: &'a Orchestrator,
     pub swarm: &'a Swarm,
@@ -37,17 +39,24 @@ pub struct Placed {
     pub sel: Option<(i32, i32)>,
 }
 
-/// The done threads folded into one line: `✓ n complete · names`.
-pub fn done_card(cv: &mut Screen, y: i32, c: &CardCtx, done: &[&Thread]) -> Placed {
-    // interim (plan `uniform-agent-tree.md` U4, until U5 replaces narrow): no thread is
-    // selected any more, so the card selects its root
-    cv.area(3, c.w - 1, y, y + 1, Target::Orch(c.o.pane_id.clone()));
-    let names = done
-        .iter()
-        .map(|t| t.name.as_str())
-        .collect::<Vec<_>>()
-        .join(", ");
-    let text = trunc(&format!(" {} complete · {names}", done.len()), c.w - 9);
+/// The root's finished subagents folded into one line, `✓ N finished · names`, and
+/// `+N older` for those the done window dropped; `ident` is its id in the depth-1 column.
+pub fn fin_card(cv: &mut Screen, y: i32, c: &CardCtx, fin: &[&Agent], ident: &str) -> Placed {
+    let target = Target::Fin {
+        pane: c.o.pane_id.clone(),
+        group: None,
+    };
+    cv.area(3, c.w - 1, y, y + 1, target);
+    let names: Vec<String> = fin.iter().map(|a| name(a)).collect();
+    let older = c.o.hidden_finished;
+    let mut text = String::new();
+    if !names.is_empty() {
+        text = format!(" {} finished · {}", names.len(), names.join(", "));
+    }
+    if older > 0 {
+        text = format!(" +{older} older ·{text}");
+    }
+    let text = trunc(&text, c.w - 9);
     cv.segs(
         5,
         y,
@@ -56,57 +65,75 @@ pub fn done_card(cv: &mut Screen, y: i32, c: &CardCtx, done: &[&Thread]) -> Plac
             Seg::new(text, FAINT),
         ],
     );
+    let mut sel = None;
+    if c.view.agent.as_deref() == Some(ident) {
+        let focused = c.view.focus == 1;
+        cv.put(3, y, "▸", if focused { HI } else { DIM }, None, false);
+        if focused {
+            sel = Some((y, y + 1));
+        }
+    }
     Placed {
         height: 1,
         anchor: y,
-        sel: None,
+        sel,
     }
 }
 
-/// A thread's card at row `y`; `seed` shifts its edge's sweep; `exp`: opened (interim, until
-/// U5 replaces narrow: the thread holding the selected agent, else the first). An opened
-/// card shows its phases, then its selected agent.
-pub fn thread_card(
+/// Agent `a`'s card at row `y`, `below` its descendants; `seed` shifts its edge's sweep;
+/// `open`: it holds the selected agent, whose details it then shows.
+pub fn agent_card(
     cv: &mut Screen,
     y: i32,
     c: &CardCtx,
-    t: &Thread,
-    (seed, exp): (i64, bool),
+    a: &Agent,
+    below: &[&Agent],
+    (seed, open): (i64, bool),
 ) -> Placed {
     let view = c.view;
-    let agent = if exp {
-        find_agent(Some(c.o), view.agent.as_deref())
-            .filter(|a| t.agents.iter().any(|b| b.id == a.id))
-    } else {
-        None
-    };
-    let det = agent.map_or_else(Vec::new, |a| {
-        agent_detail_lines(a, c.w - 10, view.now, view.frame)
+    let picked = find_agent(Some(c.o), view.agent.as_deref()).filter(|_| open);
+    let det = picked.map_or_else(Vec::new, |p| {
+        agent_detail_lines(p, c.w - 10, view.now, view.frame)
     });
-    let steps = t.phases.len() as i32;
-    let height = match (exp, agent) {
-        (true, Some(_)) => 4 + 1 + steps + 1 + 1 + det.len() as i32 + 1 + 1,
-        (true, None) => 4 + 1 + steps + 1,
-        _ => 4,
+    let height = if picked.is_some() {
+        det.len() as i32 + 8
+    } else {
+        4
     };
-    frame(
+    let card = Area {
+        x: 3,
+        y,
+        w: c.w - 4,
+        h: height,
+    };
+    let target = Target::Agent(AgentRef {
+        pane: c.o.pane_id.clone(),
+        agent: a.id.clone(),
+    });
+    cv.area(3, c.w - 1, y, y + height, target.clone());
+    rbox(
         cv,
-        Area {
-            x: 3,
-            y,
-            w: c.w - 4,
-            h: height,
-        },
-        c,
-        t,
-        exp,
-        seed,
+        card.x,
+        y,
+        card.w,
+        height,
+        border(view, &target, open && view.focus >= 1, open),
     );
+    let mut all: Vec<&Agent> = vec![a];
+    all.extend(below);
+    let state = state_of(
+        &all,
+        !all.iter().any(|a| a.status.is_live()),
+        view.frame,
+        &Extras::default(),
+        None,
+    );
+    edge(cv, card, &state, view.frame, seed);
+    head(cv, y, c, a, &all, below, open);
     let mut sel = None;
-    if exp {
-        let r = phases(cv, y + 4, t, view, c.w);
-        if let Some(a) = agent {
-            agent_block(cv, r, c, a, &det);
+    if open {
+        if let Some(p) = picked {
+            agent_block(cv, y + 4, c, p, &det);
         }
         if view.focus >= 1 {
             sel = Some((y, y + height));
@@ -119,40 +146,33 @@ pub fn thread_card(
     }
 }
 
-/// The card's box and edge, its title line (glyph, name, marks) and its pods and subtitle.
-fn frame(cv: &mut Screen, card: Area, c: &CardCtx, t: &Thread, exp: bool, seed: i64) {
-    let (view, w, y) = (c.view, c.w, card.y);
-    let target = Target::Orch(c.o.pane_id.clone());
-    cv.area(3, w - 1, y, y + card.h, target.clone());
-    rbox(
-        cv,
-        card.x,
-        y,
-        card.w,
-        card.h,
-        border(view, &target, exp && view.focus >= 1, exp),
-    );
-    let agents: Vec<_> = t.agents.iter().collect();
-    let state = state_of(&agents, t.is_done(), view.frame, &Extras::default(), None);
-    edge(cv, card, &state, view.frame, seed);
-    let mw = marks_right(cv, w - 3, y + 1, &marks_of(&agents, false, 0), None);
-    let (g, gc) = thread_glyph(t, view);
-    let name = Seg::new(trunc(&t.name, w - 13 - mw), if exp { HI } else { FG }).bold();
-    cv.segs(5, y + 1, &[Seg::new(g, gc).bold(), Seg::plain(" "), name]);
-    let sel_agent = if exp { view.agent.as_deref() } else { None };
-    pods_row(
-        cv,
-        7,
-        y + 2,
-        t,
-        view,
-        Pods {
-            max_n: 6,
-            sel_agent,
-            orch: Some(&c.o.pane_id),
-        },
-    );
-    let sub = trunc(&phase_sub(t, view), w - 40);
+/// The card's two lines: glyph, title and its subtree's marks; a pod per descendant, then
+/// its model and age.
+fn head(
+    cv: &mut Screen,
+    y: i32,
+    c: &CardCtx,
+    a: &Agent,
+    all: &[&Agent],
+    below: &[&Agent],
+    open: bool,
+) {
+    let (view, w) = (c.view, c.w);
+    let mw = marks_right(cv, w - 3, y + 1, &marks_of(all, false, 0), None);
+    let g = Seg::new(glyph(a, view.frame), status(&a.status)).bold();
+    let title = Seg::new(trunc(&name(a), w - 13 - mw), if open { HI } else { FG }).bold();
+    cv.segs(5, y + 1, &[g, Seg::plain(" "), title]);
+    let sel_agent = if open { view.agent.as_deref() } else { None };
+    let pods = Pods {
+        max_n: 6,
+        sel_agent,
+        orch: Some(&c.o.pane_id),
+    };
+    pods_row(cv, 7, y + 2, below, view, pods);
+    let model = a.model.as_deref().filter(|m| !m.is_empty());
+    let age = age_of(a, view.now);
+    let sub: Vec<&str> = [model, age.as_deref()].into_iter().flatten().collect();
+    let sub = trunc(&sub.join(" · "), w - 40);
     cv.segs(
         w - 3 - sub.chars().count() as i32,
         y + 2,
@@ -160,17 +180,8 @@ fn frame(cv: &mut Screen, card: Area, c: &CardCtx, t: &Thread, exp: bool, seed: 
     );
 }
 
-/// The opened card's phases from row `r`, a line each; the row after them and a gap.
-fn phases(cv: &mut Screen, mut r: i32, t: &Thread, view: &View, w: i32) -> i32 {
-    for i in 0..t.phases.len() {
-        step_line(cv, 7, r, t, i, w - 12, view);
-        r += 1;
-    }
-    r + 1
-}
-
-/// The selected agent at row `r`: its pod, role, id, model, age and calls, its detail lines
-/// `det`, and its action hints.
+/// The selected agent at row `r`: its pod, title, then `role id · model · age · calls`, its
+/// detail lines `det`, and its action hints.
 fn agent_block(cv: &mut Screen, mut r: i32, c: &CardCtx, a: &Agent, det: &[Vec<Seg>]) {
     let (view, w) = (c.view, c.w);
     let ident = AgentRef {
