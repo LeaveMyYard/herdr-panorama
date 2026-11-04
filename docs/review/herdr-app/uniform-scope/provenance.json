@@ -1,0 +1,61 @@
+{
+  "source_head": "3b8d3feaabed4ede0996914a75074b8a90b0ea17",
+  "source_dirty": "",
+  "sources": {
+    "panorama/binary.js": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
+    "panorama/contract.js": "965ecb7797b880ebbcd473403d3661722ac35bcbaa52a347a580195b68a122ec",
+    "panorama/feed-client.js": "f05fa058be2f6ed3bfdb1feb62a893ddf50b3320ad0ae3f58d31486029b67a64",
+    "panorama/main.js": "8e7ea4dbc7876f2a61e4f042db0f26c8cbe3d3fbe2336069e249ade803e271f1",
+    "panorama/marks.js": "fa01036df348f1f516d3e8d73ad342e46ba56c215a22a0acdce1669a682fe9aa",
+    "panorama/model.js": "f736d8c57d58260268dad0a56004f996d3e65a237f18de7f891471e3b49627b0",
+    "panorama/peek-caller.js": "fd681bf86fc9c811f43ebb7ec6d78b5ff39620e5aad9b9b6fe53256cbef0dad8",
+    "panorama/routing.js": "0607371d0b0adbfee08c305fb79ef09f6186c26bbf20863378e3d775eaef6f6c",
+    "panorama/state.js": "fa728eaecbbff12978d23bf0db6de308106895b777cd692020e6b5685bde40fe",
+    "panorama/tree.js": "cc1e352f1e0c33c8c04e6246193ea9e8196d8b542bf3cca6df834b15eba1d239",
+    "panorama/viewport-math.js": "ef8bde18ea4d282b7573854069084beeac08e46e8b9ffec9c938d50661d617b4",
+    "panorama/viewport.js": "29182526d6e8a5c30a521f39efd5854c2a1517655bbf74603f0bd2b2cd33389b",
+    "panorama-spaces/binary.js": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
+    "panorama-spaces/contract.js": "965ecb7797b880ebbcd473403d3661722ac35bcbaa52a347a580195b68a122ec",
+    "panorama-spaces/feed-client.js": "f05fa058be2f6ed3bfdb1feb62a893ddf50b3320ad0ae3f58d31486029b67a64",
+    "panorama-spaces/main.js": "5c777e3495a9f020232f4b604f27b50da43e03edf005bd9b63e7c485dc4eb4b6",
+    "panorama-spaces/model.js": "f736d8c57d58260268dad0a56004f996d3e65a237f18de7f891471e3b49627b0",
+    "panorama-spaces/state.js": "33916886591ccc3b7bb877a09c7c68ebda29c04234083270d0e1a919740bc982",
+    "panorama-spaces/tabs.js": "d39d193f14c0636836242fdf80d631fd51bac366c7fe9547713cf6c87b6a4354",
+    "panorama-spaces/tree.js": "cc1e352f1e0c33c8c04e6246193ea9e8196d8b542bf3cca6df834b15eba1d239"
+  },
+  "isolation": {
+    "separate_core": true,
+    "core_pid": 2443859,
+    "initial_live": 0,
+    "session": "scope-r08nyo9c",
+    "private_env_verified": true
+  },
+  "store_before": null,
+  "command": {
+    "args": [
+      "herdr-app",
+      "do",
+      "panorama-spaces.agents-scope-all"
+    ],
+    "returncode": 0,
+    "stdout": "{\n  \"ok\": true\n}\n",
+    "stderr": ""
+  },
+  "store_after_command": "{\n  \"agents.scope\": \"\\\"all\\\"\"\n}",
+  "store_mode": "0o600",
+  "status": {
+    "zoom": 2.0,
+    "font_size": 28.0,
+    "ui_font_size": 26.0,
+    "space": "sp993b42523ed7fb4140d7f3720ec5fedc",
+    "tab": "tb6ac08cc5d06ba509f8d723ca0702922a",
+    "focused_pane": "pa2f8ce40c993b8b8fabf9805e9f1bfa4",
+    "layout": "panorama",
+    "agent": "t1",
+    "floats": {},
+    "overlays": [],
+    "errors": []
+  },
+  "core_stop": 0,
+  "scratch_removed": true
+}
