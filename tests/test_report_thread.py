@@ -1,4 +1,5 @@
-"""report_thread: merging into the explicit channel, and the MCP server over stdio."""
+"""report_thread, deprecated: listed but inert over stdio and in process; the explicit channel's
+merge and compaction (still written by the frozen Python ``panorama emit``)."""
 
 import json
 import os
@@ -31,26 +32,24 @@ def test_report_merges_phases_and_keeps_times():
     assert {p["name"]: p["end"] for p in d.phases}["author"] == iso(T0 + 600)  # kept
 
 
-def test_tool_uses_the_session_from_the_environment(monkeypatch):
+IGNORED = {"status": "ignored", "reason": "threads were removed"}
+
+
+def test_report_thread_records_nothing_and_says_ignored(monkeypatch):
     monkeypatch.delenv("HERDR_PANE_ID", raising=False)
     monkeypatch.delenv("CLAUDE_CODE_SESSION_ID", raising=False)
-    assert report_thread("t1")["status"] == "unavailable"
+    assert report_thread("t1") == IGNORED
     monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "s2")
-    out = report_thread("t1", title="Task 1\x1b[2J", phase="implement", next=["review"])
-    assert out["status"] == "recorded" and out["phases"] == [("implement", "now"), ("review", "next")]
-    assert events.current("s2", "t1").name == "Task 1[2J"  # control characters stripped
-    assert report_thread("t1", status="bogus")["status"] == "error"
+    assert report_thread("t1", title="Task 1", phase="implement", next=["review"]) == IGNORED
+    assert events.current("s2", "t1") is None and not events.events_path("s2").exists()
 
 
-def test_tool_prefers_the_panes_current_session(fake_herdr, monkeypatch, tmp_path):
-    snap = tmp_path / "snap.json"
-    snap.write_text("{}")
+def test_report_thread_never_asks_herdr_for_a_session(fake_herdr, monkeypatch):
     monkeypatch.setenv("HERDR_PANE_ID", "w1:p1")
     monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "stale")
-    # the fake herdr answers `pane get` without a session: fall back to the environment
-    assert report_thread("t2", phase="x")["status"] == "recorded"
-    assert events.current("stale", "t2") is not None
-    assert fake_herdr.calls_of("pane", "get") == [["pane", "get", "w1:p1"]]
+    assert report_thread("t2", phase="x") == IGNORED
+    assert fake_herdr.calls_of("pane", "get") == []
+    assert not events.events_path("stale").exists()
 
 
 async def test_mcp_server_over_stdio(tmp_path):
@@ -60,32 +59,26 @@ async def test_mcp_server_over_stdio(tmp_path):
     params = StdioServerParameters(command=sys.executable, args=["-m", "herdr_panorama.cli", "mcp"], env=env)
     async with Client(params, mode="legacy", read_timeout_seconds=60) as client:
         tools = {t.name: t for t in (await client.list_tools()).tools}
-        assert set(tools) == {"report_thread"}
+        assert set(tools) == {"report_thread"}  # still listed: no "Unknown tool" for old sessions
+        assert tools["report_thread"].description.startswith("Deprecated: has no effect.")
+        assert tools["report_thread"].input_schema["required"] == ["thread_id"]
         res = await client.call_tool("report_thread", {"thread_id": "t", "title": "T", "phase": "build"})
-    line = json.loads((tmp_path / "ev" / "s3.jsonl").read_text().splitlines()[-1])
-    assert line["thread"] == "t" and line["phases"][0]["state"] == "now"
-    assert not res.is_error
+    assert not res.is_error and res.structured_content == IGNORED
+    assert not (tmp_path / "ev").exists()
 
 
-
-def test_m1_limits_and_no_wildcard_claims(monkeypatch):
+def test_any_arguments_are_ignored(monkeypatch):
     monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "s4")
     monkeypatch.delenv("HERDR_PANE_ID", raising=False)
-    assert report_thread("t", agents=["*"])["status"] == "error"
-    assert report_thread("t", agents=["ab*"])["status"] == "error"
-    assert report_thread("t", agents=["Review PR*"])["status"] == "recorded"
-    out = report_thread("t", phases_done=[f"p{i}" for i in range(100)], next=["n"] * 100)
-    assert out["status"] == "error"
-    out = report_thread("t", title="x\u202eevil\u2066", phase="a" * 500)
-    d = events.current("s4", "t")
-    assert d.name == "xevil" and len(d.phases[0]["name"]) <= 200
+    for kwargs in ({"agents": ["*"]}, {"status": "bogus"}, {"next": ["n"] * 100},
+                   {"title": "x\u202eevil\u2066", "phase": "a" * 500}):
+        assert report_thread("t", **kwargs) == IGNORED
+    assert not events.events_path("s4").exists()
 
 
-def test_m1_the_events_file_is_compacted(monkeypatch):
-    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "s5")
-    monkeypatch.delenv("HERDR_PANE_ID", raising=False)
+def test_m1_the_events_file_is_compacted():
     for i in range(400):
-        report_thread("t", title="Thread", phase=f"phase {i % 7}", next=["review", "merge"])
+        events.report("s5", "t", "Thread", phase=f"phase {i % 7}", next_phases=["review", "merge"], now=T0 + i)
     path = events.events_path("s5")
     assert path.stat().st_size < 2 * events.COMPACT_AT
     d = events.current("s5", "t")

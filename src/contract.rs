@@ -18,9 +18,14 @@ pub const PANEL: u32 = 1;
 /// and the events format (v1). Raise it with `CLAUDE_CONTRACT=` in both scripts when any of
 /// these changes incompatibly.
 ///
+/// 2: threads were removed (plan `uniform-agent-tree.md` §6). SessionStart says nothing, the
+/// server has no instructions, `report_thread` is listed with its old schema but records
+/// nothing, and no events are written. A binary on 1 would still ask agents to report, so it
+/// is passed over for the Python hooks and server, which got the same two changes.
+///
 /// It is answered as `claude <n>`, never a bare number: a binary from before this contract
 /// answers every `contract …` with the panel's bare `1`, and must never pass this probe.
-pub const CLAUDE: u32 = 1;
+pub const CLAUDE: u32 = 2;
 
 /// The view's contract (`panorama contract tui`): what `scripts/tui` checks before it runs this
 /// binary as the manifest's `panorama` and `new-agent` panes instead of the Python app. It

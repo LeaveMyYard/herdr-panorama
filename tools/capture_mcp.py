@@ -10,9 +10,10 @@ with an id waits for its reply; `subscriptions/listen` waits for the acknowledge
 - `claude-code.jsonl`: Claude Code 2.1.302's own requests (`claude-code-2.1.302.requests.jsonl`,
   cut from herdr-agent-kit's fixtures/claude/mcp recording of herdr-inbox, protocol 2026-07-28).
 - `legacy.jsonl`: the 2025-06-18 `initialize` handshake, an unknown method, an unknown tool.
-- `report-thread.jsonl`: report_thread calls (recorded, refused, updated), then the events
-  file they wrote (`"dir": "events"`, its `ts` and phase times replaced by "<ts>").
-- `no-session.jsonl`: report_thread without a session id.
+- `report-thread.jsonl`: report_thread calls, valid and not; since threads were removed every
+  call the schema allows answers `ignored`. An events file they wrote would follow
+  (`"dir": "events"`, its `ts` and phase times replaced by "<ts>"); there is none.
+- `no-session.jsonl`: report_thread without a session id (`ignored` too).
 """
 import json
 import os
@@ -99,9 +100,10 @@ def main(out_dir: str) -> None:
                 env["CLAUDE_CODE_SESSION_ID"] = SID
             path = out / f"{name}.jsonl"
             run(reqs, env, path)
-            if name == "report-thread":
+            written = pathlib.Path(tmp) / f"{SID}.jsonl"
+            if name == "report-thread" and written.exists():
                 with open(path, "a") as fh:
-                    for line in (pathlib.Path(tmp) / f"{SID}.jsonl").read_text().splitlines():
+                    for line in written.read_text().splitlines():
                         rec = json.loads(line)
                         rec["ts"] = "<ts>"
                         for ph in rec.get("phases", []):

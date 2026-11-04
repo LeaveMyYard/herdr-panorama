@@ -1,6 +1,7 @@
 //! The `report_thread` tool as the Python server lists it (`mcp_server.DESCRIPTION` and the
-//! schemas pydantic made of its signature), captured in `tests/fixtures/mcp/legacy.jsonl`:
-//! agents read this text, so it stays the same word for word.
+//! schemas pydantic made of its signature), captured in `tests/fixtures/mcp/legacy.jsonl`.
+//! Deprecated: threads were removed, so the tool records nothing. It stays listed with its old
+//! schema so a session told to call it before never sees "Unknown tool" (removed in N+1).
 
 use rmcp::model::{JsonObject, Tool};
 use serde_json::{Value, json};
@@ -10,7 +11,7 @@ use std::sync::Arc;
 pub const NAME: &str = "report_thread";
 
 /// What the tool is for, as agents read it.
-pub const DESCRIPTION: &str = "Declare or update a thread of work for the herdr swarm view (herdr-panorama).\n\nCall it when multi-step work starts (a PR through review rounds, a plan's tasks, several\nsubagents on one goal) and whenever its phase changes. Returns immediately.\n- thread_id: stable id, e.g. \"pr-595\" or \"task-3\"; title: short name, e.g. \"PR #595 ledger\".\n- phase: the current phase (\"review r2\"); phases_done: finished phases in order;\n  next: the phases still to come. Omitted lists keep what you reported before.\n- status: \"active\" (default), \"done\", \"failed\" or \"cancelled\" when the thread ends.\n- agents: optional subagent ids or descriptions (a trailing * matches a prefix) that work on it.";
+pub const DESCRIPTION: &str = "Deprecated: has no effect. herdr-panorama no longer has threads: it shows every\nagent and subagent under the name its spawner gave it, so there is nothing to report.\nCalls are accepted and ignored.";
 
 fn object(v: Value) -> Arc<JsonObject> {
     match v {

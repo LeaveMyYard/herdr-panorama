@@ -122,9 +122,6 @@ agent cards by depth; the narrow graph offers selectable agent pods and the
 selected agent's details.
 History-only children stay unknown, including in the compact dock.
 
-Explicit `report_thread` declarations can organize the
-same children without duplicating them or replacing the root card.
-
 Herdr supplies the root pane's runtime state. Persisted completed, failed, or
 interrupted turns describe historical work. A completed turn, idle pane, or
 observer `notLoaded` status does **not** establish that the session completed.
@@ -172,32 +169,22 @@ precedence, and declaration IDs include their source thread to prevent sibling
 collisions. Report reads are capped per collection and do not read arbitrary
 paths supplied in a report.
 
-## Optional `report_thread` MCP server
+## Removed: the `report_thread` MCP server
 
-Merge [codex/config.example.toml](../codex/config.example.toml) into your chosen
-Codex configuration only when opting in. Set `command` to the absolute Rust
-binary path:
+Threads were removed, so there is nothing to report: Panorama shows every agent
+and subagent as one tree, under the name its spawner gave it. The example
+`[mcp_servers.herdr_panorama]` block is gone from
+[codex/config.example.toml](../codex/config.example.toml). If you merged it into
+your Codex configuration, delete it there yourself; Panorama never edits Codex
+configuration. Until you do, `panorama mcp` keeps answering for the rest of this
+release: `report_thread` is still listed, records nothing and answers
+`{"status": "ignored", "reason": "threads were removed"}`, whatever caller
+`_meta.threadId` it carries. `panorama emit` likewise records nothing, says so on
+stderr and exits 0. A later release removes both.
 
-```toml
-[mcp_servers.herdr_panorama]
-command = "/absolute/path/to/panorama"
-args = ["mcp"]
-```
-
-Codex supplies the exact caller in each MCP call's `_meta.threadId`. Panorama
-uses it separately for root and child callers; the shared `_meta.sessionId` is
-not an identity key. An invalid supplied thread ID is refused. MCP reporting
-does not register or change the pane association.
-
-From a Codex shell tool, the Rust `emit` command can resolve the exact
-`CODEX_THREAD_ID`, or you can pass `--session` explicitly:
-
-```sh
-/absolute/path/to/panorama emit --session THREAD_ID --thread work --status active
-```
-
-`CODEX_SESSION_ID` is deliberately ignored because it may identify the shared
-session tree. Existing Claude reporting keeps its own fallback behavior.
+Report files an earlier version wrote under the state directory's
+`herdr-panorama/events/` are left in place; nothing writes them any more, and
+you can delete them.
 
 ## Compatibility and limits
 
@@ -207,5 +194,5 @@ readers can ignore the extra field but do not preserve it on re-emission.
 
 Remote Codex panes remain visible from herdr metadata; detailed remote history
 is a follow-up, and a remote pane never reads this machine's local Codex home or
-association store. Inbox answer delivery to Codex is also a follow-up. Optional
-MCP reporting, pane visibility, and session registration do not enable it.
+association store. Inbox answer delivery to Codex is also a follow-up. Pane visibility and session
+registration do not enable it.

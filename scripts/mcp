@@ -14,7 +14,7 @@
 # server through uv, as before, in the plugin data dir's venv (plugin.json's
 # UV_PROJECT_ENVIRONMENT). The answer is `claude <n>`: a binary from before the contract
 # answers a bare number and is passed over.
-CLAUDE_CONTRACT=1
+CLAUDE_CONTRACT=2
 
 R=${1:-${CLAUDE_PLUGIN_ROOT:-.}}
 B="$R/target/release/panorama"
