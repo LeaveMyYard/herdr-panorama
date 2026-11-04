@@ -197,3 +197,53 @@ fn collected_history_renders_through_existing_navigation_and_graph() {
     );
     assert!(text.contains("command"), "{text}");
 }
+
+#[test]
+fn codex_roots_and_subagents_are_titled_by_herdr_names_then_spawner_then_codex() {
+    let fixture = Fixture::new("paginated");
+    let mut collector = fixture.collector(true);
+    let mut snapshot = snapshot();
+    let swarm = ready(&mut collector, &snapshot);
+    let find = |swarm: &panorama_core::model::Swarm, pane: &str| {
+        swarm
+            .orchestrators
+            .iter()
+            .find(|o| o.pane_id == pane)
+            .cloned()
+            .unwrap()
+    };
+    // The tab "Codex" is neutral and holds three agents: the thread's name wins.
+    let a = find(&swarm, "codex-a");
+    assert_eq!(
+        (a.title.as_str(), a.title_source.as_str()),
+        ("Synthetic", "session")
+    );
+    let unbound = find(&swarm, "unbound");
+    assert_eq!(unbound.title_source, "id");
+    assert!(unbound.title.starts_with("Codex · "), "{}", unbound.title);
+    let titled = |id: &str| {
+        let agent = a.agents().find(|agent| agent.id == id).unwrap();
+        (
+            agent.title.clone(),
+            agent.title_source.clone(),
+            agent.role.clone(),
+        )
+    };
+    assert_eq!(
+        titled(CHILD),
+        ("review auth".into(), "spawner".into(), "explorer".into())
+    );
+    assert_eq!(
+        titled(GRANDCHILD),
+        ("Lovelace".into(), "session".into(), "worker".into())
+    );
+    // The root's own card is named by the root, not again by its thread.
+    assert_eq!(titled("main:codex:codex-a").0, "");
+    // An operator-named pane beats the Codex thread's name.
+    snapshot["agents"][1]["name"] = json!("Billing API");
+    let a = find(&ready(&mut collector, &snapshot), "codex-a");
+    assert_eq!(
+        (a.title.as_str(), a.title_source.as_str()),
+        ("Billing API", "pane")
+    );
+}

@@ -62,6 +62,8 @@ pub struct Thread {
     pub parent_thread_id: Option<String>,
     pub forked_from_id: Option<String>,
     pub name: Option<String>,
+    /// The spawner-given task name: the last segment of `source.subAgent.thread_spawn.agent_path`.
+    pub task_name: Option<String>,
     pub nickname: Option<String>,
     pub role: Option<String>,
     pub model: Option<String>,

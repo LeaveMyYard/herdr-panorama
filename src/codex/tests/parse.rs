@@ -60,3 +60,30 @@ fn parentlessness_requires_explicit_null_not_invalid_or_missing_evidence() {
             .is_none()
     );
 }
+
+#[test]
+fn a_spawned_thread_carries_its_spawner_given_task_name() {
+    let shapes: serde_json::Value =
+        serde_json::from_str(include_str!("spawn_shapes.json")).unwrap();
+    let child = parse::thread(&shapes["child_thread"], "child-thread").unwrap();
+    assert_eq!(child.task_name.as_deref(), Some("review auth flow"));
+    assert_eq!(child.nickname.as_deref(), Some("Euclid"));
+    assert_eq!(child.role.as_deref(), Some("explorer"));
+    assert_eq!(child.name, None);
+    let mut ids = Vec::new();
+    parse::child_ids(&shapes["spawn_item"]["item"], &mut ids);
+    assert_eq!(ids, ["child-thread"]);
+    // An unnamed (v1) spawn, the root's own path and a malformed source give no task name.
+    for source in [
+        json!({"subAgent":{"thread_spawn":{"parent_thread_id":"p","depth":1,"agent_path":null}}}),
+        json!({"subAgent":{"thread_spawn":{"parent_thread_id":"p","depth":1,"agent_path":"/root"}}}),
+        json!({"subAgent":{"thread_spawn":{"parent_thread_id":"p","depth":1,"agent_path":"/root/a/"}}}),
+        json!("cli"),
+    ] {
+        let mut v = shapes["child_thread"].clone();
+        v["source"] = source.clone();
+        let t = parse::thread(&v, "child-thread").unwrap();
+        let expect = (source.to_string().contains("/root/a/")).then_some("a");
+        assert_eq!(t.task_name.as_deref(), expect, "{source}");
+    }
+}

@@ -1,0 +1,45 @@
+{
+  "provenance": "Shapes from `codex app-server generate-json-schema --experimental` of codex-cli 0.166.0, run with an empty temporary CODEX_HOME (v2 Thread, SessionSource.subAgent.thread_spawn and ThreadItem collabAgentToolCall). Values are synthetic; no live session was read and no model was called.",
+  "spawn_item": {
+    "turnId": "parent-turn",
+    "item": {
+      "type": "collabAgentToolCall",
+      "id": "spawn-call",
+      "tool": "spawnAgent",
+      "status": "completed",
+      "senderThreadId": "parent-thread",
+      "receiverThreadIds": ["child-thread"],
+      "prompt": "Review the auth flow\nRead src/auth and report risky paths.",
+      "model": null,
+      "reasoningEffort": null,
+      "agentsStates": {"child-thread": {"status": "running", "message": null}}
+    }
+  },
+  "child_thread": {
+    "id": "child-thread",
+    "sessionId": "shared-tree",
+    "parentThreadId": "parent-thread",
+    "forkedFromId": null,
+    "name": null,
+    "agentNickname": "Euclid",
+    "agentRole": "explorer",
+    "preview": "Review the auth flow",
+    "model": "synthetic-model",
+    "createdAt": 100,
+    "updatedAt": 200,
+    "cliVersion": "0.166.0",
+    "cwd": "/same/cwd",
+    "ephemeral": false,
+    "modelProvider": "openai",
+    "projectId": null,
+    "status": {"type": "active"},
+    "source": {"subAgent": {"thread_spawn": {
+      "parent_thread_id": "parent-thread",
+      "depth": 1,
+      "agent_path": "/root/review_auth_flow",
+      "agent_nickname": "Euclid",
+      "agent_role": "explorer"
+    }}},
+    "turns": []
+  }
+}

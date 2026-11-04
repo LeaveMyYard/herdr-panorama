@@ -3,6 +3,7 @@
 
 use crate::codex::{Thread, TurnStatus};
 use crate::collect::py::chars;
+use crate::collect::title;
 use panorama_core::model::{Agent, HerdrStatus, Phase, PhaseState, Status, ThreadStatus};
 
 pub(super) fn time(value: f64) -> Option<f64> {
@@ -72,8 +73,18 @@ pub(super) fn agent(thread: &Thread, seq: i64) -> Agent {
             .as_ref()
             .filter(|tool| tool.turn_id == turn.id)
     });
+    let (title, source) = title::codex_agent(
+        thread.task_name.as_deref(),
+        thread.name.as_deref(),
+        thread.nickname.as_deref(),
+        first_prompt(thread),
+        thread.role.as_deref(),
+        &thread.thread_id,
+    );
     Agent {
         id: thread.thread_id.clone(),
+        title,
+        title_source: source.to_owned(),
         description: chars(
             thread
                 .name
@@ -101,4 +112,14 @@ pub(super) fn agent(thread: &Thread, seq: i64) -> Agent {
         seq,
         ..Agent::default()
     }
+}
+
+/// The prompt of the earliest turn in the read window that has one (turns are newest first).
+pub(super) fn first_prompt(thread: &Thread) -> Option<&str> {
+    thread
+        .turns
+        .iter()
+        .rev()
+        .map(|turn| turn.prompt.as_str())
+        .find(|prompt| !prompt.is_empty())
 }

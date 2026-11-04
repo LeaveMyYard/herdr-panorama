@@ -111,25 +111,23 @@ fn label(
     }
 }
 
-/// The Claude root's title from its herdr names and its session (§2.2); `None` leaves the
-/// last rung to the caller, which knows the tab's number.
+/// A root's title from its herdr names, its harness's session titles (Claude's `custom-title`,
+/// `agent-name`, `ai-title`; a Codex thread's name) and its first prompt (§2.2); `None` leaves
+/// the last rung to the caller, which knows the tab's number.
 fn root_title(
     a: &Map<String, Value>,
     tab: &Map<String, Value>,
-    sess: Option<&Session>,
     per_tab: usize,
+    session: [Option<&str>; 3],
+    first_prompt: Option<&str>,
 ) -> Option<(String, &'static str)> {
-    let titles = sess.map(|s| s.conversation().titles());
-    let prompt = sess.and_then(|s| s.conversation().prompts().next().map(|p| p.text));
     title::root(&title::RootInputs {
         kind: str_of(a, "agent").unwrap_or("claude"),
         pane_name: str_of(a, "name"),
         tab_label: strip_inbox_mark(str_of(tab, "label").unwrap_or("")),
         per_tab,
-        session: titles.map_or([None; 3], |t| {
-            [t.custom.as_deref(), t.agent.as_deref(), t.ai.as_deref()]
-        }),
-        first_prompt: prompt,
+        session,
+        first_prompt,
         terminal_title: str_of(a, "terminal_title_stripped"),
     })
 }
@@ -172,8 +170,14 @@ impl Collector {
                     None => native.map(str::to_owned),
                 }
             };
-            if let Some(details) = self.codex.as_mut() {
-                details.enrich(&mut o, now, self.window);
+            let seen = self
+                .codex
+                .as_mut()
+                .map(|details| details.enrich(&mut o, now, self.window))
+                .unwrap_or_default();
+            let session = [seen.name.as_deref(), None, None];
+            if let Some((t, src)) = root_title(a, tab, per_tab, session, seen.prompt.as_deref()) {
+                (o.title, o.title_source) = (t, src.to_owned());
             }
             return o;
         }
@@ -200,7 +204,13 @@ impl Collector {
         o.inbox_texts = mine.iter().map(|q| q.question.clone()).collect();
         let scanner = key.as_ref().and_then(|k| self.sessions.get(k));
         o.tab_label = label(a, tab, scanner.map(|s| s.session()), &o.pane_id, per_tab);
-        if let Some((t, src)) = root_title(a, tab, scanner.map(|s| s.session()), per_tab) {
+        let conv = scanner.map(|s| s.session().conversation());
+        let titles = conv.map(|c| c.titles());
+        let session = titles.map_or([None; 3], |t| {
+            [t.custom.as_deref(), t.agent.as_deref(), t.ai.as_deref()]
+        });
+        let prompt = conv.and_then(|c| c.prompts().next().map(|p| p.text));
+        if let Some((t, src)) = root_title(a, tab, per_tab, session, prompt) {
             (o.title, o.title_source) = (t, src.to_owned());
         }
         let (Some(key), Some(scanner)) = (key.clone(), scanner) else {

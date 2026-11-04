@@ -243,7 +243,7 @@ impl Collector {
             }) {
                 Ok(mut o) => {
                     o.tab_no = tab_no(&tab_of(a));
-                    if o.title.is_empty() && o.harness != "codex" {
+                    if o.title.is_empty() {
                         let (t, src) = title::root_fallback(&o.harness, o.tab_no, &o.pane_id);
                         (o.title, o.title_source) = (t, src.to_owned());
                     }

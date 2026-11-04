@@ -201,3 +201,71 @@ fn the_last_rung_names_the_tab_else_the_pane() {
         ("Claude · w1:p4".into(), "id")
     );
 }
+
+#[test]
+fn a_codex_subagent_goes_task_name_then_name_then_nickname_then_prompt() {
+    let id = "019a2b3c-0000-7000-8000-000000000001";
+    let all = |task, name, nick, prompt, role| codex_agent(task, name, nick, prompt, role, id);
+    let prompt = Some("\nReview the auth flow\nRead src/auth.");
+    assert_eq!(
+        all(
+            Some("review auth"),
+            Some("Named"),
+            Some("Euclid"),
+            prompt,
+            Some("explorer")
+        ),
+        ("review auth".into(), "spawner")
+    );
+    assert_eq!(
+        all(
+            None,
+            Some("Named"),
+            Some("Euclid"),
+            prompt,
+            Some("explorer")
+        ),
+        ("Named".into(), "session")
+    );
+    assert_eq!(
+        all(Some(" "), None, Some("Euclid"), prompt, Some("explorer")),
+        ("Euclid".into(), "session")
+    );
+    assert_eq!(
+        all(None, None, None, prompt, Some("explorer")),
+        ("Review the auth flow".into(), "prompt")
+    );
+    assert_eq!(
+        all(None, None, None, None, Some("explorer")),
+        ("explorer 019a2b3".into(), "type")
+    );
+    assert_eq!(
+        all(None, None, None, None, None),
+        ("agent 019a2b3".into(), "id")
+    );
+}
+
+#[test]
+fn a_codex_root_takes_herdr_names_then_its_thread_name_then_its_prompt() {
+    let codex = || RootInputs {
+        kind: "codex",
+        session: [Some("Codex rename"), None, None],
+        first_prompt: Some("Fix the flaky test\nmore"),
+        ..inputs()
+    };
+    let r = RootInputs {
+        tab_label: "Billing API",
+        ..codex()
+    };
+    assert_eq!(root(&r), Some(("Billing API".into(), "tab")));
+    let r = RootInputs {
+        tab_label: "codex",
+        ..codex()
+    };
+    assert_eq!(root(&r), Some(("Codex rename".into(), "session")));
+    let r = RootInputs {
+        session: [None; 3],
+        ..codex()
+    };
+    assert_eq!(root(&r), Some(("Fix the flaky test".into(), "prompt")));
+}

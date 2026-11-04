@@ -122,6 +122,33 @@ agent cards by depth; the narrow graph offers selectable agent pods and the
 selected agent's details.
 History-only children stay unknown, including in the compact dock.
 
+### How Codex agents are named
+
+A Codex root is named by, in order: a pane name you set in herdr; its tab's
+label, when you named the tab and the tab holds only this agent; the root
+thread's `name` (from `/rename` or Codex's own title); the first line of its
+earliest prompt in the read window; a telling terminal title; else
+`Codex · tab N`.
+
+A subagent, at any depth, is named by, in order:
+
+1. **The task name its spawner gave it.** Codex 0.166.0's app-server schema
+   (`codex app-server generate-json-schema`) puts it in the spawned thread's own
+   `thread/read` record, as the last segment of
+   `source.subAgent.thread_spawn.agent_path` (`/root/review_auth` reads as
+   `review auth`). Codex sets the path only when the spawner passes a
+   `task_name`; older spawns have none.
+2. Its thread's `name`, when set.
+3. Codex's `agentNickname` (`Euclid`, `Lovelace`, …). It is stable but it is
+   Codex's choice, not the spawner's.
+4. The first line of its earliest prompt in the read window.
+5. Its `agentRole` and short thread id, else `agent <short id>`.
+
+The spawn item itself (`collabAgentToolCall`) carries the spawner's whole
+`prompt`, not a name; Panorama reads only its receiver ids, never its prompt.
+Naming reads nothing beyond the thread records Panorama already fetches, so it
+does not change any read budget.
+
 Herdr supplies the root pane's runtime state. Persisted completed, failed, or
 interrupted turns describe historical work. A completed turn, idle pane, or
 observer `notLoaded` status does **not** establish that the session completed.
