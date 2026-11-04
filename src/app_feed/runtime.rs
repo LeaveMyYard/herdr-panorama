@@ -19,7 +19,28 @@ use std::{
     time::{Duration, Instant},
 };
 
+/// Test-only startup latency or exit at `stage` (`PANORAMA_TEST_START=<stage>:<ms|exit>`);
+/// release builds have no such knob.
+#[cfg(debug_assertions)]
+fn test_fault(stage: &str) {
+    let Ok(value) = std::env::var("PANORAMA_TEST_START") else {
+        return;
+    };
+    match value.split_once(':') {
+        Some((at, "exit")) if at == stage => std::process::exit(3),
+        Some((at, ms)) if at == stage => {
+            if let Ok(ms) = ms.parse() {
+                std::thread::sleep(Duration::from_millis(ms));
+            }
+        }
+        _ => {}
+    }
+}
+#[cfg(not(debug_assertions))]
+fn test_fault(_: &str) {}
+
 pub fn watch(home: Home, r: Receipt, _lifetime: std::fs::File) -> Result<()> {
+    test_fault("register");
     let mut journal = Journal::open(&home, &r)?;
     let stop = Arc::new(AtomicBool::new(false));
     let monitor_stop = stop.clone();
@@ -52,14 +73,7 @@ pub fn watch(home: Home, r: Receipt, _lifetime: std::fs::File) -> Result<()> {
                 env.xdg_state_home().join("herdr-panorama/codex-bindings"),
             ],
         );
-        // Test-only startup latency; release builds have no such knob.
-        #[cfg(debug_assertions)]
-        if let Some(ms) = std::env::var("PANORAMA_TEST_READY_DELAY_MS")
-            .ok()
-            .and_then(|s| s.parse().ok())
-        {
-            std::thread::sleep(Duration::from_millis(ms));
-        }
+        test_fault("ready");
         // A parent that stopped waiting has closed the pipe; that is not a writer failure.
         let mut out = std::io::stdout();
         let _ = writeln!(out, "READY {}", r.id).and_then(|()| out.flush());

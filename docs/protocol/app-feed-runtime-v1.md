@@ -262,13 +262,13 @@ collected. No PID is ever signalled. Outcomes after a validated spawn:
 
 | Outcome | Classification | Effect |
 |---|---|---|
-| `READY <install_id>` | Started | Remove the ledger; exit 0. |
+| `READY <install_id>` | Started | Remove the ledger; exit 0. A later ensure that proves this writer busy also removes a ledger. |
 | No acknowledgement within 5 s, but ownership names this exact child and its PID/start/namespace/command are live | Started (late acknowledgement) | Same busy-writer proof a concurrent ensure accepts; remove the ledger; exit 0. The writer ignores a closed acknowledgement pipe. |
 | No acknowledgement within 5 s and no such registration | Still starting | Exit 1; control and ledger unchanged; the child is left to register or give up. A later ensure proves it busy or finds its lock free. |
 | Spawn error | Transient | Record the next ledger failure; exit 1. |
 | Child exits before acknowledging, and a fresh lifetime-lock description is acquired within 2 s | Transient | Record the next ledger failure; exit 1. |
 | Child exits before acknowledging, lock still held after 2 s | Permanent | Disable; exit 1; receipt retained. |
-| Any other acknowledgement bytes (other generation, garbage, > 256 bytes) | Provenance failure, permanent | Disable, wait 2 s for cooperative stop; exit 1. |
+| Any bytes that stop being a prefix of `READY <install_id>\n` (other generation, garbage) | Provenance failure, permanent | Disable, wait 2 s for cooperative stop; exit 1. |
 
 Recording failure n sets `retry_at_ms` to now + min(5 s × 2^(n−1), 160 s).
 While that time is in the future (and at most 160 s away, so a clock moved
@@ -278,9 +278,12 @@ ledger write that fails, disables the generation instead; only a reinstall
 recovers from that, as before. Validation and provenance failures before
 spawn (receipt, generation, binary hash/mode/path, control, runtime names,
 journal/ownership proof, ledger) never spawn and never change control; they
-refuse on every ensure while the condition holds. Debug builds of the binary
-accept a test-only `PANORAMA_TEST_READY_DELAY_MS` writer delay before the
-acknowledgement; release builds have no such knob.
+refuse on every ensure while the condition holds. A child that refuses its own
+validation after spawn exits before acknowledging and is therefore counted as
+transient; ensure repeats that validation before each later spawn. Debug builds
+of the binary accept a test-only `PANORAMA_TEST_START=<register|ready>:<ms|exit>`
+writer delay or exit before registration or acknowledgement; release builds
+have no such knob.
 
 Writer control checks run independently of collection at most 100 ms apart.
 Disabled/removed receipt or control requests cooperative shutdown; collection

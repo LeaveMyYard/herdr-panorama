@@ -506,7 +506,7 @@ fn a_registered_writer_acknowledging_late_is_kept_not_disabled() {
     let install = Installed::new();
     let out = install
         .command()
-        .env("PANORAMA_TEST_READY_DELAY_MS", "6500")
+        .env("PANORAMA_TEST_START", "ready:6500")
         .args(["app-feed", "--ensure", "--app-home"])
         .arg(&install.app)
         .output()
@@ -520,5 +520,64 @@ fn a_registered_writer_acknowledging_late_is_kept_not_disabled() {
     let owner = install.owner();
     install.wait_feed(|v| v["v"].is_u64());
     assert_eq!(install.owner().writer_pid, owner.writer_pid);
+    let (_home, _r, _lock) = install.quiesce().unwrap();
+}
+
+fn ensure_with_fault(install: &Installed, fault: &str) -> std::process::Output {
+    install
+        .command()
+        .env("PANORAMA_TEST_START", fault)
+        .args(["app-feed", "--ensure", "--app-home"])
+        .arg(&install.app)
+        .output()
+        .unwrap()
+}
+
+#[test]
+fn a_child_exiting_before_acknowledgement_with_a_free_lock_is_counted_not_disabled() {
+    let install = Installed::new();
+    let out = ensure_with_fault(&install, "ready:exit");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert_eq!(out.status.code(), Some(1), "{stderr}");
+    assert!(stderr.contains("writer exited"), "{stderr}");
+    assert!(stderr.contains("transient start failure 1/8"), "{stderr}");
+    assert!(!disabled(&install));
+    let ledger: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(ledger_path(&install)).unwrap()).unwrap();
+    assert_eq!(ledger["failures"], 1);
+}
+
+#[test]
+fn an_unregistered_slow_child_is_left_starting_and_a_busy_proof_clears_the_ledger() {
+    let install = Installed::new();
+    write_ledger(&install, 6, 0);
+    let out = ensure_with_fault(&install, "register:6000");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert_eq!(out.status.code(), Some(1), "{stderr}");
+    assert!(stderr.contains("still starting"), "{stderr}");
+    assert!(!disabled(&install));
+    let ledger: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(ledger_path(&install)).unwrap()).unwrap();
+    assert_eq!(ledger["failures"], 6);
+    let registration = install.app.join(format!(
+        "data/panorama/runtime/{}/ownership.json",
+        app_feed_support::ID
+    ));
+    let deadline = std::time::Instant::now() + Duration::from_secs(20);
+    while !registration.exists() {
+        assert!(
+            std::time::Instant::now() < deadline,
+            "writer never registered"
+        );
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    let proven = install.ensure();
+    assert!(
+        proven.status.success(),
+        "{}",
+        String::from_utf8_lossy(&proven.stderr)
+    );
+    assert!(!ledger_path(&install).exists());
+    assert!(!disabled(&install));
     let (_home, _r, _lock) = install.quiesce().unwrap();
 }

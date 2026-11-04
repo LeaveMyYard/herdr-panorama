@@ -51,12 +51,12 @@ fn ready(child: &mut Child, id: &str) -> Ack {
             Err(e) if e.kind() == ErrorKind::WouldBlock => {}
             Err(e) => return Ack::Pending(e.to_string()),
         }
-        if bytes.ends_with(b"\n") || bytes.len() > 256 {
-            return if bytes == format!("READY {id}\n").as_bytes() {
-                Ack::Ready
-            } else {
-                Ack::Foreign
-            };
+        let expected = format!("READY {id}\n");
+        if !expected.as_bytes().starts_with(&bytes) {
+            return Ack::Foreign;
+        }
+        if bytes == expected.as_bytes() {
+            return Ack::Ready;
         }
         if Instant::now() >= deadline {
             return Ack::Pending("writer acknowledgement timed out".into());
@@ -118,6 +118,10 @@ pub fn ensure(home: Home, expected: Option<&str>) -> Result<()> {
                 Ownership::read(&home, &r)?.ok_or("busy writer has no ownership registration")?;
             if !owner.live(&home) {
                 return Err("busy writer ownership cannot be proven".into());
+            }
+            // A proven running writer is a proven start: the failure run is over.
+            if let Ok(Some((_, known))) = Ledger::read(&home, &r) {
+                let _ = home.remove(&r.path(LEDGER), &known);
             }
             return Ok(());
         }
