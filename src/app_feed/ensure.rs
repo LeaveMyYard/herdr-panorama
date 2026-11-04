@@ -79,24 +79,64 @@ fn registered(home: &Home, r: &Receipt, pid: u32) -> bool {
         .is_some_and(|(owner, _)| owner.writer_pid == pid && owner.live(home))
 }
 
-/// A transient failure with no running writer: count it, back off, and disable
-/// only once the bound is reached or the count cannot be recorded.
-fn transient(home: &Home, r: &Receipt, ledger: Option<&(Ledger, Known)>, error: &str) -> String {
-    let failures = ledger.map_or(0, |(l, _)| l.failures) + 1;
-    if failures >= MAX_FAILURES {
-        let disabled = r.disable(home);
-        return format!(
-            "{error}; {failures} consecutive transient start failures; generation disabled: {disabled:?}"
-        );
-    }
-    match Ledger::record(home, r, failures, ledger.map(|(_, k)| k)) {
-        Ok(wait) => format!(
-            "{error}; transient start failure {failures}/{MAX_FAILURES}; retry after {wait} ms"
-        ),
-        Err(e) => {
-            let disabled = r.disable(home);
-            format!("{error}; start ledger unavailable ({e}); generation disabled: {disabled:?}")
+/// Every spawn is counted before it happens, while the reserved lifetime lock
+/// proves no writer runs (writers refuse a visible `.start.tmp`). Only a proven
+/// start removes the count, so an attempt that is never proven, including one
+/// left starting that later exits unregistered, stays inside the bound.
+struct Attempt {
+    failures: u32,
+    /// Backoff already recorded for this attempt; `None` for the final attempt.
+    wait: Option<u64>,
+    /// The ledger file as this attempt left it, removed after a proven start.
+    known: Option<Known>,
+}
+impl Attempt {
+    fn count(home: &Home, r: &Receipt, ledger: Option<(Ledger, Known)>) -> Result<Self> {
+        let failures = ledger.as_ref().map_or(0, |(l, _)| l.failures) + 1;
+        if failures >= MAX_FAILURES {
+            let known = ledger.map(|(_, k)| k);
+            return Ok(Self {
+                failures,
+                wait: None,
+                known,
+            });
         }
+        let wait = Ledger::record(home, r, failures, ledger.as_ref().map(|(_, k)| k))
+            .map_err(|e| format!("start ledger unavailable ({e}); writer not started"))?;
+        let known = Ledger::read(home, r)?.map(|(_, k)| k);
+        Ok(Self {
+            failures,
+            wait: Some(wait),
+            known,
+        })
+    }
+    /// A transient failure: the attempt stays counted; the final one disables.
+    fn failed(&self, home: &Home, r: &Receipt, error: &str) -> String {
+        let (failures, max) = (self.failures, MAX_FAILURES);
+        match self.wait {
+            Some(wait) => {
+                format!("{error}; transient start failure {failures}/{max}; retry after {wait} ms")
+            }
+            None => {
+                let disabled = r.disable(home);
+                format!(
+                    "{error}; {failures} consecutive transient start failures; generation disabled: {disabled:?}"
+                )
+            }
+        }
+    }
+    /// A proven start (or a permanent disable, which supersedes the count) ends the run.
+    fn clear(&self, home: &Home, r: &Receipt) {
+        if let Some(known) = &self.known {
+            clear(home, r, known);
+        }
+    }
+}
+
+/// Advisory removal: a ledger whose bytes changed is left for review, with a warning.
+fn clear(home: &Home, r: &Receipt, known: &Known) {
+    if let Err(e) = home.remove(&r.path(LEDGER), known) {
+        eprintln!("panorama app-feed: start ledger not reset: {e}");
     }
 }
 
@@ -121,7 +161,7 @@ pub fn ensure(home: Home, expected: Option<&str>) -> Result<()> {
             }
             // A proven running writer is a proven start: the failure run is over.
             if let Ok(Some((_, known))) = Ledger::read(&home, &r) {
-                let _ = home.remove(&r.path(LEDGER), &known);
+                clear(&home, &r, &known);
             }
             return Ok(());
         }
@@ -136,6 +176,7 @@ pub fn ensure(home: Home, expected: Option<&str>) -> Result<()> {
             l.failures
         ));
     }
+    let attempt = Attempt::count(&home, &r, ledger)?;
     // A spawn error drops the reservation with the command; no writer can run.
     let spawned = Command::new(home.path.join(BINARY))
         .args(["app-feed", "--watch", "--app-home"])
@@ -151,31 +192,34 @@ pub fn ensure(home: Home, expected: Option<&str>) -> Result<()> {
         Ok(child) => child,
         Err(e) => {
             let error = format!("cannot start owned writer: {e}");
-            return Err(transient(&home, &r, ledger.as_ref(), &error));
+            return Err(attempt.failed(&home, &r, &error));
         }
     };
     match ready(&mut child, &r.id) {
         Ack::Ready => {}
         Ack::Pending(_) if registered(&home, &r, child.id()) => {}
         Ack::Pending(error) => {
-            // Not registered yet: leave it starting. A later ensure proves it busy,
-            // or finds its lock free once it gives up. Nothing is disabled or killed.
-            return Err(format!("{error}; writer still starting; retry later"));
+            // Not registered yet: leave it starting, still counted. A later ensure
+            // proves it busy (clearing the count) or finds its lock free once it
+            // gives up. Nothing is killed; only the final attempt disables.
+            return Err(attempt.failed(&home, &r, &format!("{error}; writer still starting")));
         }
         Ack::Exited(error) => {
             // Never signal; quiescence is a fresh description of the lifetime lock.
             let lock = r.lock_file(&home)?;
             let _ = child.try_wait();
             if fs::lock(&lock, STOP_WAIT).is_ok() {
-                return Err(transient(&home, &r, ledger.as_ref(), error));
+                return Err(attempt.failed(&home, &r, error));
             }
             r.disable(&home)?;
+            attempt.clear(&home, &r);
             return Err(format!(
                 "{error}; stop timeout; generation disabled; receipt retained"
             ));
         }
         Ack::Foreign => {
             r.disable(&home)?;
+            attempt.clear(&home, &r);
             // Cooperate through control; never signal a stored/guessed watcher PID.
             let lock = r.lock_file(&home)?;
             let stopped = fs::lock(&lock, STOP_WAIT);
@@ -190,10 +234,7 @@ pub fn ensure(home: Home, expected: Option<&str>) -> Result<()> {
             ));
         }
     }
-    if let Some((_, known)) = &ledger {
-        // Advisory reset after a proven start; a changed ledger is left for review.
-        let _ = home.remove(&r.path(LEDGER), known);
-    }
+    attempt.clear(&home, &r);
     Ok(())
 }
 

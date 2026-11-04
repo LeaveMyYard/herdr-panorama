@@ -52,9 +52,12 @@ def start_ledger(home, receipt):
     if current is None:
         return None
     value = loads(current[0])
+    # Exact integers only, matching ensure's u8/u32/u64 parse: 2.0 is ambiguous here too.
+    def exact(key, lower, upper):
+        return type(value[key]) is int and lower <= value[key] <= upper
     if (not isinstance(value, dict) or set(value) != {'v', 'install_id', 'failures', 'retry_at_ms'}
-            or not integer(value['v'], 1, 1) or value['install_id'] != receipt['install_id']
-            or not integer(value['failures'], 1, 7) or not integer(value['retry_at_ms'], 0, 2 ** 64 - 1)):
+            or not exact('v', 1, 1) or value['install_id'] != receipt['install_id']
+            or not exact('failures', 1, 7) or not exact('retry_at_ms', 0, 2 ** 64 - 1)):
         raise ValueError(f'Ambiguous start ledger: {path}')
     return current
 

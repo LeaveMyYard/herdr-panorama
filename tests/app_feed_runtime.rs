@@ -555,10 +555,12 @@ fn an_unregistered_slow_child_is_left_starting_and_a_busy_proof_clears_the_ledge
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert_eq!(out.status.code(), Some(1), "{stderr}");
     assert!(stderr.contains("still starting"), "{stderr}");
+    assert!(stderr.contains("transient start failure 7/8"), "{stderr}");
     assert!(!disabled(&install));
+    // Counted provisionally, so an attempt that then exits unregistered stays bounded.
     let ledger: serde_json::Value =
         serde_json::from_slice(&std::fs::read(ledger_path(&install)).unwrap()).unwrap();
-    assert_eq!(ledger["failures"], 6);
+    assert_eq!(ledger["failures"], 7);
     let registration = install.app.join(format!(
         "data/panorama/runtime/{}/ownership.json",
         app_feed_support::ID
@@ -580,4 +582,42 @@ fn an_unregistered_slow_child_is_left_starting_and_a_busy_proof_clears_the_ledge
     assert!(!ledger_path(&install).exists());
     assert!(!disabled(&install));
     let (_home, _r, _lock) = install.quiesce().unwrap();
+}
+
+fn wait_stopped(install: &Installed) {
+    let home = Home::open(&install.app).unwrap();
+    let r = Receipt::read(&home).unwrap();
+    fs::lock(&r.lock_file(&home).unwrap(), Duration::from_secs(15)).unwrap();
+}
+
+#[test]
+fn a_foreign_or_garbage_acknowledgement_disables_and_is_never_counted() {
+    for fault in ["ready:foreign", "ready:garbage"] {
+        let install = Installed::new();
+        let out = ensure_with_fault(&install, fault);
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert_eq!(out.status.code(), Some(1), "{fault}: {stderr}");
+        assert!(
+            stderr.contains("foreign writer acknowledgement"),
+            "{fault}: {stderr}"
+        );
+        assert!(disabled(&install), "{fault}");
+        assert!(!ledger_path(&install).exists(), "{fault}");
+        assert!(!install.ensure().status.success(), "{fault}");
+        wait_stopped(&install);
+    }
+}
+
+#[test]
+fn a_child_exiting_while_its_lock_is_still_held_disables_and_is_never_counted() {
+    let install = Installed::new();
+    write_ledger(&install, 3, 0);
+    let out = ensure_with_fault(&install, "register:hold-exit");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert_eq!(out.status.code(), Some(1), "{stderr}");
+    assert!(stderr.contains("stop timeout"), "{stderr}");
+    assert!(disabled(&install));
+    assert!(!ledger_path(&install).exists());
+    assert!(!install.ensure().status.success());
+    wait_stopped(&install);
 }
