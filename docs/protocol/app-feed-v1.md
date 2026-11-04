@@ -1,4 +1,8 @@
-# herdr-app feed v1
+# herdr-app feed v1 (superseded)
+
+**Superseded by [feed v2](app-feed-v2.md)** (plan `uniform-agent-tree.md` U7). No
+writer emits v1 any more and no test checks this document; it is kept as the record
+of the thread-based contract.
 
 This is the Rust collector → herdr-app mod contract for the approved
 [plan](../plans/herdr-app-mod.md), implementing the data needed by

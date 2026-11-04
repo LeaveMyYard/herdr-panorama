@@ -46,7 +46,7 @@
     "writer_start": "fixture-start",
     "writer_pidns": null,
     "feed_sha256": null,
-    "pending_feed_sha256": "3a73d25e0020918b1274f803aa2211e3cb96d9e94a72aa53a4c89935d56106b0"
+    "pending_feed_sha256": "d61d859df337222b77dd3c1ca411bc5bead429b1339d8950f2ec4acd342722c2"
   },
   "committed_ownership": {
     "v": 1,
@@ -55,7 +55,7 @@
     "writer_pid": 4242,
     "writer_start": "fixture-start",
     "writer_pidns": null,
-    "feed_sha256": "3a73d25e0020918b1274f803aa2211e3cb96d9e94a72aa53a4c89935d56106b0",
+    "feed_sha256": "d61d859df337222b77dd3c1ca411bc5bead429b1339d8950f2ec4acd342722c2",
     "pending_feed_sha256": null
   },
   "generation_fence": {
