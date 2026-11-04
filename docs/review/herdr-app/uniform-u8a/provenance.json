@@ -1,0 +1,55 @@
+{
+  "source_head": "b67276f9b399dc6b2a45924685dcb48934647e5b",
+  "source_dirty": "",
+  "sources_sha256": {
+    "panorama/binary.js": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
+    "panorama/contract.js": "3207b21bcf349dd831bd4c5cb3df36361e0b17706d52113e8f972c2c3564f9a1",
+    "panorama/feed-client.js": "f05fa058be2f6ed3bfdb1feb62a893ddf50b3320ad0ae3f58d31486029b67a64",
+    "panorama/main.js": "ae3eeec00e61328177482c5354be2a80e98126d9c3c0a5369839bec923013f44",
+    "panorama/marks.js": "513bd5de90a43f84b713d21ef69c5efc141299feecc13dceea681eaccd2f1b45",
+    "panorama/model.js": "ba2bad0fa22f268354ace24cb6138c54459a8b32a0a0a01693bdc70e7c64a80d",
+    "panorama/peek-caller.js": "53a4a81810aa675476d9b11a761a1cac722b3c9b2c061230e2d9b2990f99ef32",
+    "panorama/routing.js": "0607371d0b0adbfee08c305fb79ef09f6186c26bbf20863378e3d775eaef6f6c",
+    "panorama/state.js": "fa728eaecbbff12978d23bf0db6de308106895b777cd692020e6b5685bde40fe",
+    "panorama/tree.js": "cc1e352f1e0c33c8c04e6246193ea9e8196d8b542bf3cca6df834b15eba1d239",
+    "panorama/viewport-math.js": "ef8bde18ea4d282b7573854069084beeac08e46e8b9ffec9c938d50661d617b4",
+    "panorama/viewport.js": "29182526d6e8a5c30a521f39efd5854c2a1517655bbf74603f0bd2b2cd33389b",
+    "panorama-peek/actions.js": "4b14ebd6eb0afd6b7aa2426f045578afcabb95329c364bebc5defc12c5b539c3",
+    "panorama-peek/binary.js": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
+    "panorama-peek/contract.js": "3207b21bcf349dd831bd4c5cb3df36361e0b17706d52113e8f972c2c3564f9a1",
+    "panorama-peek/feed-client.js": "f05fa058be2f6ed3bfdb1feb62a893ddf50b3320ad0ae3f58d31486029b67a64",
+    "panorama-peek/main.js": "3615bffab75b6e03e363b64230639e7f6860c03eed5d2e60e0c90848babbe7f2",
+    "panorama-peek/marks.js": "513bd5de90a43f84b713d21ef69c5efc141299feecc13dceea681eaccd2f1b45",
+    "panorama-peek/metadata.js": "c72b6b71af3f2c0db2c06e13e82e48de5b03e0d32c1e0c3c80f12070754f3c5e",
+    "panorama-peek/model.js": "ba2bad0fa22f268354ace24cb6138c54459a8b32a0a0a01693bdc70e7c64a80d",
+    "panorama-peek/paging.js": "b5ee4fece7bfcff5476a53c94ade2ba29a130394b6236e01d2ac1eeb35acb1e1",
+    "panorama-peek/routing.js": "0607371d0b0adbfee08c305fb79ef09f6186c26bbf20863378e3d775eaef6f6c",
+    "panorama-peek/state.js": "b26b03a0caad9deb9657f692f5106c6f32dc0476e6af95c6a048cefe35f5bcda",
+    "panorama-peek/subject.js": "3086abd1cf6760e2801d506001736cc62a2ab1a8a4062a54958a778e70093145",
+    "panorama-peek/tree.js": "cc1e352f1e0c33c8c04e6246193ea9e8196d8b542bf3cca6df834b15eba1d239",
+    "panorama-spaces/binary.js": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
+    "panorama-spaces/contract.js": "3207b21bcf349dd831bd4c5cb3df36361e0b17706d52113e8f972c2c3564f9a1",
+    "panorama-spaces/feed-client.js": "f05fa058be2f6ed3bfdb1feb62a893ddf50b3320ad0ae3f58d31486029b67a64",
+    "panorama-spaces/main.js": "45020698a06d5f69ff6c0bb10be4ad2f04aed1eacabd0f908e0f8ca7f3ce73e4",
+    "panorama-spaces/model.js": "ba2bad0fa22f268354ace24cb6138c54459a8b32a0a0a01693bdc70e7c64a80d",
+    "panorama-spaces/state.js": "33916886591ccc3b7bb877a09c7c68ebda29c04234083270d0e1a919740bc982",
+    "panorama-spaces/tabs.js": "d39d193f14c0636836242fdf80d631fd51bac366c7fe9547713cf6c87b6a4354",
+    "panorama-spaces/tree.js": "cc1e352f1e0c33c8c04e6246193ea9e8196d8b542bf3cca6df834b15eba1d239"
+  },
+  "isolation": {
+    "separate_core": true,
+    "initial_live": 0,
+    "session": "u8a-l0b6912r",
+    "private_env_verified": true
+  },
+  "app_status": {
+    "zoom": 2.0,
+    "layout": "panorama",
+    "overlays": [
+      "panorama-peek"
+    ],
+    "errors": []
+  },
+  "core_stop": 0,
+  "scratch_removed": true
+}
