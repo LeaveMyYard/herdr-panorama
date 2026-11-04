@@ -1,8 +1,9 @@
 //! →/← through the columns (Python `action_right`, `action_left`): into the agents the
-//! selected one spawned, back up to the one that spawned it; the docked list has one.
+//! selected one spawned (from a root: its depth-1 agents), back up to the one that spawned
+//! it; the docked list has one.
 
 use super::Graph;
-use panorama_core::view::nav::{find_orch, find_thread, nav, parent_key, path_ids};
+use panorama_core::view::nav::{find_orch, nav, parent_key, path_ids};
 use panorama_core::view::state::FIN_CARD;
 
 impl Graph {
@@ -14,17 +15,16 @@ impl Graph {
             return;
         }
         let o = find_orch(&self.swarm, self.view.orch.as_deref());
-        let t = find_thread(o, self.view.thread.as_deref());
         let agent = self.view.agent.clone();
-        if self.view.focus >= 2 {
+        if self.view.focus >= 1 {
             // into the agents the selected one spawned (the one last selected there, else the first)
-            let (Some(t), Some(a)) = (t, agent.as_deref()) else {
+            let (Some(o), Some(a)) = (o, agent.as_deref()) else {
                 return;
             };
             if a.starts_with(FIN_CARD) {
                 return;
             }
-            let kids: Vec<&String> = cols[nxt].iter().filter(|i| parent_key(t, i) == a).collect();
+            let kids: Vec<&String> = cols[nxt].iter().filter(|i| parent_key(o, i) == a).collect();
             let Some(first) = kids.first() else { return };
             let remembered = self
                 .view
@@ -34,15 +34,15 @@ impl Graph {
                 .cloned();
             let pick = remembered.unwrap_or_else(|| (*first).clone());
             self.select(nxt, &pick);
-        } else if nxt == 2 && agent.as_ref().is_some_and(|a| !cols[2].contains(a)) {
-            // a deeper agent stays selected: step into the depth-1 agent on its path
-            let path = path_ids(t, agent.as_deref());
+        } else if agent.as_ref().is_some_and(|a| !cols[1].contains(a)) {
+            // from a root, a deeper agent stays selected: step into the depth-1 agent on its path
+            let path = path_ids(o, agent.as_deref());
             let pick = path
                 .first()
-                .filter(|p| cols[2].contains(p))
-                .unwrap_or(&cols[2][0])
+                .filter(|p| cols[1].contains(p))
+                .unwrap_or(&cols[1][0])
                 .clone();
-            self.select(2, &pick);
+            self.select(1, &pick);
         } else if self
             .cur(nxt)
             .is_none_or(|c| !cols[nxt].iter().any(|i| i == c))
@@ -56,14 +56,11 @@ impl Graph {
     /// ←: back a column; from a spawned agent, up to the agent that spawned it.
     pub(crate) fn step_left(&mut self) {
         let focus = self.view.focus;
-        if focus >= 3 {
+        if focus >= 2 {
             let o = find_orch(&self.swarm, self.view.orch.as_deref());
-            if let (Some(t), Some(a)) = (
-                find_thread(o, self.view.thread.as_deref()),
-                self.view.agent.clone(),
-            ) {
-                let key = parent_key(t, &a);
-                if key != t.id {
+            if let (Some(o), Some(a)) = (o, self.view.agent.clone()) {
+                let key = parent_key(o, &a);
+                if key != o.pane_id {
                     self.select(focus - 1, &key);
                 }
             }

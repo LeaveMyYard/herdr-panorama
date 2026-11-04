@@ -138,15 +138,10 @@ impl Run {
         out
     }
 
-    /// `(focus, orch, thread, agent)` (test_tui.py `sel`).
-    fn sel(&self) -> (usize, Option<&str>, Option<&str>, Option<&str>) {
+    /// `(focus, orch, agent)` (test_tui.py `sel`, without the thread since the uniform tree).
+    fn sel(&self) -> (usize, Option<&str>, Option<&str>) {
         let v = &self.d.app.view;
-        (
-            v.focus,
-            v.orch.as_deref(),
-            v.thread.as_deref(),
-            v.agent.as_deref(),
-        )
+        (v.focus, v.orch.as_deref(), v.agent.as_deref())
     }
 
     /// The text on screen.

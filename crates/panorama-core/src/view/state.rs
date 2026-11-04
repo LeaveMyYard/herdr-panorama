@@ -9,11 +9,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 /// The orchestrator-list id of the `+ New agent` row (Python `NEW_ROW`).
 pub const NEW_ROW: &str = "new:";
-/// The thread-list id prefix of an orchestrator's "n complete" card (`DONE_CARD` + pane id).
-pub const DONE_CARD: &str = "done:";
-/// The thread-list id prefix of an orchestrator's background card (`BG_CARD` + pane id).
-pub const BG_CARD: &str = "bg:";
-/// The agent-list id prefix of a "n finished" card (`FIN_CARD` + group key).
+/// The agent-list id prefix of a "n finished" card (`FIN_CARD` + group key: the id of the
+/// agent that spawned the group, or the root's pane id for the root's own).
 pub const FIN_CARD: &str = "fin:";
 
 /// How a view is drawn this frame. The binary owns it and passes it to each render.
@@ -21,18 +18,13 @@ pub const FIN_CARD: &str = "fin:";
 pub struct View {
     /// The selected orchestrator's pane id, or [`NEW_ROW`].
     pub orch: Option<String>,
-    /// The selected thread's id (or [`DONE_CARD`] / [`BG_CARD`] + the pane id).
-    pub thread: Option<String>,
     /// The selected agent's id at any depth (or [`FIN_CARD`] + its group key).
     pub agent: Option<String>,
-    /// The column the keyboard is in: 0 orchestrators, 1 threads, 2.. agents by depth.
+    /// The column the keyboard is in: its depth (0 the roots, 1.. their agents by depth).
     pub focus: usize,
-    /// Pane ids whose done threads are unfolded.
-    pub done_open: BTreeSet<String>,
     /// Group keys whose finished agents are unfolded.
     pub fin_open: BTreeSet<String>,
-    /// Pane id -> the thread last selected under it; group key -> the agent last selected.
-    pub remember_thread: BTreeMap<String, String>,
+    /// Group key -> the agent last selected in it.
     pub remember_agent: BTreeMap<String, String>,
     pub filter: Filter,
     /// The unseen marks.
@@ -69,12 +61,9 @@ impl Default for View {
     fn default() -> Self {
         Self {
             orch: None,
-            thread: None,
             agent: None,
             focus: 0,
-            done_open: BTreeSet::new(),
             fin_open: BTreeSet::new(),
-            remember_thread: BTreeMap::new(),
             remember_agent: BTreeMap::new(),
             filter: Filter::All,
             unseen: Marks::new(),

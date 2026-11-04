@@ -3,11 +3,13 @@
 
 use super::card::{CardCtx, done_card, thread_card};
 use super::links::join;
+use crate::model::ThreadSource;
 use crate::model::{HerdrStatus, Orchestrator, Status, Swarm, Thread};
 use crate::view::cards::boxes::HOVER;
 use crate::view::cards::marks::{marks_of, marks_right};
 use crate::view::colour::Rgb;
-use crate::view::nav::split_threads;
+use crate::view::filter::Filter;
+use crate::view::nav::find_agent;
 use crate::view::orch_state::{Ages, OrchState, orch_state};
 use crate::view::palette::{DIM, FAINT, FG, HI, status};
 use crate::view::pod::pod;
@@ -98,17 +100,21 @@ pub fn open_orch(
     let mut cards: Vec<Option<&Thread>> = active.iter().map(|t| Some(*t)).collect();
     if !done.is_empty() {
         cards.push(None);
-        if view.done_open.contains(&o.pane_id) {
-            cards.extend(done.iter().map(|t| Some(*t)));
-        }
     }
+    // interim, until U5 replaces narrow: the thread holding the selected agent opens, else
+    // the first
+    let picked = find_agent(Some(o), view.agent.as_deref());
+    let open = active
+        .iter()
+        .position(|t| picked.is_some_and(|a| t.agents.iter().any(|b| b.id == a.id)))
+        .unwrap_or(0);
     let ctx = CardCtx { o, swarm, view, w };
     let (top_y, mut y) = (y, y + 2);
     let mut anchors = vec![];
-    for card in cards {
+    for (i, card) in cards.into_iter().enumerate() {
         let placed = match card {
             None => done_card(cv, y, &ctx, &done),
-            Some(t) => thread_card(cv, y, &ctx, t, anchors.len() as i64 + 1),
+            Some(t) => thread_card(cv, y, &ctx, t, (anchors.len() as i64 + 1, i == open)),
         };
         if placed.sel.is_some() {
             sel = placed.sel;
@@ -118,4 +124,41 @@ pub fn open_orch(
     }
     join(cv, top_y, &anchors);
     Opened { end: y, sel }
+}
+
+/// An orchestrator's threads as narrow shows them (interim, the former `nav::split_threads`,
+/// until U5 replaces narrow): the active ones (a failed one stays with them), and the done
+/// ones it folds.
+fn split_threads(o: &Orchestrator, filter: Filter) -> (Vec<&Thread>, Vec<&Thread>) {
+    use crate::model::ThreadStatus;
+    let is_active = |t: &Thread| {
+        (!t.is_done() && t.status != ThreadStatus::Failed) || t.source == ThreadSource::Session
+    };
+    let threads = || {
+        o.threads
+            .iter()
+            .filter(|t| !t.is_tree() || !t.agents.is_empty())
+    };
+    let mut active: Vec<&Thread> = threads().filter(|t| is_active(t)).collect();
+    let rest = threads().filter(|t| !is_active(t));
+    let (failed, done): (Vec<&Thread>, Vec<&Thread>) =
+        rest.partition(|t| t.status == ThreadStatus::Failed);
+    active.extend(failed);
+    match filter {
+        Filter::Needs => {
+            let needs = |t: &&Thread| {
+                t.agents.iter().any(|a| a.status.needs_operator())
+                    || t.status == ThreadStatus::Failed
+            };
+            (active.into_iter().filter(needs).collect(), vec![])
+        }
+        Filter::Running => (
+            active
+                .into_iter()
+                .filter(|t| t.status == ThreadStatus::Active)
+                .collect(),
+            vec![],
+        ),
+        Filter::All => (active, done),
+    }
 }

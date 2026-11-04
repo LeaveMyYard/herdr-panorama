@@ -59,23 +59,19 @@ fn animation_frames_do_not_count_as_arrivals() {
 }
 
 #[test]
-fn pods_that_shifted_ignore_clicks_even_if_their_agent_card_did_not_move() {
-    // test_mouse.py::test_r7_m1_pods_that_shifted_ignore_clicks_even_if_their_agent_card_did_not_move
+fn cards_that_shifted_ignore_clicks() {
+    // test_mouse.py::test_r7_m1_pods_that_shifted_ignore_clicks_even_if_their_agent_card_did_not_move,
+    // on the depth-1 cards that replaced the thread card's pods
     let mut r = Run::demo("w1:p1", WIDE);
     let now = r.settled();
     let before = format!("{:?}", r.sel());
-    assert_eq!(
-        r.sel(),
-        (0, Some("w1:p1"), Some("ref:#42"), Some("a1c3d90"))
-    );
+    assert_eq!(r.sel(), (0, Some("w1:p1"), Some("a1c3d90")));
     let s = r.d.shown().unwrap().clone();
-    let pods: Vec<((i32, i32), Target)> = s
+    let cards: Vec<((i32, i32), Target)> = s
         .targets
         .iter()
-        .filter(|h| {
-            h.x1 - h.x0 == 3 && matches!(&h.target, Target::Agent(a) if a.thread == "ref:#42")
-        })
-        .map(|h| ((h.x0, h.y), h.target.clone()))
+        .filter(|h| matches!(&h.target, Target::Agent(_)))
+        .map(|h| ((h.x0 + 1, h.y), h.target.clone()))
         .collect();
     let mut sw = wire("demo").0;
     let a3 = sw.orchestrators[0].threads[0]
@@ -83,20 +79,19 @@ fn pods_that_shifted_ignore_clicks_even_if_their_agent_card_did_not_move() {
         .iter_mut()
         .find(|a| a.id == "a3e1b22")
         .unwrap();
-    a3.status = Status::Failed; // the failed agent sorts first: every pod shifts a slot
+    a3.status = Status::Failed; // a finished agent no longer folds: the cards below it move
     r.refresh(sw, now);
     let s = r.d.shown().unwrap().clone();
-    let shifted: Vec<(i32, i32)> = pods
+    let shifted: Vec<(i32, i32)> = cards
         .iter()
-        .filter(|(at, t)| s.target_at(at.0, at.1) != Some(t))
+        .filter(|(at, t)| s.target_at(at.0, at.1).is_some_and(|n| n != t))
         .map(|(at, _)| *at)
         .collect();
-    let a1 = Target::Agent(AgentRef {
+    let a3 = Target::Agent(AgentRef {
         pane: "w1:p1".into(),
-        thread: "ref:#42".into(),
-        agent: "a1c3d90".into(),
+        agent: "a3e1b22".into(),
     });
-    assert!(shifted.iter().any(|&(x, y)| s.target_at(x, y) == Some(&a1)));
+    assert!(shifted.iter().any(|&(x, y)| s.target_at(x, y) == Some(&a3)));
     for at in shifted {
         let out = r.click_at(at, now + Duration::from_millis(100));
         assert_eq!(format!("{:?}", r.sel()), before);

@@ -7,15 +7,16 @@ pub const DW: i32 = 44;
 /// The narrowest the last depth column shown may shrink to, to fit.
 pub const DMIN: i32 = 36;
 
-/// Card widths (orchestrators, threads, agents) by the terminal width `w` (design turn 7):
-/// a little wider on big screens, capped, never stretched.
-pub fn tier(w: i32) -> (i32, i32, i32) {
+/// Card widths (roots, agents) by the terminal width `w` (design turn 7, with the thread
+/// column gone: plan `uniform-agent-tree.md` §4): a little wider on big screens, capped,
+/// never stretched.
+pub fn tier(w: i32) -> (i32, i32) {
     if w >= 300 {
-        (36, 64, 60)
+        (48, 60)
     } else if w >= 220 {
-        (32, 56, 56)
+        (44, 56)
     } else {
-        (28, ((w - 36 - 7 - 2) * 50 / 115).clamp(36, 50), DW)
+        (40, DW)
     }
 }
 
@@ -30,7 +31,7 @@ pub fn window(
     hcol: Option<usize>,
 ) -> (usize, usize) {
     let n = widths.len();
-    let min_of = |i: usize| if i < 2 { widths[i] } else { DMIN };
+    let min_of = |i: usize| if i == 0 { widths[0] } else { DMIN };
     let span = |lo: usize, hi: usize| {
         widths[lo..hi].iter().sum::<i32>() + gaps[lo + 1..=hi].iter().sum::<i32>() + min_of(hi)
     };
@@ -40,7 +41,7 @@ pub fn window(
         hi = lo;
     } else {
         lo = f.saturating_sub(1);
-        hi = (n - 1).min((f + 1).max(2));
+        hi = (n - 1).min(f + 1);
         while hi > f && span(lo, hi) > avail {
             hi -= 1;
         }
@@ -59,13 +60,9 @@ pub fn window(
     (lo, hi)
 }
 
-/// Column `i`'s name, as the line above the columns says what is off-screen.
+/// Column `i`'s name, as the line above the columns says what is off-screen: its depth.
 pub fn col_label(i: usize) -> String {
-    match i {
-        0 => "orchestrators".into(),
-        1 => "threads".into(),
-        _ => format!("depth {}", i - 1),
-    }
+    format!("Depth {i}")
 }
 
 /// The columns of one render: every column's width (the last one shown shrunk to fit), the
@@ -82,19 +79,15 @@ pub struct Columns {
 impl Columns {
     /// Lays out `widths` on a `w`-wide screen around the focus column `focus`.
     pub fn place(mut widths: Vec<i32>, w: i32, focus: usize, hcol: Option<usize>) -> Self {
-        let dw = tier(w).2;
+        let dw = tier(w).1;
         let gaps: Vec<i32> = (0..widths.len())
-            .map(|i| match i {
-                0 => 0,
-                1 => 6,
-                _ => 7,
-            })
+            .map(|i| if i == 0 { 0 } else { 7 })
             .collect();
         let f = focus.min(widths.len() - 1);
         let (lo, hi) = window(&widths, &gaps, f, w - 6, hcol);
         // scrolled: two more columns on the left for the lines in from there
         let x0 = if lo == 0 { 2 } else { 4 };
-        if hi >= 2 {
+        if hi >= 1 {
             // the space left on the right stays empty (operator: a stretched card's sweep
             // runs too long)
             let used = widths[lo..hi].iter().sum::<i32>() + gaps[lo + 1..=hi].iter().sum::<i32>();
@@ -138,7 +131,7 @@ impl Columns {
         self.widths.len()
     }
 
-    /// Whether there are none (never: the orchestrators are always a column).
+    /// Whether there are none (never: the roots are always a column).
     pub fn is_empty(&self) -> bool {
         self.widths.is_empty()
     }

@@ -83,9 +83,9 @@ fn a_tab_without_an_orchestrator_shows_the_graph_with_the_shown_one_opened() {
     p.on_connected(true);
     feed(&mut p, state(json!({"visible_tabs": ["w1:t1"]})));
     assert_eq!(p.swarm.docked, None);
-    // Python's initial selection: the shown orchestrator, its first thread and agent
+    // Python's initial selection: the shown root and its first depth-1 agent
     assert_eq!(p.view.orch.as_deref(), Some("w1:p1"));
-    assert!(p.view.thread.is_some() && p.view.agent.is_some());
+    assert!(p.view.agent.is_some());
     let f = Frame {
         now: 0.0,
         frame: 0.0,

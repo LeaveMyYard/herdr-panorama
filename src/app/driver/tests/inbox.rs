@@ -16,10 +16,9 @@ fn a_click_on_an_agent_cards_answer_deep_links_its_question() {
     r.key(Key::Right, now);
     r.key(Key::Move(1), now);
     r.key(Key::Move(1), now);
-    r.key(Key::Right, now); // PR #48: the asking agent, its card expanded
+    r.key(Key::Move(1), now); // PR #48: the asking agent, its card expanded
     let answer = Target::Answer(AgentRef {
         pane: "w1:p1".into(),
-        thread: "ref:#48".into(),
         agent: "c1d2e3f".into(),
     });
     assert!(r.spot(&answer).is_some());
