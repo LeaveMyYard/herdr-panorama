@@ -43,6 +43,7 @@ pub(super) fn thread(v: &Value, expected: &str) -> Option<Thread> {
         name: text(v, "name"),
         task_name: task_name(v),
         nickname: text(v, "agentNickname"),
+        preview: text(v, "preview"),
         role: text(v, "agentRole"),
         model: text(v, "model"),
         created_at: time(v, "createdAt").unwrap_or_default(),
@@ -60,7 +61,7 @@ fn task_name(v: &Value) -> Option<String> {
         .get("agent_path")?
         .as_str()?;
     let (_, last) = path.trim_end_matches('/').rsplit_once('/')?;
-    Some(clean(&last.replace('_', " "))).filter(|s| !s.trim().is_empty() && last != "root")
+    (last != "root").then(|| clean(&last.replace('_', " ")))
 }
 pub(super) fn turn(v: &Value) -> Option<Turn> {
     Some(Turn {

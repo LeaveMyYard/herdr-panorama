@@ -73,17 +73,19 @@ fn a_spawned_thread_carries_its_spawner_given_task_name() {
     let mut ids = Vec::new();
     parse::child_ids(&shapes["spawn_item"]["item"], &mut ids);
     assert_eq!(ids, ["child-thread"]);
-    // An unnamed (v1) spawn, the root's own path and a malformed source give no task name.
-    for source in [
-        json!({"subAgent":{"thread_spawn":{"parent_thread_id":"p","depth":1,"agent_path":null}}}),
-        json!({"subAgent":{"thread_spawn":{"parent_thread_id":"p","depth":1,"agent_path":"/root"}}}),
-        json!({"subAgent":{"thread_spawn":{"parent_thread_id":"p","depth":1,"agent_path":"/root/a/"}}}),
-        json!("cli"),
+    // A path names the task by its last segment; no path, the root's own path or a source
+    // that is not a spawn names none.
+    let spawn = |path: serde_json::Value| json!({"subAgent":{"thread_spawn":{"parent_thread_id":"p","depth":1,"agent_path":path}}});
+    for (source, expected) in [
+        (spawn(json!(null)), None),
+        (spawn(json!("/root")), None),
+        (spawn(json!("/root/plan/write_tests/")), Some("write tests")),
+        (json!("cli"), None),
     ] {
         let mut v = shapes["child_thread"].clone();
         v["source"] = source.clone();
         let t = parse::thread(&v, "child-thread").unwrap();
-        let expect = (source.to_string().contains("/root/a/")).then_some("a");
-        assert_eq!(t.task_name.as_deref(), expect, "{source}");
+        assert_eq!(t.task_name.as_deref(), expected, "{source}");
     }
+    assert_eq!(child.preview.as_deref(), Some("Review the auth flow"));
 }

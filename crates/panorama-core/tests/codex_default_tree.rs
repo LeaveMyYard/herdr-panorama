@@ -1,6 +1,7 @@
 //! Default collected Codex session hierarchy: no explicit report threads required. Agents
-//! carry the titles the collector gives them (plan `uniform-agent-tree.md` §2.2, U1b): the
-//! spawner's task name, Codex's nickname, the first prompt; the root's own card has none.
+//! carry hand-written titles of the kinds the collector gives (plan `uniform-agent-tree.md`
+//! §2.2, U1b): the spawner's task name, Codex's nickname, the first prompt; the root's own
+//! card has none.
 use panorama_core::model::{Status, Swarm};
 use panorama_core::view::nav::nav;
 use panorama_core::view::{Target, View, render_dock, render_graph};

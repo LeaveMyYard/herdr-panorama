@@ -28,7 +28,7 @@ pub(super) fn native_id(info: &serde_json::Map<String, serde_json::Value>) -> Op
 }
 
 /// What a Codex root's title is chosen from beyond herdr's names: its thread's name and the
-/// earliest prompt in its read window (plan §2.2 "Root, Codex").
+/// first prompt (`preview`, else the earliest one read) (plan §2.2 "Root, Codex").
 #[derive(Default)]
 pub(super) struct RootSeen {
     pub name: Option<String>,

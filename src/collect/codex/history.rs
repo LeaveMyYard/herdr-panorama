@@ -114,12 +114,20 @@ pub(super) fn agent(thread: &Thread, seq: i64) -> Agent {
     }
 }
 
-/// The prompt of the earliest turn in the read window that has one (turns are newest first).
+/// The thread's first prompt: Codex's `preview` (its first user message, so a long thread's
+/// title does not move with the read window), else the earliest prompt read (turns are newest
+/// first).
 pub(super) fn first_prompt(thread: &Thread) -> Option<&str> {
     thread
-        .turns
-        .iter()
-        .rev()
-        .map(|turn| turn.prompt.as_str())
-        .find(|prompt| !prompt.is_empty())
+        .preview
+        .as_deref()
+        .filter(|p| !p.is_empty())
+        .or_else(|| {
+            thread
+                .turns
+                .iter()
+                .rev()
+                .map(|turn| turn.prompt.as_str())
+                .find(|prompt| !prompt.is_empty())
+        })
 }

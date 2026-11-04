@@ -127,7 +127,8 @@ History-only children stay unknown, including in the compact dock.
 A Codex root is named by, in order: a pane name you set in herdr; its tab's
 label, when you named the tab and the tab holds only this agent; the root
 thread's `name` (from `/rename` or Codex's own title); the first line of its
-earliest prompt in the read window; a telling terminal title; else
+first prompt (Codex's thread `preview`, else the earliest prompt read); a
+telling terminal title; else
 `Codex · tab N`.
 
 A subagent, at any depth, is named by, in order:
@@ -141,7 +142,8 @@ A subagent, at any depth, is named by, in order:
 2. Its thread's `name`, when set.
 3. Codex's `agentNickname` (`Euclid`, `Lovelace`, …). It is stable but it is
    Codex's choice, not the spawner's.
-4. The first line of its earliest prompt in the read window.
+4. The first line of its first prompt (the thread's `preview`, else the
+   earliest prompt read).
 5. Its `agentRole` and short thread id, else `agent <short id>`.
 
 The spawn item itself (`collabAgentToolCall`) carries the spawner's whole
