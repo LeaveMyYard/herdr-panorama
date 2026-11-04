@@ -45,10 +45,7 @@ pub fn agent_card(cv: &mut Screen, p: Place, a: &Agent, c: AgentCtx, view: &View
         return folded(cv, p, a, c, view, Target::Agent(r));
     }
     let Place { x, y, w, .. } = p;
-    let mut lines = agent_detail_lines(a, w - 6, view.now, view.frame);
-    if let Some(about) = about(a) {
-        lines.insert(0, vec![Seg::new(trunc(&about, w - 6), DIM)]);
-    }
+    let lines = detail_lines(a, w - 6, view);
     let hh = 6 + lines.len() as i32;
     frame(
         cv,
@@ -75,6 +72,16 @@ pub fn agent_card(cv: &mut Screen, p: Place, a: &Agent, c: AgentCtx, view: &View
         &[age_of(a, view.now), calls(a), phase],
     );
     hh
+}
+
+/// The unfolded card's detail lines in `w` cells: a titled agent's `role id · model` first,
+/// then [`agent_detail_lines`]. The layout sizes the card from these too.
+pub fn detail_lines(a: &Agent, w: i32, view: &View) -> Vec<Vec<Seg>> {
+    let mut lines = agent_detail_lines(a, w, view.now, view.frame);
+    if let Some(about) = about(a) {
+        lines.insert(0, vec![Seg::new(trunc(&about, w), DIM)]);
+    }
+    lines
 }
 
 /// An unselected agent: its pod, title and activity on one line, its age and calls below.

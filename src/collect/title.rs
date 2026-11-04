@@ -99,15 +99,15 @@ pub fn first_line(text: &str) -> Option<String> {
 }
 
 /// A herdr label the operator did not choose: empty, all digits (herdr's numbering), the
-/// agent's kind or program name, `tab`, or one Panorama writes back itself when it leaves a
-/// tab (`home::label::neutral_label`: the agent's herdr name, else its kind, else `tab`).
-pub fn is_neutral(label: &str, kind: &str, herdr_name: Option<&str>) -> bool {
+/// agent's kind or program name, or `tab`. Of what Panorama writes back itself when it
+/// leaves a tab (`home::label::neutral_label`), the agent's herdr name needs no check here:
+/// a pane name that is not neutral already names the root before its tab does.
+pub fn is_neutral(label: &str, kind: &str) -> bool {
     let l = clean(label).to_lowercase();
     l.is_empty()
         || l.chars().all(|c| c.is_ascii_digit())
         || ["claude", "codex", "tab", "claude code"].contains(&l.as_str())
         || l == kind.to_lowercase()
-        || herdr_name.is_some_and(|n| clean(n).to_lowercase() == l)
 }
 
 /// A terminal title worth showing (`model.js`'s "telling" rule): not a path, not
@@ -116,7 +116,7 @@ pub fn is_telling(title: &str, kind: &str) -> bool {
     let t = clean(title);
     let raw = title.trim_start();
     let path = raw.starts_with(['/', '~']) || raw.as_bytes().get(1..3) == Some(b":\\".as_slice());
-    !t.is_empty() && !path && !t.contains('@') && !is_neutral(&t, kind, None)
+    !t.is_empty() && !path && !t.contains('@') && !is_neutral(&t, kind)
 }
 
 /// What a Claude root's title is chosen from (§2.2 "Root, Claude").
@@ -130,6 +130,7 @@ pub struct RootInputs<'a> {
     pub per_tab: usize,
     /// `custom-title`, `agent-name`, `ai-title`, in that order.
     pub session: [Option<&'a str>; 3],
+    /// The first operator prompt; its first line is used.
     pub first_prompt: Option<&'a str>,
     pub terminal_title: Option<&'a str>,
 }
@@ -137,18 +138,18 @@ pub struct RootInputs<'a> {
 /// A root's title from the operator's herdr names, its session and its terminal; `None`
 /// when none gives one ([`root_fallback`] then names it by its tab or pane).
 pub fn root(r: &RootInputs) -> Option<(String, &'static str)> {
-    let pane = r.pane_name.filter(|n| !is_neutral(n, r.kind, None));
-    let tab =
-        (r.per_tab <= 1 && !is_neutral(r.tab_label, r.kind, r.pane_name)).then_some(r.tab_label);
+    let pane = r.pane_name.filter(|n| !is_neutral(n, r.kind));
+    let tab = (r.per_tab <= 1 && !is_neutral(r.tab_label, r.kind)).then_some(r.tab_label);
     let terminal = r.terminal_title.filter(|t| is_telling(t, r.kind));
     let [custom, agent, ai] = r.session;
+    let prompt = r.first_prompt.and_then(first_line);
     first([
         (pane, "pane"),
         (tab, "tab"),
         (custom, "session"),
         (agent, "session"),
         (ai, "session"),
-        (r.first_prompt, "prompt"),
+        (prompt.as_deref(), "prompt"),
         (terminal, "pane"),
     ])
 }

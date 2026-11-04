@@ -29,7 +29,8 @@ fn swarm_of(run: &Value, cond: &str) -> Swarm {
 }
 
 /// The titles the Rust collector gives this captured scenario (U1a; Python's model has none):
-/// every tab label is operator-set, and every subagent has its spawner's description.
+/// every tab label is operator-set, and every subagent has its spawner's description (the
+/// collector's side is checked by `tests/collect_demo.rs` `roots_and_agents_carry_their_titles`).
 fn titled(swarm: &mut Swarm) {
     for o in &mut swarm.orchestrators {
         o.title = o.tab_label.clone();

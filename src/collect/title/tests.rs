@@ -129,7 +129,6 @@ fn a_neutral_tab_label_does_not_name_a_root() {
         };
         assert_eq!(root(&r), Some(want), "label {label:?}");
     }
-    assert!(is_neutral("mybot", "claude", Some("mybot")));
 }
 
 #[test]
@@ -165,7 +164,7 @@ fn session_titles_go_custom_then_agent_name_then_ai_title() {
 #[test]
 fn then_the_first_prompt_then_a_telling_terminal_title() {
     let r = RootInputs {
-        first_prompt: Some("Fix the build"),
+        first_prompt: Some("\n Fix the build\n\nContext: the CI log says X"),
         terminal_title: Some("✳ Something else"),
         ..inputs()
     };

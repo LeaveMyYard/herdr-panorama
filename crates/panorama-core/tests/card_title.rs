@@ -226,3 +226,30 @@ fn narrow_and_dock_rows_show_titles() {
     assert!(dock.contains("Author the invoice"), "{dock}");
     assert!(!dock.contains("general-purpose a6c"), "{dock}");
 }
+
+#[test]
+fn a_selected_titled_card_keeps_its_gap_to_the_card_below() {
+    // its `role id · model` line is counted in the layout: the next card moves down by one row
+    let sibling = |sw: &mut Swarm| {
+        let mut b = sw.orchestrators[0].threads[0].agents[1].clone();
+        b.parent = None;
+        b.depth = 1;
+        sw.orchestrators[0].threads[0].agents[1] = b;
+    };
+    let mut titled_sw = titled();
+    sibling(&mut titled_sw);
+    let mut plain = titled_sw.clone();
+    for a in &mut plain.orchestrators[0].threads[0].agents {
+        a.title.clear();
+    }
+    let v = titled_view("a6c8a7b1");
+    let at = |sw: &Swarm, text: &str| {
+        let rows = rows(sw, &v, 200);
+        let at = rows.iter().position(|r| r.contains(text)).expect(text);
+        (at, rows[at - 1].clone())
+    };
+    let (t_at, t_top) = at(&titled_sw, "Review the diff");
+    let (p_at, _) = at(&plain, "reviewer b2c3d4e");
+    assert_eq!(t_at, p_at + 1, "the gap row was eaten");
+    assert!(t_top.contains('╭'), "{t_top}");
+}

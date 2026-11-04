@@ -201,7 +201,8 @@ fn agent_block(cv: &mut Screen, mut r: i32, c: &CardCtx, t: &Thread, a: &Agent, 
         (role_label(a).to_owned(), String::new())
     } else {
         (
-            trunc(&a.title, (w - 18).max(8)),
+            // at most 3/5 of the row: its role, id, age and calls keep room
+            trunc(&a.title, ((w - 16) * 3 / 5).max(8)),
             format!(" {}", role_label(a)),
         )
     };
