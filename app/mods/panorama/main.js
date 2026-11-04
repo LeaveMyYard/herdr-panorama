@@ -5,7 +5,7 @@ import { startSidebar, consumerFeed, closeConsumer } from './feed-client.js';
 import { initViewport, wheelViewport, viewport } from './viewport.js';
 import { rootTarget } from './routing.js';
 import { PeekCaller } from './peek-caller.js';
-import { joinRoots, groups, rootSignature, iconProgram, spaceTotals } from './model.js';
+import { joinRoots, groups, listed, rootSignature, iconProgram, spaceTotals } from './model.js';
 import { rows, isOpen, needs, directTiles, agentTitle } from './tree.js';
 import { icon, mark, rootMarks, lines } from './marks.js';
 import { tile, badge, glyph, glyphRun, mix, stateOf, cardColors, SURFACE } from './state.js';
@@ -23,11 +23,14 @@ function shown(node, target, visible = true) {
 const narrow = () => (find(layout(), 'sidebar')?.size?.px ?? Infinity) < 160;
 const stop = (_event, cx) => cx.stop_propagation();
 const ROW = 20; // V9/V11 dense tree rows
+// The docked list's trunk: under the card icon's centre (edge 3 + pl 6 + number 14 + gap 8 + half the 16px icon), minus half the line.
+const TRUNK = 3 + 6 + 14 + 8 + 8 - 0.75;
 const DOCK = { fg: '#c3c7cd', hi: '#eceef1', number: '#4d535c', need: '#ffb547', fail: '#ff6b6b', hover: '#1c1e23' };
 const SECTION = { 4: stateOf('wait').hue, 3: stateOf('done').hue, 2: stateOf('run').hue };
 // V10 card state, aligned with the priority sections (groups()): failed > permission >
 // done (own status, no need kinds, i.e. groups() priority 3) > working > needs answer > idle.
 function cardState(item) {
+  if (item.stale) return 'stale';
   const kinds = item.aggregate.kinds;
   if (kinds.includes('fail')) return 'fail';
   if (kinds.includes('blk')) return 'blk';
@@ -39,8 +42,6 @@ function cardState(item) {
 const cardTitle = item => item.name;
 // Line 2: one tile per active direct subagent, ✓n for finished ones, then the counts.
 const strip = item => directTiles(item.root, item.nativeChildren?.length ?? 0);
-// Unmatched feed roots carry no app space; the sidebar lists them after the active space.
-const ELSEWHERE = { key: 'elsewhere', label: 'Elsewhere', tone: 'dim' };
 // The running sweep moves along the card's bottom border (SPEC 4.7), under line 2.
 function sweep(on, now) {
   if (!on) return [];
@@ -120,7 +121,7 @@ export default class Panorama extends View {
     const pic = item.program ?? iconProgram(item.root.harness), state = cardState(item), hue = stateOf(state).hue;
     const hovered = this.hovered === item.key, docked = item.focused, colors = cardColors(state, docked);
     const fill = hovered && !docked ? mix(hue, 0x0e / 255, DOCK.hover) : colors.fill;
-    const questions = item.aggregate.questions, line = strip(item), quiet = docked && open && count > 0;
+    const questions = item.aggregate.questions, line = item.stale ? { tiles: [], done: 0, active: 0, live: 0 } : strip(item), quiet = docked && open && count > 0;
     const number = item.stock?.tab_index ?? null;
     const title = cardTitle(item);
     const head = h_flex().h(25).pl(6).pr(10).items_center()
@@ -137,13 +138,14 @@ export default class Panorama extends View {
         .children(line.tiles.map(mark => tile(mark.status, 16, mark.status === 'wait' ? mark.questions : null)))
         .when(line.done > 0, el => el.child(tile('done', 16, line.done)))))
       .child(div().flex_1().min_w(0).truncate().when(!quiet && (line.tiles.length > 0 || line.done > 0), el => el.ml(6)).text_size(11.5).text_color(docked ? SURFACE.dim : SURFACE.faint)
-        .child(`${line.active} active · ${line.live} agents`));
+        .child(item.stale ? '' : `${line.active} active · ${line.live} agents`));
     // An open card continues into its rows (inCard), so its bottom stays square and open.
     return div().pt(4).h(52).flex_none().child(div().id(`root-${item.key}`).relative().h(48).border_color(colors.border).bg(hue)
       .when(joined, el => el.rounded_t(8).border_t(1).border_l(1).border_r(1)).when(!joined, el => el.rounded(8).border(1))
       .on_hover((on, cx) => { this.hovered = on ? item.key : (this.hovered === item.key ? null : this.hovered); cx.notify(); })
       .when(Boolean(item.terminal), el => el.cursor_pointer().on_click(() => run(rootTarget(item).name, rootTarget(item).args)))
       .child(v_flex().absolute().left(3).right(0).top(0).bottom(0).when(joined, el => el.rounded_tr(7)).when(!joined, el => el.rounded_r(7)).bg(fill).child(head).child(tail))
+      .when(joined, el => el.child(div().absolute().left(TRUNK).top(23).bottom(0).w(1.5).bg(t.input)))
       .children(sweep(state === 'run' && item.aggregate.sweep, now)));
   }
   // A row inside its root's card: the card's state edge, tint and border continue down to
@@ -185,11 +187,10 @@ export default class Panorama extends View {
     }
     const everything = joinRoots(this.feed?.feed, stock, all, ps, ss, this.changed);
     setAgentOrder(everything.filter(item => item.stock).map(item => item.stock.address));
-    // V10: the list shows the active space's roots only.
+    // V10: the active space's roots, plus roots known only from the feed (listed()).
     const active = ss.find(space => space.active)?.id ?? null;
-    const items = everything.filter(item => item.space !== null && item.space === active);
+    const items = listed(everything, active, Boolean(this.feed?.stale));
     const totals = headerTotals(items, active);
-    const elsewhere = everything.filter(item => !item.stock && !item.isNative && item.space === null);
     let sections = groups(items);
     const grouped = shared('agents.sort') === 'grouped';
     if (grouped) {
@@ -201,7 +202,6 @@ export default class Panorama extends View {
       }
       sections = [...mapped.values()];
     }
-    if (elsewhere.length) sections = [...sections, { ...ELSEWHERE, roots: elsewhere }];
     const rendered = [];
     const append = (element, height, animated = false) => rendered.push({ element, height, animated });
     for (const section of sections) {

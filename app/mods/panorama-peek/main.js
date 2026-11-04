@@ -4,7 +4,7 @@ import { agents, terminals, panes, spaces, props, theme, settings, window, run, 
 import { startConsumer, consumerFeed, closeConsumer } from './feed-client.js';
 import { harnessOf, iconProgram, joinRoots } from './model.js';
 import { agentTitle } from './tree.js';
-import { rootKey, probeMatches } from './contract.js';
+import { rootKey, requireProbe } from './contract.js';
 import { icon } from './marks.js';
 import { badge, stateOf } from './state.js';
 import { subject, transcriptScope, focusTarget } from './subject.js';
@@ -33,8 +33,7 @@ export default class PanoramaPeek extends View {
   scope() { return transcriptScope(this.value(), window()?.platform); }
   current(scope) { return !this.closed && this.scope()?.key === scope?.key; }
   async validate() {
-    const response = await this.client.callPrivate(['app-feed', '--help']);
-    if (response.code !== 0 || !probeMatches(response.stdout)) throw Error(response.stderr || response.stdout);
+    await requireProbe(args => this.client.callPrivate(args));
   }
   newPages() {
     this.pages?.close();
@@ -121,7 +120,7 @@ export default class PanoramaPeek extends View {
     // V11: titled by the agent's name (else its root's), with role · model beside it.
     const rootName = item?.name || root?.title || root?.tab_label || root?.pane_id || '';
     const context = [space?.name, rootName].filter(Boolean).join(' · ');
-    const heading = agent ? agentTitle(agent) : rootName, secondary = agent ? [agent.role, agent.model].filter(Boolean).join(' · ') : '';
+    const heading = agent ? agentTitle(agent) : rootName, secondary = agent ? [agent.title ? agent.role : null, agent.model].filter(Boolean).join(' · ') : '';
     const error = agent?.error || this.actionError, status = agent?.status ?? root?.herdr_status;
     // V11 C: the subject's state badge, and its state edge down the card's left side.
     return frame.relative().when(Boolean(value), el => el.child(div().absolute().left(0).top(10).bottom(10).w(3).rounded(2).bg(stateOf(status).hue)))

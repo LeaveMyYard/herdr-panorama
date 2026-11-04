@@ -1,6 +1,6 @@
 // Generated from app/shared/peek-caller.js by scripts/app-build.
 import { agents, terminals, panes, spaces, openOverlay, closeOverlay, settings } from 'herdr';
-import { rootKey, probeMatches } from './contract.js';
+import { rootKey, requireProbe } from './contract.js';
 import { joinRoots } from './model.js';
 const generation = value => typeof value === 'string' && /^[0-9a-f]{32}$/.test(value);
 const token = () => Array.from({ length: 4 }, () => Math.floor(Math.random() * 4294967296).toString(16).padStart(8, '0')).join('');
@@ -41,9 +41,8 @@ export class PeekCaller {
     this.current = next; this.error = null;
     cx.spawn(async cx => {
       try {
-        const answer = await this.client.callPrivate(['app-feed', '--help']);
+        await requireProbe(args => this.client.callPrivate(args));
         if (this.current !== next || this.closed) return;
-        if (answer.code !== 0 || !probeMatches(answer.stdout)) throw Error(answer.stderr || answer.stdout);
         const subject = this.resolve(scope, id);
         if (!subject) { this.current = null; this.retire(); return; }
         const viewport = globalThis.window.viewport_size(), zoom = settings().zoom ?? 1;

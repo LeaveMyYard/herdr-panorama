@@ -7,6 +7,7 @@ import { sandbox, root } from './helpers.mjs';
 import { state } from './herdr-fixture.mjs';
 register('./herdr-loader.mjs', import.meta.url);
 const { startSidebar: startFeed, startConsumer, consumerFeed, closeConsumer, validLease } = await import('../shared/feed-client.js');
+const { PeekCaller } = await import('../shared/peek-caller.js');
 function ready(t) {
   const s = sandbox(t), artifact = join(s.temp, 'reviewed');
   writeFileSync(artifact, '#!/bin/sh\nexit 0\n', { mode: 0o755 });
@@ -252,4 +253,20 @@ test('a pinned receipt and valid persisted lease cannot present fresh data befor
   startConsumer(s.view,s.cx);await until(()=>release);assert.equal(s.view.feedClient.install_id,receipt.install_id);assert.equal(consumerFeed(s.view).stale,true);
   release(JSON.stringify({v:1,install_id:receipt.install_id,disabled:false}));await until(()=>s.view.feedValidated);
   assert.equal(consumerFeed(s.view).stale,false);assert.equal(state.execs.length,0);
+});
+
+test('Peek opens only after the bound writer answers the exact v2 probe', async () => {
+  const G = '0123456789abcdef0123456789abcdef', feed = JSON.parse(readFileSync(join(root, 'tests/fixtures/app-feed/swarm.json')));
+  globalThis.window = { viewport_size: () => ({ width: 1200, height: 900 }) };
+  for (const [stdout, opens] of [['panorama app-feed v1\n', 0], ['panorama app-feed v2\n', 1]]) {
+    state.overlays = []; let done;
+    const finished = new Promise(resolve => { done = resolve; });
+    const client = { stopped: false, install_id: G, callPrivate: async args => { assert.deepEqual(args, ['app-feed', '--help']); return { code: 0, stdout, stderr: '' }; } };
+    const caller = new PeekCaller('panorama', client, () => ({ feed, stale: false, install_id: G }));
+    const cx = { spawn: callback => Promise.resolve(callback(cx)), notify: done };
+    caller.show({ root: feed.roots[0], agent: feed.roots[0].agents[0] }, 'row', false, cx); await finished;
+    assert.equal(state.overlays.length, opens);
+    assert.equal(Boolean(caller.error), !opens);
+    if (opens) assert.equal(state.overlays[0].props.agent, feed.roots[0].agents[0]);
+  }
 });

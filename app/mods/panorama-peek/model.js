@@ -18,7 +18,7 @@ function telling(pane) {
 // pane title, then the program name and address. The space name is secondary context.
 export function rootTitle({ address, program, terminal, tab, alone, feed, pane }) {
   const pick = [[named(terminal?.name, address, program), 'pane'], [tab?.named && alone ? named(tab.name, address, program) : null, 'tab'],
-    [clean(feed?.title), feed?.title_source ?? 'feed'], [telling(pane), 'live'], [program?.name, 'program'], [address, 'id']].find(([value]) => value);
+    [clean(feed?.title), feed?.title_source ?? 'feed'], [telling(pane), 'live'], [program?.name && address ? `${program.name} · ${address}` : program?.name, 'program'], [address, 'id']].find(([value]) => value);
   return pick ? { name: pick[0], source: pick[1] } : { name: '', source: 'id' };
 }
 export function joinRoots(feed, stock, terminals, panes, spaces, changes = {}) {
@@ -35,7 +35,7 @@ export function joinRoots(feed, stock, terminals, panes, spaces, changes = {}) {
     const title = rootTitle({ address: agent.address, program: agent.program, terminal: byAddress.get(agent.address), tab,
       alone: stock.filter(other => other.tab === agent.tab).length === 1, feed: source, pane: pane ?? { title: agent.title, program: agent.program } });
     return { key: rootKey(root), root, stock: agent, terminal: live.has(agent.address) ? agent.address : null,
-      name: title.name, title_source: title.source, spaceName: agent.space_name ?? null, space: agent.space ?? null,
+      name: title.name, title_source: title.source, space: agent.space ?? null,
       tab: agent.tab ?? null, nativeChildren: [], isNative: false, status: agent.status, program: agent.program, pinned: Boolean(agent.pinned), focused: Boolean(agent.focused),
       seq: agent.seq ?? index, changed: changes[agent.address]?.at ?? 0, aggregate: aggregate(root, agent.status) };
   });
@@ -71,11 +71,22 @@ export function joinRoots(feed, stock, terminals, panes, spaces, changes = {}) {
   // null: no app space, tab, focus target or aggregate is invented for them. The sidebar
   // lists them after the active space's roots (feed v2 "Identity, tree and app joins").
   for (const root of feed?.roots ?? []) if (!used.has(root)) {
-    roots.push({ key: rootKey(root), root, stock: null, terminal: null, name: clean(root.title) || root.tab_label || root.pane_id, title_source: root.title ? root.title_source : 'tab', spaceName: null,
+    const [name, source] = [[clean(root.title), root.title_source], [root.tab_label, 'tab'], [root.pane_id, 'id']].find(([value]) => value);
+    roots.push({ key: rootKey(root), root, stock: null, terminal: null, name, title_source: source,
       space: null, tab: null, nativeChildren: [], isNative: false, status: root.herdr_status, program: null, pinned: false, focused: false, seq: 0,
       changed: 0, aggregate: aggregate(root) });
   }
   return roots.sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.aggregate.priority - a.aggregate.priority || b.aggregate.urgency - a.aggregate.urgency || b.changed - a.changed || b.seq - a.seq);
+}
+// A root known only from the feed: no stock agent, no app space.
+export const feedOnly = item => !item.stock && !item.isNative && item.space === null;
+// The sidebar's list: the active space's roots, then every feed-only root (feed v2 keeps
+// them listed under their feed identity, in the ordinary priority sections). A stale feed
+// is not fresh evidence, so its feed-only roots then read Stale with no needs or work.
+export function listed(roots, active, stale) {
+  const quiet = item => ({ ...item, status: 'stale', stale: true, aggregate: { ...item.aggregate, kinds: [], needsCount: 0, questions: 0, working: false, sweep: false, priority: 1, urgency: 0 } });
+  return roots.filter(item => (item.space !== null && item.space === active) || feedOnly(item)).map(item => stale && feedOnly(item) ? quiet(item) : item)
+    .sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.aggregate.priority - a.aggregate.priority); // stable: joinRoots order within a section
 }
 export function groups(roots) {
   const result = [];

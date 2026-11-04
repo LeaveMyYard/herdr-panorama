@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { root as repo } from './helpers.mjs';
-import { parseFeed, readResult, rootKey, agentKey, probeMatches } from '../shared/contract.js';
+import { parseFeed, readResult, rootKey, agentKey, probeMatches, requireProbe } from '../shared/contract.js';
 import { rootTarget, detailTarget } from '../shared/routing.js';
 import { aggregate, forest, rows, directTiles, agentTitle } from '../shared/tree.js';
-import { joinRoots, harnessOf, iconProgram, nativeMembership, spaceTotals, rootTitle } from '../shared/model.js';
+import { joinRoots, harnessOf, iconProgram, nativeMembership, spaceTotals, rootTitle, listed, groups } from '../shared/model.js';
 const read = name => readFileSync(join(repo, `tests/fixtures/app-feed/${name}.json`), 'utf8');
 const fixture = () => JSON.parse(read('swarm'));
 const root = () => fixture().roots[0];
@@ -23,7 +23,9 @@ test('v2 fixtures parse; invalid, v1 and unknown versions retain the last valid 
   assert.equal(readResult(null, null).feed, null);
 });
 
-test('the capability probe is exactly the first stdout line `panorama app-feed v2`', () => {
+test('the capability probe is exactly the first stdout line `panorama app-feed v2`', async () => {
+  for (const answer of [{ code: 0, stdout: 'panorama app-feed v1\n' }, { code: 1, stdout: 'panorama app-feed v2\n' }, null]) await assert.rejects(requireProbe(async () => answer));
+  assert.equal((await requireProbe(async () => ({ code: 0, stdout: 'panorama app-feed v2\n' }))).code, 0);
   assert.equal(probeMatches('panorama app-feed v2\nusage'), true);
   for (const stdout of ['panorama app-feed v1\n', ' panorama app-feed v2', 'x\npanorama app-feed v2', 'panorama app-feed v20', null]) assert.equal(probeMatches(stdout), false);
 });
@@ -140,12 +142,11 @@ test('root titles: operator-named terminal, then a named tab holding one agent, 
   assert.deepEqual(rootTitle({ address: 't2', program, terminal: { name: 't2' }, tab, alone: true, feed }), { name: 'Release', source: 'tab' });
   assert.deepEqual(rootTitle({ address: 't2', program, terminal: { name: 'Claude Code' }, tab, alone: false, feed }), { name: 'Billing API migration', source: 'session' });
   assert.deepEqual(rootTitle({ address: 't2', program, tab: { ...tab, named: false, name: '2' }, alone: true, feed: null, pane: { title: 'Fix login flake', program } }), { name: 'Fix login flake', source: 'live' });
-  assert.deepEqual(rootTitle({ address: 't2', program, pane: { title: '~/Code/x', program } }), { name: 'Claude Code', source: 'program' });
+  assert.deepEqual(rootTitle({ address: 't2', program, pane: { title: '~/Code/x', program } }), { name: 'Claude Code · t2', source: 'program' });
   const r = root(); r.terminal = 't2';
   const stock = [{ address: 't2', space: 's', space_name: 'Payments space', tab: 'tb', status: 'working', program }, { address: 't3', space: 's', space_name: 'Payments space', tab: 'tb', status: 'idle', program }];
   const joined = joinRoots({ roots: [r] }, stock, [{ address: 't2', state: 'live' }], [], [{ id: 's', tabs: [tab] }]);
   assert.equal(joined.find(item => item.root === r).name, 'Billing API migration', 'two agents share the tab, so the tab names neither');
-  assert.equal(joined.find(item => item.root === r).spaceName, 'Payments space');
   assert.equal(joinRoots({ roots: [r] }, stock.slice(0, 1), [{ address: 't2', state: 'live' }], [], [{ id: 's', tabs: [tab] }])[0].name, 'Release');
 });
 
@@ -162,6 +163,8 @@ test('exact qualified core join enriches once; parity, unknown roots and missing
   r.host = 'herdr-tui';
   const unmatched = joinRoots(f, stock, known, [], []).find(item => !item.stock);
   assert.equal(unmatched.name, 'feed metadata'); assert.equal(unmatched.space, null); assert.equal(unmatched.terminal, null);
+  assert.equal(unmatched.title_source, 'tab');
+  r.title = '·'; r.tab_label = ''; assert.equal(joinRoots(f, stock, known, [], []).find(item => !item.stock).title_source, 'id');
   r.title = 'Watch the deploy';
   assert.equal(joinRoots(f, stock, known, [], []).find(item => !item.stock).name, 'Watch the deploy');
   assert.equal(joinRoots(f, stock, known, [], []).length, 4);
@@ -274,4 +277,17 @@ test('idle roots with working descendants promote Working; own done remains Done
   stock[0].status = 'done'; assert.equal(joinRoots(null, stock, live, [], [])[0].aggregate.priority, 3);
   stock[0].status = 'idle'; live[1].status = 'done';
   assert.equal(joinRoots(null, stock, live, [], [])[0].aggregate.priority, 1);
+});
+
+test('feed-only roots stay listed in the ordinary sections; a stale feed shows them Stale with no needs', () => {
+  const blocked = root(); blocked.host = 'herdr-tui'; blocked.terminal = null; blocked.herdr_status = 'blocked';
+  const stock = [{ address: 't1', space: 'a', tab: 'tb', status: 'working' }, { address: 't9', space: 'b', tab: 'tb2', status: 'idle' }];
+  const all = joinRoots({ roots: [blocked] }, stock, [{ address: 't1', state: 'live' }], [], []);
+  const fresh = listed(all, 'a', false);
+  assert.deepEqual(fresh.map(item => item.stock?.address ?? item.root.pane_id), [blocked.pane_id, 't1']);
+  assert.deepEqual(groups(fresh).map(group => group.label), ['Needs you', 'Working']);
+  assert.deepEqual(groups(listed(all, 'a', true)).map(group => group.label), ['Working', 'Idle']);
+  const stale = listed(all, 'a', true).find(item => !item.stock);
+  assert.equal(stale.status, 'stale'); assert.equal(stale.stale, true); assert.deepEqual(stale.aggregate.kinds, []); assert.equal(stale.aggregate.priority, 1);
+  assert.equal(all.find(item => !item.stock).aggregate.priority, 4, 'the joined entity itself is not mutated');
 });

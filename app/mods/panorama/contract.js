@@ -25,6 +25,12 @@ function type(value, spec, path) {
 // The writer's capability probe: exactly this first stdout line of `app-feed --help`.
 export const FEED_PROBE = 'panorama app-feed v2';
 export const probeMatches = stdout => typeof stdout === 'string' && stdout.split('\n')[0] === FEED_PROBE;
+// Peek and its callers re-probe the bound private command before acting; any other writer throws.
+export async function requireProbe(callPrivate) {
+  const answer = await callPrivate(['app-feed', '--help']);
+  if (answer?.code !== 0 || !probeMatches(answer.stdout)) throw Error(answer?.stderr || answer?.stdout || 'app-feed probe');
+  return answer;
+}
 export const rootKey = root => JSON.stringify(['root', root.host, root.host === 'herdr-core' && root.terminal !== null ? root.terminal : root.pane_id]);
 export const agentKey = (root, agent) => JSON.stringify(['agent', rootKey(root), agent.id]);
 function unique(values, label) {
