@@ -25,12 +25,12 @@ const stop = (_event, cx) => cx.stop_propagation();
 const DOCK = { fg: '#c3c7cd', hi: '#eceef1', number: '#4d535c', need: '#ffb547', fail: '#ff6b6b', hover: '#1c1e23' };
 const SECTION = { 4: stateOf('wait').hue, 3: stateOf('done').hue, 2: stateOf('run').hue };
 // V10 card state, aligned with the priority sections (groups()): failed > permission >
-// done (own status, no needs) > working > needs answer > idle.
+// done (own status, no need kinds, i.e. groups() priority 3) > working > needs answer > idle.
 function cardState(item) {
   const kinds = item.aggregate.kinds;
   if (kinds.includes('fail')) return 'fail';
   if (kinds.includes('blk')) return 'blk';
-  if (item.status === 'done') return 'done';
+  if (item.status === 'done' && !kinds.length) return 'done';
   if (item.aggregate.working) return 'run';
   return kinds.includes('wait') ? 'wait' : 'idle';
 }
