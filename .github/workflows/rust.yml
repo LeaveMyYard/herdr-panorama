@@ -57,7 +57,7 @@ jobs:
               - 'tests/fixtures/app-feed-runtime/**'
               - 'docs/protocol/app-feed-runtime-v1.md'
               - 'tests/fixtures/app-feed/**'
-              - 'docs/protocol/app-feed-v1.md'
+              - 'docs/protocol/app-feed-v2.md'
               - 'tests/core_host_source.rs'
               - 'tests/codex_identity_store.rs'
               - 'tests/fixtures/hc-list.json'

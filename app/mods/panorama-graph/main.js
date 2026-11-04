@@ -6,9 +6,9 @@ import { startConsumer, consumerFeed, closeConsumer } from './feed-client.js';
 import { InboxNavigation } from './inbox.js';
 import { rootTarget } from './routing.js';
 import { PeekCaller } from './peek-caller.js';
-import { rootKey, threadKey, agentKey } from './contract.js';
+import { rootKey, agentKey } from './contract.js';
 
-import { graphModel, columnWindow, currentNode, selectNode, navigate, selectionPath, ClickGuard, viewportAnimates, logicalSize } from './graph.js';
+import { graphModel, columnWindow, currentNode, selectNode, navigate, selectionPath, crumbs, ClickGuard, viewportAnimates, logicalSize } from './graph.js';
 import { card, alpha } from './cards.js';
 import { answerIntent } from './actions.js';
 export default class Graph extends View {
@@ -19,7 +19,7 @@ export default class Graph extends View {
     cx.spawn(async cx => { await this.inbox.refresh(); cx.notify(); });
     this.changed = {}; // Status ages belong to this live view, never a persisted store.
     this.space = initial?.space ?? props()?.space ?? focused()?.space;
-    this.state = { focus: 1, orch: null, thread: null, agent: null, expanded: new Set(), remember: new Map(), manual: null, scroll: {} };
+    this.state = { focus: 0, root: null, agent: null, expanded: new Set(), remember: new Map(), manual: null, scroll: {} };
     this.guard = new ClickGuard(); this.size = { width: 1000, height: 600 }; this.handle = cx.focus_handle();
     cx.timer.every(30000, cx => { cx.notify(); cx.spawn(async cx => { if (!this.inbox.busy) { await this.inbox.refresh(); cx.notify(); } }); });
     cx.spawn(async cx => {
@@ -56,20 +56,15 @@ export default class Graph extends View {
     }
     const roots = joinRoots(wrapper?.feed, stock, terminals(), panes(), spaces(), this.changed).filter(item => item.space === this.space);
     let model = graphModel(roots, this.state);
-    if (model.item && this.state.orch !== model.item.key) this.state.orch = model.item.key;
-    if (model.thread && this.state.thread !== threadKey(model.item.root, model.thread)) this.state.thread = threadKey(model.item.root, model.thread);
+    if (model.item && this.state.root !== model.item.key) this.state.root = model.item.key;
     this.state.focus = Math.min(this.state.focus, model.columns.length - 1);
     while (this.state.focus > 0 && !model.columns[this.state.focus]?.length) this.state.focus--;
-    if (this.state.focus >= (model.nativeFallback ? 1 : 2)) {
+    if (this.state.focus >= 1) {
       const current = currentNode(model, this.state);
       if (current && this.state.agent !== current.key) { this.state.agent = current.key; model = graphModel(roots, this.state); }
     }
     model.source = JSON.stringify([wrapper, roots.map(root => [root.key, root.status, root.root])]);
-    for (const node of model.nodes) {
-      const owner = node.item ?? model.item;
-      const thread = node.kind === 'thread' ? node.thread : ['agent', 'fold'].includes(node.kind) ? model.thread : null;
-      node.scope = JSON.stringify([wrapper.install_id, rootKey(owner.root), owner.root.session_id, thread?.id ?? null]);
-    }
+    for (const node of model.nodes) node.scope = JSON.stringify([wrapper.install_id, rootKey(node.owner.root), node.owner.root.session_id ?? null]);
     this.current = currentNode(model, this.state);
     return model;
   }
@@ -89,10 +84,10 @@ export default class Graph extends View {
     if (!node || !this.guard.allows(node.key, Date.now())) return;
     const model = this.model();
     node = this.resolveNode(node, model); if (!node) return;
-    const item = node.item ?? model.item;
-    const thread = node.kind === 'thread' ? node.thread : ['agent', 'fold'].includes(node.kind) ? model.thread : null;
-    if (node.kind === 'fold' && action === 'open') { this.state.expanded.add(node.parent?.key ?? threadKey(model.item.root, model.thread)); this.state.agent = agentKey(model.item.root, node.fold[0]); return; }
-    if (action === 'orchestrator') { const target = rootTarget(node.kind === 'orch' ? item : model.item); if (target) run(target.name, target.args); return; }
+    // The owner is the root or native terminal whose feed root holds this node's agent.
+    const item = node.owner;
+    if (node.kind === 'fold' && action === 'open') { if (node.fold.length) { this.state.expanded.add(node.group); this.state.agent = agentKey(item.root, node.fold[0]); } return; }
+    if (action === 'root') { const target = rootTarget(node.kind === 'root' ? item : model.item); if (target) run(target.name, target.args); return; }
     if (action === 'answer') {
       const intent = answerIntent(item, node);
       if (intent?.kind === 'permission') run(intent.target.name, intent.target.args);
@@ -100,12 +95,12 @@ export default class Graph extends View {
       return;
     }
     if (action === 'transcript') {
-      this.peekCaller.show({ root: item.root, thread, agent: node.agent ?? null }, node.key, true, cx); return;
+      this.peekCaller.show({ root: item.root, agent: node.agent ?? null }, node.key, true, cx); return;
     }
-    if (node.kind === 'orch' || node.kind === 'thread' || node.kind === 'native') {
+    if (node.kind === 'root' || node.kind === 'native') {
       const target = rootTarget(item); if (target) run(target.name, target.args); return;
     }
-    this.peekCaller.show({ root: item.root, thread, agent: node.agent }, node.key, false, cx);
+    this.peekCaller.show({ root: item.root, agent: node.agent }, node.key, false, cx);
   }
   openInbox(question, cx) {
     if (!cx || !this.inbox.canOpen(question) || this.inbox.busy) return;
@@ -124,7 +119,7 @@ export default class Graph extends View {
     if (event.modifiers.control || event.modifiers.platform || event.modifiers.alt) return;
     const direction = ({ up: 'up', k: 'up', down: 'down', j: 'down', right: 'right', l: 'right', left: 'left', h: 'left' })[event.key];
     if (direction) { navigate(this.state, this.model(), direction); cx.stop_propagation(); cx.notify(); return; }
-    const action = ({ enter: 'open', t: 'transcript', a: 'answer', i: 'inbox', g: 'orchestrator' })[event.key];
+    const action = ({ enter: 'open', t: 'transcript', a: 'answer', i: 'inbox', g: 'root' })[event.key];
     if (action) { this.act(action, this.current, cx); cx.stop_propagation(); cx.notify(); }
   }
   scroll(event, cx, column = null) {
@@ -163,12 +158,8 @@ export default class Graph extends View {
       result.push(line(spine, top, 1.5, bottom - top));
       for (let index = 0; index < targetYs.length; index++) result.push(line(spine, targetYs[index], child.x - spine, 1.5, path.has(targets[index]?.key) ? bright : t.input));
     };
-    const orch = model.orchs.find(node => node.key === model.item?.key);
-    if (orch) groupLine(orch, 1, model.threadNodes.map(node => node.y + node.mid));
-    for (const group of model.tree.groups) {
-      const parent = group.parent ?? model.threadNodes.find(node => node.thread === model.thread);
-      groupLine(parent ?? orch, group.depth + (model.nativeFallback ? 0 : 1), group.ys);
-    }
+    const head = model.heads.find(node => node.key === model.item?.key);
+    for (const group of model.tree.groups) groupLine(group.parent ?? head, group.depth, group.ys);
     return result;
   }
   render(cx) {
@@ -179,7 +170,7 @@ export default class Graph extends View {
     const t = theme(), now = Date.now(), model = this.model(); this.lastModel = model;
     const source = model.source;
     this.guard.refresh(model.nodes, now, this.source !== undefined && source !== this.source); this.source = source;
-    const window = columnWindow(model.columns.length, this.state.focus, this.size.width - 32, this.state.manual, model.nativeFallback); this.window = window;
+    const window = columnWindow(model.columns.length, this.state.focus, this.size.width - 32, this.state.manual); this.window = window;
     const height = this.canvasSize?.height ?? Math.max(0, this.size.height - 104); this.canvasHeight = height;
     const offsets = this.offsetsFor(model, height);
     const viewport = JSON.stringify([window.lo, window.hi, offsets]);
@@ -189,10 +180,8 @@ export default class Graph extends View {
     if (animate && !this.animation) this.animation = cx.timer.every(50, cx => { if (this.isVisible()) cx.notify(); else { this.animation.cancel(); this.animation = null; } });
     if (!animate && this.animation) { this.animation.cancel(); this.animation = null; }
     const path = selectionPath(model, this.state), hiddenRight = model.columns.length - 1 - window.hi;
-    const crumbs = [model.item?.detail || model.item?.name, ...(model.thread ? [model.thread.name] : [])];
-    let selected = model.nodes.find(node => node.key === this.state.agent); const agentPath = [];
-    while (selected) { agentPath.unshift(selected.agent?.id ?? selected.item?.name ?? ''); selected = selected.parent; } crumbs.push(...agentPath);
-    const label = column => column === 0 ? 'Orchestrators' : model.nativeFallback ? `Depth ${column}` : column === 1 ? 'Threads' : `Depth ${column - 1}`;
+    const names = crumbs(model, this.state), last = model.columns.length - 1;
+    const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
     const canvas = div().relative().flex_1().min_h(0).w_full().overflow_hidden().id('graph-canvas')
       .on_size_change((size, cx) => { if (!this.measuredCanvas || size.height !== this.measuredCanvas.height || size.width !== this.measuredCanvas.width) { this.measuredCanvas = size; cx.notify(); } })
       .on_scroll_wheel((event, cx) => this.scroll(event, cx)).children(this.connectors(t, model, window))
@@ -214,10 +203,10 @@ export default class Graph extends View {
       .on_mouse_down('left', () => this.handle.focus())
       .on_size_change((size, cx) => { if (!this.measuredSize || size.width !== this.measuredSize.width || size.height !== this.measuredSize.height) { this.measuredSize = size; cx.notify(); } })
       .child(h_flex().h(22).flex_none().items_center().text_size(11.5)
-        .child(div().flex_1().truncate().text_color(t.muted).child(window.lo ? `‹ ${crumbs.slice(0, window.lo).filter(Boolean).join(' › ')}   ${window.lo} columns left` : ''))
-        .child(div().flex_none().text_color(t.dim).child(hiddenRight ? `depth ${window.hi}–${model.columns.length - 2} · ${hiddenRight} columns right ›` : '')))
+        .child(div().flex_1().truncate().text_color(t.muted).child(window.lo ? `‹ ${names.slice(0, window.lo).filter(Boolean).join(' › ')}   ${plural(window.lo, 'column')} left` : ''))
+        .child(div().flex_none().text_color(t.dim).child(hiddenRight ? `depth ${window.hi + 1}${hiddenRight > 1 ? `–${last}` : ''} · ${plural(hiddenRight, 'column')} right ›` : '')))
       .child(div().relative().h(24).flex_none().children(window.columns.map(column => h_flex().absolute().left(column.x).w(column.width).h(24).gap(6).items_center().text_size(11.5)
-        .child(div().font_medium().text_color(t.dim).child(label(column.column)))
+        .child(div().font_medium().text_color(t.dim).child(`Depth ${column.column}`))
         .child(div().text_color(t.dim).child(String(model.columns[column.column].reduce((count, node) => count + (node.fold?.length ?? 1), 0)))))))
       .child(canvas)
       .child(div().relative().h(6).mt(6).mb(6).rounded(3).flex_none().bg(alpha(t.foreground, '0a'))

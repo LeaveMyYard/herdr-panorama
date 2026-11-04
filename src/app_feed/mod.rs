@@ -1,4 +1,4 @@
-//! App feed v1 keeps runtime provenance beside the swarm, written in its legacy shape ([`v1`]).
+//! App feed v2 keeps runtime provenance beside the swarm (`docs/protocol/app-feed-v2.md`).
 pub mod cli;
 pub mod ensure;
 pub mod fs;
@@ -10,7 +10,6 @@ pub mod receipt;
 pub mod runtime;
 pub mod serialize;
 pub mod triggers;
-pub mod v1;
 
 use crate::host::{Host, collect::Collected};
 use panorama_core::model::Swarm;

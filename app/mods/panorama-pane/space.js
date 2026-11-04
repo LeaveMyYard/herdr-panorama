@@ -6,7 +6,6 @@ export function spaceInventory(roots, space) {
     if (item.space !== space || !address || seen.has(address)) continue;
     seen.add(address); items.push(item);
   }
-  return { orchestrators: items.filter(item => !item.isNative).length,
-    threads: items.reduce((count, item) => count + item.root.threads.length, 0),
-    agents: items.reduce((count, item) => count + Number(item.isNative) + item.root.threads.reduce((n, thread) => n + thread.agents.length, 0), 0) };
+  return { roots: items.filter(item => !item.isNative).length,
+    agents: items.reduce((count, item) => count + Number(item.isNative) + (item.root.agents?.length ?? 0), 0) };
 }

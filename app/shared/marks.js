@@ -23,14 +23,14 @@ export function rootMarks(t, item) {
     .children(item.aggregate.kinds.map(kind => mark(t, kind, item.aggregate.questions)))
     .when(item.status !== 'blocked', el => el.child(mark(t, item.status, 0, true)));
 }
-export function phases(t, items) {
-  return h_flex().flex_none().gap(2).ml(8).items_center().children(items.map(phase => div().w(8).h(4).rounded(2)
-    .bg(({ done: t.dim, now: t.working, failed: t.blocked, waiting: t.blocked })[phase.state] ?? t.input)));
-}
-export function lines(t, segments) {
+// Tree segments for one row (V7 "computed, not stitched"): │ and ├ run one straight
+// vertical through the row, ├ adds a straight tick at the row centre (`height`), and only
+// the last child's └ is a rounded elbow.
+export function lines(t, segments, height = 26) {
   return segments.map(segment => div().relative().w(13).h_full().flex_none()
-    .when(segment === '│' || segment === '├', el => el.child(div().absolute().left(7).top(-2).bottom(0).w(1.5).bg(t.input)))
-    .when(segment === '├' || segment === '└', el => el.child(div().absolute().left(7).top(-2).h(15).w(6).border_l(1.5).border_b(1.5).rounded_bl(6).border_color(t.input))));
+    .when(segment === '│' || segment === '├', el => el.child(div().absolute().left(6.25).top(0).bottom(0).w(1.5).bg(t.input)))
+    .when(segment === '├', el => el.child(div().absolute().left(7).top(height / 2 - 0.75).w(6).h(1.5).bg(t.input)))
+    .when(segment === '└', el => el.child(div().absolute().left(6.25).top(0).h(height / 2 + 0.75).w(6.75).border_l(1.5).border_b(1.5).rounded_bl(5).border_color(t.input))));
 }
 export function borderMotion(t, now, { edge = false, sweep = false, root = false } = {}) {
   const p = (now % 2400) / 2400, eased = p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;

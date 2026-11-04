@@ -7,13 +7,12 @@ export function subject(packet, client, intent) {
   if (!generation(id) || packet?.stale || client?.stopped || client?.install_id !== id || packet?.install_id !== id || !packet.feed) return null;
   let key;
   try { key = rootKey(intent.root); } catch { return null; }
-  const root = packet.feed.orchestrators.find(candidate => rootKey(candidate) === key);
+  const root = packet.feed.roots.find(candidate => rootKey(candidate) === key);
   if (!root || root.session_id !== intent.root.session_id) return null;
-  const thread = intent.thread ? root.threads.find(candidate => candidate.id === intent.thread.id) : null;
-  if (intent.thread && !thread) return null;
-  const agent = intent.agent && thread ? thread.agents.find(candidate => candidate.id === intent.agent.id) : null;
+  // Scope is {root, agent}: the agent resolves in its root's one tree, never from props.
+  const agent = intent.agent ? root.agents.find(candidate => candidate.id === intent.agent.id) : null;
   if (intent.agent && !agent) return null;
-  return { root, thread, agent, generation: id, stale: Boolean(packet.stale), key: JSON.stringify([id, key, root.session_id, thread?.id ?? null, agent?.id ?? null]) };
+  return { root, agent, generation: id, stale: Boolean(packet.stale), key: JSON.stringify([id, key, root.session_id, agent?.id ?? null]) };
 }
 export function filesystemRef(value, platform) {
   if (typeof value !== 'string' || !value || value.includes('\0')) return null;

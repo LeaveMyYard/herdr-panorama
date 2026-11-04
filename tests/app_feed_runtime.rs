@@ -18,7 +18,7 @@ fn help_and_invalid_installations_never_start_or_create_runtime() {
         .output()
         .unwrap();
     assert!(help.status.success());
-    assert!(String::from_utf8_lossy(&help.stdout).starts_with("panorama app-feed v1\n"));
+    assert!(String::from_utf8_lossy(&help.stdout).starts_with("panorama app-feed v2\n"));
     assert_eq!(std::fs::read_dir(temp.path()).unwrap().count(), 0);
     let install = Installed::new();
     let before = std::fs::read(install.app.join(RECEIPT)).unwrap();
@@ -87,7 +87,7 @@ fn concurrent_ensure_is_one_writer_and_events_recollect_degraded_errors() {
     for mut child in children {
         assert!(child.wait().unwrap().success());
     }
-    install.wait_feed(|v| v["orchestrators"][0]["herdr_status"] == "working");
+    install.wait_feed(|v| v["roots"][0]["herdr_status"] == "working");
     let owner = install.owner();
     let initial = install.ensure();
     assert!(
@@ -98,7 +98,7 @@ fn concurrent_ensure_is_one_writer_and_events_recollect_degraded_errors() {
     assert_eq!(install.owner().writer_pid, owner.writer_pid);
     assert_eq!(install.owner().writer_start, owner.writer_start);
     std::fs::write(install.data.join("state.json"), br#"{"status":"blocked"}"#).unwrap();
-    install.wait_feed(|v| v["orchestrators"][0]["herdr_status"] == "blocked");
+    install.wait_feed(|v| v["roots"][0]["herdr_status"] == "blocked");
     std::fs::write(
         install.data.join("state.json"),
         br#"{"status":"working","fail":true}"#,
@@ -117,7 +117,7 @@ fn used_home_stop_and_receipt_removal_block_a_delayed_restart() {
         "{}",
         String::from_utf8_lossy(&initial.stderr)
     );
-    install.wait_feed(|v| v["v"] == 1);
+    install.wait_feed(|v| v["v"] == 2);
     let personal = install.app.join("personal.txt");
     std::fs::write(&personal, "personal").unwrap();
     let (home, r, _lock) = install.quiesce().unwrap();
@@ -146,7 +146,7 @@ fn unknown_runtime_files_preserve_receipt_and_personal_data_after_stop() {
         "{}",
         String::from_utf8_lossy(&initial.stderr)
     );
-    install.wait_feed(|v| v["v"] == 1);
+    install.wait_feed(|v| v["v"] == 2);
     let path = install.app.join(format!(
         "data/panorama/runtime/{}/personal.txt",
         app_feed_support::ID
@@ -241,7 +241,7 @@ fn stale_registration_with_a_free_lifetime_lock_can_start_a_new_proven_writer() 
         "{}",
         String::from_utf8_lossy(&result.stderr)
     );
-    install.wait_feed(|v| v["v"] == 1);
+    install.wait_feed(|v| v["v"] == 2);
     let current = install.owner();
     assert_ne!(current.writer_pid, 4_000_000_000_u32);
     assert_ne!(current.writer_start, "obsolete-start");
@@ -258,7 +258,7 @@ fn stop_while_a_collection_helper_is_blocked_reaps_it_before_unlocking() {
         "{}",
         String::from_utf8_lossy(&result.stderr)
     );
-    install.wait_feed(|v| v["v"] == 1);
+    install.wait_feed(|v| v["v"] == 2);
     let script = install.bin.join("hc");
     let blocked = install.data.join("blocked.pid");
     let text = format!(
@@ -294,7 +294,7 @@ fn cooperative_runtime_stop_never_executes_an_edited_private_binary() {
         "{}",
         String::from_utf8_lossy(&result.stderr)
     );
-    install.wait_feed(|v| v["v"] == 1);
+    install.wait_feed(|v| v["v"] == 2);
     let marker = install.data.join("edited-binary-executed");
     let replacement = install.app.join("data/panorama/bin/replacement");
     let bytes = format!(
@@ -347,7 +347,7 @@ fn old_generation_cannot_start_a_reinstalled_writer_but_current_generation_can()
         "{}",
         String::from_utf8_lossy(&out.stderr)
     );
-    installed.wait_feed(|v| v["orchestrators"][0]["terminal"] == "t2");
+    installed.wait_feed(|v| v["roots"][0]["terminal"] == "t2");
     assert_eq!(installed.owner().install_id, next);
 }
 

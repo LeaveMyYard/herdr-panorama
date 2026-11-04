@@ -1,132 +1,123 @@
-import { forest, finished, needs, threadMark } from './tree.js';
-import { threadKey, agentKey } from './contract.js';
-export const GAP = 36;
-export const columnWidth = (column, nativeFallback = false) => column === 0 ? 236 : column === 1 && !nativeFallback ? 300 : 272;
-export const span = (lo, hi, nativeFallback = false) => {
-  let size = 0;
-  for (let column = lo; column <= hi; column++) size += columnWidth(column, nativeFallback) + (column > lo ? GAP : 0);
-  return size;
-};
-export function columnWindow(count, focus, width, manual = null, nativeFallback = false) {
+import { forest, finished, needs, agentTitle } from './tree.js';
+import { agentKey } from './contract.js';
+// V11 graph (frames D and D2): column 0 holds the space's root sessions, then one column
+// per depth of the selected root's agent tree. Every column and card is the same.
+export const GAP = 36, WIDTH = 272;
+export const span = (lo, hi) => hi < lo ? 0 : (hi - lo + 1) * WIDTH + (hi - lo) * GAP;
+export function columnWindow(count, focus, width, manual = null) {
   if (!count) return { lo: 0, hi: -1, columns: [], total: 0, left: 0, shown: 0 };
   focus = Math.max(0, Math.min(focus, count - 1));
   let lo = Math.max(0, focus - 1), hi = focus;
-  const fits = (a, b) => span(a, b, nativeFallback) <= Math.max(0, width - 24);
+  const fits = (a, b) => span(a, b) <= Math.max(0, width - 24);
   // The focused column and its parent are retained even at narrow widths.
-  if (hi + 1 < count && fits(lo, hi + 1)) hi++;
   while (hi + 1 < count && fits(lo, hi + 1)) hi++;
   while (lo > 0 && fits(lo - 1, hi)) lo--;
   if (manual !== null) {
     lo = Math.max(0, Math.min(manual, count - 1)); hi = lo;
     while (hi + 1 < count && fits(lo, hi + 1)) hi++;
   }
-  let x = lo > 0 ? 24 : 0;
-  const columns = [];
-  for (let column = lo; column <= hi; column++) {
-    columns.push({ column, x, width: columnWidth(column, nativeFallback) }); x += columnWidth(column, nativeFallback) + GAP;
-  }
-  return { lo, hi, columns, total: span(0, count - 1, nativeFallback), left: lo ? span(0, lo - 1, nativeFallback) + GAP : 0, shown: span(lo, hi, nativeFallback) };
+  const x0 = lo > 0 ? 24 : 0;
+  const columns = Array.from({ length: hi - lo + 1 }, (_, n) => ({ column: lo + n, x: x0 + n * (WIDTH + GAP), width: WIDTH }));
+  return { lo, hi, columns, total: span(0, count - 1), left: lo ? span(0, lo - 1) + GAP : 0, shown: span(lo, hi) };
 }
+// A selected agent opens with its `agent` line, what it is doing, its questions and error.
 export function agentHeight(agent, selected) {
   if (!selected) return 54;
   const wrap = text => Math.max(1, Math.ceil([...String(text ?? '')].length / 34));
   const details = [agent.activity ?? '', ...(agent.questions ?? []), ...(agent.error ? [agent.error] : [])];
-  return 68 + details.reduce((height, text) => height + wrap(text) * 17 + 3, 0);
+  return 88 + details.reduce((height, text) => height + wrap(text) * 17 + 3, 0);
 }
-function shownTree(agents) {
-  const roots = forest(agents), order = [], stack = [...roots];
+// One tree under a root: its transcript agents, then its verified same-space native terminal
+// children, each carrying its own feed agents and native children. A feed root that is also a
+// native child joins as that native node only (R8); joinRoots never lists it again at depth 0.
+export function rootTree(item) {
+  const natives = (item.nativeChildren ?? []).filter(child => child.space === item.space);
+  const terminals = new Set(natives.map(child => child.terminal)), under = new Map(), top = [];
+  for (const child of natives) {
+    const parent = child.nativeParent;
+    if (!terminals.has(parent) || parent === child.terminal) top.push(child);
+    else under.set(parent, [...(under.get(parent) ?? []), child]);
+  }
+  const agentNodes = owner => {
+    const heads = forest(owner.root.agents ?? []), wrapped = new Map(), stack = heads.slice();
+    while (stack.length) { const node = stack.pop(); wrapped.set(node, { kind: 'agent', key: agentKey(owner.root, node.agent), agent: node.agent, owner, children: [] }); stack.push(...node.children); }
+    for (const [node, out] of wrapped) out.children = node.children.map(child => wrapped.get(child));
+    return heads.map(node => wrapped.get(node));
+  };
+  const nativeNode = child => ({ kind: 'native', key: child.key, item: child, owner: child, children: agentNodes(child) });
+  const seen = new Set(), result = [...agentNodes(item), ...top.map(nativeNode)], stack = result.filter(node => node.kind === 'native').reverse();
+  // Iterative and seen-guarded: cyclic or disconnected native ancestry lists each terminal once.
+  for (;;) {
+    while (stack.length) {
+      const node = stack.pop(); if (seen.has(node.key)) continue; seen.add(node.key);
+      const kids = (under.get(node.item.terminal) ?? []).filter(child => !seen.has(child.key)).map(nativeNode);
+      node.children.push(...kids); stack.push(...kids.slice().reverse());
+    }
+    const lost = natives.find(child => !seen.has(child.key));
+    if (!lost) break;
+    const node = nativeNode(lost); result.push(node); stack.push(node);
+  }
+  return result;
+}
+// Bottom-up: a node stays listed while anything in its subtree is unfinished.
+function annotate(roots) {
+  const order = [], stack = roots.slice();
   while (stack.length) { const node = stack.pop(); order.push(node); stack.push(...node.children); }
-  for (const node of order.reverse()) node.shown = !finished(node.agent.status) || node.children.some(child => child.shown);
+  for (const node of order.reverse()) node.shown = node.kind === 'native' || !finished(node.agent.status) || node.children.some(child => child.shown);
   return roots;
 }
-export function treeLayout(item, thread, selected, expanded = new Set()) {
-  if (!thread) return { nodes: [], groups: [], depth: 0 };
-  const roots = shownTree(thread.agents), nodes = [], groups = [], cur = [], trunk = [];
+export function treeLayout(item, selected = null, expanded = new Set()) {
+  if (!item) return { nodes: [], groups: [], depth: 0 };
+  const nodes = [], groups = [], cur = [], trunk = [];
   // Explicit stack supports producer trees deeper than the JavaScript call stack.
-  const work = [{ kind: 'group', list: roots, depth: 1, parent: null, parentY: 0, key: threadKey(item.root, thread) }];
+  const work = [{ kind: 'group', list: annotate(rootTree(item)), depth: 1, parent: null, parentY: 0, key: item.key }];
   while (work.length) {
     const task = work.pop();
     if (task.kind === 'end') { trunk[task.group.depth] = Math.max(trunk[task.group.depth] ?? 0, ...task.group.ys); continue; }
     if (task.kind === 'node') {
-      const { group, source } = task, depth = group.depth;
-      const fold = Array.isArray(source), agent = fold ? null : source.agent;
-      const key = fold ? JSON.stringify(['finished', group.key]) : agentKey(item.root, agent);
+      const { group, source } = task, depth = group.depth, fold = Array.isArray(source);
       const children = !fold && source.children.length > 0;
-      const height = fold ? 40 : agentHeight(agent, selected === key);
+      const height = fold ? 40 : source.kind === 'native' ? (selected === source.key ? 100 : 54) : agentHeight(source.agent, selected === source.key);
       const y = Math.max(cur[depth] ?? 0, group.parentY, children ? (trunk[depth + 1] ?? -100) - 27 + 16 : 0);
-      const node = { key, agent, fold: fold ? source.map(node => node.agent) : null, depth, column: depth + 1, parent: group.parent, y, height, mid: fold ? 20 : 27 };
+      const node = fold
+        ? { kind: 'fold', key: JSON.stringify(['finished', group.key]), group: group.key, fold: source.map(node => node.agent), owner: source[0]?.owner ?? item, older: group.older }
+        : { kind: source.kind, key: source.key, agent: source.agent ?? null, item: source.item, owner: source.owner, children: source.children.length };
+      Object.assign(node, { depth, column: depth, parent: group.parent, y, height, mid: fold ? 20 : 27 });
       nodes.push(node); cur[depth] = y + height + 10; group.ys.push(y + node.mid);
-      if (children) work.push({ kind: 'group', list: source.children, depth: depth + 1, parent: node, parentY: y, key });
+      if (children) work.push({ kind: 'group', list: source.children, depth: depth + 1, parent: node, parentY: y, key: node.key });
       continue;
     }
-    const group = { depth: task.depth, parent: task.parent, parentY: task.parentY, key: task.key, ys: [] };
+    // The writer's `+N older` (aged-out finished agents) rides on the root-level fold, even alone.
+    const group = { depth: task.depth, parent: task.parent, parentY: task.parentY, key: task.key, ys: [], older: task.parent ? 0 : item.root.hidden_finished ?? 0 }, open = expanded.has(group.key);
     groups.push(group);
-    const done = task.list.filter(node => !node.shown), show = task.list.filter(node => node.shown || expanded.has(group.key));
+    // Finished siblings fold per parent into one `N finished · titles` card after the live ones.
+    const done = task.list.filter(node => !node.shown), show = task.list.filter(node => node.shown || open);
     work.push({ kind: 'end', group });
-    if (done.length && !expanded.has(group.key)) work.push({ kind: 'node', source: done, group });
+    if ((done.length && !open) || group.older) work.push({ kind: 'node', source: open ? [] : done, group });
     for (const source of show.slice().reverse()) work.push({ kind: 'node', source, group });
   }
   return { nodes, groups, depth: nodes.reduce((depth, node) => Math.max(depth, node.depth), 0) };
 }
-export function nativeLayout(item, selected) {
-  // A separate fallback projection: native ancestry never acquires a transcript thread.
-  const items = (item.nativeChildren ?? []).filter(child => child.space === item.space);
-  const terminals = new Map(items.map(child => [child.terminal, child]));
-  const roots = items.filter(child => !terminals.has(child.nativeParent) || child.nativeParent === child.terminal);
-  const nodes = [], groups = [], seen = new Set(), cur = [], trunk = [];
-  const work = roots.slice().reverse().map(child => ({ child, parent: null, depth: 1 }));
-  for (;;) {
-    if (!work.length) {
-      const disconnected = items.find(child => !seen.has(child.key));
-      if (!disconnected) break;
-      work.push({ child: disconnected, parent: null, depth: 1 });
-    }
-    const task = work.pop();
-    if (task.end) { trunk[task.node.depth] = Math.max(trunk[task.node.depth] ?? 0, task.node.y + task.node.mid); continue; }
-    if (seen.has(task.child.key)) continue;
-    seen.add(task.child.key);
-    const children = items.filter(child => child.nativeParent === task.child.terminal && !seen.has(child.key));
-    const y = Math.max(cur[task.depth] ?? 0, task.parent?.y ?? 0, children.length ? (trunk[task.depth + 1] ?? -100) - 27 + 16 : 0);
-    const node = { kind: 'native', key: task.child.key, item: task.child, parent: task.parent, depth: task.depth, column: task.depth, y, mid: 27, height: task.child.key === selected ? 100 : 54 };
-    nodes.push(node); cur[task.depth] = y + node.height + 10;
-    let group = groups.find(group => group.parent === task.parent && group.depth === task.depth);
-    if (!group) { group = { parent: task.parent, depth: task.depth, ys: [] }; groups.push(group); }
-    group.ys.push(y + node.mid);
-    work.push({ end: true, node });
-    work.push(...children.slice().reverse().map(child => ({ child, parent: node, depth: task.depth + 1 })));
-  }
-  return { nodes, groups, depth: nodes.reduce((depth, node) => Math.max(depth, node.depth), 0) };
-}
+export const nodeTitle = node => node.kind === 'agent' ? agentTitle(node.agent) : node.item?.name ?? '';
 export function graphModel(roots, state) {
-  const item = roots.find(item => item.key === state.orch) ?? roots[0] ?? null;
-  const threads = item?.root.threads ?? [];
-  const thread = threads.find(thread => threadKey(item.root, thread) === state.thread) ?? threads[0] ?? null;
-  const selected = state.focus >= (thread ? 2 : 1) ? state.agent : null;
-  const tree = item ? (thread ? treeLayout(item, thread, selected, state.expanded) : nativeLayout(item, selected)) : { nodes: [], groups: [], depth: 0 };
-  const orchs = roots.map((root, index) => ({ key: root.key, kind: 'orch', item: root, column: 0, y: index * 64, height: 54, mid: 27 }));
-  let y = 0;
-  const threadNodes = threads.map(entry => {
-    const key = threadKey(item.root, entry), height = entry === thread && state.focus === 1 ? 64 + entry.phases.length * 20 : 54;
-    const node = { key, kind: 'thread', thread: entry, column: 1, y, height, mid: 27, mark: threadMark(entry) }; y += height + 10; return node;
-  });
-  const nodes = [...orchs, ...threadNodes, ...tree.nodes.map(node => ({ ...node, kind: node.kind ?? (node.fold ? 'fold' : 'agent') }))];
-  const columns = Array.from({ length: (thread ? 2 : 1) + tree.depth }, (_, column) => nodes.filter(node => node.column === column));
-  return { item, thread, tree, nodes, columns, orchs, threadNodes, nativeFallback: !thread };
+  const item = roots.find(item => item.key === state.root) ?? roots[0] ?? null;
+  const tree = treeLayout(item, state.focus >= 1 ? state.agent : null, state.expanded);
+  const heads = roots.map((root, index) => ({ key: root.key, kind: 'root', item: root, owner: root, column: 0, y: index * 64, height: 54, mid: 27 }));
+  const nodes = [...heads, ...tree.nodes];
+  const columns = Array.from({ length: 1 + tree.depth }, (_, column) => nodes.filter(node => node.column === column));
+  return { item, tree, nodes, columns, heads };
 }
 export function currentNode(model, state) {
-  const key = state.focus === 0 ? state.orch : model.columns[state.focus]?.[0]?.kind === 'thread' ? state.thread : state.agent;
+  const key = state.focus === 0 ? state.root : state.agent;
   return model.columns[state.focus]?.find(node => node.key === key) ?? model.columns[state.focus]?.[0] ?? null;
 }
 export function selectNode(state, model, node) {
   if (!node) return;
-  if (node.kind === 'orch') {
-    if (state.orch !== node.key) { state.orch = node.key; state.thread = null; state.agent = null; }
-  } else if (node.kind === 'thread') {
-    if (state.thread !== node.key) { state.thread = node.key; state.agent = null; }
+  if (node.kind === 'root') {
+    if (state.root !== node.key) { state.root = node.key; state.agent = null; }
   } else {
     state.agent = node.key;
-    if (node.parent) state.remember.set(node.parent.key, node.key);
-    else if (node.kind === 'native') state.remember.set(model.item.key, node.key);
+    state.remember.set(node.parent?.key ?? model.item.key, node.key);
   }
   state.focus = node.column; state.manual = null; state.scroll = {}; state.follow = true;
 }
@@ -141,33 +132,32 @@ export function navigate(state, model, direction) {
   }
   if (direction === 'left') {
     if (!state.focus) return false;
-    if (current.kind === 'native') {
-      if (current.parent) selectNode(state, model, current.parent);
-      else { state.focus = 0; state.manual = null; state.scroll = {}; }
-    }
-    else if (state.focus >= 3 && current.parent) selectNode(state, model, current.parent);
-    else { state.focus--; state.manual = null; state.scroll = {}; }
+    if (current.parent) selectNode(state, model, current.parent);
+    else { state.focus = 0; state.manual = null; state.scroll = {}; }
     return true;
   }
   const next = model.columns[state.focus + 1];
   if (!next?.length || current.kind === 'fold') return false;
-  let choices = (current.kind === 'native' || state.focus >= 2) ? next.filter(node => node.parent?.key === current.key) : next;
+  const choices = state.focus === 0 ? next : next.filter(node => node.parent?.key === current.key);
   if (!choices.length) return false;
-  const remembered = state.remember.get(current.key);
-  let target = choices.find(node => node.key === remembered);
-  if (!target && state.focus === 1 && state.agent) {
-    let selected = model.nodes.find(node => node.key === state.agent);
+  let target = choices.find(node => node.key === state.remember.get(current.key));
+  if (!target && state.focus === 0 && state.agent) {
+    let selected = model.nodes.find(node => node.key === state.agent && node.kind !== 'root');
     while (selected?.parent) selected = selected.parent;
     target = choices.find(node => node.key === selected?.key);
   }
   selectNode(state, model, target ?? choices[0]); return true;
 }
-export function selectionPath(model, state) {
-  const path = new Set([model.item?.key, model.threadNodes.find(node => node.thread === model.thread)?.key]);
-  let node = model.nodes.find(node => node.key === state.agent);
-  while (node) { path.add(node.key); node = node.parent; }
+const selectedPath = (model, state) => {
+  const path = [];
+  for (let node = model.nodes.find(node => node.key === state.agent && node.kind !== 'root'); node; node = node.parent) path.unshift(node);
   return path;
+};
+export function selectionPath(model, state) {
+  return new Set([model.item?.key, ...selectedPath(model, state).map(node => node.key)]);
 }
+// Breadcrumb names: the root's title, then the selected path's titles.
+export const crumbs = (model, state) => [model.item?.name ?? '', ...selectedPath(model, state).map(nodeTitle)];
 export class ClickGuard {
   constructor() { this.positions = new Map(); this.moved = new Map(); this.scrolled = -Infinity; }
   scroll(now) { this.scrolled = now; }
@@ -184,13 +174,13 @@ export class ClickGuard {
   allows(key, now) { return now - this.scrolled >= 300 && now - (this.moved.get(key) ?? -Infinity) >= 1000; }
 }
 export function cardMotion(node) {
-  if (node.kind === 'orch') return { edge: node.item.aggregate.kinds.length > 0, sweep: Boolean(node.item.aggregate.sweep) };
+  if (node.kind === 'root') return { edge: node.item.aggregate.kinds.length > 0, sweep: Boolean(node.item.aggregate.sweep) };
   if (node.kind === 'native') return { edge: node.item.aggregate.kinds.length > 0, sweep: Boolean(node.item.aggregate.working) };
   if (node.kind === 'agent') return { edge: needs(node.agent.status), sweep: ['run', 'rev'].includes(node.agent.status) };
   return { edge: false, sweep: false };
 }
 const intersects = (start, end, clip) => clip > 0 && end > 0 && start < clip && end > start;
-export function animationVisible(node, offset, height, x = 0, width = 272, clipWidth = Infinity) {
+export function animationVisible(node, offset, height, x = 0, width = WIDTH, clipWidth = Infinity) {
   const motion = cardMotion(node), top = node.y - offset;
   // Match the drawn overlays, not the full card: its top/bottom corners do not animate.
   const edge = motion.edge && intersects(x - 1.5, x + .5, clipWidth) && intersects(top + 8, top + node.height - 8, height);

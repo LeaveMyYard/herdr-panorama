@@ -17,7 +17,12 @@ test('inbox navigation emits positive safe question identities and never agent I
  assert.equal(answerIntent(item,{agent:{status:'wait',question_ids:[0,-1,Number.MAX_SAFE_INTEGER+1]}}),null);
  assert.deepEqual(answerIntent(item,{agent:{id:'t99',status:'wait',question_ids:[9]}}),{kind:'question',question:9});
 });
-test('Transcript intent keeps source references inert and preserves nullable root/thread context',()=>{
+test('Transcript intent keeps source references inert and carries only the {root, agent} scope',()=>{
  const source={...root,root:{...root.root,transcript:'$(never-execute)'}};
- assert.deepEqual(transcriptProps(source,{kind:'orch',item:source},null),{root:source.root,thread:null,agent:null,terminal:'t2',terminalAction:'focus',action:'transcript'});
+ assert.deepEqual(transcriptProps(source,{kind:'root',item:source}),{root:source.root,agent:null,terminal:'t2',terminalAction:'focus',action:'transcript'});
+});
+test('an agent under a native terminal child answers and opens through its owning terminal',()=>{
+ const native={...root,terminal:'t-child',isNative:true,status:'idle',root:{inbox:[31]}}, agent={id:'a',status:'blk',question_ids:[]};
+ assert.deepEqual(answerIntent(root,{kind:'agent',agent,owner:native}),{kind:'permission',target:{name:'terminal.peek',args:{terminal:'t-child'}}});
+ assert.deepEqual(transcriptProps(root,{kind:'agent',agent,owner:native}),{root:native.root,agent,terminal:'t-child',terminalAction:'peek',action:'transcript'});
 });

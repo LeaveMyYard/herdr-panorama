@@ -7,6 +7,7 @@ import { sandbox, root } from './helpers.mjs';
 import { state } from './herdr-fixture.mjs';
 register('./herdr-loader.mjs', import.meta.url);
 const { startSidebar: startFeed, startConsumer, consumerFeed, closeConsumer, validLease } = await import('../shared/feed-client.js');
+const { PeekCaller } = await import('../shared/peek-caller.js');
 function ready(t) {
   const s = sandbox(t), artifact = join(s.temp, 'reviewed');
   writeFileSync(artifact, '#!/bin/sh\nexit 0\n', { mode: 0o755 });
@@ -39,7 +40,7 @@ test('native adapter prehash gates exact private capability/ensure argv with exp
 test('modified artifact never executes, while valid feed and stock enrichment data survive', async t => {
   const s = ready(t); writeFileSync(join(s.home, 'data/panorama/bin/panorama'), '#!/bin/sh\nexit 91\n');
   startFeed(s.view, s.cx); await until(() => s.view.writerError && s.view.feed?.feed);
-  assert.equal(state.execs.length, 0); assert.equal(s.view.feed.feed.orchestrators.length, 6);
+  assert.equal(state.execs.length, 0); assert.equal(s.view.feed.feed.roots.length, 6);
   assert.ok(consumerFeed(s.view).errors.length); assert.equal(s.failures.length, 0);
 });
 
@@ -55,9 +56,12 @@ test('absent receipt prevents new startup and a later read retains stale provena
 });
 
 test('incompatible capability marker prevents ensure rather than falling back to PATH', async t => {
-  const s = ready(t); state.exec = () => ({ code: 0, stdout: 'another executable', stderr: '' });
-  startFeed(s.view, s.cx); await until(() => s.view.writerError);
-  assert.equal(state.execs.length, 1); assert.deepEqual(state.execs[0].args, ['app-feed', '--help']);
+  // A v1 writer (or a v2 line that is not the first) is as foreign as any other executable.
+  for (const stdout of ['another executable', 'panorama app-feed v1\n', 'note\npanorama app-feed v2\n']) {
+    const s = ready(t); state.exec = () => ({ code: 0, stdout, stderr: '' });
+    startFeed(s.view, s.cx); await until(() => s.view.writerError);
+    assert.equal(state.execs.length, 1); assert.deepEqual(state.execs[0].args, ['app-feed', '--help']);
+  }
 });
 
 test('coalesced file events queue a second read so a completed stale read cannot swallow the latest feed', async t => {
@@ -95,10 +99,10 @@ test('no-sidebar consumer initial takeover wins once; losing async help cannot s
   const first = {}; startConsumer(first, s.cx); await until(() => releases.length === 1);
   const second = {}; startConsumer(second, s.cx);
   await until(() => state.execs.length === 2); const winner = state.values['panorama.feed.owner'].token;
-  releases[0]({ code: 0, stdout: 'panorama app-feed v1', stderr: '' });
+  releases[0]({ code: 0, stdout: 'panorama app-feed v2', stderr: '' });
   await new Promise(resolve => setTimeout(resolve, 10));
   assert.equal(state.execs.filter(call => call.args[1] === '--ensure').length, 0);
-  releases[1]({ code: 0, stdout: 'panorama app-feed v1', stderr: '' });
+  releases[1]({ code: 0, stdout: 'panorama app-feed v2', stderr: '' });
   await until(() => state.execs.some(call => call.args[1] === '--ensure'));
   for (const timer of s.timers) timer.callback(s.cx);
   assert.equal(state.values['panorama.feed.owner'].token, winner);
@@ -224,7 +228,7 @@ test('delayed feed result cannot republish after disabled stop acknowledgment', 
 });
 test('delayed private response cannot restart or republish after disabled generation', async t=>{
   const s=ready(t);let release;
-  state.exec=(_binary,args)=>args[1]==='--ensure'?new Promise(resolve=>{release=resolve;}):{code:0,stdout:'panorama app-feed v1',stderr:''};
+  state.exec=(_binary,args)=>args[1]==='--ensure'?new Promise(resolve=>{release=resolve;}):{code:0,stdout:'panorama app-feed v2',stderr:''};
   startFeed(s.view,s.cx);await until(()=>release);disabled(s);
   for(const timer of s.timers)timer.callback(s.cx);await until(()=>s.view.feedClient.stopped);
   release({code:0,stdout:'',stderr:''});await new Promise(resolve=>setTimeout(resolve,10));
@@ -249,4 +253,21 @@ test('a pinned receipt and valid persisted lease cannot present fresh data befor
   startConsumer(s.view,s.cx);await until(()=>release);assert.equal(s.view.feedClient.install_id,receipt.install_id);assert.equal(consumerFeed(s.view).stale,true);
   release(JSON.stringify({v:1,install_id:receipt.install_id,disabled:false}));await until(()=>s.view.feedValidated);
   assert.equal(consumerFeed(s.view).stale,false);assert.equal(state.execs.length,0);
+});
+
+test('Peek opens only after the bound writer answers the exact v2 probe', async t => {
+  const G = '0123456789abcdef0123456789abcdef', feed = JSON.parse(readFileSync(join(root, 'tests/fixtures/app-feed/swarm.json')));
+  const previous = globalThis.window; t.after(() => { globalThis.window = previous; });
+  globalThis.window = { viewport_size: () => ({ width: 1200, height: 900 }) };
+  for (const [stdout, opens] of [['panorama app-feed v1\n', 0], ['panorama app-feed v2\n', 1]]) {
+    state.overlays = []; let done;
+    const finished = new Promise(resolve => { done = resolve; });
+    const client = { stopped: false, install_id: G, callPrivate: async args => { assert.deepEqual(args, ['app-feed', '--help']); return { code: 0, stdout, stderr: '' }; } };
+    const caller = new PeekCaller('panorama', client, () => ({ feed, stale: false, install_id: G }));
+    const cx = { spawn: callback => Promise.resolve(callback(cx)), notify: done };
+    caller.show({ root: feed.roots[0], agent: feed.roots[0].agents[0] }, 'row', false, cx); await finished;
+    assert.equal(state.overlays.length, opens);
+    assert.equal(Boolean(caller.error), !opens);
+    if (opens) assert.equal(state.overlays[0].props.agent, feed.roots[0].agents[0]);
+  }
 });
