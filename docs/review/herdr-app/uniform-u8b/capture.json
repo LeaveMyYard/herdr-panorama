@@ -1,0 +1,29 @@
+{
+  "source_head": "c2e5a7b1b29436cf92ffde3d0f43dec2aabc9e5e",
+  "source_dirty": "",
+  "graph_sources": {
+    "actions.js": "46d3ad670f91dd59626818be68f639a9887a6a76a5ae8b317afccab4352f3faa",
+    "binary.js": "a93891983c2e7efabae2d303e2f44f435dcb01b69a6850a86848754a51893c1a",
+    "cards.js": "a5422a9f68e5205e1f656fd3665fdad7061db346d3b317a736ed9b8cc8c4f05e",
+    "contract.js": "3207b21bcf349dd831bd4c5cb3df36361e0b17706d52113e8f972c2c3564f9a1",
+    "feed-client.js": "f05fa058be2f6ed3bfdb1feb62a893ddf50b3320ad0ae3f58d31486029b67a64",
+    "graph.js": "66150d214c97ac096b53b13db33696a2c237647bd69fe3343567a00f86076ffd",
+    "inbox.js": "74693c2b08e7cb8aaab9c24bbd5f2f83d7a23e0ca4c9461e00f656e1ca7798bb",
+    "main.js": "77a6f47d1ceaf61b9045c2c03062f446f6f38d8062beb2bc9903235e3496ec14",
+    "marks.js": "05af79c3838b449f49f9cd8c7db33ca1925ea8858ac30f0bc8f6e86864d04e85",
+    "model.js": "ba2bad0fa22f268354ace24cb6138c54459a8b32a0a0a01693bdc70e7c64a80d",
+    "peek-caller.js": "53a4a81810aa675476d9b11a761a1cac722b3c9b2c061230e2d9b2990f99ef32",
+    "routing.js": "0607371d0b0adbfee08c305fb79ef09f6186c26bbf20863378e3d775eaef6f6c",
+    "state.js": "478b1e1e00d2b8487a28d9acf8ce9337be9b62391e27471ad99182d9ba9acb9a",
+    "tree.js": "cc1e352f1e0c33c8c04e6246193ea9e8196d8b542bf3cca6df834b15eba1d239"
+  },
+  "isolation": {
+    "separate_core": true,
+    "core_pid": 941926,
+    "initial_live": 0,
+    "session": "u8b-czk88o0w",
+    "private_env_verified": true
+  },
+  "core_stop": 0,
+  "scratch_removed": true
+}
