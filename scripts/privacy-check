@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# Count private terms in the tracked tree. This repo is public, so the terms never
+# live here: pass one or more term files kept outside the repo, one literal per line.
+#
+#   scripts/privacy-check /private/terms.txt [/private/more-terms.txt ...]
+#
+# It reads the index, so it sees what `git add` staged, not unstaged edits, and a tracked
+# file missing from the worktree is still checked.
+# Matching is case-insensitive over file names and the raw bytes of file contents.
+# It cannot see text rendered in image or video pixels or held in compressed data,
+# so a pass says nothing about images: view those by hand.
+# It prints counts only, never a term or a matching line. It exits 1 on any hit and
+# 2 when the check itself could not run, so a failed run is never read as a pass.
+set -euo pipefail
+# Any unplanned failure (not a git repo, git ls-files failing) is a check that did not run.
+trap 'echo "privacy-check: failed at line $LINENO" >&2; exit 2' ERR
+unset GREP_OPTIONS
+
+die() {
+  echo "privacy-check: $*" >&2
+  exit 2
+}
+
+# A tool's result, trusted only if it is coherent: status 1 means no match and so a count of
+# 0, status 0 means a match and so a count above 0, and anything else is a failed check.
+verified() { # what, status, count
+  [ "$2" -le 1 ] || die "$1 failed with status $2"
+  case "$3" in
+    '' | *[!0-9]*) die "$1 gave a count that is not a number" ;;
+  esac
+  if { [ "$2" -eq 0 ] && [ "$3" -eq 0 ]; } || { [ "$2" -eq 1 ] && [ "$3" -ne 0 ]; }; then
+    die "$1 gave a count that contradicts its status"
+  fi
+}
+
+if [ "$#" -eq 0 ]; then
+  echo "usage: scripts/privacy-check TERMS_FILE..." >&2
+  exit 2
+fi
+
+terms=
+paths=
+trap 'rm -f "$terms" "$paths"' EXIT
+terms=$(mktemp)
+paths=$(mktemp)
+
+for file in "$@"; do
+  if [ ! -f "$file" ] || [ ! -r "$file" ]; then
+    die "cannot read terms file: $file"
+  fi
+  # One file at a time, so a last line with no newline cannot join the next file's
+  # first line. CRs go so CRLF lists match file names too. Blank lines go because an
+  # empty pattern would match everything. Redirected, because awk would run a file
+  # argument such as `a=b` as an assignment.
+  awk '{ sub(/\r$/, "") } NF' <"$file" >>"$terms"
+done
+[ -s "$terms" ] || die "no terms in: $*"
+count=$(awk 'END { print NR }' "$terms") # awk, not wc: BSD wc pads its count with spaces.
+case "$count" in
+  '' | 0 | *[!0-9]*) die "could not count the terms" ;;
+esac
+
+root=$(git rev-parse --show-toplevel)
+[ -n "$root" ] || die "no repository root"
+cd "$root"
+
+# Each output line is `path:count`; anything else fails the check rather than adding 0.
+status=0
+counts=$(git grep --cached --no-color -c -i -F -f "$terms") || status=$?
+[ "$status" -le 1 ] || die "git grep failed with status $status"
+content=$(printf '%s\n' "$counts" | awk '
+  !NF { next }
+  !/:[0-9]+$/ { bad = 1; exit }
+  { sub(/.*:/, ""); n += $0 }
+  END { if (bad) exit 3; printf "%d\n", n }')
+verified "git grep" "$status" "$content"
+
+# -z keeps non-ASCII paths as bytes; plain output quotes them as octal escapes.
+git ls-files -z >"$paths"
+status=0
+names=$(grep -z -c -i -F -f "$terms" "$paths") || status=$?
+verified "file-name grep" "$status" "$names"
+
+echo "terms: $count, content hits: $content, file-name hits: $names"
+# Both counts are verified numbers here. Exit 0 needs both to be 0, nothing falls through.
+if [ "$content" -eq 0 ] && [ "$names" -eq 0 ]; then
+  exit 0
+fi
+exit 1

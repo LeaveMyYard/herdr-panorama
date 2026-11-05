@@ -1,6 +1,0 @@
-{
-  "code": 0,
-  "stdout": "{\"hidden_finished\":0,\"terminals\":[{\"address\":\"t1\",\"agent\":\"claude\",\"cwd\":\"<C1_WORKTREE>\",\"state\":\"live\",\"status\":\"blocked\",\"turn\":1,\"where\":\"C1 isolated smoke / Claude Code\"},{\"address\":\"t2\",\"agent\":\"sh\",\"cwd\":\"<PRIVATE_SCRATCH>/home\",\"state\":\"live\",\"turn\":0,\"where\":\"C1 isolated smoke / 2\"}]}\n",
-  "stderr": "",
-  "rpc_seconds": 0.0019785599943134002
-}

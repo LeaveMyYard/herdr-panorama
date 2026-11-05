@@ -507,9 +507,9 @@ class Component extends DCLogic {
           A('author', 'claude', 'wait', '"Retrying…" or "Reconnecting…"?', { q: 1 }),
         ] },
       ] },
-      { space: 'TrafficLens', title: 'Data pipeline SDD', h: 'claude', st: 'blk', age: '2m', doneThreads: 2, threads: [
-        { name: 'Task 3/7 add retry cap', ph: 'ddw..', agents: [A('implementer', 'claude', 'blk', 'wants Bash(rm -rf build/)')] },
-        { name: 'Task 4/7 dedupe tick events', ph: 'n...', agents: [
+      { space: 'Project Alpha', title: 'Sample task 123', h: 'claude', st: 'blk', age: '2m', doneThreads: 2, threads: [
+        { name: 'Sample task 3/7 part A', ph: 'ddw..', agents: [A('implementer', 'claude', 'blk', 'wants Bash(rm -rf build/)')] },
+        { name: 'Sample task 4/7 second part', ph: 'n...', agents: [
           A('implementer', 'cursor', 'run', 'running tests'),
           A('task-reviewer', 'claude', 'q', 'queued'),
         ] },
@@ -518,13 +518,13 @@ class Component extends DCLogic {
         { name: 'Compare limiter crates', ph: 'ddd', agents: [A('researcher', 'claude', 'done', 'wrote the comparison')] },
         { name: 'Prototype token bucket', ph: 'dd', agents: [A('worker', 'claude', 'done', 'pushed a branch')] },
       ] },
-      { space: '65net', title: 'Assess same-AZ proxy routing', h: 'codex', st: 'run', age: '22m', threads: [
-        { name: 'Measure cross-AZ hops', ph: 'dn.', agents: [
-          A('worker', 'codex', 'run', 'tracing eu-west-1 paths', { kids: [A('probe', 'claude', 'run', 'running mtr from 3 hosts')] }),
+      { space: 'Project Beta', title: 'Sample task 456 longer title', h: 'codex', st: 'run', age: '22m', threads: [
+        { name: 'Sample task 456 step 1', ph: 'dn.', agents: [
+          A('worker', 'codex', 'run', 'reading sample input 1', { kids: [A('probe', 'claude', 'run', 'running sample check x3')] }),
         ] },
-        { name: 'Draft routing ADR', ph: '...', agents: [A('writer', 'gemini', 'q', 'queued until hops are in')] },
+        { name: 'Sample task 456 step 2', ph: '...', agents: [A('writer', 'gemini', 'q', 'queued until step 1 is in')] },
       ] },
-      { space: 'TrafficLens', title: 'Docs refresh', h: 'amp', st: 'q', age: '1h', threads: [] },
+      { space: 'Project Alpha', title: 'Sample task 8', h: 'amp', st: 'q', age: '1h', threads: [] },
     ];
 
     const all = a => [a].concat((a.kids || []).flatMap(all));
@@ -604,7 +604,7 @@ class Component extends DCLogic {
           const kids = o.threads.map(t => ({ t })).concat(o.doneThreads ? [{ sum: o.doneThreads }] : []);
           kids.forEach((k, i) => {
             const last = i === kids.length - 1;
-            if (k.sum) { out.push(sumRow(segs([], last), '✓ ' + k.sum + ' tasks done', 'schema, migrations')); return; }
+            if (k.sum) { out.push(sumRow(segs([], last), '✓ ' + k.sum + ' tasks done', 'part 1, part 2')); return; }
             out.push(thRow(k.t, segs([], last)));
             if (mode === 'full') treeFull(k.t.agents, [!last], out);
             else if (k.t.agents.some(news)) treeNews(k.t.agents, [!last], out, mode);
@@ -616,8 +616,8 @@ class Component extends DCLogic {
 
     const spaces = [
       { l: 'T', name: 'Test', repo: 'herdr-panorama', cls: 'sp on', tileSt: { background: '#22a99a' }, marks: [{ cls: 'mk chip need', t: '2', st: { marginLeft: '8px' } }, mark('run')] },
-      { l: 'T', name: 'TrafficLens', repo: '', cls: 'sp', tileSt: { background: '#e3814f' }, marks: [{ cls: 'mk chip need', t: '1', st: {} }, mark('run')] },
-      { l: '6', name: '65net', repo: '', cls: 'sp', tileSt: { background: '#5b8def' }, marks: [mark('run')] },
+      { l: 'A', name: 'Project Alpha', repo: '', cls: 'sp', tileSt: { background: '#e3814f' }, marks: [{ cls: 'mk chip need', t: '1', st: {} }, mark('run')] },
+      { l: 'B', name: 'Project Beta', repo: '', cls: 'sp', tileSt: { background: '#5b8def' }, marks: [mark('run')] },
     ];
 
     const lines = [

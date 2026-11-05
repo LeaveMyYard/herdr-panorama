@@ -1,9 +1,0 @@
-{
-  "separate_core": true,
-  "different_pid": true,
-  "initial_live": 0,
-  "sockets": [
-    "/home/leavemyyard/.cache/b3-runtime-mcu0q9_i/runtime/herdr-core/b3-b3-runtime-mcu0q9_i.sock"
-  ],
-  "session": "b3-b3-runtime-mcu0q9_i"
-}
