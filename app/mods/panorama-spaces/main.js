@@ -444,7 +444,7 @@ export default class Spaces extends View {
   render() {
     const t = theme();
     this.packet = consumerFeed(this);
-    const roots = joinRoots(this.packet.feed, agents(), terminals(), panes(), spaces());
+    const roots = joinRoots(this.packet.feed, agents(), terminals(), panes(), spaces(), { aged: this.packet.aged });
     this.totals = Object.fromEntries(spaces().map(space => [space.id, spaceTotals(roots, space.id)]));
     const collapsed = narrow();
     const palette = ["ansi6", "ansi3", "ansi4", "ansi5", "ansi2", "ansi1"];

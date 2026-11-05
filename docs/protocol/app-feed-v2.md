@@ -181,6 +181,18 @@ agent titles, or guessed parentage. A TUI or unknown-host root cannot acquire
 app membership from a coincidentally matching terminal string. Remote addresses
 stay qualified: `vps/t7` does not match local `t7`.
 
+Terminal numbering is per core instance, so a collection older than the 15 s
+limit in [app-feed-runtime-v1.md](app-feed-runtime-v1.md) proves nothing about the
+terminal now at an address. While the packet is aged the mods apply no `terminal`
+join: stock rows and native children show live app data alone and count nothing
+from the feed, and a root whose address has a live row is not listed a second
+time. The retained feed stays cached with its age and returns when a current
+collection arrives. Staleness that is not age (a lease handoff, a failed read of a
+collection still inside the limit) keeps the join until the limit passes. The limit
+bounds the risk and does not remove it: for up to 15 s after a core restart a new
+terminal can still join the previous one's root, because the feed carries no core
+instance id.
+
 Legacy membership fields remain only to preserve the snapshot shape. Core
 writers use the placeholders documented above and add no space/tab membership
 fields. App focus, pinning, changed age, section ordering and icons come from

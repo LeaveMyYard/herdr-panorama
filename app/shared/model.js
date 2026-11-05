@@ -20,14 +20,21 @@ export function rootTitle({ address, program, terminal, tab, alone, feed, pane }
     [clean(feed?.title), feed?.title_source ?? 'feed'], [telling(pane), 'live'], [program?.name && address ? `${program.name} · ${address}` : program?.name, 'program'], [address, 'id']].find(([value]) => value);
   return pick ? { name: pick[0], source: pick[1] } : { name: '', source: 'id' };
 }
-export function joinRoots(feed, stock, terminals, panes, spaces, changes = {}) {
-  const enrichment = new Map((feed?.roots ?? []).filter(root => root.host === 'herdr-core' && root.terminal !== null).map(root => [root.terminal, root]));
+// `aged` is the packet's collection age (contract.js). Terminal numbering is per core instance,
+// so an old collection's `t3` may be another process: it names no live row. Those rows show
+// stock data alone, and the feed root they would have matched is not listed a second time.
+export function joinRoots(feed, stock, terminals, panes, spaces, { changes = {}, aged = false } = {}) {
+  const sources = new Map((feed?.roots ?? []).filter(root => root.host === 'herdr-core' && root.terminal !== null).map(root => [root.terminal, root]));
   const used = new Set(), tabs = spaces.flatMap(space => space.tabs);
+  const enrich = address => {
+    const source = sources.get(address);
+    if (source) used.add(source);
+    return aged ? undefined : source;
+  };
   const live = new Set(terminals.filter(t => t.state === 'live').map(t => t.address));
   const byAddress = new Map(terminals.map(t => [t.address, t]));
   const roots = stock.map((agent, index) => {
-    const source = enrichment.get(agent.address);
-    if (source) used.add(source);
+    const source = enrich(agent.address);
     const root = source ?? { host: 'herdr-core', terminal: agent.address, pane_id: agent.pane ?? agent.address, harness: agent.program?.key ?? 'unknown', herdr_status: agent.status, tab_label: agent.title ?? '', title: '', title_source: 'id', inbox: [], agents: [], hidden_finished: 0 };
     const tab = tabs.find(tab => tab.id === agent.tab);
     const pane = panes.find(pane => pane.terminal === agent.address) ?? (agent.pane ? panes.find(pane => pane.pane === agent.pane) : undefined);
@@ -40,8 +47,7 @@ export function joinRoots(feed, stock, terminals, panes, spaces, changes = {}) {
   });
   for (const item of roots) {
     item.nativeChildren = terminalChildren(item.stock.address, terminals, stock).map(node => {
-      const terminal = node.terminal, source = enrichment.get(terminal.address);
-      if (source) used.add(source);
+      const terminal = node.terminal, source = enrich(terminal.address);
       const status = terminal.status === 'error' ? 'blocked' : terminal.status === 'done' ? 'idle' : terminal.status ?? 'idle';
       const root = source ?? { host: 'herdr-core', terminal: terminal.address, pane_id: terminal.address, harness: terminal.program?.key ?? 'unknown', herdr_status: status, title: '', title_source: 'id', inbox: [], agents: [], hidden_finished: 0 };
       const title = rootTitle({ address: terminal.address, program: terminal.program, terminal, feed: source });

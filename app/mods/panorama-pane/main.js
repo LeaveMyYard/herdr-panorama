@@ -55,7 +55,7 @@ export default class Pane extends View {
     if (!p) return div();
     if (p.mod === 'panorama-graph') {
       const space = spaces().find(space => space.tabs.some(tab => tab.id === p.tab));
-      const roots = joinRoots(this.packet.feed, agents(), terminals(), panes(), spaces());
+      const roots = joinRoots(this.packet.feed, agents(), terminals(), panes(), spaces(), { aged: this.packet.aged });
       const totals = { ...spaceTotals(roots, space?.id), ...spaceInventory(roots, space?.id) };
       return h_flex().size_full().tooltip(this.packet.errors.join(' · ')).px(10).gap(8).items_center().bg(t.background).border_b(1).border_color(t.border).text_size(12)
         .on_click(() => run('pane.focus', { pane: p.pane }))

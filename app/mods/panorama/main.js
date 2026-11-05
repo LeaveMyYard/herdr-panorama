@@ -175,7 +175,7 @@ export default class Panorama extends View {
       const key = JSON.stringify(['root', root.host, root.host === 'herdr-core' && root.terminal !== null ? root.terminal : root.pane_id]);
       if (this.changed[key]?.status !== root.herdr_status) { this.changed[key] = { status: root.herdr_status, at: now }; }
     }
-    const everything = joinRoots(this.feed?.feed, stock, all, ps, ss, this.changed);
+    const everything = joinRoots(this.feed?.feed, stock, all, ps, ss, { changes: this.changed, aged: this.feed?.aged });
     setAgentOrder(everything.filter(item => item.stock).map(item => item.stock.address));
     // V10: the active space's roots, plus roots known only from the feed (listed());
     // All spaces lists every space's roots in the same sections.
