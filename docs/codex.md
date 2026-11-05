@@ -13,8 +13,8 @@ checkout does not install, restart, or activate a running plugin.
 
 ## Harness icons
 
-Orchestrator titles can use the real Claude and Codex marks from **Herdr Agent
-Icons Max** (U+E1A0 and U+E1A1), followed by the tab label. Launcher choices and
+Root titles can use the real Claude and Codex marks from **Herdr Agent
+Icons Max** (U+E1A0 and U+E1A1), followed by the title. Launcher choices and
 help keep their full harness names. The font is distributed by
 [herdr-radar](https://github.com/hhdebb/herdr-radar) and
 [herdr-icon-agent-ui](https://github.com/qintmb/herdr-icon-agent-ui); Panorama
@@ -116,9 +116,9 @@ the root, and no agent stands for the root thread. Below it is its exact
 parent/child agent tree, at any depth; the root's own children have no parent.
 Each agent shows bounded prompt/summary text, model, the latest recorded tool,
 and the tool count in the loaded turn window. Counts are not all-time totals.
-Turns are not phases (plan `uniform-agent-tree.md` U3). The compact dock keeps its existing
-presentation: one tile for the root's tree, indented rows for agents that spawned children, and child status glyphs
-on the right (leaf agents are glyphs). Open the expanded graph to navigate full
+Turns are not phases (plan `uniform-agent-tree.md` U3). The compact dock shows one tile per
+active direct subagent; the docked entry lists two layers of agents, with deeper agents as
+status glyphs on the right of their row. Open the expanded graph to navigate full
 agent cards by depth; the narrow graph offers selectable agent pods and the
 selected agent's details.
 History-only children stay unknown, including in the compact dock.
@@ -205,8 +205,8 @@ your Codex configuration, delete it there yourself; Panorama never edits Codex
 configuration. Until you do, `panorama mcp` keeps answering for the rest of this
 release: `report_thread` is still listed, records nothing and answers
 `{"status": "ignored", "reason": "threads were removed"}`, whatever caller
-`_meta.threadId` it carries. The Rust `panorama emit` likewise records nothing,
-says so on stderr and exits 0. A later release removes both.
+`_meta.threadId` it carries. The Rust `panorama emit` likewise records nothing and
+says so on stderr. A later release removes both.
 
 Report files an earlier version wrote under the state directory's
 `herdr-panorama/events/` are left in place; the Rust binary no longer writes
