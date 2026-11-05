@@ -2,6 +2,10 @@
 
 Status: **draft for the operator's decision**. Nothing is built yet. This plan covers both plugins:
 
+**Note, 2026-11-05.** The Rust model has since diverged from Python on purpose: it has one
+uniform agent tree, with no threads or phases ([uniform-agent-tree.md](uniform-agent-tree.md)).
+Parity below means the older model; the frozen Python entrypoint keeps it.
+
 - herdr-panorama (`~/Code/herdr-panorama`, main `dfcbced`);
 - herdr-inbox (`~/Code/herdr-inbox`, main `3796ef8`), with its Claude Code plugin and the
   `herdr-inbox-ui` mod.

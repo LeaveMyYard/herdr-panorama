@@ -13,8 +13,8 @@ checkout does not install, restart, or activate a running plugin.
 
 ## Harness icons
 
-Orchestrator titles can use the real Claude and Codex marks from **Herdr Agent
-Icons Max** (U+E1A0 and U+E1A1), followed by the tab label. Launcher choices and
+Root titles can use the real Claude and Codex marks from **Herdr Agent
+Icons Max** (U+E1A0 and U+E1A1), followed by the title. Launcher choices and
 help keep their full harness names. The font is distributed by
 [herdr-radar](https://github.com/hhdebb/herdr-radar) and
 [herdr-icon-agent-ui](https://github.com/qintmb/herdr-icon-agent-ui); Panorama
@@ -205,8 +205,8 @@ your Codex configuration, delete it there yourself; Panorama never edits Codex
 configuration. Until you do, `panorama mcp` keeps answering for the rest of this
 release: `report_thread` is still listed, records nothing and answers
 `{"status": "ignored", "reason": "threads were removed"}`, whatever caller
-`_meta.threadId` it carries. The Rust `panorama emit` likewise records nothing,
-says so on stderr and exits 0. A later release removes both.
+`_meta.threadId` it carries. The Rust `panorama emit` likewise records nothing and
+says so on stderr. A later release removes both.
 
 Report files an earlier version wrote under the state directory's
 `herdr-panorama/events/` are left in place; the Rust binary no longer writes

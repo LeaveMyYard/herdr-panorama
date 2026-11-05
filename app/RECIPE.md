@@ -1,7 +1,7 @@
 # Panorama for herdr-app
 
-A native Agents sidebar and per-space Swarm graph show orchestrators, threads
-and their spawned agents. Pane-less agents open Peek, with a read-only transcript
+A native Agents sidebar and per-space Swarm graph show each root and its whole
+agent tree. Pane-less agents open Peek, with a read-only transcript
 viewer. Native roots stay visible when no transcript can be associated safely.
 
 ![Native Swarm graph on synthetic design data](preview.png)
@@ -23,14 +23,14 @@ The narrow rail below 160px keeps the compact stock presentation.
 
 Needs-you is coral (`blocked`), work is amber (`working`), unseen done is blue
 (`done`), review is `ansi5`, and idle uses `idle`. Other colors come from theme()
-so the layout follows the app theme. Orchestrator rows are 30px; thread/agent rows
-are 26px, with 13px tree segments and native harness icons.
+so the layout follows the app theme. A root is a 48px two-line card; the docked
+root continues into one row per agent, two layers deep, with native harness icons.
 
-Swarm uses fixed-width columns: orchestrators 236px, threads 300px, each spawn
-depth 272px, with 36px gaps. A selected thread shows phases; a selected agent shows
+Swarm uses one fixed-width column per depth, 272px with 36px gaps: depth 0 holds
+the space's roots and every depth uses the same card. A selected card shows
 activity/questions/error and available actions. Hidden columns have breadcrumbs
 and a scrollbar. Peek is 284px wide with status, supplied metadata, error and last
-message, plus Open orchestrator and Transcript.
+message, plus Open root pane and Transcript.
 
 ## How it behaves
 
@@ -38,22 +38,23 @@ message, plus Open orchestrator and Transcript.
   verified core addresses; never infer ownership from names, folders or agent IDs.
 - Needs-you, Done, Working and Idle follow urgency, with pinned agents first.
   Working is a native spinner; review is `»`, wait `?N`, permission `!`, failure
-  a solid `✗`, done a check/dot, idle a ring. Threads aggregate descendants.
-- Threads remain visible where there is news; finished sibling groups fold.
+  a solid `✗`, done a check/dot, idle a ring. A node's need marks add up its
+  descendants.
+- Finished siblings fold into one `N finished · names` group per parent.
   User folds override defaults until their subtree status changes.
 - Space clicks create Swarm once at tab index 1, then select it. Never keep moving
   an existing tab against a user's drag. Retain stock Spaces git/worktree/machine
   behavior and stock terminal-tab behavior.
 - Sidebar root clicks focus their verified terminal; native terminal children
-  can peek; transcript-only agents open the mod's popup. In Swarm, root/thread
-  clicks select/drill, Enter/double-click opens the root, and agent clicks open it.
+  can peek; transcript-only agents open the mod's popup. In Swarm, root clicks
+  select/drill, Enter/double-click opens the root, and agent clicks open it.
 - Arrows/hjkl navigate spawn depth; wheel scrolls columns independently and
   shift-wheel moves the horizontal window. Guard moved targets for 300ms after
   scroll and 1s after refresh. Animate needs borders and working sweeps only
   when visible; keep native spinner timing 900ms.
 - `t`/Transcript opens a native read-only JSONL viewer with 100-line pages.
   `a`/`i` navigate to existing Inbox or a verified permission pane; they never
-  answer, type or change permissions. `g` goes to the orchestrator.
+  answer, type or change permissions. `g` goes to the root.
 
 ## Built from
 

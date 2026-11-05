@@ -3,7 +3,7 @@
 herdr 0.9.3 can save SSH machines (`herdr machine list`). It also forwards API calls to a
 machine's own herdr server with `herdr --machine <label-or-id> <api command>`; forwarding
 never starts a server, and ids are per server. Panorama uses these to show the Claude
-orchestrators running on those machines next to the local ones, in the same view.
+roots running on those machines next to the local ones, in the same view.
 
 ## What was measured (read-only, against a saved VM)
 
@@ -58,7 +58,7 @@ orchestrators running on those machines next to the local ones, in the same view
      - **Continued sessions** (#39):
        - herdr names the session a conversation started in. When the conversation moved on
          to a new session, its mirrored transcript ends with `continued-in` (see DESIGN,
-         "Orchestrators").
+         "Roots").
        - After a collect, the watcher mirrors the sessions those records name as well, and
          collects again. That happens up to 3 hops in one refresh; further hops wait for the
          next refresh.
@@ -67,22 +67,22 @@ orchestrators running on those machines next to the local ones, in the same view
      - **One sync per machine at a time:** a lock per machine around mirror + prune, so
        two refreshes can never append into one mirror at once.
   3. Run the same collector as for local sessions, with that mirror as its projects root.
-     Every orchestrator then gets its machine (`machine_id` for identity and commands,
+     Every root then gets its machine (`machine_id` for identity and commands,
      `machine` the label for display). Its herdr ids are namespaced by the machine's
      **id** (`<id>:w1:p2`), because ids are per server and labels can repeat or contain `:`.
-- **Merging.** The view adds every machine's latest result after the local orchestrators,
+- **Merging.** The view adds every machine's latest result after the local roots,
   one machine after another. Problems show in the header's `refresh failed` chip:
   - **unreachable:** a machine that has never answered, with its error;
   - **stale:** a machine whose last good result is older than 30 s, or whose last refresh
     failed; it keeps that last result on screen.
 - **Identity.** Cursors, clicks and arming compare namespaced ids, so `w1:p1` here and
-  `devbox:w1:p1` there are different orchestrators.
+  `devbox:w1:p1` there are different roots.
 - **UI, the operator's choice: group by machine.** A faint divider row with the machine's
-  label sits above that machine's orchestrators: `─ devbox ───`. Groups are keyed by the
+  label sits above that machine's roots: `─ devbox ───`. Groups are keyed by the
   machine's id, so two machines with the same label get two dividers. The cards and entries
-  themselves are unchanged, and local orchestrators have no divider. This applies to the
+  themselves are unchanged, and local roots have no divider. This applies to the
   2a wide and narrow layouts and to the docked 3a panel. The divider is not a click target.
-- **Enter, `g` or a click on a remote orchestrator, the operator's choice: focus remotely
+- **Enter, `g` or a click on a remote root, the operator's choice: focus remotely
   plus a hint.** Panorama runs `herdr --machine <id> agent focus <pane>` in a worker,
   so the pane is in front once herdr shows that machine. It then notifies
   "<name> is on <machine>: switch herdr to <machine> to see it". It **never docks** into a
@@ -94,9 +94,9 @@ orchestrators running on those machines next to the local ones, in the same view
 
 ## Limits of this version
 
-- Panorama's own Claude Code plugin data (the explicit `report_thread` channel, the
-  SubagentStart/Stop hook times) is not mirrored. Remote agents therefore show inferred
-  endings (`done?`), and declared threads are missing until those files are mirrored too.
+- Panorama's own Claude Code plugin data (the SubagentStart/Stop hook times) is not
+  mirrored. Remote agents therefore show inferred endings (`done?`) until those files are
+  mirrored too.
 - A transcript rewritten shorter on the remote keeps its old mirrored copy until it grows
   past it; transcripts are append-only in practice.
 - `CLAUDE_CONFIG_DIR` on the remote is not honoured: the mirror reads `~/.claude/projects`.

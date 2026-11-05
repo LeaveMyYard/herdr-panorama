@@ -1,7 +1,7 @@
 # herdr-app flavour
 
-The panorama sidebar reads the v1 app feed, preserves every native stock agent,
-and adds transcript trees, status marks, folding and harness icons. Spaces adds
+The panorama sidebar reads the v2 app feed, preserves every native stock agent,
+and adds each root's agent tree, status marks, folding and harness icons. Spaces adds
 per-space activity and needs counts while keeping stock machine/worktree/git
 behavior. Selecting an expanded Space creates Swarm once at the first tab
 position or selects its existing graph. The owned tabs and pane-header clones
@@ -109,10 +109,15 @@ preference stores and host layout-state snapshot are described below; the instal
 does not rewrite personal shared state or acquire deletion ownership over retained
 preference/layout files.
 
-- **No threads:** verify the private release artifact and current session proof;
-  older unbound roots are expected to stay basic.
+- **No agent tree on a root:** verify the private release artifact and current session
+  proof; older unbound roots are expected to stay basic.
 - **Stale/unavailable feed:** inspect `herdr-app status` for the intended app home.
   Stock roots and last valid stale data remain; a visible cache is not live proof.
+- **Leftover `.start.tmp`:** after a crash, ensure and uninstall both refuse
+  `data/panorama/runtime/<install_id>/.start.tmp`, a staging copy of the retry ledger
+  that holds no ownership. Close herdr-app, check that no `panorama app-feed` writer
+  is running, remove that one file by hand and retry. This is the only runtime file
+  to remove yourself.
 - **Frontend stop timeout:** manually reopen the current mod/layout so it can clear
   its disabled generation, then retry. The installer does not launch/select it.
 - **Collision, unsafe retained store or runtime/receipt refusal:** preserve the

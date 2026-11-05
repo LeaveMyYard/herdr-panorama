@@ -9,10 +9,21 @@ permission prompt or a question. Nothing shows that structure. To learn what a
 tab is doing, the operator has to open it and scroll.
 
 herdr-panorama is a read-only swarm view of that structure, drawn like an Argo resource
-graph: **orchestrators → threads → agents**, with small coloured squares
-("pods") as the status mark. It implements variant **2a "Graph · squares are
+graph: **roots → their agents, at any depth**, with small coloured squares
+("pods") as the status mark. It grew from variant **2a "Graph · squares are
 subagents"** of the Claude Design project (copies in `docs/design/`, rendered
 reference in `docs/design/2a.png`).
+
+**How to read this document.** It began as the Python proof of concept and records
+the design turn by turn. Since the uniform-tree work
+([plan](plans/uniform-agent-tree.md), design
+[V11](design/herdr-app/state-refresh-v11/README.md)) the Rust app has no threads
+or phases: a root is a pane running an agent, and every agent below it is the same
+kind of node. This document uses those words. The frozen Python entrypoint
+(`src/herdr_panorama`) still calls a root an orchestrator and keeps the older model;
+[Removed: threads](#removed-threads) says what it keeps. Implementation notes that
+name Python files, and the turn history, describe that code as it was built. The
+Rust port is otherwise in [rust-rewrite.md](plans/rust-rewrite.md).
 
 Scope of the PoC: Claude Code sessions only, running in herdr panes. The view
 never types into a pane. Its only actions are focusing a pane (`g`) and
@@ -28,7 +39,7 @@ herdr api snapshot ──┐
   <sid>/subagents/…  │      │  tail-read)│                │
   <sid>/workflows/…  │      └────────────┘                ▼
 inbox.db (ro, opt.) ─┤                              tui.SwarmApp (Textual, cell grid)
-events/<sid>.jsonl ──┘ (explicit thread channel)          │
+                                                          │
                                                           └─▶ herdr agent focus <pane>
                                                               herdr plugin action invoke …inbox.open
 ```
@@ -39,42 +50,42 @@ One package `herdr_panorama`, CLI `panorama`:
 |---|---|
 | `panorama tui` | the Textual view (herdr popup or split) |
 | `panorama snapshot [--json] [--counts]` | print the derived model; `--counts` prints numbers only, no content |
-| `panorama emit …` | append a thread declaration to the explicit channel (see below) |
+| `panorama emit …` | deprecated: records nothing (see [Removed: threads](#removed-threads)) |
 | `panorama open [--split]` | open the plugin pane (used by the herdr actions) |
 
-Runtime: Python ≥ 3.11, uv, Textual. Storage: none of its own, apart from the
-optional event files the orchestrators write.
+Runtime: the Rust app when the plugin root has a current build, else Python ≥ 3.11,
+uv and Textual. The diagram shows the Python layout; the Rust app has the same
+inputs. Storage: none of its own.
 
 ## Data model
 
-`model.py` holds plain dataclasses; `panorama snapshot --json` prints them.
+`panorama snapshot --json` prints the model (`src/snapshot/json.rs`); the Rust
+types are in `crates/panorama-core/src/model/`.
 
-- **Swarm**: `orchestrators`, `generated_at`, counters `questions`, `blocked`,
-  `failed`, `running`.
-- **Orchestrator**: one per herdr pane whose agent is `claude`. `pane_id`,
-  `tab_id`, `tab_label` (the name the operator gave the tab), `workspace_id`,
-  `session_id`, `herdr_status` (`working` / `idle` / `blocked` / `done` /
-  `unknown`), `flavour`, `transcript` (path), `pending` (what a `blocked` pane
-  waits on: AskUserQuestion text or "wants Bash(…)"), `inbox` (open herdr-inbox
-  question ids), `threads`.
-- **Thread**: `id`, `name`, `source` (`explicit` / `workflow` / `ref` /
-  `turn`), `phases`, `agents`, `status` (`active` / `done` / `failed`),
-  `started`, `ended`, `worktree`, `pct`.
-- **Phase**: `name`, `state` (`done` / `now` / `next` / `failed` /
-  `skipped`), `start`, `end`, `note`.
-- **Agent**: `id` (Claude agent id), `tool_use_id`, `description`, `role`,
-  `agent_type`, `model`, `status`, `started`, `ended`, `last_at`,
-  `tool_calls`, `activity` (last tool call, one line), `last_message` (last
-  assistant text, one paragraph), `questions` (open inbox questions the agent
-  filed), `error`, `phases` (indexes into the thread's phases), `parent`
-  (spawning agent id for nested agents), `depth`, `resumes`.
+- **Swarm**: `roots`, `generated_at`, `herdr_ok`, `inbox_ok`, `errors`,
+  `stale_after`, and `counts` (`roots`, `agents`, `running`, `waiting`,
+  `questions`, `blocked`, `failed`).
+- **Root**: the depth-0 node, one per herdr pane running an agent. `pane_id`,
+  `tab_id`, `workspace_id`, `session_id`, `herdr_status` (`working` / `idle` /
+  `blocked` / `done` / `unknown`), `harness`, `transcript` (path), `pending` (what
+  a `blocked` pane waits on: AskUserQuestion text or "wants Bash(…)"), `inbox`
+  (open herdr-inbox question ids), `title`, `title_source`, `agents` (flat, parents
+  before children) and `hidden_finished` (agents the done window dropped). Its own
+  state lives on the root: nothing stands in for it in `agents`.
+- **Agent**: `id`, `title`, `title_source`, `description`, `role`, `agent_type`,
+  `model`, `status`, `started`, `ended`, `last_at`, `tool_calls`, `activity` (last
+  tool call, one line), `last_message` (last assistant text, one paragraph),
+  `questions` (open inbox questions the agent filed), `error`, `parent` (the
+  spawning agent's id, null for a direct child of the root), `depth` (recomputed
+  from the parent chain, root children are 1), `resumes`. A dangling or cyclic
+  parent makes the agent a root child, so none is hidden.
 
 Agent `status` uses the design's eight codes: `q` queued ○, `run` running ⠋
 (spinner ⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏), `rev` reviewing », `wait` needs answer ?, `blk` blocked !,
 `fail` failed ✗, `done` ✓, `cxl` cancelled -. Amber is reserved for `wait` and
 `blk`, red for `fail`. Turn 8 adds `bg` waiting ⠁ (lavender, one braille dot circling the cell,
-`⠁⠈⠐⠠⢀⡀⠄⠂`): see *Waiting and stale*. Agents and orchestrators carry `bg` (their background
-tasks in flight); orchestrators carry `last_activity`; the swarm carries `stale_after`.
+`⠁⠈⠐⠠⢀⡀⠄⠂`): see *Waiting and stale*. Agents and roots carry `bg` (their background
+tasks in flight); roots carry `last_activity`; the swarm carries `stale_after`.
 
 ## Data layer (`src/herdr_panorama/scan/`)
 
@@ -85,7 +96,7 @@ study it is based on compared zoetrope with real sessions on this machine and
 found three classes of status error, which the port fixes (below). Verified on
 Claude Code 2.1.x transcripts and herdr 0.9.3, read-only.
 
-### Orchestrators: `herdr api snapshot`
+### Roots: `herdr api snapshot`
 
 One call returns `agents`, `panes`, `tabs` and `workspaces` (a few ms). For
 each agent with `agent == "claude"` and `agent_session.kind == "id"`:
@@ -97,7 +108,7 @@ each agent with `agent == "claude"` and `agent_session.kind == "id"`:
 | `session_id` | `agent_session.value`, then followed through `continued-in` records (below) |
 | `tab_label` | the tab's `label`; without one, the session's `custom-title`, `agent-name` or `ai-title` record, then the terminal title |
 
-Orchestrators follow herdr's tab order; several Claude panes in one tab are
+Roots follow herdr's tab order; several Claude panes in one tab are
 labelled `tab · pane`.
 
 **A conversation can move to a new session id.** The same Claude process can carry on under a
@@ -282,7 +293,7 @@ the same rules, so it catches implementation slips, not wrong rules.
 
 herdr reports `agent_status: "blocked"` when Claude Code shows a permission
 prompt or an AskUserQuestion dialog; permission prompts are not in the
-transcript. The orchestrator's in-flight calls (last 64 KB) tell which:
+transcript. The root's in-flight calls (last 64 KB) tell which:
 
 - `AskUserQuestion`: input `{"questions":[{"question","header","multiSelect",
   "options":[{"label","description"}]}]}` (captured). Its question texts are
@@ -290,7 +301,7 @@ transcript. The orchestrator's in-flight calls (last 64 KB) tell which:
 - anything else: `wants Bash(<description>)` (permission prompt).
 
 Background subagents run with `requestNonInteractive: true` and never prompt,
-so `!` belongs to orchestrators. The view only shows the text and focuses the
+so `!` belongs to roots. The view only shows the text and focuses the
 pane (`g`); it never allows, denies or answers.
 
 ### herdr-inbox (optional)
@@ -301,15 +312,15 @@ Only columns of the 0.1 `questions` table are read (`id`, `session_id`,
 `pane_id`, `asked_by`, `question`, `status`, `created_at`), so every inbox
 version works. Open = `status = 'open'`.
 
-- orchestrator `?N` = open questions of its `session_id` (fallback `pane_id`);
+- root `?N` = open questions of its `session_id` (fallback `pane_id`);
 - agent `?N` = open questions whose receipts are in the agent's own file; the
   rest go on a "main session" card;
-- `a` (or a click on an agent card's `a answer` or an orchestrator's `?N`)
+- `a` (or a click on an agent card's `a answer` or a root's `?N`)
   opens the inbox **on that question group**, using herdr-inbox's deep-link API
   (≥ 0.6.0):
   - an agent opens with `inbox open --question Q<n>` (its first open question's
     group);
-  - an orchestrator opens with `inbox open --pane <pane_id>` (its oldest open
+  - a root opens with `inbox open --pane <pane_id>` (its oldest open
     group);
   - the command runs as `uv run --quiet --frozen --no-dev --project <plugin_root> inbox …`,
     where `plugin_root` and `version` come from `herdr plugin list --json`. It
@@ -341,23 +352,21 @@ version works. Open = `status = 'open'`.
 ### Mouse
 
 Everything the keys reach can be clicked, in both layouts. The renderer records
-every target with the identity it was drawn for (orchestrator pane, thread,
-agent) at the last paint; a card is registered before the labels inside it,
+every target with the identity it was drawn for (root pane, agent) at the last paint; a card is registered before the labels inside it,
 and the innermost target under the pointer wins.
 
 | Click | Effect | Key |
 |---|---|---|
-| orchestrator card (narrow: its row) | select it, focus the column | `↑↓` |
-| the selected orchestrator card, column focused | go to its pane | `g` |
-| an orchestrator entry in the docked 3a panel | select it and switch to it at once (one click) | `↑↓` `enter` |
-| thread card (narrow: the boxed card) | select it, focus the column | `→` `↑↓` |
-| agent card, or a pod in a thread card | select it (the card expands) | `→` `↑↓` |
-| the selected agent card, column focused | go to the orchestrator pane | `g` |
+| root card (narrow: its row) | select it, focus the column | `↑↓` |
+| the selected root card, column focused | go to its pane | `g` |
+| a root entry in the docked 3a panel | select it and switch to it at once (one click) | `↑↓` `enter` |
+| agent card, or a pod in a narrow card | select it (the card expands) | `→` `↑↓` |
+| the selected agent card, column focused | go to the root pane | `g` |
 | `✓ n complete`, `n finished` | select and fold / unfold | `enter` |
 | `+ New agent` | open the form | `n` |
 | `all` / `running` / `needs me` in the header | that filter | `f` |
 | `g open pane`, `t transcript`, `a answer` in an agent card | that action on that agent | `g` `t` `a` |
-| `?N` on an orchestrator card | its questions in the inbox | `a` |
+| `?N` on a root card | its questions in the inbox | `a` |
 | empty space | nothing | |
 
 "Clicked again" needs the card to be the cursor (selected *and* its column
@@ -373,7 +382,7 @@ a click never acts on a card the operator was not already on.
   ignores clicks for 1 s, including on the first paint. A click aimed before a
   refresh therefore cannot land on something the refresh slid under the
   pointer. It is per cell, not per identity, because one identity can be drawn
-  in several places (an agent's pod in its thread card and its own card) and a
+  in several places (an agent's pod in a narrow card and its own card) and a
   card covers several rows: any one of those moving is enough. Only refreshes
   count: animation frames, hover and the wheel never change it (a frame keeps
   every card where it was). Comparing the cell maps costs well under a
@@ -395,97 +404,59 @@ a click never acts on a card the operator was not already on.
 No database, an unreadable one or a missing table: no inbox marks, no `a`,
 no `i`, no error.
 
-## Threads
+## Agent tree and names
 
-The hard part: a thread is a unit of work an orchestrator drives (a PR going
-through author → review → fix → merge, a plan task, an investigation), and
-Claude Code has no such concept. Sources, strongest first; an agent belongs to
-the first that claims it.
+One tree per root, built from what the harness records: Claude's spawn chains,
+Codex's `parentThreadId`. There is no grouping step and no agent cooperation. Both
+views show the same tree: every node below the root is the same kind of node, and
+having a pane changes only what a click does.
 
-1. **Explicit channel** (any flavour can emit it, see below).
-2. **Native Workflow runs**: one thread per `runId`, named by the launch's
-   `workflowName`; phases from the run summary's `phases`, else the journal's
-   phase order, else `meta.workflowPhase`. Phase state: `done` when all its
-   agents finished, `now` while one runs, `next` with none yet (`skipped`
-   once the run ended), `failed` when its last agent failed.
-3. **References** (`source: ref`): `#123`, `PR 123`, `PR #123`, `pull/123`,
-   optionally with a repo word before it (`api #397`, `web #52`,
-   `docs #688`), in the agent's description. Agents with the same key (repo
-   word lowercased + number; a bare `#123` joins a keyed thread with the same
-   number if there is exactly one) form one thread named after the key.
-4. **Prompt eras** (`source: turn`, zoetrope's `prompt_for_ts`): remaining
-   depth-1 agents are grouped by the operator prompt that was current when
-   they were launched (the latest `origin.kind == "human"` prompt at or before
-   the spawn). Name: the first agent's description, `+N` when there are more.
+**Titles.** Each title is cleaned (control and bidi characters dropped, whitespace
+collapsed, leading decorations stripped, cut to 80 characters) and `title_source`
+records the rule that won, which drives no logic. `role`, `agent_type`, the short id
+and `model` are secondary text.
 
-Nested agents (depth ≥ 2) join their root agent's thread.
+- **Subagent, Claude:** `meta.json` `description`, the spawn's `input.description`,
+  the first line of its first prompt, `agent_type` with the short id, `agent <short id>`.
+- **Subagent, Codex:** see [How Codex agents are named](codex.md).
+- **Root:** the operator's herdr pane or tab name, then the session title (`/rename`,
+  `agent-name`, `ai-title`; Codex's `thread.name`), the first line of the first prompt,
+  a telling terminal title, then the harness with its tab or pane. In the app the mod
+  applies the operator's names from live data, because a core writer has none
+  ([feed v2, Titles](protocol/app-feed-v2.md)).
 
-**Heuristic phases** (sources 3–4): each launch and each resume of an agent is
-a span `(role, start, end)`, its end the first notice after it. Spans sorted by start; consecutive spans with the
-same role merge into one phase; phase names are the role, with a round number
-for reviewer/fixer/author repeats (`review r1`, `fix r1`, `review r2`).
-Heuristic threads never have `next` phases (the future is unknown).
+**Status.** A root's own state is its herdr status, pending prompt, the inbox
+questions no agent filed and its background work. Need marks (✗ ! ?N) add up over all
+descendants, with distinct question ids.
 
-Thread status: `active` while any agent runs, `failed` if its newest agent
-failed, else `done` (`cancelled` if all were). Done threads outside the done
-window (see Configuration) are dropped.
+**Done window.** A finished agent whose end is older than `done_window` (done or
+failed alike) is dropped, unless a descendant of it is still shown, and is counted in
+the root's `hidden_finished`, shown as `+N older`. A root stays while its pane does.
+Finished siblings fold into one `n finished · names` card or row per parent, the root
+included.
 
-Flavour shown on the orchestrator card: the explicit channel's `flavour` if
-any thread has one, else `workflow` if any thread is a workflow, else
-`pr-review` if any is a `ref` thread, else `agents`.
+### Removed: threads
 
-Known weaknesses: an agent named "Fix flaky test" with no reference lands in
-a turn thread even if it belongs to the PR the previous turn worked on; one
-operator prompt that starts two unrelated pieces of work makes one thread; a
-description that mentions two PRs joins the first. The explicit channel is the
-fix for all three.
+Earlier versions drew a third layer between orchestrator and agent. A thread was
+a unit of work: explicitly declared (`report_thread`, `panorama emit`, or a file in
+`${XDG_STATE_HOME:-~/.local/state}/herdr-panorama/events/`), a native Workflow run,
+a PR/issue reference in descriptions, or an operator-prompt era, with phases built
+from run summaries or from launch and resume spans. The operator removed the layer
+on 2026-11-04: the spawner names each agent at every depth, so the graph needs no
+layer with a name of its own.
 
-### Explicit channel (v1)
-
-An append-only JSONL file per orchestrator session:
-`${XDG_STATE_HOME:-~/.local/state}/herdr-panorama/events/<session_id>.jsonl`
-(override `PANORAMA_EVENTS_DIR`). The Rust collector no longer reads these files
-(plan `uniform-agent-tree.md` §6, slice U3) and ignores `PANORAMA_EVENTS_DIR`;
-existing files are left in place and can be deleted. Each line is one object; later lines update
-earlier ones field by field (`phases` and `agents` replace, they do not
-append). Unknown fields are ignored; unknown `v` lines are skipped.
-
-```json
-{"v":1,"ts":"2026-10-14T09:43:00Z","thread":"pr-595",
- "name":"PR #595 soft-reuse ledger","flavour":"pr-review",
- "status":"active","worktree":"wt/ledger","pct":60,
- "phases":[{"name":"author","state":"done","start":"09:02","end":"09:20"},
-           {"name":"review r1","state":"done","start":"09:24","end":"09:38","note":"1B 2H 3M"},
-           {"name":"review r2","state":"now","start":"09:43"},
-           {"name":"CI","state":"next"},{"name":"merge","state":"next"}],
- "agents":[{"match":"<agentId from the launch>","role":"author","phase":0},
-           {"match":"review PR 595*","role":"reviewer","phase":3}]}
-```
-
-- `thread` (required): id, unique per session.
-- `status`: `active` / `done` / `failed` / `cancelled`.
-- `phases[].state`: `done` / `now` / `next` / `failed` / `skipped`; `start`,
-  `end`: `HH:MM` or ISO-8601.
-- `agents[].match`: an agentId, or a description (`*` suffix = prefix match).
-  `role` overrides the derived role (the flavour's vocabulary, e.g.
-  `task-reviewer`); `phase` pins the agent to a phase index.
-
-Writers: `panorama emit --thread pr-595 --name … --phase "review r2=now"
---agent "review PR 595*=reviewer"` (session from `CLAUDE_CODE_SESSION_ID`,
-which Claude Code exports to its Bash tool and subagents' Bash tools), or
-any tool that appends the JSON line (a superpowers skill step, a review-loop
-script, a coordinator's hook). It is deliberately a file, not a socket: no
-server to run, no ordering problem between writers (O_APPEND lines under 4 KB
-are atomic on Linux and macOS), readable after the fact. An MCP tool wrapper
-(`declare_thread`) is a later step; the PoC documents the file and ships the
-CLI.
+The Rust collector no longer reads the event files and ignores
+`PANORAMA_EVENTS_DIR`; existing files can be deleted. The frozen Python entrypoint
+keeps all of this as its legacy view, and its `panorama emit` still writes those
+files. Its rules are in `src/herdr_panorama/` and in this file's Git history. The
+tree that replaced it is the [plan](plans/uniform-agent-tree.md).
 
 ## Claude Code plugin (opt-in)
 
 The repo is also a Claude Code plugin (`.claude-plugin/plugin.json`,
 `marketplace.json`, `hooks/hooks.json`). Nothing needs it: without it, the view
-works from transcripts alone. Installing it adds exact start and stop records,
-the `report_thread` tool and one line of session instructions.
+works from transcripts alone. Installing it adds exact start and stop records.
+Its MCP server is deprecated (see below).
 
 ### Hooks: never exit 2
 
@@ -572,38 +543,16 @@ How the scanner uses the records (on top of the status rules above):
 
 ### SessionStart instruction
 
-Once per session (recorded in the hooks file) and inside herdr only
-(`HERDR_PANE_ID` / `HERDR_ENV` set), the session gets one paragraph of
-`additionalContext`, under 70 words:
-- call `report_thread` when multi-step work starts and at each phase change;
-- one call per change;
-- skip it for single-step tasks.
+The `SessionStart` hook records the session's Claude process and says nothing to
+the agent: the paragraph of `additionalContext` that used to ask for `report_thread`
+is gone.
 
-### `report_thread` (MCP tool)
+### `report_thread` (deprecated MCP tool)
 
-`report_thread(thread_id, title?, phase?, phases_done?, next?, status?, agents?)`
-writes the explicit channel above, the same format `panorama emit` writes.
-
-Reports merge:
-- a phase gets `start` when it is first reported as current, and `end` when
-  it is first reported as done;
-- omitted lists keep what was reported before;
-- `status` ends the thread.
-
-Limits:
-- at most 30 phases or agents per list;
-- 200 characters per string;
-- control and bidi/format characters are stripped;
-- an agent pattern `abc*` must name at least 4 characters before the `*`.
-  The channel reader enforces this too, so no declaration can claim every
-  agent.
-
-The events file is rewritten as one line per thread once it passes 64 KB,
-under a lock that appends also take.
-
-The session is resolved per call: the pane's current Claude session from
-herdr (`HERDR_PANE_ID` → `pane get`, which follows `/clear`), else
-`CLAUDE_CODE_SESSION_ID`.
+Still listed with its old schema, so a session told to call it before an upgrade
+sees no "Unknown tool". A call writes nothing and answers
+`{"status": "ignored", "reason": "threads were removed"}`. A later release removes
+the tool and the server.
 
 ## TUI: variant 2a
 
@@ -613,17 +562,14 @@ design's characters, colours (`TH.dark`, pod colours `PB`) and coordinates.
 - **Header**: `herdr panorama`, filters `all running needs me` (active one bold),
   counters `? N ! N ✗ N` on the right, clock `HH:MM`.
 - **Wide (≥ 120 columns)**: three columns joined by solid links (`├─┬─┤`, see below):
-  orchestrator cards (x 2, w 28): name, marks `✗ ! ?N`, `n active · n agents`,
-  flavour tag; thread cards of the selected orchestrator (x 36, w 50): phase
-  glyph + name, current phase + duration, pod row (finished pods fold to
-  `+n done`), age tag; the selected thread unfolds into its steps with times;
-  one `✓ n complete` card. Agent cards of the selected thread (x 93, w 44):
-  pod, role, id, model, activity, age / calls tags; the selected agent expands
-  with `now …`, questions, error, last message and actions `g open pane`,
-  `t transcript`, `a answer`; finished agents fold into one
-  `n finished · role ×n` card.
-- **Narrow (< 120)**: indented list; only the selected orchestrator is open,
-  its threads as cards, the selected thread expanded with steps and the
+  one column per depth, labelled `Depth n`, with the same card in each: harness mark,
+  title, the subtree's need marks `✗ ! ?N` and its own state; then activity and
+  `model · age` (`tab N · age` for a root). The selected card expands with `now …`,
+  questions, error, last message, its `role · id · model` and actions `g open pane`,
+  `t transcript`, `a answer`; a root's own background work is a line there. Finished
+  siblings fold into one `n finished · names` card per parent.
+- **Narrow (< 120)**: indented list; only the selected root is open, its direct
+  children as cards, each with a one-line pod run of its descendants, plus the
   selected agent's detail.
 - **Legend** and **key hints** at the bottom, as in the design.
 
@@ -634,26 +580,25 @@ design's characters, colours (`TH.dark`, pod colours `PB`) and coordinates.
   edge is animated it becomes `┨` (or `┠` leaving). Cells are merged bit by bit
   (up, down, left, right), so crossings and corners always join; the narrow
   list's tree uses the same lines.
-- **Every card has an animated edge:** orchestrators, threads and agents. The
+- **Every card has an animated edge:** roots and agents. The
   design's `edge()`:
   - the left border takes the card's state colour, blinking when it needs you
     (failed, blocked, needs you): one second a blink, on for a frame, a sine fade
     off over the next, off for a frame, a fade back on (see Smooth animation);
   - while agents work, a 4-cell `━` bar in the running colour sweeps the
     bottom border, one cell per 250 ms frame;
-  - the sweep is shifted by `seed × 7` cells, with seed 0 for orchestrators
-    (they move together, as in the design), the index + 1 for threads, and
-    the agent's own seed for agents;
+  - the sweep is shifted by `seed × 7` cells, with seed 0 for roots
+    (they move together, as in the design) and the agent's own seed for agents;
   - idle, done and cancelled cards keep a plain border, as do panorama's
     extra `done?` and `lost`.
 - **State:** a card's state is the design's `stOf` over its agents: attention
-  > working > reviewing > idle, or done when everything is. Each orchestrator
+  > working > reviewing > idle, or done when everything is. Each root
   card shows it as a pod and a label, followed by
-  `· <active threads>/<live agents>`.
-- **Orchestrator-only extensions** (functional, consistent with the existing
+  `· <live>/<agents>`.
+- **Root-only extensions** (functional, consistent with the existing
   marks): herdr reporting the main session `working` counts as working,
   `blocked` as blocked, and inbox questions no agent filed as needs you.
-  These are the main session's own state; an orchestrator often works without
+  These are the main session's own state; a root often works without
   subagents.
 - **Spinners** turn one step per frame.
 - **Cost:** a frame never re-renders: it restyles the moving cells of the last render in place
@@ -670,7 +615,7 @@ design's characters, colours (`TH.dark`, pod colours `PB`) and coordinates.
 Columns scroll independently: each column keeps its selected card in view.
 Agent cards are ordered by start time (the operator's decision; the design
 orders them by urgency), so a status change never reorders cards under the
-cursor. The pods in a thread card keep the design's urgency order; they are
+cursor. The pods in a narrow card keep the design's urgency order; they are
 not navigable.
 
 ### Wider cards on big screens (design turn 7, approved by the operator)
@@ -678,10 +623,9 @@ not navigable.
 Reference: `docs/design/swarm-wide.js`, rendered by `render-7.mjs`; `tests/test_wide.py` compares
 cell for cell at 160, 240 and 320 columns.
 
-- **Width tiers** (orchestrators / threads / agents): below 220 columns 28 / 50 / 44 (the
-  threads shrink to 36 below 160), as before; 220–299 columns 32 / 56 / 56; from 300 columns
-  36 / 64 / 60, the cap. Columns still keep their width and align left. The space left over
-  shows more depth columns: at 320 columns all five depth levels of the test thread fit.
+- **Width tiers** (roots / agents): below 220 columns 42 / 44; 220–299 columns 44 / 56; from
+  300 columns 48 / 60, the cap. Columns still keep their width and align left. The space left over
+  shows more depth columns: at 320 columns all five depth levels of the test tree fit.
 - **The working sweep** along a card's bottom border takes at most 12 s per lap (48 frames),
   whatever the card's width. Up to a 44-column card it moves one cell a frame, as before; a
   wider card moves further each frame. The connector lines are not animated.
@@ -699,18 +643,18 @@ compares cell for cell (the whole 3a panel; every pulsed cell of 2a).
   failure > question > finished. An answered question (no open question left) is not unseen
   any more; if the agent then finishes, that is a new event.
 - **Seen:** a click on the card or its actions; Enter on it (on a `n finished` card: its folded
-  agents); `g` / docking next to its orchestrator (all of that orchestrator's agents). Also herdr's
-  focus *moving* onto the orchestrator's pane (focused at this refresh, not at the previous one)
+  agents); `g` / docking next to its root (all of that root's agents). Also herdr's
+  focus *moving* onto the root's pane (focused at this refresh, not at the previous one)
   clears the marks that arose before it. Focus resting on a pane (the operator away, the cockpit's
   docked agent) is not looking, and the first refresh after start never clears by focus.
   Moving the cursor is not looking either.
 - **Drawing:** an unseen agent card's whole border (corners, sides, the animated edge and its
-  sweep) pulses in the event colour. A `n finished` card holding one does too. Thread,
-  `✓ n complete` and orchestrator cards take the most urgent mark of their agents: the same
+  sweep) pulses in the event colour. A `n finished` card holding one does too. A root
+  card takes the most urgent mark of its agents: the same
   pulse for a failure or a question, a quieter one for a finished agent. One pulse every 12
   frames (3 s), a sine wave in time, never fully off: full 35–100 % of the event colour over the line colour,
   quiet 15–45 %. The docked panel tints the entry's two lines (8–30 %, quiet 4–14 %) and
-  pulses the docked list's thread glyph (and `✓ n done`). Unseen marks keep frames running.
+  pulses the docked list's agent glyph (and `✓ n done`). Unseen marks keep frames running.
   - **The selected card pulses over its own border colour** (the operator's report: the
     current card was lost under the animation). In swarm-unseen.js the pulse recolours the
     whole border over the line colour, the selection's white included, so a selected
@@ -782,7 +726,7 @@ colours and `TILE_OFF` the same way, and an unseen tile's pulse runs over that b
 ### Waiting and stale (design turn 8, approved by the operator)
 
 Reference: `docs/design/swarm-states.js`, rendered by `render-8.mjs`; `tests/test_states.py`
-compares cell for cell (the whole docked panel, 9e since turn 9; in 2a the new orchestrator cards, the state lines
+compares cell for cell (the whole docked panel, 9e since turn 9; in 2a the new root cards, the state lines
 of the earlier ones, the background card and the waiting agent's card). The operator's
 answers: the 3a questions label is now `needs you` (Q109), the header chip `refresh failed`
 (Q110), and a long wait stays `waiting` with its age (Q111).
@@ -793,27 +737,26 @@ answers: the 3a questions label is now `needs you` (Q109), the header chip `refr
   draft had the clocks `◴◵◶◷`, but ghostty takes those from a wider fallback font, the problem
   that replaced `◐◓◑◒` with braille); the left edge is steady (no sweep:
   nothing thinks; no blink: nothing needs you).
-- **Stale** (◌, grey `#646a73`): an orchestrator that would be idle or all done, with nothing
+- **Stale** (◌, grey `#646a73`): a root that would be idle or all done, with nothing
   in flight, whose last activity is older than `stale_after` (default `"12h"`). Last activity
   is the newest timestamp in its session's transcript or any of its agents' (a prompt, a
   reply, a tool call, a notice). Name and label go faint: `stale 15h` (hours up to 48, then
   days). It keeps its place in tab order.
 - **Order:** failed > blocked > needs you > working > reviewing > waiting > stale | idle |
-  all done. A waiting orchestrator older than `stale_after` stays waiting and says how long:
+  all done. A waiting root older than `stale_after` stays waiting and says how long:
   `waiting 15h` (the oldest task's age).
-- **2a:** the orchestrator card reads `waiting · N bg`. Its background tasks are a
-  `background` card above its threads (selectable; Enter stays: nothing is behind it), one
-  row per task: clock, kind (`Bash`, `Monitor`), description, age; the bottom tag says
+- **2a:** the root card reads `waiting · N bg`. Its background tasks are lines in its
+  expanded card, one per task: clock, kind (`Bash`, `Monitor`), description, age; a line says
   `turn ended Nm ago` (since the last activity). A waiting agent's expanded card lists its
   tasks under `now  turn ended · N task(s) in background`, and its label is `waiting 3m`
   (since its oldest task).
 - **Docked panel (9e tiles):** the state tile and the label `waiting` (or `stale 15h`), the
   second line appends ` · N bg`, and the docked entry lists its background tasks first, a
-  lavender tile each (`bash 14m` on the right). An entry without threads starts its counts
+  lavender tile each (`bash 14m` on the right). An entry without tiles starts its counts
   where the tiles would be. In 9e too, questions read `needs you` (Q109).
 - **Animation:** the clock is an `Anim` on the restyle path (`render.clock`), stepping at whole
   frames like the spinner; `tests/test_smooth.py` covers the 2a and 9e waiting layouts.
-- **Filters and counts:** `running` keeps waiting orchestrators and drops stale ones; `needs
+- **Filters and counts:** `running` keeps waiting roots and drops stale ones; `needs
   me` shows neither. The header's `? ! ✗` are unchanged. The legend gains `⠁ waiting` and
   `◌ stale` (a narrow legend drops whole entries that do not fit: stale, waiting, lost, done?).
 
@@ -857,20 +800,19 @@ of 1,408 idle gaps of main sessions (an `end_turn`, then over a minute of silenc
 called waiting, 1,361 had that task's ending notice arrive later (96.7 %), 6 were tasks still
 running, and 41 belonged to one task stopped without a record (the process check removes
 it). One idle gap was woken by a task the rule did not know (launched under an earlier
-session id, before a resume). Live: of 7 idle orchestrators, one was waiting (a poll loop,
+session id, before a resume). Live: of 7 idle roots, one was waiting (a poll loop,
 a child of its Claude process for 15 h, checked by hand); the other six were idle for 13–39 h
 (stale). The replay oracle's counts for agents are in *Accuracy*.
 
 ### Subagents to any depth (design turn 5, direction 5d)
 
-Agents spawn subagents, which spawn theirs. The collector already puts a nested
-agent in its top agent's thread with its `parent`; the view draws that tree
-instead of flattening it. Reference: `docs/design/swarm-deep.js` (5d), rendered
+Agents spawn subagents, which spawn theirs. The collector records each agent's
+`parent`; the view draws that tree instead of flattening it. Reference: `docs/design/swarm-deep.js` (5d), rendered
 by `render-5d.mjs`; the golden test `tests/test_deep.py` compares cell for cell.
 
-- **One column per depth:** orchestrators | threads | depth 1 | depth 2 | … as
-  deep as the selected thread's tree. A depth column holds every shown agent of
-  that depth in the thread. Each card sits level with the agent that spawned it
+- **One column per depth:** depth 0 (the roots) | depth 1 | depth 2 | … as
+  deep as the selected root's tree. A depth column holds every shown agent of
+  that depth under the root. Each card sits level with the agent that spawned it
   (or below the cards already in its column), and 2a's links join it to that
   agent. An agent with children starts below the previous group's last child,
   so two groups' lines never share rows. Finished children fold into one
@@ -879,7 +821,7 @@ by `render-5d.mjs`; the golden test `tests/test_deep.py` compares cell for cell.
 - **Columns keep their width and align left** (agents 44, the last one may
   shrink to 36 to fit). The space left on the right stays empty: the operator
   approved this in turn 5, because a stretched card's sweep runs too long. This
-  applies to the depth-1 column of a flat thread too, which used to stretch to 65.
+  applies to the depth-1 column of a flat tree too, which used to stretch to 65.
 - **Sideways scrolling:** the view shows the focused column, the column before
   it (its parents) and, when it fits, the column after it (its children). Then
   it adds more columns while they fit, right first, then left. The line above
@@ -891,13 +833,12 @@ by `render-5d.mjs`; the golden test `tests/test_deep.py` compares cell for cell.
   is off-screen.
 - **Keys:** `↑↓` move within a depth column, across parents. `→` goes into the
   selected agent's children: the child last selected there, else the first one.
-  `←` goes up to the agent that spawned it. From the thread, `→` steps onto the
+  `←` goes up to the agent that spawned it. From a root, `→` steps onto the
   depth-1 agent on the selected path.
-- **Thread cards** show pods for the depth-1 agents only, then `+N nested`.
 - **Narrow layouts (< 120 columns) have no depth view.** The design specifies 5d at
-  160 columns and the 46-column panel only. The narrow list keeps 2a's thread card,
-  with one pod row for all of the thread's agents (nested ones included), plus the
-  selected agent's details. `→`/`←` still step through the depth columns, but the
+  160 columns and the 46-column panel only. The narrow list shows the selected root's
+  direct children, each with one pod row for its descendants, plus the selected
+  agent's details. `→`/`←` still step through the depth columns, but the
   siblings being walked are not drawn; only the selected agent's details show where
   the cursor is.
 - **Scrolling never moves a click target silently.** A wheel or sideways scroll
@@ -905,17 +846,18 @@ by `render-5d.mjs`; the golden test `tests/test_deep.py` compares cell for cell.
   while the operator clicks. Every cell whose target a scroll changed ignores clicks
   for 0.3 s. This is the refresh rule with a shorter window, so a deliberate
   scroll-then-click still works.
-- **The docked panel (46 columns)** keeps each thread row with its depth-1
-  agents' glyphs. Under the row is an indented tree of only the agents that
-  spawned others, each followed by its own children's glyphs (`lead l1  ⠋⠹ +2✓`).
-  Leaf agents stay glyphs.
+- **The docked panel (46 columns)** uses one row for every agent: own glyph, title,
+  then a run of states. Layer 1 is the root's direct children, whose run counts only
+  finished children (`+2✓`) because their live children are listed under them. Layer 2
+  is their children, whose run shows all descendants, most urgent first, up to 6.
+  Nothing below layer 2 gets a row.
 - **Data:** the collector walks spawn chains to any depth (the old walk stopped
   after 8 hops), places parents before children, and keeps a finished ancestor
   of any shown agent even when it is outside the done window. A parent loop or a
-  parent outside the thread makes the agent a depth-1 one; nothing is hidden.
+  dangling parent makes the agent a depth-1 one; nothing is hidden.
 
 Keys: `↑↓`/`jk` move in the focused column, `→`/`l`/`enter` open (focus the
-next column), `←`/`h` back, `g` go to pane (focus the orchestrator's pane and
+next column), `←`/`h` back, `g` go to pane (focus the root's pane and
 close the popup), `t` transcript (show the agent's transcript path; opening a
 viewer is a later step), `a` answer (opens herdr-inbox when the selection has
 an inbox question; otherwise `g`), `i` inbox, `f` cycle filter, `?` help,
@@ -952,7 +894,7 @@ herdr cannot replace its own main UI, but a plugin pane can have a tab of its
 own; panorama uses that as the operator's home surface. The operator asked
 for both features: the home tab, and a "New agent" button below the chats. In
 the TUI they follow design 2a's visual language: the `+ New agent` row is a
-card like the orchestrator cards, with a `+` in the key colour and a dim
+card like the root cards, with a `+` in the key colour and a dim
 label, and the form uses the same palette. `◆ panorama` is the herdr tab label.
 
 - **Single instance.**
@@ -979,7 +921,7 @@ label, and the form uses the same palette. `◆ panorama` is the herdr tab label
   popup. With `home_tab = false` in the plugin config, `open` shows the popup
   as before.
 - **In the home tab** the view never closes itself:
-  - Enter on an orchestrator, and `g` on any card, focus that agent's pane;
+  - Enter on a root, and `g` on any card, focus that agent's pane;
   - `a`/`i` open the inbox popup over it;
   - Esc does nothing, and `q` quits.
 - **No `◆ panorama` tab without panorama** (issue #9). If the operator splits the
@@ -994,14 +936,14 @@ label, and the form uses the same palette. `◆ panorama` is the herdr tab label
   - A tab keeps the label while any agent-less pane in it is verified panorama, or
     cannot be checked (process-info fails, or no foreground process yet, as
     mid-start or mid-restore).
-- **`+ New agent`.** It is a row under the orchestrator cards with the stable
+- **`+ New agent`.** It is a row under the root cards with the stable
   id `new:`, always last, and the key `n` opens it too. A refresh never moves
   it or changes what Enter does on it, and Enter on it is armed like every
   other action. The form asks for:
   - a name (required, slugified to herdr's agent-name rule
     `[a-z][a-z0-9_-]{0,31}`, also the tab label, and refused if
     `herdr agent get <name>` already resolves an agent);
-  - a working directory (default: the selected orchestrator's cwd, read once
+  - a working directory (default: the selected root's cwd, read once
     when the form opens; it must exist);
   - an optional first prompt.
 
@@ -1039,7 +981,7 @@ label, and the form uses the same palette. `◆ panorama` is the herdr tab label
 ## Cockpit (experimental)
 
 > **The moving cockpit is removed (operator decision Q187, 2026-10-18).** The cockpit is now
-> only the per-tab panels ("Per-tab panels" below): every orchestrator tab its own panel, the
+> only the per-tab panels ("Per-tab panels" below): every root tab its own panel, the
 > home panorama staying in its home tab and feeding them. Moving panorama's pane between tabs
 > (the dock, "Follow", `cockpit_follow`) is gone from the code; `cockpit_panels` is not read
 > (an old `"moving"` reads as per-tab), and a home panorama an older version left docked next
@@ -1109,7 +1051,7 @@ created and closed; no pane of the operator's was touched.
 - The record is only a hint, and it is per herdr session
   (`home-<hash of the socket path>.json`), so two `herdr --session` servers never share
   one.
-- **Docking** (Enter on an orchestrator, `g`, or a click on the selected card), in a
+- **Docking** (Enter on a root, `g`, or a click on the selected card), in a
   worker, one at a time, under the home lock:
   1. A fresh snapshot; panorama's pane by content; the target must run an agent. Already
      in the target's tab: only the width is fitted. The cockpit setting is read live at
@@ -1150,7 +1092,7 @@ created and closed; no pane of the operator's was touched.
     columns, and after measuring, both sides drew exactly 46.
   - Before the first measurement the fallback is 2, the operator's.
 - **Any width renders.** The 3a panel lays out to the width it is actually drawn at.
-  - Right-aligned fields (state, `?N`, the thread agents, `n`) end at the real right edge.
+  - Right-aligned fields (state, `?N`, the agents' glyphs, `n`) end at the real right edge.
   - A narrow pane cuts names, never the state label.
   - The footer drops whole hints (`n new`, then `a answer`, ...) rather than cutting one.
   - At the design's 46 columns it is still cell for cell the design (`tests/test_dock_panel.py`).
@@ -1162,7 +1104,7 @@ created and closed; no pane of the operator's was touched.
 The panel used to exist only in the tab it docked into. If the operator switched tabs
 another way (the tab bar, `prefix+1..9`, a notification, `herdr agent focus`), the new tab
 had no panel. Now panorama listens to herdr's focus events and re-docks its own pane
-wherever the operator lands on an orchestrator. Because this moves a pane without a key
+wherever the operator lands on a root. Because this moves a pane without a key
 press, the rules are strict:
 
 - **Listening (read-only).** The home view keeps one `events.subscribe` connection for
@@ -1195,7 +1137,7 @@ press, the rules are strict:
   A failed step leaves everything as it is.
 - **Tabs** (`cockpit_follow_tabs`): `"any"`, the default and the operator's decision, also
   follows into tabs the operator split, where panorama then takes about 46 columns of that
-  layout. `"single"` follows only into tabs whose one pane is the orchestrator. An explicit
+  layout. `"single"` follows only into tabs whose one pane is the root. An explicit
   Enter docks anywhere with either setting.
 - **Never while zoomed.** While panorama is zoomed (`z`, `pane.layout` reports `zoomed`),
   the operator is looking at the full graph, so panorama stays put.
@@ -1297,7 +1239,7 @@ their results to the view only after releasing the lock.
 
 ### The docked panel (designs 3a and 9e)
 
-When panorama is docked next to an agent (it shares a tab with an orchestrator) and is
+When panorama is docked next to an agent (it shares a tab with a root) and is
 narrower than the 2a wide layout, it draws the operator's pick from design turn 3:
 **3a "Compact list"** (a port of `vA` in `docs/design/swarm-dock.js`; it replaced 3b "Cards
 with a pod row", which the operator tried live first), with the coloured tiles of turn 9's
@@ -1306,21 +1248,20 @@ with a pod row", which the operator tried live first), with the coloured tiles o
 the state's tile colours, bold; a needs-you tile blinks like the bare glyphs do, to a grey
 tile in its off phase.
 
-- **Header.** `SWARM  N orchestrators`, with `?N !N ✗N` on the right.
-- **One entry per orchestrator, two lines.**
+- **Header.** `SWARM  N roots`, with `?N !N ✗N` on the right.
+- **One entry per root, two lines.**
   - The first line: tab number, the state in a tile, name (dim when all done), then `?N`
     and the state label (`failed`, `blocked`, `working`, `needs you`, `waiting`, `stale`, `idle` or `done`;
     turn 8 renamed the questions label from `waiting` to `needs you`).
-  - The second line: one tile per active thread (its most urgent agent's state), a cell
-    apart; the done threads fold into one `✓n` tile; then `N active · N agents`. When the
+  - The second line: one tile per active direct subagent (its subtree's most urgent state),
+    a cell apart; the finished ones fold into one `✓n` tile; then `N active · N agents`. When the
     tiles do not all fit, the first ones then `+n`, so the counts stay whole.
-- **The docked entry** is the orchestrator in panorama's own tab. It has a gold `▌` bar on
-  the left and the selected background, and it lists its threads underneath as a tree: a
-  tile, the name (up to 22 cells), and on the right the thread's live agents as bare glyphs
-  (most urgent first, up to 4, then ` +N✓`). Done threads fold into a `✓` tile and `N done`.
-  Its second line keeps only the counts, since the list shows the same tiles.
+- **The docked entry** is the root in panorama's own tab. It has a gold `▌` bar on
+  the left and the selected background, and it lists its agents underneath as a tree, two
+  layers deep, with deeper agents as bare glyphs on the row's right (most urgent first, up to
+  6, then ` +N✓`). Finished siblings fold into one `N finished · names` row. Its second line keeps only the counts, since the list shows the same tiles.
 - **Unseen** (turn 6). The entry's two lines pulse as a tint, as in turn 6. In the docked
-  list an unseen thread's tile, and the done fold's tile, pulses its background toward the
+  list an unseen agent's tile, and the done fold's tile, pulses its background toward the
   event colour (red, amber, green), every 3 s and never fully off (the operator, Q115: "tile
   background pulses").
 - **Below the entries:** the `+ New agent` row. **Footer:** `↑↓ move  ret open  a answer
@@ -1341,8 +1282,8 @@ tile in its off phase.
     `pfx+spc` with every hint.
 - **State.** Computed like the design's `oState`, with the same extensions as 2a: herdr
   reporting the main session working counts as working, blocked counts as blocked, and the
-  session's open inbox questions are its `?N`. The main session's own thread and agent are
-  the entry itself, so they are not listed as a thread or an agent.
+  session's open inbox questions are its `?N`. The main session is the entry itself, so it is
+  not listed as an agent.
 - **Fidelity.** On the design's own dataset (captured from `swarm-tui.js` plus 9's finished
   Docs Site), the panel matches 9e's render (`tests/fixtures/design_9.json`) cell for cell:
   characters, colours and bold, in eight animation frames, plain and with turn 6's unseen
@@ -1384,16 +1325,16 @@ tile in its off phase.
     / `dock-design-unfocused.png` show the app and the design side by side.
 - **Interaction.**
   - The panel is one column: ↑/↓ move between the entries and `+ New agent`; → does nothing.
-  - Enter on an entry docks panorama next to that orchestrator. **One click** on an entry
+  - Enter on an entry docks panorama next to that root. **One click** on an entry
     does the same at once: it selects the entry and runs exactly what Enter runs. This is
     the operator's request for the side panel; the full 2a graph keeps select-first.
     - On the already-docked entry, the click (like Enter) docks "already there" and focuses
       its agent's pane.
     - **Arrows switch the chats** (`dock_on_arrows`, default true; the operator's proposal
-      after #14). In the docked panel ↑/↓ dock next to the highlighted orchestrator once the
+      after #14). In the docked panel ↑/↓ dock next to the highlighted root once the
       arrows rest for `ARROW_DOCK_SECONDS` (0.2 s, so holding an arrow docks once, at the
       last entry), through the same keep-focus path as below; Enter (like `g`) goes into that
-      agent. Not for the docked entry, `+ New agent`, or an orchestrator on another machine
+      agent. Not for the docked entry, `+ New agent`, or a root on another machine
       (Enter keeps its hint). An arrow dock that comes due while a dock runs is looked at
       again when it ends; none happens while a follow runs or once the keyboard has left
       panorama (the terminal's blur, or herdr reporting another pane focused). A click still switches at once. Off: Enter docks as below. It needs
@@ -1437,8 +1378,8 @@ tile in its off phase.
     - It acts on the identity drawn under it, re-checked against the model, and the
       per-cell arrival rule applies unchanged.
   - A click on `?N` answers it instead, and `a` answers the selected entry.
-  - Each entry, including the docked one's thread list, is a click target for its
-    orchestrator's identity. The per-cell arrival rule, the arming delay, identity re-checks
+  - Each entry, including the docked one's agent list, is a click target for its
+    root's identity. The per-cell arrival rule, the arming delay, identity re-checks
     and follow all apply unchanged.
 - **Extensions the design does not show.**
   - 3a has no separate "selected" look. The keyboard cursor wears the design's hover look:
@@ -1449,7 +1390,7 @@ tile in its off phase.
 
 ## Per-tab panels (built, off by default; the only cockpit since Q187)
 
-The operator's option 1 for the switching blink: give every orchestrator tab its own docked
+The operator's option 1 for the switching blink: give every root tab its own docked
 panel, so switching chats is a plain tab switch with the panel already in place. Revised after
 the design review of #29.
 
@@ -1480,7 +1421,7 @@ Hence the creation rule:
 
 1. **Tabs panorama creates (`+ New agent`):** build the tab with `layout.apply`, the panel on
    the left of the new agent from the first frame. No flash, ever.
-2. **Every other orchestrator tab:** (superseded by the operator's answer below: eagerly, in a
+2. **Every other root tab:** (superseded by the operator's answer below: eagerly, in a
    batch, accepting the tab switches) create its panel **when the operator is in that tab**,
    i.e. on the first visit or the first switch there. The steps:
    - split right, with `focus: false`;
@@ -1507,7 +1448,7 @@ The eager / lazy trade-off goes to the operator with these facts (Q138).
   - the panel manager.
 
   It publishes state on a local socket.
-- **A viewer** (`panorama panel`) runs in each orchestrator tab's panel pane and renders the
+- **A viewer** (`panorama panel`) runs in each root tab's panel pane and renders the
   docked panel (9e, with turn 10's colours) from the published state. It keeps only its own
   cursor, hover and arming, its focus look (the terminal's focus reports and herdr's
   `pane_focused`, as #25), and its animation frame. It collects nothing and has no follow.
@@ -1554,7 +1495,7 @@ It is the natural first Rust component: small, render-only, its own input handli
 - **Core to viewer.**
   - `{"state": {...}}`: always a **full snapshot**, never deltas, in v1. It is sent on connect
     and after every collect (~1.5 s). It carries:
-    - the orchestrators, threads and agents, with exactly the fields the panel draws (ids,
+    - the roots and agents, with exactly the fields the panel draws (ids,
       names, tab numbers, statuses, spinner sequence numbers, question counts, machine labels);
     - the docked pairing per tab and the unseen marks;
     - the header counts and errors;
@@ -1574,7 +1515,7 @@ It is the natural first Rust component: small, render-only, its own input handli
   `home._lock` stays what it is: a short lock for pane operations (dock, leave, ensure, the
   `"moving"` fallback). It is never held for the core's life. A socket file is
   unlinked only after a connect to it failed, with the lock held.
-- **Which tabs.** Tabs holding a local Claude orchestrator pane in panorama's workspace. With
+- **Which tabs.** Tabs holding a local Claude root pane in panorama's workspace. With
   `cockpit_follow_tabs = "single"`, only tabs where it is the only pane. Never a remote
   machine's tabs.
 - **Creating.** As in the creation rule above.
@@ -1602,13 +1543,13 @@ It is the natural first Rust component: small, render-only, its own input handli
 - **The operator closes a panel.** It stays closed for that tab, recorded in the core's state,
   until the operator asks for it again there with the open key (below).
 - **The open key in per-tab mode.**
-  - In an orchestrator tab that has a panel: focus that panel.
-  - In an orchestrator tab without one (closed by hand, or not made yet): clear the "closed"
+  - In a root tab that has a panel: focus that panel.
+  - In a root tab without one (closed by hand, or not made yet): clear the "closed"
     mark and create the panel there by the creation rule (the operator is in that tab), then
     focus it.
   - Anywhere else: the home tab, as today.
 - **Removal, with hysteresis.** A tab's panel is removed only after the tab has had no
-  orchestrator for a while (proposed: 30 s), so Claude exiting and re-launching keeps its
+  root for a while (proposed: 30 s), so Claude exiting and re-launching keeps its
   panel. On cockpit off the core removes the per-tab panels it can prove are ours.
 - **Width.** Each viewer keeps its own split at `cockpit_width` (today's `fit` and measured
   frame), so every tab's panel has the same width.
@@ -1620,13 +1561,13 @@ It is the natural first Rust component: small, render-only, its own input handli
   agent (Enter).
 - **Every action re-checks against a fresh herdr snapshot at action time**, not the core's last
   `state`:
-  - the target orchestrator's identity and its tab;
+  - the target root's identity and its tab;
   - that the operator is still on this viewer's pane (moved on);
   - the arming windows.
 - **The arrows' settle timer** keeps #26's checks: this viewer still has the keyboard, and a
   switch of its own is not running.
 - **A target tab without a panel yet** gets one there, by the creation rule (one flash, once).
-- **The target viewer** starts with its cursor on its own orchestrator.
+- **The target viewer** starts with its cursor on its own root.
 - **Follow** goes away. The home tab and the full graph are unchanged; the home pane is the core.
 
 ### Shared and per-viewer state
@@ -1671,7 +1612,7 @@ per-tab had proven itself).
 
 1. **Creation (Q138, Q142): eagerly, on the left, accepting being pulled** during placement.
    To keep the disruption small:
-   - Placement runs in one batch: when the core starts, and when a new orchestrator tab
+   - Placement runs in one batch: when the core starts, and when a new root tab
      appears. (Narrowed in the review of #30, see "As built": the batch runs only at core
      start; a later tab gets its panel when the operator is in it.)
    - Before the batch, the operator's focused tab and pane are remembered. Afterwards they are
@@ -1702,7 +1643,7 @@ per-tab had proven itself).
   - nothing holds the keyboard during the batch: a focus-catching "setting up panels…"
     popup was considered and declined by the operator (Q153: "No popup"). The batch window
     is a few herdr calls per tab, at core start only.
-- **Later tabs.** A tab that becomes an orchestrator tab after the start gets its panel only
+- **Later tabs.** A tab that becomes a root tab after the start gets its panel only
   while the operator is in it. Just before the swap the manager looks again: if they left,
   the panel waits on the right, and is swapped left on their next visit. If they were on
   another pane of that tab, that pane gets the focus back after the swap.
@@ -1717,7 +1658,7 @@ per-tab had proven itself).
     panel again.
   - A tab with a pane herdr could not check gets no panel that pass.
 - **Closed stays closed.** A panel of ours that disappears while its tab still has its
-  orchestrator, after its viewer had connected, was closed by the operator. Its tab is
+  root, after its viewer had connected, was closed by the operator. Its tab is
   recorded in `panels-<session>.json` in the state dir, so a restarted core remembers it.
 - **A crash is not a close.** A panel that disappears before its viewer ever connected (for
   example a broken environment) died on its own, and so did a viewer that left a crash marker
@@ -1780,7 +1721,7 @@ per-tab had proven itself).
     herdr runs in panorama's pid namespace (not in a container), and macOS computes `etime`
     from the wall clock, so a clock step can make an old shell look young; the record, the
     terminal, the label and the process checks do not depend on either.
-  - **Checked on an isolated herdr 0.9.3**, with `cockpit_panels = "per-tab"`, two orchestrator
+  - **Checked on an isolated herdr 0.9.3**, with `cockpit_panels = "per-tab"`, two root
     tabs and an extra pane labelled `Panorama panel` by hand: after `kill -9` of the server and
     of every panorama process, and a restart, the core closed both restored panels 2 to 3 s
     after herdr started and made new panels on the left of the agents. The hand-labelled pane
@@ -1814,7 +1755,7 @@ per-tab had proven itself).
   a Rust core and a Python panel no longer share a major, so the core and its panels must come
   from the same binary (`docs/protocol/panel-v2.md`, "Version 1"). The core knows the Rust process as a panel as before: `pane
   process-info` shows `…/panorama panel`. Checked on an isolated herdr
-  0.9.3 (own HOME and socket), with two then eight orchestrator tabs:
+  0.9.3 (own HOME and socket), with two then eight root tabs:
   - placement (left of the agent, 46 columns plus the frame), the record, no doubling;
   - Enter and `g` go into the agent; ↑/↓ switch to the next tab's panel; `?` shows the keys
     notice; `f` changes the filter in every panel and the home view;
@@ -1861,14 +1802,14 @@ per-tab had proven itself).
   panorama no longer docks or follows in per-tab mode, and `home.ensure` brings it back to
   its own tab.
 - **One selected row in every panel** (the operator's report, after #43).
-  - **The selected row** is the local orchestrator in the tab herdr shows (`state.visible_tabs`;
+  - **The selected row** is the local root in the tab herdr shows (`state.visible_tabs`;
     else the one whose pane has the focus). It is the same in every tab's panel, hidden ones
     included, because each applies it from the core's state, not from its own cursor.
   - **Arrows:** ↑/↓ move from it, and the switch follows. A state that still shows the same tab
     doesn't pull a pending move back.
   - **Hover:** the keyboard cursor no longer wears the hover look in a panel
     (`View.cursor_look`). The hover look is the mouse's alone and clears when the mouse leaves.
-    The shown orchestrator is the docked entry, so it already has the docked bar.
+    The shown root is the docked entry, so it already has the docked bar.
 - **One filter in every view** (the operator's report: "changing filters on the left panel is
   not synced between tabs and navigation does not take current filter into account").
   - **Shared:** `f` or a click on a filter in a panel sends `filter` (protocol 1.3) to the
@@ -1876,7 +1817,7 @@ per-tab had proven itself).
     the same, so every panel and the home view show one filter. The choosing panel keeps its
     choice against older states until the core echoes it, or for 1 s. Nothing saves it: after
     a home restart every view starts at `all` again (no filter was ever saved).
-  - **Navigation:** only among what the filter shows. When it hides the shown orchestrator, no
+  - **Navigation:** only among what the filter shows. When it hides the shown root, no
     row is selected and no key acts on it; it is the selected row again as soon as the filter
     shows it (a refresh or a filter change). ↑/↓ resume from where it sits in the full list, to
     the next shown row in their direction (they used to jump to the top). The same holds in
@@ -1909,7 +1850,7 @@ per-tab had proven itself).
   (`herdr.PANEL_COMMAND`, the same as the manifest's, with the plugin's environment) on the
   left, a plain pane on the right for the agent. No swap ever happens there.
 - **Checked on an isolated herdr 0.9.3 with a client attached:**
-  - the start batch: panels left of three orchestrators, and focus back where it was;
+  - the start batch: panels left of three roots, and focus back where it was;
   - a new tab got no panel until visited; on the visit the operator stayed on the agent;
   - a panel closed by hand stayed closed until the open key, which made and focused a new
     one;
@@ -1962,11 +1903,11 @@ changes; the same pattern as herdr-inbox's `tab_prefix`:
 
 ```toml
 done_window = "1h"   # how long finished (done or failed) agents stay visible: seconds or "90m", "2h30m"
-stale_after = "12h"  # an orchestrator idle this long reads "stale" (PANORAMA_STALE_AFTER overrides)
+stale_after = "12h"  # a root idle this long reads "stale" (PANORAMA_STALE_AFTER overrides)
 home_tab = true      # the home tab (false: the key opens the popup)
-cockpit = false      # experimental: a panel left of every orchestrator (see Per-tab panels)
+cockpit = false      # experimental: a panel left of every root (see Per-tab panels)
 cockpit_width = 46   # the panels' drawable columns (36..119)
-cockpit_follow_tabs = "any" # "single": panels only in tabs whose one pane is the orchestrator
+cockpit_follow_tabs = "any" # "single": panels only in tabs whose one pane is the root
 machines = "all"     # saved herdr SSH machines to show: "all", "none", ["label", ...] (docs/REMOTE.md)
 highlight_unseen = true # pulse what changed since the operator looked (see Unseen)
 animation_fps = 20   # the colour tick, 2..30 (see Smooth animation); read when the view starts
@@ -1975,8 +1916,8 @@ animation_fps = 20   # the colour tick, 2..30 (see Smooth animation); read when 
 Default 1 hour. `PANORAMA_DONE_WINDOW` (seconds or a duration) overrides it.
 The Rust collector (plan `uniform-agent-tree.md` U3) drops a finished agent,
 done or failed, that ended earlier, unless an agent it spawned is still shown,
-and counts it in its root's `hidden_finished`. The Python collector still
-drops done and failed threads that ended earlier.
+and counts it in its root's `hidden_finished`. The Python collector works on
+its legacy threads instead.
 
 ## Safety rules
 
@@ -1991,7 +1932,7 @@ Learnt in the herdr-inbox reviews, applied here:
 - **Every herdr call** goes through one wrapper with a timeout (3 s) that never
   raises into the UI; every argument passes the control-character sanitiser.
 - **No background event changes what the next key does.** Cursors are target
-  identities (orchestrator `pane_id`, thread id, agent id), never row indexes.
+  identities (root `pane_id`, agent id), never row indexes.
   After a refresh the selection is re-resolved by identity; a vanished target
   parks the cursor on a placeholder (keys act on nothing) until the operator
   moves.
@@ -1999,8 +1940,8 @@ Learnt in the herdr-inbox reviews, applied here:
   selected target was (re)shown by something the operator did not cause (first
   paint, a refresh that changed the selected card), so a key meant for the old
   card never acts on a new one. The arming key holds everything those keys
-  read: the selected orchestrator, its herdr status and open inbox questions,
-  whether the inbox exists, the thread, the agent, its status, questions and
+  read: the selected root, its herdr status and open inbox questions,
+  whether the inbox exists, the agent, its status, questions and
   transcript.
 - **Parked cursor**: when the focused column's selection vanished, action keys
   act on nothing until the operator moves.
@@ -2009,10 +1950,8 @@ Learnt in the herdr-inbox reviews, applied here:
 
 ## Limitations (PoC)
 
-- Claude Code only; agents of other harnesses in herdr are not shown.
-- Thread heuristics as listed above; resumes of an agent are spans, but a
-  long-lived agent reused across two PRs is drawn in the thread of its first
-  description.
+- The Python entrypoint is Claude Code only. The Rust app also reads local Codex
+  sessions ([docs/codex.md](codex.md)); other harnesses appear with no tree.
 - Agents started from a session that has since been `/clear`ed belong to the
   old session id and are not shown (the pane now reports the new one).
 - Workflow agents queued but not started are invisible (the journal has no
