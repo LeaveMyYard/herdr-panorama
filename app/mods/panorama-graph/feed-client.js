@@ -1,6 +1,6 @@
 // Generated from app/shared/feed-client.js by scripts/app-build.
 import { appHome, exec, readTextFile, watchFolder, shared, setShared, layout } from 'herdr';
-import { readResult, probeMatches } from './contract.js';
+import { readResult, probeMatches, aged } from './contract.js';
 import { installReceipt, verifiedBinary } from './binary.js';
 const OWNER = 'panorama.feed.owner', PACKET = 'panorama.feed';
 const HEARTBEAT = 5000, TTL = 15000;
@@ -9,10 +9,6 @@ export function validLease(value, now = Date.now()) {
   return Boolean(value && value.v === 1 && typeof value.token === 'string' && value.token.length > 0
     && ['sidebar', 'consumer'].includes(value.role) && Number.isFinite(value.seen_at)
     && value.seen_at <= now && now - value.seen_at < TTL);
-}
-function aged(packet, now = Date.now()) {
-  const collected = packet?.generated_at;
-  return !Number.isFinite(collected) || collected * 1000 > now || now - collected * 1000 > TTL;
 }
 function references(node) {
   return Boolean(node && (node.content?.mod === 'panorama' || (node.children ?? []).some(references)));
@@ -37,7 +33,7 @@ function start(view, cx, role) {
   if (view.feedClient) return view.feedClient;
   const home = appHome(), directory = `${home}/data/panorama`;
   const token = `${Date.now()}:${++serial}:${Math.random()}`;
-  let generation = null, stopped = false, closed = false, reading = null, queued = false, started = false, epoch = 0, claiming = false;
+  let generation = null, stopped = false, closed = false, reading = null, queued = false, started = false, ensured = false, epoch = 0, claiming = false;
   let recovering = false, lastRecovery = -Infinity;
   let resolveIdentity;
   const identity = new Promise(resolve => { resolveIdentity = resolve; });
@@ -101,7 +97,9 @@ function start(view, cx, role) {
   const callPrivate = args => invoke(args, alive);
   function recover(context) {
     const now = Date.now();
-    if (!started || !owns() || recovering || !aged(view.feed, now) || now - lastRecovery < HEARTBEAT) return;
+    // Until one ensure succeeds the start is unproven whatever the feed's age: a child left
+    // starting can publish fresh bytes while this owner still reports stale and an error.
+    if (!ensured || !owns() || recovering || (started && !aged(view.feed, now)) || now - lastRecovery < HEARTBEAT) return;
     const revision = epoch; recovering = true; lastRecovery = now;
     context.spawn(async context => {
       try {
@@ -109,7 +107,7 @@ function start(view, cx, role) {
         if (result.code !== 0) throw Error(result.stderr || result.stdout);
         // Ensure acknowledges startup only. Retained bytes stay aged until a
         // newly collected feed supplies a current collection timestamp.
-        view.writerError = null; reload(context);
+        started = true; view.writerError = null; reload(context);
       } catch (error) {
         if (active(revision) && !error?.cancelled) { view.writerError = String(error.message ?? error); publish(context); }
       } finally { recovering = false; }
@@ -145,7 +143,7 @@ function start(view, cx, role) {
         await identity; if (!alive() || !eligible()) return;
         await authority(() => alive() && eligible()); if (!alive() || !eligible()) return;
         if (!initial && validLease(shared(OWNER))) return;
-        epoch++; started = false; queued = false;
+        epoch++; started = false; ensured = false; queued = false;
         setShared(OWNER, { v: 1, token, role, seen_at: Date.now() });
         setShared(PACKET, packet());
         const revision = epoch;
@@ -159,6 +157,7 @@ function start(view, cx, role) {
         const capability = await invoke(['app-feed', '--help'], () => active(revision)); if (!active(revision)) return;
         if (capability.code !== 0 || !probeMatches(capability.stdout)) throw Error(capability.stderr || capability.stdout);
         const result = await invoke(['app-feed', '--ensure'], () => active(revision)); if (!active(revision)) return;
+        ensured = true; // Run, not succeeded: recover() retries a transient failure from here.
         if (result.code !== 0) throw Error(result.stderr || result.stdout);
         started = true; view.writerError = null; reload(context);
       } catch (error) {
@@ -214,7 +213,7 @@ export function consumerFeed(view) {
   // or owner stop cannot erase this local stale provenance.
   if (published && (!client?.install_id || published.install_id === client.install_id)) view.feed = published;
   const current = view.feed ?? { feed: null, generated_at: null, errors: [], stale: true };
-  return { ...current, writerError: view.writerError ?? current.writerError ?? null,
+  return { ...current, aged: aged(current), writerError: view.writerError ?? current.writerError ?? null,
     errors: [...new Set([...(current.errors ?? []), ...(view.writerError ? [view.writerError] : [])])], stale: Boolean(current.stale || aged(current)
       || !published || !client || !view.feedValidated || client.stopped || !client.install_id || current.install_id !== client.install_id
       || published.install_id !== client.install_id || !validLease(shared(OWNER))) };

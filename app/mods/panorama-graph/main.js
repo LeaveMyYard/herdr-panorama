@@ -54,7 +54,7 @@ export default class Graph extends View {
       const status = agent.status === 'done' ? 'idle' : agent.status;
       if (this.changed[agent.address]?.s !== status) { this.changed[agent.address] = { s: status, at: Date.now() }; }
     }
-    const roots = joinRoots(wrapper?.feed, stock, terminals(), panes(), spaces(), this.changed).filter(item => item.space === this.space);
+    const roots = joinRoots(wrapper?.feed, stock, terminals(), panes(), spaces(), { changes: this.changed, aged: wrapper?.aged }).filter(item => item.space === this.space);
     let model = graphModel(roots, this.state);
     if (model.item && this.state.root !== model.item.key) this.state.root = model.item.key;
     this.state.focus = Math.min(this.state.focus, model.columns.length - 1);

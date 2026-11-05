@@ -76,7 +76,7 @@ export default class Tabs extends View {
     const space = spaces().find(p => p.active);
     const shown = space?.tabs ?? [];
     const allPanes = panes();
-    const roots = joinRoots(this.packet.feed, agents(), terminals(), allPanes, spaces());
+    const roots = joinRoots(this.packet.feed, agents(), terminals(), allPanes, spaces(), { aged: this.packet.aged });
     const totals = spaceTotals(roots, space?.id);
     const swarmTabs = new Set(allPanes.filter(pane => pane.mod === 'panorama-graph').map(pane => pane.tab));
     const stop = (_e, cx) => cx.stop_propagation();

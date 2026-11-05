@@ -323,7 +323,11 @@ most once per existing 5 s heartbeat with one pending attempt and owner/epoch
 guards after awaits. Ensure success alone never refreshes old collection time;
 consumers independently age cached packets. Missing/changed/disabled authority
 remains a permanent client stop; a non-disabled ensure error (including a
-deferred start) is transient and may be retried at that cadence.
+deferred start) is transient and may be retried at that cadence. Until one ensure
+has succeeded the retry runs at that cadence whatever the feed's age, because a
+child left starting can publish a current feed while the failed start still
+holds the projection stale. A failed capability probe is not a run ensure and is
+not retried. A new claim starts over with its own startup ensure.
 
 ## Shared evidence
 

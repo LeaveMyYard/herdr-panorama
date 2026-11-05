@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { root as repo } from './helpers.mjs';
-import { parseFeed, readResult, rootKey, agentKey, probeMatches, requireProbe } from '../shared/contract.js';
+import { parseFeed, readResult, rootKey, agentKey, probeMatches, requireProbe, aged } from '../shared/contract.js';
 import { rootTarget, detailTarget } from '../shared/routing.js';
 import { aggregate, forest, rows, directTiles, agentTitle } from '../shared/tree.js';
 import { joinRoots, harnessOf, iconProgram, nativeMembership, spaceTotals, rootTitle, listed, groups, headerTotals, storedScope, cardPlace } from '../shared/model.js';
@@ -292,6 +292,36 @@ test('feed-only roots stay listed in the ordinary sections; a stale feed shows t
   assert.equal(all.find(item => !item.stock).aggregate.priority, 4, 'the joined entity itself is not mutated');
 });
 
+test('an aged collection joins no live terminal: rows show stock data alone and nothing is counted from it', () => {
+  // The previous core's t3 and t4, against a new core that reused both addresses.
+  const old = { ...minimal([agent('a', 'wait')]), terminal: 't3', title: 'Old conversation', inbox: [7], inbox_texts: ['Old question'] };
+  old.agents[0].question_ids = [7]; old.agents[0].questions = ['Old question'];
+  const child = { ...minimal([agent('b', 'fail')]), terminal: 't4', pane_id: 'p4', title: 'Old child' };
+  const elsewhere = { ...minimal([]), terminal: 't8', pane_id: 'p8', title: 'No terminal now' };
+  const feed = { roots: [old, child, elsewhere] };
+  const stock = [{ address: 't3', space: 's', tab: 'tb', status: 'idle', title: 'plain', program: { key: 'claude', name: 'Claude' } }];
+  const live = [{ address: 't3', state: 'live' }, { address: 't4', state: 'live', parent: 't3', program: { key: 'codex', name: 'Codex' } }];
+  const fresh = joinRoots(feed, stock, live, [], [], {});
+  const enriched = fresh.find(item => item.stock);
+  assert.equal(enriched.name, 'Old conversation'); assert.equal(enriched.nativeChildren[0].name, 'Old child');
+  const joined = joinRoots(feed, stock, live, [], [], { aged: true });
+  const row = joined.find(item => item.stock), others = joined.filter(item => !item.stock);
+  assert.equal(row.stock.address, 't3'); assert.equal(row.terminal, 't3'); assert.equal(row.name, 'plain');
+  assert.deepEqual(row.root.agents, []); assert.deepEqual(row.root.inbox, []);
+  assert.deepEqual(row.aggregate.kinds, []); assert.equal(row.aggregate.questions, 0); assert.equal(row.aggregate.needsCount, 0);
+  assert.deepEqual(row.nativeChildren[0].root.agents, []); assert.equal(row.nativeChildren[0].name, 'Codex · t4');
+  assert.deepEqual(spaceTotals(joined, 's'), { kinds: [], needsCount: 0, questions: 0, working: false, done: false });
+  assert.deepEqual(others.map(item => item.root), [elsewhere], 'a matched root is not listed again, an unmatched one stays');
+  assert.equal(others[0].terminal, null); assert.equal(listed(joined, 's', true).find(item => !item.stock).status, 'stale');
+});
+
+test('collection age: only a finite, past timestamp within 15 s is current', () => {
+  const now = 1_000_000_000;
+  for (const generated_at of [now / 1000, now / 1000 - 15]) assert.equal(aged({ generated_at }, now), false);
+  for (const generated_at of [now / 1000 - 15.001, now / 1000 + 1, null, NaN, Infinity, undefined]) assert.equal(aged({ generated_at }, now), true);
+  assert.equal(aged(null, now), true);
+});
+
 test('All spaces lists every space in the same priority sections; header totals follow the scope', () => {
   const asking = minimal([agent('q', 'blk')]); asking.terminal = 't2';
   const stock = [{ address: 't1', space: 'a', space_name: 'Alpha', tab: 'ta', tab_index: 1, status: 'working' },
@@ -313,4 +343,11 @@ test('the stored scope is All spaces only for an exact JSON "all"; anything else
   assert.equal(storedScope(JSON.stringify({ 'agents.scope': JSON.stringify('all'), 'machines.folded': '[]' })), 'all');
   for (const text of [null, '', '{broken', '{}', JSON.stringify({ 'agents.scope': 'all' }), JSON.stringify({ 'agents.scope': JSON.stringify('space') }), '[]'])
     assert.equal(storedScope(text), 'space');
+});
+
+test('every view that joins a packet passes its collection age, so none can show an aged join', () => {
+  for (const mod of ['panorama', 'panorama-graph', 'panorama-spaces', 'panorama-tabs', 'panorama-pane']) {
+    const calls = readFileSync(join(repo, `app/mods/${mod}/main.js`), 'utf8').split('\n').filter(line => line.includes('joinRoots('));
+    assert.equal(calls.length, 1, mod); assert.match(calls[0], /aged: [\w.?]+\.aged \}\)/, mod);
+  }
 });

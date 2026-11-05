@@ -112,7 +112,10 @@ preference/layout files.
 - **No threads:** verify the private release artifact and current session proof;
   older unbound roots are expected to stay basic.
 - **Stale/unavailable feed:** inspect `herdr-app status` for the intended app home.
-  Stock roots and last valid stale data remain; a visible cache is not live proof.
+  Stock roots stay. Terminal numbers are per core instance, so once a collection is
+  over 15 seconds old no feed title, tree or `?N` joins a live row; the last valid
+  feed is kept and returns with the next collection. A root known only to the feed
+  stays listed as Stale, without navigation.
 - **Frontend stop timeout:** manually reopen the current mod/layout so it can clear
   its disabled generation, then retry. The installer does not launch/select it.
 - **Collision, unsafe retained store or runtime/receipt refusal:** preserve the
@@ -232,6 +235,7 @@ matching-generation stale cache. Collections older than 15 seconds, missing a
 finite timestamp, or timestamped in the future are stale even while the advisory
 lease is renewed. Only the current owner can request one pending generation-
 guarded recovery; ensure success alone does not freshen old collection bytes.
+A failed startup ensure is retried the same way, until one succeeds.
 Final close or missing/changed receipt clears
 shared feed/owner to null only with matching generation and current owner token;
 a losing old owner cannot clear another client. Native probes show null keys

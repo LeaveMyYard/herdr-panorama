@@ -59,6 +59,12 @@ export function parseFeed(text) {
   }
   return feed;
 }
+// A collection older than three normal polls, unstamped or from the future is stale whatever
+// its lease says (app-feed-runtime-v1.md); see also joinRoots for what age then forbids.
+export function aged(packet, now = Date.now()) {
+  const collected = packet?.generated_at;
+  return !Number.isFinite(collected) || collected * 1000 > now || now - collected * 1000 > 15000;
+}
 export function readResult(previous, text, error = null) {
   try {
     if (error || text === null) throw error || Error('feed.json');
