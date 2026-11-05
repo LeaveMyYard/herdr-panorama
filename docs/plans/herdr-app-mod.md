@@ -5,7 +5,7 @@ Status: **approved by the operator for implementation** (2026-11-03). Delivered 
 
 **Amended 2026-11-05** ([uniform-agent-tree.md](uniform-agent-tree.md), slice U9): sections 1–4
 now say roots and agents. The operator removed threads and phases on 2026-11-04, and the
-feed is v2.
+feed is v2: the feed v1 wording in §3 is the plan as approved, kept as history.
 
 ## 1. Goal
 
@@ -40,7 +40,7 @@ The design is final and is the source of truth for the look:
    - Animations: spinners; a moving bar under a root while its agents work; an eased,
      blinking 2px edge on rows that need the operator.
    - Default folding per SPEC (agents only on the path to something
-     that needs the operator; finished agents folded into "✓ N done · roles"; chevrons fold).
+     that needs the operator; finished agents folded into "N finished · names"; chevrons fold).
    - **Harness icon on every agent row** (Claude Code, Codex, Gemini, Cursor, Amp, …) from the
      app's own icon set (`program.icon` for terminals; `icons/<harness>.svg` for pane-less
      subagents), full colour or tinted per `program.tint`.
@@ -61,7 +61,7 @@ The design is final and is the source of truth for the look:
    pins the tab first, so re-move it only when the mod creates it, never fight a user's drag.
 4. **Graph tab.** A `panorama-graph` tab shows that space's swarm using the final D/D2 Swarm
    View 5 deep design: one column per spawn depth, with the computed horizontal window and
-   independently scrolled columns. Final SPEC §6.6 defines the click split: an
+   independently scrolled columns. Final SPEC §6.6 defines the click split: a
    root click selects and drills down; double-click or Enter opens the
    root. An agent click selects and opens its verified terminal or pane-less Peek.
    `a`/`i` navigate to the existing Inbox or verified permission pane; they never answer,

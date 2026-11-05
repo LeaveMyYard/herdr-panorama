@@ -25,9 +25,10 @@ kind of node. This document uses those words. The frozen Python entrypoint
 name Python files, and the turn history, describe that code as it was built. The
 Rust port is otherwise in [rust-rewrite.md](plans/rust-rewrite.md).
 
-Scope of the PoC: Claude Code sessions only, running in herdr panes. The view
-never types into a pane. Its only actions are focusing a pane (`g`) and
-opening the herdr-inbox popup (`a` / `i`) when that plugin is installed.
+Scope: Claude Code and, in the Rust app, Codex sessions in herdr panes. The view
+types into a pane only when the operator submits the New agent form. Its other
+actions are focusing a pane (`g`) and opening the herdr-inbox popup (`a` / `i`)
+when that plugin is installed.
 
 ## Components
 
@@ -44,13 +45,13 @@ inbox.db (ro, opt.) ─┤                              tui.SwarmApp (Textual, c
                                                               herdr plugin action invoke …inbox.open
 ```
 
-One package `herdr_panorama`, CLI `panorama`:
+The Python package `herdr_panorama` and the Rust binary share the CLI `panorama`:
 
 | Command | Purpose |
 |---|---|
 | `panorama tui` | the Textual view (herdr popup or split) |
 | `panorama snapshot [--json] [--counts]` | print the derived model; `--counts` prints numbers only, no content |
-| `panorama emit …` | deprecated: records nothing (see [Removed: threads](#removed-threads)) |
+| `panorama emit …` | deprecated: in Rust it records nothing (see [Removed: threads](#removed-threads)) |
 | `panorama open [--split]` | open the plugin pane (used by the herdr actions) |
 
 Runtime: the Rust app when the plugin root has a current build, else Python ≥ 3.11,
@@ -59,13 +60,15 @@ inputs. Storage: none of its own.
 
 ## Data model
 
-`panorama snapshot --json` prints the model (`src/snapshot/json.rs`); the Rust
-types are in `crates/panorama-core/src/model/`.
+`panorama snapshot --json` prints the model (`src/snapshot/json.rs`), apart from
+`stale_after`, which the views use; the Rust types are in
+`crates/panorama-core/src/model/`.
 
 - **Swarm**: `roots`, `generated_at`, `herdr_ok`, `inbox_ok`, `errors`,
   `stale_after`, and `counts` (`roots`, `agents`, `running`, `waiting`,
   `questions`, `blocked`, `failed`).
-- **Root**: the depth-0 node, one per herdr pane running an agent. `pane_id`,
+- **Root**: the depth-0 node, one per herdr pane running Claude Code or Codex (in the
+  app, one per stock agent row). `pane_id`,
   `tab_id`, `workspace_id`, `session_id`, `herdr_status` (`working` / `idle` /
   `blocked` / `done` / `unknown`), `harness`, `transcript` (path), `pending` (what
   a `blocked` pane waits on: AskUserQuestion text or "wants Bash(…)"), `inbox`
@@ -314,7 +317,7 @@ version works. Open = `status = 'open'`.
 
 - root `?N` = open questions of its `session_id` (fallback `pane_id`);
 - agent `?N` = open questions whose receipts are in the agent's own file; the
-  rest go on a "main session" card;
+  rest stay on the root;
 - `a` (or a click on an agent card's `a answer` or a root's `?N`)
   opens the inbox **on that question group**, using herdr-inbox's deep-link API
   (≥ 0.6.0):
@@ -362,7 +365,7 @@ and the innermost target under the pointer wins.
 | a root entry in the docked 3a panel | select it and switch to it at once (one click) | `↑↓` `enter` |
 | agent card, or a pod in a narrow card | select it (the card expands) | `→` `↑↓` |
 | the selected agent card, column focused | go to the root pane | `g` |
-| `✓ n complete`, `n finished` | select and fold / unfold | `enter` |
+| `n finished` | select and fold / unfold | `enter` |
 | `+ New agent` | open the form | `n` |
 | `all` / `running` / `needs me` in the header | that filter | `f` |
 | `g open pane`, `t transcript`, `a answer` in an agent card | that action on that agent | `g` `t` `a` |
@@ -388,7 +391,7 @@ a click never acts on a card the operator was not already on.
   every card where it was). Comparing the cell maps costs well under a
   millisecond per refresh.
 - **Selection clicks are harmless; action clicks are armed.** Selecting and
-  filtering only move the cursor. Folding (`✓ n complete`, `n finished`) is
+  filtering only move the cursor. Folding (`n finished`) is
   armed like Enter, its key. Going to a pane, the New agent
   form, answering and the transcript path also wait out `ARM_SECONDS` after a
   refresh changed the selected card, exactly like their keys.
@@ -561,8 +564,8 @@ design's characters, colours (`TH.dark`, pod colours `PB`) and coordinates.
 
 - **Header**: `herdr panorama`, filters `all running needs me` (active one bold),
   counters `? N ! N ✗ N` on the right, clock `HH:MM`.
-- **Wide (≥ 120 columns)**: three columns joined by solid links (`├─┬─┤`, see below):
-  one column per depth, labelled `Depth n`, with the same card in each: harness mark,
+- **Wide (≥ 120 columns)**: columns joined by solid links (`├─┬─┤`, see below), one per
+  depth, with the same card in each: harness mark,
   title, the subtree's need marks `✗ ! ?N` and its own state; then activity and
   `model · age` (`tab N · age` for a root). The selected card expands with `now …`,
   questions, error, last message, its `role · id · model` and actions `g open pane`,
@@ -629,9 +632,9 @@ cell for cell at 160, 240 and 320 columns.
 - **The working sweep** along a card's bottom border takes at most 12 s per lap (48 frames),
   whatever the card's width. Up to a 44-column card it moves one cell a frame, as before; a
   wider card moves further each frame. The connector lines are not animated.
-- **The model keeps its version:** `claude-opus-4-5-…` shows as `opus 4.5`. From 240 columns
-  a card's type, id and model fit whole (`general-purpose 0c53fda · opus 4.5`); narrower cards
-  cut the title with `…` before the state.
+- **The model keeps its version:** `claude-opus-4-5-…` shows as `opus 4.5`. An untitled
+  agent's type, id and model fit whole from 240 columns (`general-purpose 0c53fda · opus 4.5`);
+  narrower cards cut the title with `…` before the state.
 
 ### Unseen (design turn 6, approved by the operator)
 
@@ -654,7 +657,7 @@ compares cell for cell (the whole 3a panel; every pulsed cell of 2a).
   pulse for a failure or a question, a quieter one for a finished agent. One pulse every 12
   frames (3 s), a sine wave in time, never fully off: full 35–100 % of the event colour over the line colour,
   quiet 15–45 %. The docked panel tints the entry's two lines (8–30 %, quiet 4–14 %) and
-  pulses the docked list's agent glyph (and `✓ n done`). Unseen marks keep frames running.
+  pulses the docked list's agent glyph (and the `N finished` row's). Unseen marks keep frames running.
   - **The selected card pulses over its own border colour** (the operator's report: the
     current card was lost under the animation). In swarm-unseen.js the pulse recolours the
     whole border over the line colour, the selection's white included, so a selected
@@ -826,7 +829,7 @@ by `render-5d.mjs`; the golden test `tests/test_deep.py` compares cell for cell.
   it (its parents) and, when it fits, the column after it (its children). Then
   it adds more columns while they fit, right first, then left. The line above
   the columns names what is off-screen: on the left (`‹ …`) the selected path
-  through the hidden columns, on the right `depth a–b  n columns right ›`. A card
+  through the hidden columns, on the right `Depth a–b  n columns right ›`. A card
   whose children's column is off-screen shows `› n`. shift+wheel or a horizontal
   wheel scrolls without moving the focus; the next focus or selection change
   scrolls back to it. `shift+wheel scroll` joins the key hints while something
@@ -1951,7 +1954,8 @@ Learnt in the herdr-inbox reviews, applied here:
 ## Limitations (PoC)
 
 - The Python entrypoint is Claude Code only. The Rust app also reads local Codex
-  sessions ([docs/codex.md](codex.md)); other harnesses appear with no tree.
+  sessions ([docs/codex.md](codex.md)). Other harnesses are not shown in the TUI; in
+  the app they stay as stock rows with no tree.
 - Agents started from a session that has since been `/clear`ed belong to the
   old session id and are not shown (the pane now reports the new one).
 - Workflow agents queued but not started are invisible (the journal has no

@@ -2,7 +2,7 @@
 
 <h3 align="center">Run a swarm of Claude Code agents in herdr and see, at a glance, which one needs you</h3>
 
-<p align="center">herdr panorama draws every agent in your <a href="https://herdr.dev">herdr</a> session and every subagent it spawned as one tree, like an Argo resource graph with small coloured status tiles. It reads what Claude Code already writes, types into a pane only when you start a new agent from it, and puts what failed, blocked or asked a question in front.</p>
+<p align="center">herdr panorama draws every Claude Code and Codex agent in your <a href="https://herdr.dev">herdr</a> session and every subagent it spawned as one tree, like an Argo resource graph with small coloured status tiles. It reads what Claude Code already writes, types into a pane only when you start a new agent from it, and puts what failed, blocked or asked a question in front.</p>
 
 <p align="center"><a href="docs/media/herdr-demo.mp4"><img src="docs/screenshots/hero.gif" width="88%" alt="The swarm view on demo data: orchestrator cards with spinners and blinking attention edges, a PR thread with its steps, and its agents"></a></p>
 
@@ -37,11 +37,14 @@ description = "swarm view"
 (reference copy and render in [docs/design/](docs/design/)). The design, the data sources and the
 open questions are in [docs/DESIGN.md](docs/DESIGN.md).
 
-**Rust view and Python fallback.** This page describes the Rust app: every root (a pane running
-an agent) with its whole agent tree, every agent titled by its spawner. A plugin root without a
-current build of it falls back to the frozen Python entrypoint, which keeps its legacy view with
-orchestrator and thread columns, phases and Claude sessions only. The screenshots and clips on
-this page were recorded before the tree and still show those columns.
+**Rust view and Python view.** This page describes the Rust app: every root (a pane running
+Claude Code or Codex) with its whole agent tree, every agent titled by its spawner. `herdr plugin
+install` alone does not build it, so a plain install runs the frozen Python entrypoint, which
+keeps its legacy view with orchestrator and thread columns, phases and Claude sessions only. To
+get the Rust app, run `cargo build --release` in the plugin root (with `CARGO_TARGET_DIR`
+set, add `--target-dir target`, because only `target/release/panorama` there counts). A build that is out of date with the checkout falls back
+the same way. The screenshots and clips on this page were recorded before the tree and still show
+those columns.
 
 **Local Codex support is available in the Rust view.** Claude Code and Codex panes share
 the list, navigation and launcher. Exact session associations add Codex turns, tools and
@@ -173,7 +176,7 @@ herdr plugin install LeaveMyYard/herdr-inbox
 
 ## What it shows
 
-- **Roots**: every herdr pane running an agent, with its state
+- **Roots**: every herdr pane running Claude Code or Codex, with its state
   (failed, blocked, needs you, working, reviewing, waiting, stale, idle, all done). **Waiting** ⠁ (a dot circling the cell):
   herdr says idle, but a Bash it put in the background or a Monitor watch is still running, so it
   will wake up by itself; its tasks are listed. **Stale** ◌: idle for longer than `stale_after`
@@ -183,9 +186,9 @@ herdr plugin install LeaveMyYard/herdr-inbox
   `!` blocked (permission prompt or question dialog) and `?N` open
   [herdr-inbox](https://github.com/LeaveMyYard/herdr-inbox) questions. A root is titled by the
   name you gave its pane or tab, else its session title, first prompt or terminal title.
-- **Agents** of the selected root, at every depth: one column per depth (`Depth 1`, `Depth 2`, …)
-  and the same card in each, with status, last tool call, age, tool calls, open questions and
-  last message, and role and model in the expanded card. Each agent is titled by what its spawner
+- **Agents** of the selected root, at every depth: one column per depth and the same card in
+  each, with status, model, last tool call, age, tool calls, open questions and last message,
+  and its role in the expanded card. Each agent is titled by what its spawner
   called it. Marks add up the tree, so a root shows what any agent under it needs. Finished
   siblings fold into one `n finished` card per parent; `+N older` counts those past `done_window`.
 
@@ -389,6 +392,8 @@ The wheel scrolls a column. A card that a refresh just moved under the pointer
 ignores clicks for a second.
 
 From a shell:
+
+With the Rust app built:
 
 ```sh
 target/release/panorama snapshot            # text summary of the derived model

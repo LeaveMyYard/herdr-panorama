@@ -116,8 +116,9 @@ preference/layout files.
 - **Leftover `.start.tmp`:** after a crash, ensure and uninstall both refuse
   `data/panorama/runtime/<install_id>/.start.tmp`, a staging copy of the retry ledger
   that holds no ownership. Close herdr-app, check that no `panorama app-feed` writer
-  is running, remove that one file by hand and retry. This is the only runtime file
-  to remove yourself.
+  is running, remove that one file by hand and retry what refused. A refused uninstall
+  has already disabled the generation, so continue with uninstall, not by reopening the
+  app. This is the only runtime file to remove yourself.
 - **Frontend stop timeout:** manually reopen the current mod/layout so it can clear
   its disabled generation, then retry. The installer does not launch/select it.
 - **Collision, unsafe retained store or runtime/receipt refusal:** preserve the

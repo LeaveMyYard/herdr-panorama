@@ -116,9 +116,9 @@ the root, and no agent stands for the root thread. Below it is its exact
 parent/child agent tree, at any depth; the root's own children have no parent.
 Each agent shows bounded prompt/summary text, model, the latest recorded tool,
 and the tool count in the loaded turn window. Counts are not all-time totals.
-Turns are not phases (plan `uniform-agent-tree.md` U3). The compact dock keeps its existing
-presentation: one tile for the root's tree, indented rows for agents that spawned children, and child status glyphs
-on the right (leaf agents are glyphs). Open the expanded graph to navigate full
+Turns are not phases (plan `uniform-agent-tree.md` U3). The compact dock shows one tile per
+active direct subagent; the docked entry lists two layers of agents, with deeper agents as
+status glyphs on the right of their row. Open the expanded graph to navigate full
 agent cards by depth; the narrow graph offers selectable agent pods and the
 selected agent's details.
 History-only children stay unknown, including in the compact dock.

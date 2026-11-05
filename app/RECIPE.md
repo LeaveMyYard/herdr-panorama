@@ -23,8 +23,9 @@ The narrow rail below 160px keeps the compact stock presentation.
 
 Needs-you is coral (`blocked`), work is amber (`working`), unseen done is blue
 (`done`), review is `ansi5`, and idle uses `idle`. Other colors come from theme()
-so the layout follows the app theme. A root is a 48px two-line card; the docked
-root continues into one row per agent, two layers deep, with native harness icons.
+so the layout follows the app theme. A root is a 48px two-line card with a native
+harness icon; an open root continues into one row per agent, two layers deep, each
+with its status glyph.
 
 Swarm uses one fixed-width column per depth, 272px with 36px gaps: depth 0 holds
 the space's roots and every depth uses the same card. A selected card shows
