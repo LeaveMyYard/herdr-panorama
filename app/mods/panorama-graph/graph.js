@@ -20,12 +20,36 @@ export function columnWindow(count, focus, width, manual = null) {
   const columns = Array.from({ length: hi - lo + 1 }, (_, n) => ({ column: lo + n, x: x0 + n * (WIDTH + GAP), width: WIDTH }));
   return { lo, hi, columns, total: span(0, count - 1), left: lo ? span(0, lo - 1) + GAP : 0, shown: span(lo, hi) };
 }
+const BORDER = 2; // The card's 1px border, on both sides of its body.
+const BELOW_LABEL = 28; // The `↓ N more below` label and its margin, at the canvas bottom.
+// What a selected agent's `agent` line says.
+export const agentMeta = (agent, age) => [[agent.role, agent.id].filter(Boolean).join(' '), agent.model, age, agent.tool_calls ? `${agent.tool_calls} calls` : ''].filter(Boolean).join(' · ');
 // A selected agent opens with its `agent` line, what it is doing, its questions and error.
-export function agentHeight(agent, selected) {
+// Those lines wrap, and only the host knows where: `measured` is the height of the card as
+// laid out. The estimate covers the first frame, before the host has reported it.
+export function agentHeight(agent, selected, measured) {
   if (!selected) return 54;
+  if (measured) return measured;
   const wrap = text => Math.max(1, Math.ceil([...String(text ?? '')].length / 34));
-  const details = [agent.activity ?? '', ...(agent.questions ?? []), ...(agent.error ? [agent.error] : [])];
-  return 88 + details.reduce((height, text) => height + wrap(text) * 17 + 3, 0);
+  const details = [agentMeta(agent, '<1m'), agent.activity ?? '', ...(agent.questions ?? []), ...(agent.error ? [agent.error] : [])];
+  return 68 + details.reduce((height, text) => height + wrap(text) * 17 + 3, 0);
+}
+// Keeps a selected card's height from its reported body size; true when the layout must follow.
+// Pixel rounding can move a report by one host pixel as the card moves, and following that
+// could keep a bottom-pinned card moving, so it is ignored; a real change is a whole line.
+export function recordCardHeight(heights, key, size, zoom) {
+  const scale = zoomScale(zoom);
+  if (!(size.height > 0)) return false;
+  const height = Math.round(size.height / scale) + BORDER;
+  if (Math.abs((heights.get(key) ?? -Infinity) - height) <= Math.max(1, Math.ceil(1 / scale))) return false;
+  heights.set(key, height); return true;
+}
+// Scrolls a column just enough to show its selected card whole, above the label that counts
+// the cards under it.
+export function selectedOffset(nodes, current, height) {
+  if (!current) return 0;
+  const reserve = nodes.some(node => node.y > current.y) ? BELOW_LABEL : 0;
+  return Math.max(0, current.y + current.height + reserve - height);
 }
 // One tree under a root: its transcript agents, then its verified same-space native terminal
 // children, each carrying its own feed agents and native children. A feed root that is also a
@@ -66,7 +90,7 @@ function annotate(roots) {
   for (const node of order.reverse()) node.shown = node.kind === 'native' || !finished(node.agent.status) || node.children.some(child => child.shown);
   return roots;
 }
-export function treeLayout(item, selected = null, expanded = new Set()) {
+export function treeLayout(item, selected = null, expanded = new Set(), heights = new Map()) {
   if (!item) return { nodes: [], groups: [], depth: 0 };
   const nodes = [], groups = [], cur = [], trunk = [];
   // Explicit stack supports producer trees deeper than the JavaScript call stack.
@@ -77,7 +101,7 @@ export function treeLayout(item, selected = null, expanded = new Set()) {
     if (task.kind === 'node') {
       const { group, source } = task, depth = group.depth, fold = Array.isArray(source);
       const children = !fold && source.children.length > 0;
-      const height = fold ? 40 : source.kind === 'native' ? (selected === source.key ? 100 : 54) : agentHeight(source.agent, selected === source.key);
+      const height = fold ? 40 : source.kind === 'native' ? (selected === source.key ? 100 : 54) : agentHeight(source.agent, selected === source.key, heights.get(source.key));
       const y = Math.max(cur[depth] ?? 0, group.parentY, children ? (trunk[depth + 1] ?? -100) - 27 + 16 : 0);
       const node = fold
         ? { kind: 'fold', key: JSON.stringify(['finished', group.key]), group: group.key, fold: source.map(node => node.agent), owner: source[0]?.owner ?? item, older: group.older }
@@ -101,7 +125,7 @@ export function treeLayout(item, selected = null, expanded = new Set()) {
 export const nodeTitle = node => node.kind === 'agent' ? agentTitle(node.agent) : node.item?.name ?? '';
 export function graphModel(roots, state) {
   const item = roots.find(item => item.key === state.root) ?? roots[0] ?? null;
-  const tree = treeLayout(item, state.focus >= 1 ? state.agent : null, state.expanded);
+  const tree = treeLayout(item, state.focus >= 1 ? state.agent : null, state.expanded, state.heights);
   const heads = roots.map((root, index) => ({ key: root.key, kind: 'root', item: root, owner: root, column: 0, y: index * 64, height: 54, mid: 27 }));
   const nodes = [...heads, ...tree.nodes];
   const columns = Array.from({ length: 1 + tree.depth }, (_, column) => nodes.filter(node => node.column === column));
@@ -159,9 +183,12 @@ export function selectionPath(model, state) {
 // Breadcrumb names: the root's title, then the selected path's titles.
 export const crumbs = (model, state) => [model.item?.name ?? '', ...selectedPath(model, state).map(nodeTitle)];
 export class ClickGuard {
-  constructor() { this.positions = new Map(); this.moved = new Map(); this.scrolled = -Infinity; }
+  constructor() { this.positions = new Map(); this.moved = new Map(); this.scrolled = -Infinity; this.armed = false; }
   scroll(now) { this.scrolled = now; }
+  // A move with no source change behind it: the next refresh guards it like a feed update.
+  armNext() { this.armed = true; }
   refresh(nodes, now, arm = true) {
+    arm ||= this.armed; this.armed = false;
     const positions = new Map();
     for (const node of nodes) {
       const position = JSON.stringify([node.column, node.y, node.height]); positions.set(node.key, position);
@@ -192,7 +219,8 @@ export function viewportAnimates(model, window, offsets, width, height) {
 }
 
 // The installed app reports post-zoom bounds; graph card coordinates remain pre-zoom.
+const zoomScale = zoom => Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
 export function logicalSize(measured, zoom) {
-  const scale = Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
+  const scale = zoomScale(zoom);
   return { width: measured.width / scale, height: measured.height / scale };
 }
