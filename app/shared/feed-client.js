@@ -96,9 +96,10 @@ function start(view, cx, role) {
   const callPrivate = args => invoke(args, alive);
   function recover(context) {
     const now = Date.now();
-    // Until one ensure succeeds the start is unproven whatever the feed's age: a child left
-    // starting can publish fresh bytes while this owner still reports stale and an error.
-    if (!ensured || !owns() || recovering || (started && !aged(view.feed, now)) || now - lastRecovery < HEARTBEAT) return;
+    // An unproven start or a standing error retries whatever the feed's age: a child left
+    // starting can publish fresh bytes, and only a successful ensure clears either.
+    const settled = started && !view.writerError && !aged(view.feed, now);
+    if (!ensured || !owns() || recovering || settled || now - lastRecovery < HEARTBEAT) return;
     const revision = epoch; recovering = true; lastRecovery = now;
     context.spawn(async context => {
       try {
@@ -168,8 +169,10 @@ function start(view, cx, role) {
     });
   }
   const timer = cx.timer.every(HEARTBEAT, context => {
-    if (!alive()) return;
+    if (closed) return;
     context.spawn(async context => {
+      // A stopped client keeps its view: a render is what lets a collection age out of the joins.
+      if (stopped) { context.notify(); return; }
       try {
         await identity; if (!alive()) return;
         await authority(alive); if (!alive()) return;

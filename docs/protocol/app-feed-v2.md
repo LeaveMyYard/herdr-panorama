@@ -186,7 +186,10 @@ join: stock rows and native children show live app data alone and count nothing
 from the feed, and a root whose address has a live row is not listed a second
 time. The retained feed stays cached with its age and returns when a current
 collection arrives. Staleness that is not age (a lease handoff, a failed read of a
-collection still inside the limit) keeps the join until the limit passes.
+collection still inside the limit) keeps the join until the limit passes. The limit
+bounds the risk and does not remove it: for up to 15 s after a core restart a new
+terminal can still join the previous one's root, because the feed carries no core
+instance id.
 
 Legacy membership fields remain only to preserve the snapshot shape. Core
 writers use the placeholders documented above and add no space/tab membership

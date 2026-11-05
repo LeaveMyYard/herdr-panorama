@@ -326,6 +326,41 @@ test('an ensure retry keeps the 5 s throttle and its one pending attempt', async
   await beat(s); assert.equal(ensures(), 3, 'one pending attempt');
   release({ code: 0, stdout: '', stderr: '' }); await until(() => s.view.writerError === null);
 });
+test('a failed retry after a proven start keeps retrying on a fresh feed until its error clears', async t => {
+  const s = ready(t), beat = skewing(t); answering([0, 1, 0]);
+  startFeed(s.view, s.cx); await until(() => consumerFeed(s.view).stale === false);
+  await beat(s); await beat(s); await beat(s); // 18 s: aged, and the retry fails
+  assert.equal(ensures(), 2); assert.match(s.view.writerError, /deferred/);
+  const path = join(s.home, 'data/panorama/feed.json');
+  writeFileSync(path, JSON.stringify({ ...JSON.parse(readFileSync(path)), generated_at: Date.now() / 1000 }));
+  s.view.reloadFeed(s.cx); await until(() => consumerFeed(s.view).aged === false);
+  await beat(s);
+  assert.equal(ensures(), 3); assert.equal(s.view.writerError, null);
+  assert.deepEqual(consumerFeed(s.view).errors, []); assert.equal(consumerFeed(s.view).stale, false);
+});
+test('an old retry answering after a new claim cannot prove that claim', async t => {
+  const s = ready(t), beat = skewing(t); answering([1]);
+  startFeed(s.view, s.cx); await until(() => s.view.writerError);
+  let release, calls = 0; const held = new Promise(resolve => { release = resolve; });
+  state.exec = (_binary, args) => args[1] !== '--ensure' ? { code: 0, stdout: 'panorama app-feed v2\n', stderr: '' }
+    : ++calls === 1 ? held : { code: 1, stdout: '', stderr: 'the new claim failed' };
+  await beat(s); assert.equal(ensures(), 2);
+  state.values['panorama.feed.owner'] = null; // the lease lapsed while the retry is held
+  await beat(s); await until(() => /new claim/.test(s.view.writerError ?? ''));
+  release({ code: 0, stdout: '', stderr: '' }); await settle();
+  assert.match(s.view.writerError, /new claim/); assert.equal(state.values['panorama.feed'].stale, true);
+});
+test('a stopped client still renders each heartbeat, so a collection can age out of the joins', async t => {
+  const s = ready(t); answering([1]); startFeed(s.view, s.cx); await until(() => s.view.writerError);
+  disabled(s); for (const timer of s.timers) timer.callback(s.cx);
+  await until(() => s.view.feedClient.stopped);
+  let renders = 0; s.cx.notify = () => { renders++; };
+  for (const timer of s.timers) timer.callback(s.cx);
+  await settle(); assert.equal(renders, 1);
+  s.view.feedClient.close(s.cx); renders = 0;
+  for (const timer of s.timers) timer.callback(s.cx);
+  await settle(); assert.equal(renders, 0, 'a closed client is finished');
+});
 test('a disabled generation ends the ensure retries for good', async t => {
   const s = ready(t), beat = skewing(t); staleFeed(s); answering([1]);
   startFeed(s.view, s.cx); await until(() => s.view.writerError);
@@ -353,6 +388,11 @@ test('a renewed claim starts over: its startup ensure runs alone, with no retry 
 test('the consumer packet reports collection age apart from lease and read staleness', async t => {
   const s = ready(t); startFeed(s.view, s.cx); await until(() => consumerFeed(s.view).stale === false);
   assert.equal(consumerFeed(s.view).aged, false);
+  const packet = state.values['panorama.feed'];
+  state.values['panorama.feed'] = { ...packet, stale: false, generated_at: Date.now() / 1000 - 16 };
+  assert.equal(consumerFeed(s.view).aged, true);
+  assert.equal(consumerFeed(s.view).stale, true, 'age alone is stale: Peek joins without `aged` because it refuses stale');
+  state.values['panorama.feed'] = packet;
   state.values['panorama.feed.owner'] = null;
   assert.equal(consumerFeed(s.view).stale, true); assert.equal(consumerFeed(s.view).aged, false, 'a lease handoff does not age the collection');
   state.values['panorama.feed'] = { ...state.values['panorama.feed'], generated_at: Date.now() / 1000 - 16 };

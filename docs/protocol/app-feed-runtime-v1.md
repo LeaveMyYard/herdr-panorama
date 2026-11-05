@@ -324,10 +324,13 @@ guards after awaits. Ensure success alone never refreshes old collection time;
 consumers independently age cached packets. Missing/changed/disabled authority
 remains a permanent client stop; a non-disabled ensure error (including a
 deferred start) is transient and may be retried at that cadence. Until one ensure
-has succeeded the retry runs at that cadence whatever the feed's age, because a
-child left starting can publish a current feed while the failed start still
-holds the projection stale. A failed capability probe is not a run ensure and is
-not retried. A new claim starts over with its own startup ensure.
+has succeeded, and while a failed retry's error stands, the retry runs at that
+cadence whatever the feed's age, because a child left starting can publish a
+current feed and only a successful ensure clears the failure. A failed capability
+probe is not a run ensure and is not retried. A new claim starts over with its
+own startup ensure. An `exec` the host rejects outright (the bridge could not run
+the verified binary at all) is not an ensure error: it stops the client like lost
+authority.
 
 ## Shared evidence
 
