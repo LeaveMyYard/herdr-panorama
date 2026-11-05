@@ -61,18 +61,44 @@ test('a missing or unusable terms file fails even beside a good one', (t) => {
   assert.equal(run(root, []).status, 2);
 });
 
-test('a failing git grep is a failed check, not a clean tree', (t) => {
-  const { dir, root } = repo(t, { 'a.txt': `${TERM}\n` });
+function failingGit(dir, subcommand) {
   const real = spawnSync('sh', ['-c', 'command -v git'], { encoding: 'utf8' }).stdout.trim();
-  const bin = join(dir, 'bin');
+  const bin = join(dir, `bin-${subcommand}`);
   mkdirSync(bin);
   const shim = join(bin, 'git');
-  writeFileSync(shim, `#!/bin/sh\n[ "$1" = grep ] && exit 128\nexec "${real}" "$@"\n`);
+  writeFileSync(shim, `#!/bin/sh\n[ "$1" = ${subcommand} ] && exit 128\nexec "${real}" "$@"\n`);
   chmodSync(shim, 0o755);
-  const env = { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH}` };
-  const out = run(root, [list(dir, 'terms', `${TERM}\n`)], env);
+  return { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH}` };
+}
+
+test('a failing git command is a failed check, not a clean tree', (t) => {
+  const { dir, root } = repo(t, { 'a.txt': `${TERM}\n` });
+  const terms = list(dir, 'terms', `${TERM}\n`);
+  for (const subcommand of ['grep', 'ls-files']) {
+    const out = run(root, [terms], failingGit(dir, subcommand));
+    assert.equal(out.status, 2, subcommand);
+    assert.doesNotMatch(out.text, /content hits/, subcommand);
+  }
+});
+
+test('outside a git repository the check fails instead of passing', (t) => {
+  const { dir } = repo(t, {});
+  const out = run(dir, [list(dir, 'terms', `${TERM}\n`)]);
   assert.equal(out.status, 2);
   assert.doesNotMatch(out.text, /content hits/);
+});
+
+test('the term count is a plain integer whatever wc would print', (t) => {
+  const { dir, root } = repo(t, { 'a.txt': 'text\n' });
+  const bin = join(dir, 'bin-wc');
+  mkdirSync(bin);
+  const shim = join(bin, 'wc');
+  writeFileSync(shim, '#!/bin/sh\nprintf \'       9\\n\'\n');
+  chmodSync(shim, 0o755);
+  const env = { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH}` };
+  const out = run(root, [list(dir, 'terms', 'absent\nother\n')], env);
+  assert.equal(out.status, 0);
+  assert.match(out.text, /^terms: 2, content hits: 0, file-name hits: 0$/m);
 });
 
 test('file names match with non-ASCII paths and CRLF term lines', (t) => {

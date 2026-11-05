@@ -10,6 +10,8 @@
 # It prints counts only, never a term or a matching line. It exits 1 on any hit and
 # 2 when the check itself could not run, so a failed run is never read as a pass.
 set -euo pipefail
+# Any unplanned failure (not a git repo, git ls-files failing) is a check that did not run.
+trap 'echo "privacy-check: failed at line $LINENO" >&2; exit 2' ERR
 
 if [ "$#" -eq 0 ]; then
   echo "usage: scripts/privacy-check TERMS_FILE..." >&2
@@ -35,7 +37,8 @@ if [ ! -s "$terms" ]; then
   exit 2
 fi
 
-cd "$(git rev-parse --show-toplevel)"
+root=$(git rev-parse --show-toplevel)
+cd "$root"
 
 # git grep and grep exit 1 when nothing matches, which is the passing case. Anything
 # above that is a failed check, not a clean tree.
@@ -56,5 +59,9 @@ if [ "$status" -gt 1 ]; then
   exit 2
 fi
 
-echo "terms: $(wc -l <"$terms"), content hits: $content, file-name hits: $names"
-[ "$content" -eq 0 ] && [ "$names" -eq 0 ]
+# awk, not wc: BSD wc pads its count with spaces.
+count=$(awk 'END { print NR }' "$terms")
+echo "terms: $count, content hits: $content, file-name hits: $names"
+if [ "$content" -ne 0 ] || [ "$names" -ne 0 ]; then
+  exit 1
+fi
