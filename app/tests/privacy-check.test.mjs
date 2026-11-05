@@ -81,6 +81,65 @@ test('a failing git command is a failed check, not a clean tree', (t) => {
   }
 });
 
+function shim(dir, name, script) {
+  const bin = mkdtempSync(join(dir, 'bin-'));
+  const path = join(bin, name);
+  writeFileSync(path, `#!/bin/sh\n${script}\n`);
+  chmodSync(path, 0o755);
+  return { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH}` };
+}
+
+test('a file-name grep with a junk, empty or contradictory answer is a failed check', (t) => {
+  const { dir, root } = repo(t, { 'a.txt': 'text\n' });
+  const terms = list(dir, 'terms', 'a.txt\nother\n');
+  const answers = ['echo junk; exit 0', 'echo 1x; exit 0', 'exit 0', 'exit 1', 'echo; exit 1', 'echo 0; exit 0', 'echo 3; exit 1', 'echo 3; exit 2'];
+  for (const answer of answers) {
+    const out = run(root, [terms], shim(dir, 'grep', answer));
+    assert.equal(out.status, 2, answer);
+    assert.doesNotMatch(out.text, /file-name hits/, answer);
+  }
+});
+
+test('a git grep with a junk, empty or contradictory answer is a failed check', (t) => {
+  const { dir, root } = repo(t, { 'a.txt': 'text\n' });
+  const terms = list(dir, 'terms', 'absent\n');
+  const real = spawnSync('sh', ['-c', 'command -v git'], { encoding: 'utf8' }).stdout.trim();
+  const answers = ['echo junk; exit 0', 'echo junk; exit 1', 'echo a.txt:x; exit 0', 'exit 0', 'echo a.txt:0; exit 0', 'echo a.txt:2; exit 1'];
+  for (const answer of answers) {
+    const env = shim(dir, 'git', `if [ "$1" = grep ]; then ${answer}; fi\nexec "${real}" "$@"`);
+    const out = run(root, [terms], env);
+    assert.equal(out.status, 2, answer);
+    assert.doesNotMatch(out.text, /content hits/, answer);
+  }
+});
+
+test('a tracked file missing from the worktree is still searched', (t) => {
+  const { dir, root } = repo(t, { 'gone.txt': `${TERM}\n`, 'kept.txt': 'text\n' });
+  rmSync(join(root, 'gone.txt'));
+  const out = run(root, [list(dir, 'terms', `${TERM}\n`)]);
+  assert.equal(out.status, 1);
+  assert.match(out.text, /content hits: 1, file-name hits: 0/);
+});
+
+test('content and file-name counts cover the same index', (t) => {
+  const { dir, root } = repo(t, { 'a.txt': 'text\n' });
+  writeFileSync(join(root, `${TERM}-untracked.txt`), `${TERM}\n`);
+  const out = run(root, [list(dir, 'terms', `${TERM}\n`)]);
+  assert.equal(out.status, 0);
+  assert.match(out.text, /content hits: 0, file-name hits: 0/);
+});
+
+test('coloured git grep output and awkward terms file names still count', (t) => {
+  const { root } = repo(t, { 'a.txt': `${TERM}\n` });
+  spawnSync('git', ['config', 'color.grep', 'always'], { cwd: root });
+  for (const name of ['a=b', '-v']) {
+    writeFileSync(join(root, name), `${TERM}\n`);
+    const out = run(root, [name]);
+    assert.equal(out.status, 1, name);
+    assert.match(out.text, /terms: 1, content hits: 1, file-name hits: 0/, name);
+  }
+});
+
 test('outside a git repository the check fails instead of passing', (t) => {
   const { dir } = repo(t, {});
   const out = run(dir, [list(dir, 'terms', `${TERM}\n`)]);
