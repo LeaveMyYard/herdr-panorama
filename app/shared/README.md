@@ -81,7 +81,7 @@ and retains no caller context. Invoke it inside the caller's own cx.spawn.
 Do not duplicate receipt hashing, startup, or private executable dispatch.
 Use `consumerFeed(this)` in render, and `closeConsumer(this,cx)` in View.close.
 
-The full returned packet is `{feed, stale, errors, generated_at, writerError,
+The full returned packet is `{feed, stale, aged, errors, generated_at, writerError,
 install_id}`. Feed is the retained last valid v2 snapshot or null. Preserve stale
 and errors; do not unwrap `.feed` and discard its provenance. `install_id` is the
 pinned generation or null during initialization. Pinning alone does not make a
@@ -98,8 +98,15 @@ time remain retained. This is a view freshness window, not proof of writer
 death, a heartbeat guarantee, or membership/command authority; a renewed frontend
 lease cannot make an old collection fresh.
 
-After a previously successful startup, an aged current-generation owner may
-idempotently re-ensure through the existing receipt/hash/generation-verified
+`aged` is that collection-age test alone (`aged` in `contract.js`), and it implies
+`stale`. A view that renders `joinRoots` must pass `{ aged: packet.aged }`: terminal
+numbering is per core instance, so an aged collection joins no live row. A caller
+that refuses `stale` first, as Peek does, need not pass it.
+
+After its startup ensure has run, successfully or not, a current-generation owner
+may idempotently re-ensure an aged feed, and also, whatever the feed's age, until one
+ensure has succeeded and while a failed retry's error stands. It does so through
+the existing receipt/hash/generation-verified
 private bridge. The existing 5-second heartbeat permits at most one pending
 recovery and one attempt per interval, with owner/epoch checks after awaits.
 Success only acknowledges startup: old collection bytes remain stale until a

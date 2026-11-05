@@ -313,6 +313,14 @@ test('a failed startup ensure is retried on a fresh feed, or a late-starting wri
   for (const timer of s.timers) timer.callback(s.cx);
   await settle(); assert.equal(ensures(), 2, 'a proven start with a fresh feed needs no ensure');
 });
+test('a startup ensure that fails with no output is retried too: an unproven start needs no error text', async t => {
+  const s = ready(t); let calls = 0;
+  state.exec = (_binary, args) => args[1] === '--ensure' ? { code: ++calls === 1 ? 1 : 0, stdout: '', stderr: '' } : { code: 0, stdout: 'panorama app-feed v2\n', stderr: '' };
+  startFeed(s.view, s.cx); await until(() => s.view.writerError === '');
+  for (const timer of s.timers) timer.callback(s.cx);
+  await until(() => consumerFeed(s.view).stale === false);
+  assert.equal(ensures(), 2);
+});
 test('an ensure retry keeps the 5 s throttle and its one pending attempt', async t => {
   const s = ready(t), beat = skewing(t); staleFeed(s); answering([1, 1]);
   startFeed(s.view, s.cx); await until(() => s.view.writerError);
