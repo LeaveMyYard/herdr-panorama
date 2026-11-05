@@ -8,7 +8,7 @@ import { rootTarget } from './routing.js';
 import { PeekCaller } from './peek-caller.js';
 import { rootKey, agentKey } from './contract.js';
 
-import { graphModel, columnWindow, currentNode, selectNode, navigate, selectionPath, crumbs, ClickGuard, viewportAnimates, logicalSize } from './graph.js';
+import { graphModel, columnWindow, currentNode, selectNode, navigate, selectionPath, crumbs, ClickGuard, viewportAnimates, logicalSize, recordCardHeight } from './graph.js';
 import { card, alpha } from './cards.js';
 import { answerIntent } from './actions.js';
 export default class Graph extends View {
@@ -19,7 +19,7 @@ export default class Graph extends View {
     cx.spawn(async cx => { await this.inbox.refresh(); cx.notify(); });
     this.changed = {}; // Status ages belong to this live view, never a persisted store.
     this.space = initial?.space ?? props()?.space ?? focused()?.space;
-    this.state = { focus: 0, root: null, agent: null, expanded: new Set(), remember: new Map(), manual: null, scroll: {} };
+    this.state = { focus: 0, root: null, agent: null, expanded: new Set(), remember: new Map(), manual: null, scroll: {}, heights: new Map() };
     this.guard = new ClickGuard(); this.size = { width: 1000, height: 600 }; this.handle = cx.focus_handle();
     cx.timer.every(30000, cx => { cx.notify(); cx.spawn(async cx => { if (!this.inbox.busy) { await this.inbox.refresh(); cx.notify(); } }); });
     cx.spawn(async cx => {
@@ -72,6 +72,7 @@ export default class Graph extends View {
     if (!captured || typeof captured.scope !== 'string') return null;
     return model.nodes.find(node => node.key === captured.key && node.kind === captured.kind && node.scope === captured.scope) ?? null;
   }
+  measureCard(key, size, cx) { if (recordCardHeight(this.state.heights, key, size)) cx.notify(); }
   canAnswer(node) { const intent = answerIntent(this.lastModel?.item, node); return intent?.kind === 'permission' || (intent?.kind === 'question' && !this.inbox.busy && this.inbox.canOpen(intent.question)); }
   actionButton(t, action, label, node, primary = false, enabled = true) {
     return div().id(`${node.key}-${action}`).h(24).px(9).rounded(6).flex_none().flex().items_center().text_size(11.5)

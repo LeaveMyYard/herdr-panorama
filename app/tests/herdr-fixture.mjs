@@ -16,5 +16,6 @@ export const watchFolder = async path => new Promise(resolve => state.watches.pu
 // Native world for PeekCaller: empty live lists, recorded overlays.
 export const agents = () => [], terminals = () => [], panes = () => [], spaces = () => [];
 export const settings = () => ({});
+export const focused = () => null, props = () => null, theme = () => ({}), run = () => null, nextCommand = () => new Promise(() => {});
 export const openOverlay = spec => { state.overlays = [...(state.overlays ?? []), spec]; return `overlay-${state.overlays.length}`; };
 export const closeOverlay = () => null;

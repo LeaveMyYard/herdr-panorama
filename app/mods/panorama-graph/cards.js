@@ -4,7 +4,7 @@ import { icon, age } from './marks.js';
 import { harnessOf, iconProgram } from './model.js';
 import { agentTitle } from './tree.js';
 import { STATES, SURFACE, stateCode, stateOf, cardColors, badge, tile } from './state.js';
-import { cardMotion, nodeTitle } from './graph.js';
+import { agentMeta, cardMotion, nodeTitle } from './graph.js';
 export const alpha = (color, opacity) => color.slice(0, 7) + opacity;
 const text = (value, color, size = 12) => div().min_w(0).truncate().text_size(size).text_color(color).child(value ?? '');
 const stamp = (timestamp, now) => timestamp ? age(timestamp * 1000, now) : '';
@@ -75,14 +75,17 @@ export function card(view, cx, t, node, model, window, path, now) {
     }
     if (selected && node.kind === 'native') body = body.child(h_flex().h(24).items_center().child(view.actionButton(t, 'open', 'Open pane ⏎', node, true)));
     if (selected && agent) {
-      const detail = (prefix, value, color, keyColor) => h_flex().gap(7).text_size(12).child(text(prefix, keyColor, 11).w(34).flex_none())
+      const detail = (prefix, value, color, keyColor) => h_flex().items_start().gap(7).text_size(12).child(text(prefix, keyColor, 11).line_height('17px').w(34).flex_none())
         .child(div().min_w(0).flex_1().line_height('17px').text_color(color).child(value));
-      const meta = [[agent.role, agent.id].filter(Boolean).join(' '), agent.model, stamp(agent.last_at || agent.started, now), agent.tool_calls ? `${agent.tool_calls} calls` : ''];
-      body = body.child(detail('agent', meta.filter(Boolean).join(' · '), t.muted, t.dim))
-        .child(detail('now', agent.activity ?? '', t.muted, t.dim))
-        .children(agent.questions.map(question => detail('?', question, hue, hue)))
-        .when(Boolean(agent.error), el => el.child(detail('✗', agent.error, hue, hue)))
-        .child(h_flex().h(24).gap(6).items_center()
+      // `.dn-d` and `.dn-acts`. The body is out of the card's flow so it reports its content's
+      // height, not the card's: that report sizes the card and moves the column below it.
+      body = body.pb(2).absolute().left(0).right(0).top(0).id(`graph-card-body-${node.key}`)
+        .on_size_change((size, cx) => view.measureCard(node.key, size, cx))
+        .child(v_flex().pt(2).gap(3).child(detail('agent', agentMeta(agent, stamp(agent.last_at || agent.started, now)), t.muted, t.dim))
+          .child(detail('now', agent.activity ?? '', t.muted, t.dim))
+          .children(agent.questions.map(question => detail('?', question, hue, hue)))
+          .when(Boolean(agent.error), el => el.child(detail('✗', agent.error, hue, hue))))
+        .child(h_flex().h(26).pt(2).gap(6).items_center()
           .child(view.actionButton(t, 'open', 'Peek ⏎', node, true))
           .child(view.actionButton(t, 'transcript', 'Transcript t', node))
           .child(view.actionButton(t, 'answer', agent.status === 'blk' ? 'Allow / deny a' : 'Answer a', node, false, view.canAnswer(node))));
