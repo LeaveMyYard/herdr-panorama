@@ -162,9 +162,9 @@ class DesignFixture {
           A('author', 'claude', 'wait', '"Retrying…" or "Reconnecting…"?', { q: 1 }),
         ] },
       ] },
-      { space: 'TrafficLens', title: 'Data pipeline SDD', h: 'claude', st: 'blk', age: '2m', act: 'running the SDD plan, task 3/7',  doneThreads: 2, threads: [
-        { name: 'Task 3/7 add retry cap', ph: 'ddw..', agents: [A('implementer', 'claude', 'blk', 'wants Bash(rm -rf build/)')] },
-        { name: 'Task 4/7 dedupe tick events', ph: 'n...', agents: [
+      { space: 'Project Alpha', title: 'Sample task 123', h: 'claude', st: 'blk', age: '2m', act: 'running the sample plan, task 3/7',  doneThreads: 2, threads: [
+        { name: 'Sample task 3/7 part A', ph: 'ddw..', agents: [A('implementer', 'claude', 'blk', 'wants Bash(rm -rf build/)')] },
+        { name: 'Sample task 4/7 second part', ph: 'n...', agents: [
           A('implementer', 'cursor', 'run', 'running tests'),
           A('task-reviewer', 'claude', 'q', 'queued'),
         ] },
@@ -173,13 +173,13 @@ class DesignFixture {
         { name: 'Compare limiter crates', ph: 'ddd', agents: [A('researcher', 'claude', 'done', 'wrote the comparison')] },
         { name: 'Prototype token bucket', ph: 'dd', agents: [A('worker', 'claude', 'done', 'pushed a branch')] },
       ] },
-      { space: '65net', title: 'Assess same-AZ proxy routing', h: 'codex', st: 'run', age: '22m', act: 'waiting on the hop measurements',  threads: [
-        { name: 'Measure cross-AZ hops', ph: 'dn.', agents: [
-          A('worker', 'codex', 'run', 'tracing eu-west-1 paths', { kids: [A('probe', 'claude', 'run', 'running mtr from 3 hosts')] }),
+      { space: 'Project Beta', title: 'Sample task 456 longer title', h: 'codex', st: 'run', age: '22m', act: 'waiting on the sample results',  threads: [
+        { name: 'Sample task 456 step 1', ph: 'dn.', agents: [
+          A('worker', 'codex', 'run', 'reading sample input 1', { kids: [A('probe', 'claude', 'run', 'running sample check x3')] }),
         ] },
-        { name: 'Draft routing ADR', ph: '...', agents: [A('writer', 'gemini', 'q', 'queued until hops are in')] },
+        { name: 'Sample task 456 step 2', ph: '...', agents: [A('writer', 'gemini', 'q', 'queued until step 1 is in')] },
       ] },
-      { space: 'TrafficLens', title: 'Docs refresh', h: 'amp', st: 'q', age: '1h', act: 'idle',  threads: [] },
+      { space: 'Project Alpha', title: 'Sample task 8', h: 'amp', st: 'q', age: '1h', act: 'idle',  threads: [] },
     ];
 
     // V11: every agent carries the name its spawner gave it (Agent/Task description, Codex task name);
@@ -188,10 +188,10 @@ class DesignFixture {
       'pushed fix r1': 'Write PR #142 sidebar mod', 'posted 0B 1H 1M': 'Review PR #142', 'npm test exited 1': 'Fix PR #142 fold test',
       'fetched the CI log': 'Fetch the #142 CI log', 'pushed r1': 'Write PR #144 harness icons', 'review r2 · 0B 1H so far': 'Review PR #144 r2',
       'reading mods/agents/main.js': 'Explore icon call sites', 'checking program.tint': 'Check program.tint per harness',
-      '"Retrying…" or "Reconnecting…"?': 'Write PR #145 retry banner', 'wants Bash(rm -rf build/)': 'Task 3/7: add retry cap',
-      'running tests': 'Task 4/7: dedupe tick events', 'queued': 'Review task 4/7', 'wrote the comparison': 'Compare limiter crates',
-      'pushed a branch': 'Prototype token bucket', 'tracing eu-west-1 paths': 'Measure cross-AZ hops', 'running mtr from 3 hosts': 'Run mtr from 3 hosts',
-      'queued until hops are in': 'Draft routing ADR', 'mapped the icon call sites': 'Map icon call sites', 'tracing program.tint lookups': 'Trace program.tint lookups',
+      '"Retrying…" or "Reconnecting…"?': 'Write PR #145 retry banner', 'wants Bash(rm -rf build/)': 'Sample task 3/7: part A',
+      'running tests': 'Sample task 4/7: second part', 'queued': 'Review sample task 4/7', 'wrote the comparison': 'Compare limiter crates',
+      'pushed a branch': 'Prototype token bucket', 'reading sample input 1': 'Sample task 456 step 1', 'running sample check x3': 'Run sample check x3',
+      'queued until step 1 is in': 'Sample task 456 step 2', 'mapped the icon call sites': 'Map icon call sites', 'tracing program.tint lookups': 'Trace program.tint lookups',
       'listed programs.json readers': 'List programs.json readers', 'checking the icon table on reload': 'Check icon table on reload',
       'paused · asks about the Gemini tile': 'Check the Gemini tile tint', 'rendering every icon at 14px': 'Render every icon at 14px',
       'compared tinted and full colour': 'Compare tinted and full colour', 'stopped: icons.spec.ts fails': 'Fix icons.spec.ts', 'scanning 6 icon sets': 'Scan 6 icon sets',
@@ -292,7 +292,7 @@ class DesignFixture {
           const kids = o.threads.map(t => ({ t })).concat(o.doneThreads ? [{ sum: o.doneThreads }] : []);
           kids.forEach((k, i) => {
             const last = i === kids.length - 1;
-            if (k.sum) { out.push(sumRow(segs([], last), '✓ ' + k.sum + ' tasks done', 'schema, migrations')); return; }
+            if (k.sum) { out.push(sumRow(segs([], last), '✓ ' + k.sum + ' tasks done', 'part 1, part 2')); return; }
             out.push(thRow(k.t, segs([], last)));
             if (mode === 'full') treeFull(k.t.agents, [!last], out);
             else if (k.t.agents.some(news)) treeNews(k.t.agents, [!last], out, mode);
@@ -304,8 +304,8 @@ class DesignFixture {
 
     const spaces = [
       { l: 'T', name: 'Test', repo: 'herdr-panorama', cls: 'sp on', tileSt: { background: '#22a99a' }, marks: [{ cls: 'mk chip need', t: '2', st: { marginLeft: '8px' } }, mark('run')] },
-      { l: 'T', name: 'TrafficLens', repo: '', cls: 'sp', tileSt: { background: '#e3814f' }, marks: [{ cls: 'mk chip need', t: '1', st: {} }, mark('run')] },
-      { l: '6', name: '65net', repo: '', cls: 'sp', tileSt: { background: '#5b8def' }, marks: [mark('run')] },
+      { l: 'A', name: 'Project Alpha', repo: '', cls: 'sp', tileSt: { background: '#e3814f' }, marks: [{ cls: 'mk chip need', t: '1', st: {} }, mark('run')] },
+      { l: 'B', name: 'Project Beta', repo: '', cls: 'sp', tileSt: { background: '#5b8def' }, marks: [mark('run')] },
     ];
 
     const lines = [

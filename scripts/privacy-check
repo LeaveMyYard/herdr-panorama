@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Count private terms in the tracked tree. This repo is public, so the terms never
+# live here: pass one or more term files kept outside the repo, one literal per line.
+#
+#   scripts/privacy-check /private/terms.txt [/private/more-terms.txt ...]
+#
+# Matching is case-insensitive and covers file contents, binaries and file names.
+# It prints counts only, never a term or a matching line, and exits 1 on any hit.
+set -euo pipefail
+
+if [ "$#" -eq 0 ]; then
+  echo "usage: scripts/privacy-check TERMS_FILE..." >&2
+  exit 2
+fi
+
+cd "$(git rev-parse --show-toplevel)"
+terms=$(mktemp)
+trap 'rm -f "$terms"' EXIT
+# An empty pattern would match everything, so blank lines are dropped.
+cat "$@" | sed '/^[[:space:]]*$/d' >"$terms"
+if [ ! -s "$terms" ]; then
+  echo "privacy-check: no terms in: $*" >&2
+  exit 2
+fi
+
+# git grep exits 1 when nothing matches, which is the passing case.
+content=$({ git grep -c -i -F -f "$terms" || true; } | awk -F: '{ n += $NF } END { print n + 0 }')
+names=$(git ls-files | grep -c -i -F -f "$terms" || true)
+
+echo "terms: $(wc -l <"$terms"), content hits: $content, file-name hits: $names"
+[ "$content" -eq 0 ] && [ "$names" -eq 0 ]

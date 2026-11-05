@@ -87,10 +87,10 @@ Approved uninstall retention is limited to `panorama.feed:null` and
 `layouts/.state/panorama.json`, with necessary parents. This grants no installer
 deletion or adoption authority over personal/host files.
 
-![Native Swarm graph on synthetic design data](app/preview.png)
+![Swarm graph on synthetic design data](docs/design/herdr-app/state-refresh-v11/v11-d-graph-tab.png)
 
-*Native app rendering with synthetic design data; this preview does not demonstrate
-natural session ingestion. [Capture provenance](docs/review/herdr-app/b3/FINAL.md).*
+*Synthetic design render, not a capture of the running app; it does not demonstrate
+natural session ingestion.*
 
 ## Pick your setup
 
