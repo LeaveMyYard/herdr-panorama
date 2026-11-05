@@ -23,6 +23,7 @@ impl Fixture {
         let dir = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(dir.path().join("proc/20")).unwrap();
         std::fs::create_dir_all(dir.path().join("claude/sessions")).unwrap();
+        std::fs::create_dir_all(dir.path().join("claude/projects")).unwrap();
         let mut fixture = Self {
             dir,
             table: FakeProcesses::default(),
@@ -55,6 +56,7 @@ impl Fixture {
         Linker {
             proc: Proc::new(self.dir.path().join("proc"), uid()),
             uid: uid(),
+            projects: Some(self.dir.path().join("claude/projects")),
         }
     }
 }
@@ -119,14 +121,23 @@ fn the_record_is_read_from_the_processes_own_config_dir() {
     let f = Fixture::new();
     let base = f.dir.path().display();
     let check = || per_process(&f, "t2");
+    let projects = f.dir.path().join("claude/projects");
     // No CLAUDE_CONFIG_DIR: the process uses $HOME/.claude.
-    std::fs::rename(f.dir.path().join("claude"), f.dir.path().join(".claude")).unwrap();
+    let default = f.dir.path().join(".claude");
+    std::fs::create_dir_all(default.join("sessions")).unwrap();
+    std::os::unix::fs::symlink(&projects, default.join("projects")).unwrap();
+    std::fs::rename(
+        f.sessions().join("20.json"),
+        default.join("sessions/20.json"),
+    )
+    .unwrap();
     let home = format!("HC_TERMINAL_ID=t2\0HOME={base}\0");
     f.environ(home.as_bytes());
     assert_eq!(check(), Signal::Names(A.into()));
     // CLAUDE_CONFIG_DIR wins over $HOME, and its record is the one read.
     let other = f.dir.path().join("claude-3/sessions");
     std::fs::create_dir_all(&other).unwrap();
+    std::os::unix::fs::symlink(&projects, f.dir.path().join("claude-3/projects")).unwrap();
     std::fs::write(
         other.join("20.json"),
         json!({"pid":20,"sessionId":B,"procStart":"boot-1","kind":"interactive"}).to_string(),
@@ -153,6 +164,26 @@ fn the_record_is_read_from_the_processes_own_config_dir() {
     .unwrap();
     f.environ(format!("HC_TERMINAL_ID=t3\0CLAUDE_CONFIG_DIR={base}/claude-3\0").as_bytes());
     assert_eq!(check(), Signal::Absent);
+}
+
+#[test]
+fn a_config_dir_with_other_transcripts_than_the_collectors_refuses() {
+    let f = Fixture::new();
+    let config = f.dir.path().join("claude").display().to_string();
+    f.environ(format!("HC_TERMINAL_ID=t2\0CLAUDE_CONFIG_DIR={config}\0").as_bytes());
+    let check = |linker: &Linker| linker.per_process("t2", &info("t2", &["claude"]), &f.table);
+    assert_eq!(check(&f.linker()), Signal::Names(A.into()));
+    // The collector reads another root: an id from here could find a same-named copy there.
+    let mut linker = f.linker();
+    linker.projects = Some(f.dir.path().join("panoramas-projects"));
+    assert_eq!(check(&linker), Signal::Absent);
+    std::fs::create_dir(f.dir.path().join("panoramas-projects")).unwrap();
+    assert_eq!(check(&linker), Signal::Absent);
+    linker.projects = None;
+    assert_eq!(check(&linker), Signal::Absent);
+    // This dir has no transcripts yet.
+    std::fs::remove_dir(f.dir.path().join("claude/projects")).unwrap();
+    assert_eq!(check(&f.linker()), Signal::Absent);
 }
 
 #[test]
@@ -233,6 +264,40 @@ fn a_record_from_a_reused_pid_or_an_unsafe_file_is_no_evidence() {
     std::fs::remove_file(f.sessions().join("20.json")).unwrap();
     std::fs::write(f.sessions().join("20.json"), vec![b' '; 17 * 1024]).unwrap();
     assert_eq!(per_process(&f, "t2"), Signal::Absent);
+}
+
+#[test]
+fn a_record_of_another_user_is_no_evidence() {
+    let f = Fixture::new();
+    let config = f.dir.path().join("claude");
+    assert_eq!(
+        claude::record(&config, 20, "boot-1", uid()),
+        Signal::Names(A.into())
+    );
+    assert_eq!(
+        claude::record(&config, 20, "boot-1", uid() + 1),
+        Signal::Absent
+    );
+}
+
+#[test]
+fn a_fifo_in_the_records_place_neither_blocks_nor_counts() {
+    let f = Fixture::new();
+    let path = f.sessions().join("20.json");
+    std::fs::remove_file(&path).unwrap();
+    assert!(
+        std::process::Command::new("mkfifo")
+            .arg(&path)
+            .status()
+            .unwrap()
+            .success()
+    );
+    let config = f.dir.path().join("claude");
+    let (done, result) = std::sync::mpsc::channel();
+    let id = uid();
+    std::thread::spawn(move || done.send(claude::record(&config, 20, "boot-1", id)));
+    let signal = result.recv_timeout(std::time::Duration::from_secs(10));
+    assert_eq!(signal, Ok(Signal::Absent));
 }
 
 /// A table whose start token for the PID is gone after the first read (PID reuse mid-read).

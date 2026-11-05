@@ -10,9 +10,11 @@ pub use proc::{Environment, Proc};
 use super::records::{self, Hooks};
 use herdr_agent_kit::{
     agent_procs::{ProcessTable, claude::first_claude},
+    agent_session::claude::io::ProjectsRoot,
     plugin_env::PluginEnv,
 };
 use serde_json::Value;
+use std::path::{Path, PathBuf};
 
 /// One piece of evidence about a terminal's session.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -28,6 +30,8 @@ pub enum Signal {
 pub struct Linker {
     pub proc: Proc,
     pub uid: u32,
+    /// The transcript root the collector looks every linked id up in.
+    pub projects: Option<PathBuf>,
 }
 
 impl Linker {
@@ -35,6 +39,11 @@ impl Linker {
         Self {
             proc: Proc::new("/proc", env.uid()),
             uid: env.uid(),
+            projects: ProjectsRoot::resolve(
+                env.path_var("CLAUDE_CONFIG_DIR").map(Into::into),
+                env.home().map(Into::into),
+            )
+            .map(|root| root.path().to_path_buf()),
         }
     }
 
@@ -75,8 +84,6 @@ impl Linker {
         let comm = table.stat(pid).map_or(String::new(), |s| s.comm);
         let cmdline = table.cmdline(pid);
         let env = self.proc.environment(pid);
-        // The record's location comes from the process; its proof is inside the record (§2.6).
-        let config = env.as_ref().and_then(Environment::claude_dir);
         if first_claude([(pid, comm.as_str(), cmdline.as_slice())]).is_none()
             || name.as_deref() != Some(comm.as_str())
             || argv.map(|a| a.into_iter().filter(|s| !s.is_empty()).collect::<Vec<_>>())
@@ -86,7 +93,12 @@ impl Linker {
         {
             return Signal::Absent;
         }
-        let Some(config) = config else {
+        // The record's location comes from the process; its proof is inside the record (§2.6).
+        let Some(config) = env
+            .as_ref()
+            .and_then(Environment::claude_dir)
+            .filter(|dir| self.shares_transcripts(dir))
+        else {
             return Signal::Absent;
         };
         let signal = claude::record(&config, pid, &before, self.uid);
@@ -94,6 +106,16 @@ impl Linker {
             return Signal::Absent;
         }
         signal
+    }
+}
+
+impl Linker {
+    /// `config`'s transcripts are the collector's, links resolved. Otherwise an id of this
+    /// process could find a same-named transcript it does not write.
+    fn shares_transcripts(&self, config: &Path) -> bool {
+        let resolved = |path: &Path| std::fs::canonicalize(path).ok();
+        resolved(&config.join("projects"))
+            .is_some_and(|own| self.projects.as_deref().and_then(resolved) == Some(own))
     }
 }
 

@@ -60,14 +60,19 @@ means P is absent; it never refuses H or B by itself:
    - If the environment is larger than the bound, or unreadable, the gate refuses. That is
      the safe direction.
    - A process started in another terminal, or in a container, does not carry this value.
-   - The process's effective config dir is `${CLAUDE_CONFIG_DIR:-$HOME/.claude}` from its own
-     exec environment. It must be an absolute path, otherwise the gate refuses: that covers an
-     empty or relative value, and neither key being set. It does not have to equal
-     Panorama's: an operator can run several config dirs at once, and each process's record
-     lives in its own. The dir only says where to look. It proves nothing, because the record
-     has to prove itself (§3 P): owned by our uid, and carrying this `pid` and start token.
-     Anything that could set this value already runs as our uid, and could equally have
-     written the record into any other dir.
+   - The process's effective config dir is `$CLAUDE_CONFIG_DIR`, or `$HOME/.claude` when that key
+     is not set, from its own exec environment. It must be an absolute path, otherwise the
+     gate refuses: that covers an empty or relative value, and neither key being set.
+   - That dir does not have to equal Panorama's: an operator can run several config dirs at once,
+     and each process's record lives in its own. The dir only says where to look. It proves
+     nothing, because the record has to prove itself (§3 P): owned by our uid, and carrying
+     this `pid` and start token. Anything that could set this value already runs as our uid,
+     and could equally have written the record into any other dir.
+   - Its `projects` must be the same directory as the root the collector reads, with symlinks
+     resolved, otherwise the gate refuses. The collector looks an id up by name in its own
+     root only, so an id from a dir with other transcripts could find a same-named transcript
+     the process does not write: a copied dir, or a reused `--session-id`. Several config
+     dirs whose `projects` link to one directory all pass.
 7. Panorama reads the evidence (§3, P).
 8. Panorama reads start token S2 **after** the evidence. If S1 ≠ S2, or the process has
    vanished, the gate refuses (the PID was reused during the read).
@@ -87,13 +92,16 @@ session's file collects subagent lines, before and after its SessionStart record
 is bounded:
 - at most 16 Ki directory entries are looked at;
 - a file over 16 MiB is not read, and costs nothing;
-- at most 32 MiB is read per collect, newest `mtime` first (ties by name), so the set read does
-  not depend on directory order. A file being written goes first, and stale files get what is
-  left, so they cannot use up the budget of a live terminal's file.
+- at most 32 MiB is read per collect, newest `mtime` first (ties by name), so within the entry
+  bound the set read does not depend on directory order. A file written recently goes
+  first, and older files get what is left. An idle live terminal's file has an old `mtime`,
+  so newer files can use the budget before it, and past the entry bound directory order
+  decides what is seen. Both leave H partial, which is safe.
 
 A hook file that was left out, or could not be read to its end, makes H **partial** for every
 terminal: the reader cannot know which process the file belongs to, and no part of a file
-stands for the rest. A file that vanished after it was listed (pruned) counts as read.
+stands for the rest. A file that vanished after it was listed (pruned) counts as read. `errors[]`
+then gets one entry, `hooks: not every hook file was read`, so the cause of the refusals shows.
 
 How many sessions the matching records name decides H:
 - **No session** is absent, partial or not. A partial H then says nothing about the process, so
@@ -233,7 +241,9 @@ A stale link cannot outlive its process. Coverage:
 | Codex in-process `/new` (deferred rollout) | rollouts are not evidence; B only |
 | Claude's record rewrite fails after a switch (`updatePidFile` logs and returns, e.g. ENOSPC) | the old `sessionId` stays with a matching `procStart`. With P alone nothing contradicts it: **accepted residual**. With the hook configured, the new H record conflicts → refuse |
 | A hook write is lost after a switch and only the older SessionStart record remains | H alone names the old session (the existing A1 behaviour): **accepted residual** where P is unavailable. Where P is present, it names the new one → conflict → refuse |
-| Process with its own `CLAUDE_CONFIG_DIR` (several config dirs in use) | its record is read from that dir, through every other gate and file check. If that dir's `projects` is not Panorama's, the id links but no transcript is found: the root stays basic, with the right id and no borrowed data |
+| Process with its own `CLAUDE_CONFIG_DIR` (several config dirs in use) | its record is read from that dir, through every other gate and file check, when its `projects` is the collector's root (§2.6) |
+| Process whose config dir has other transcripts (copied dir, reused `--session-id`) | its `projects` is not the collector's root → P absent, so its id cannot pick up a same-named transcript through P. H has no config dir to check: a hook record from such a process can still do so. **Accepted residual**, as it was before P could read other dirs |
+| The process's config path is on a hung mount | the `open` blocks the collector, for every terminal, and the §2 reads have no deadline of their own. **Accepted residual**: Claude itself hangs on that dir too. `O_NONBLOCK` covers a FIFO, not this |
 | Process of our uid that sets `CLAUDE_CONFIG_DIR` to a dir holding a forged record | not a new capability: our uid can write `~/.claude/sessions/<pid>.json` too. The uid is the trust boundary, as for the hook records |
 | Config dir controlled by another uid (inherited env, shared path) | the file must be owned by our uid, with `nlink == 1`, opened `O_NOFOLLOW`, and carry this `pid` and start token; a symlink or a file of theirs → absent |
 | Process in another mount namespace: its config path means something else here | the file found here must still carry this `pid` and start token, so it is only ever that process's own record; otherwise absent |
@@ -260,9 +270,9 @@ The operator applies it. Panorama never edits `~/.claude` or `~/.codex`.
 
 - **`src/host/link/` (new):** the gate, P, the decision, and cross-terminal uniqueness. Each
   module stays under 300 non-test lines.
-  - Readers are injected: a `/proc` root path and the kit's `ProcessTable`. The config dir comes
-    from that `/proc`. Tests therefore use synthetic directories and `FakeProcesses`, never
-    the operator's processes.
+  - Readers are injected: a `/proc` root path, the collector's projects root, and the kit's
+    `ProcessTable`. The config dir comes from that `/proc`. Tests therefore use synthetic
+    directories and `FakeProcesses`, never the operator's processes.
 - **`records.rs`:** returns H as a signal that keeps the newest session, for §4.2.
 - **`records/load.rs`:** the bounded read of the hook files, and whether it was complete (§3 H).
 - **`source.rs`:** calls the decision at the point where it calls
