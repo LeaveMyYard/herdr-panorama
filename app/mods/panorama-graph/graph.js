@@ -21,6 +21,7 @@ export function columnWindow(count, focus, width, manual = null) {
   return { lo, hi, columns, total: span(0, count - 1), left: lo ? span(0, lo - 1) + GAP : 0, shown: span(lo, hi) };
 }
 const BORDER = 2; // The card's 1px border, on both sides of its body.
+const BELOW_LABEL = 28; // The `↓ N more below` label and its margin, at the canvas bottom.
 // What a selected agent's `agent` line says.
 export const agentMeta = (agent, age) => [[agent.role, agent.id].filter(Boolean).join(' '), agent.model, age, agent.tool_calls ? `${agent.tool_calls} calls` : ''].filter(Boolean).join(' · ');
 // A selected agent opens with its `agent` line, what it is doing, its questions and error.
@@ -34,15 +35,21 @@ export function agentHeight(agent, selected, measured) {
   return 68 + details.reduce((height, text) => height + wrap(text) * 17 + 3, 0);
 }
 // Keeps a selected card's height from its reported body size; true when the layout must follow.
-// The body spans the card inside its border, so its width gives the host's scale, whatever
-// mix of zoom and font size made it. Pixel rounding can move a report by 1px as the card
-// moves, and following that could keep a bottom-pinned card moving, so it is ignored.
-export function recordCardHeight(heights, key, size) {
-  const scale = size.width / (WIDTH - BORDER);
-  if (!(scale > 0) || !(size.height > 0)) return false;
+// Pixel rounding can move a report by one host pixel as the card moves, and following that
+// could keep a bottom-pinned card moving, so it is ignored; a real change is a whole line.
+export function recordCardHeight(heights, key, size, zoom) {
+  const scale = zoomScale(zoom);
+  if (!(size.height > 0)) return false;
   const height = Math.round(size.height / scale) + BORDER;
-  if (Math.abs((heights.get(key) ?? -Infinity) - height) <= 1) return false;
+  if (Math.abs((heights.get(key) ?? -Infinity) - height) <= Math.max(1, Math.ceil(1 / scale))) return false;
   heights.set(key, height); return true;
+}
+// Scrolls a column just enough to show its selected card whole, above the label that counts
+// the cards under it.
+export function selectedOffset(nodes, current, height) {
+  if (!current) return 0;
+  const reserve = nodes.some(node => node.y > current.y) ? BELOW_LABEL : 0;
+  return Math.max(0, current.y + current.height + reserve - height);
 }
 // One tree under a root: its transcript agents, then its verified same-space native terminal
 // children, each carrying its own feed agents and native children. A feed root that is also a
@@ -176,9 +183,12 @@ export function selectionPath(model, state) {
 // Breadcrumb names: the root's title, then the selected path's titles.
 export const crumbs = (model, state) => [model.item?.name ?? '', ...selectedPath(model, state).map(nodeTitle)];
 export class ClickGuard {
-  constructor() { this.positions = new Map(); this.moved = new Map(); this.scrolled = -Infinity; }
+  constructor() { this.positions = new Map(); this.moved = new Map(); this.scrolled = -Infinity; this.armed = false; }
   scroll(now) { this.scrolled = now; }
+  // A move with no source change behind it: the next refresh guards it like a feed update.
+  armNext() { this.armed = true; }
   refresh(nodes, now, arm = true) {
+    arm ||= this.armed; this.armed = false;
     const positions = new Map();
     for (const node of nodes) {
       const position = JSON.stringify([node.column, node.y, node.height]); positions.set(node.key, position);
@@ -209,7 +219,8 @@ export function viewportAnimates(model, window, offsets, width, height) {
 }
 
 // The installed app reports post-zoom bounds; graph card coordinates remain pre-zoom.
+const zoomScale = zoom => Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
 export function logicalSize(measured, zoom) {
-  const scale = Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
+  const scale = zoomScale(zoom);
   return { width: measured.width / scale, height: measured.height / scale };
 }

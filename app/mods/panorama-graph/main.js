@@ -8,7 +8,7 @@ import { rootTarget } from './routing.js';
 import { PeekCaller } from './peek-caller.js';
 import { rootKey, agentKey } from './contract.js';
 
-import { graphModel, columnWindow, currentNode, selectNode, navigate, selectionPath, crumbs, ClickGuard, viewportAnimates, logicalSize, recordCardHeight } from './graph.js';
+import { graphModel, columnWindow, currentNode, selectNode, navigate, selectionPath, crumbs, ClickGuard, viewportAnimates, logicalSize, recordCardHeight, selectedOffset } from './graph.js';
 import { card, alpha } from './cards.js';
 import { answerIntent } from './actions.js';
 export default class Graph extends View {
@@ -72,7 +72,13 @@ export default class Graph extends View {
     if (!captured || typeof captured.scope !== 'string') return null;
     return model.nodes.find(node => node.key === captured.key && node.kind === captured.kind && node.scope === captured.scope) ?? null;
   }
-  measureCard(key, size, cx) { if (recordCardHeight(this.state.heights, key, size)) cx.notify(); }
+  // A first report only settles a card just selected; a later one moves cards under the pointer.
+  measureCard(key, size, cx) {
+    const known = this.state.heights.has(key);
+    if (!recordCardHeight(this.state.heights, key, size, settings().zoom)) return;
+    if (known) this.guard.armNext();
+    cx.notify();
+  }
   canAnswer(node) { const intent = answerIntent(this.lastModel?.item, node); return intent?.kind === 'permission' || (intent?.kind === 'question' && !this.inbox.busy && this.inbox.canOpen(intent.question)); }
   actionButton(t, action, label, node, primary = false, enabled = true) {
     return div().id(`${node.key}-${action}`).h(24).px(9).rounded(6).flex_none().flex().items_center().text_size(11.5)
@@ -139,8 +145,7 @@ export default class Graph extends View {
     const offsets = {};
     for (let column = 0; column < model.columns.length; column++) {
       const current = column === this.state.focus ? this.current : model.columns[column].find(node => selectionPath(model, this.state).has(node.key));
-      const selectedOffset = current && current.y + current.height > height ? Math.max(0, current.y + current.height - height) : 0;
-      offsets[column] = this.state.scroll[column] ?? selectedOffset;
+      offsets[column] = this.state.scroll[column] ?? selectedOffset(model.columns[column], current, height);
     }
     return offsets;
   }

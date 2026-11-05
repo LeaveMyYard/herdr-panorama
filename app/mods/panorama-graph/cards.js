@@ -75,9 +75,10 @@ export function card(view, cx, t, node, model, window, path, now) {
     }
     if (selected && node.kind === 'native') body = body.child(h_flex().h(24).items_center().child(view.actionButton(t, 'open', 'Open pane ⏎', node, true)));
     if (selected && agent) {
-      const detail = (prefix, value, color, keyColor) => h_flex().items_start().gap(7).text_size(12).child(text(prefix, keyColor, 11).line_height('17px').w(34).flex_none())
+      const detail = (prefix, value, color, keyColor) => h_flex().items_start().gap(7).text_size(12).child(text(prefix, keyColor, 11).line_height('17px').w(30).flex_none())
         .child(div().min_w(0).flex_1().line_height('17px').text_color(color).child(value));
-      // `.dn-d` and `.dn-acts`. The body is out of the card's flow so it reports its content's
+      // `.dn-d` and `.dn-acts`. The key sits on the first line (`items_baseline` puts it lower in
+      // the host when the value wraps). The body is out of the card's flow so it reports its content's
       // height, not the card's: that report sizes the card and moves the column below it.
       body = body.pb(2).absolute().left(0).right(0).top(0).id(`graph-card-body-${node.key}`)
         .on_size_change((size, cx) => view.measureCard(node.key, size, cx))
