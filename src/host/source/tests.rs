@@ -50,7 +50,7 @@ fn missing_identity_keeps_plain_roots_and_exposes_availability_errors() {
         Some(dir.path().into()),
         1000,
     );
-    let link = Linker::system(&env);
+    let link = Linker::system(&env, dir.path().join("projects"));
     let mut source = CoreSource {
         link,
         core: Core::new(binary.into_os_string(), Duration::from_secs(1)),
@@ -67,4 +67,13 @@ fn missing_identity_keeps_plain_roots_and_exposes_availability_errors() {
     );
     assert_eq!(observation.errors.len(), 4);
     assert_eq!(observation.terminals["core:vps/t7"], "vps/t7");
+    // A hook file over the read limit says so, apart from the per-terminal refusals.
+    let hooks = dir.path().join("no-hooks");
+    std::fs::create_dir(&hooks).unwrap();
+    let big = hooks.join("11111111-1111-4111-8111-111111111111.jsonl");
+    let file = std::fs::File::create(big).unwrap();
+    file.set_len(17 * 1024 * 1024).unwrap();
+    let errors = source.read().errors;
+    assert_eq!(errors.len(), 5);
+    assert_eq!(errors[0], "hooks: not every hook file was read");
 }

@@ -23,6 +23,7 @@ impl Fixture {
         let dir = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(dir.path().join("proc/20")).unwrap();
         std::fs::create_dir_all(dir.path().join("claude/sessions")).unwrap();
+        std::fs::create_dir_all(dir.path().join("claude/projects")).unwrap();
         let mut fixture = Self {
             dir,
             table: FakeProcesses::default(),
@@ -55,7 +56,7 @@ impl Fixture {
         Linker {
             proc: Proc::new(self.dir.path().join("proc"), uid()),
             uid: uid(),
-            claude_config: Some(self.dir.path().join("claude")),
+            projects: self.dir.path().join("claude/projects"),
         }
     }
 }
@@ -116,36 +117,104 @@ fn the_process_gate_refuses_anything_it_cannot_tie_to_the_terminal() {
 }
 
 #[test]
-fn the_processes_effective_config_dir_must_be_panoramas() {
+fn the_record_is_read_from_the_processes_own_config_dir() {
     let f = Fixture::new();
+    let base = f.dir.path().display();
+    let check = || per_process(&f, "t2");
+    let projects = f.dir.path().join("claude/projects");
     // No CLAUDE_CONFIG_DIR: the process uses $HOME/.claude.
-    std::fs::rename(f.dir.path().join("claude"), f.dir.path().join(".claude")).unwrap();
-    let mut linker = f.linker();
-    linker.claude_config = Some(f.dir.path().join(".claude"));
-    let home = format!("HC_TERMINAL_ID=t2\0HOME={}\0", f.dir.path().display());
+    let default = f.dir.path().join(".claude");
+    std::fs::create_dir_all(default.join("sessions")).unwrap();
+    std::os::unix::fs::symlink(&projects, default.join("projects")).unwrap();
+    std::fs::rename(
+        f.sessions().join("20.json"),
+        default.join("sessions/20.json"),
+    )
+    .unwrap();
+    let home = format!("HC_TERMINAL_ID=t2\0HOME={base}\0");
     f.environ(home.as_bytes());
+    assert_eq!(check(), Signal::Names(A.into()));
+    // CLAUDE_CONFIG_DIR wins over $HOME, and its record is the one read.
+    let other = f.dir.path().join("claude-3/sessions");
+    std::fs::create_dir_all(&other).unwrap();
+    std::os::unix::fs::symlink(&projects, f.dir.path().join("claude-3/projects")).unwrap();
+    std::fs::write(
+        other.join("20.json"),
+        json!({"pid":20,"sessionId":B,"procStart":"boot-1","kind":"interactive"}).to_string(),
+    )
+    .unwrap();
+    f.environ(format!("{home}CLAUDE_CONFIG_DIR={base}/claude-3\0").as_bytes());
+    assert_eq!(check(), Signal::Names(B.into()));
+    // A link to that dir is the same dir: the proof is inside the record, not in the path.
+    std::os::unix::fs::symlink(f.dir.path().join("claude-3"), f.dir.path().join("alias")).unwrap();
+    f.environ(format!("{home}CLAUDE_CONFIG_DIR={base}/alias/\0").as_bytes());
+    assert_eq!(check(), Signal::Names(B.into()));
+    // The other gates hold there too: a record of another process, another terminal.
+    std::fs::write(
+        other.join("20.json"),
+        json!({"pid":20,"sessionId":B,"procStart":"boot-0","kind":"interactive"}).to_string(),
+    )
+    .unwrap();
+    f.environ(format!("{home}CLAUDE_CONFIG_DIR={base}/claude-3\0").as_bytes());
+    assert_eq!(check(), Signal::Absent);
+    std::fs::write(
+        other.join("20.json"),
+        json!({"pid":20,"sessionId":B,"procStart":"boot-1","kind":"interactive"}).to_string(),
+    )
+    .unwrap();
+    f.environ(format!("HC_TERMINAL_ID=t3\0CLAUDE_CONFIG_DIR={base}/claude-3\0").as_bytes());
+    assert_eq!(check(), Signal::Absent);
+}
+
+#[test]
+fn a_config_dir_with_other_transcripts_than_the_collectors_refuses() {
+    let f = Fixture::new();
+    let config = f.dir.path().join("claude").display().to_string();
+    f.environ(format!("HC_TERMINAL_ID=t2\0CLAUDE_CONFIG_DIR={config}\0").as_bytes());
     let check = |linker: &Linker| linker.per_process("t2", &info("t2", &["claude"]), &f.table);
-    assert_eq!(check(&linker), Signal::Names(A.into()));
-    // Panorama reads another dir than the process uses, in either direction.
-    f.environ(b"HC_TERMINAL_ID=t2\0HOME=/elsewhere\0");
+    assert_eq!(check(&f.linker()), Signal::Names(A.into()));
+    // The collector reads another root: an id from here could find a same-named copy there.
+    let mut linker = f.linker();
+    linker.projects = f.dir.path().join("panoramas-projects");
     assert_eq!(check(&linker), Signal::Absent);
-    f.environ(format!("{home}CLAUDE_CONFIG_DIR=/elsewhere\0").as_bytes());
+    std::fs::create_dir(f.dir.path().join("panoramas-projects")).unwrap();
     assert_eq!(check(&linker), Signal::Absent);
-    // Neither variable: the process's dir is unknown.
-    f.environ(b"HC_TERMINAL_ID=t2\0");
-    assert_eq!(check(&linker), Signal::Absent);
-    // Paths compare by component (a trailing slash is the same dir); links are not resolved.
-    f.environ(
-        format!(
-            "{home}CLAUDE_CONFIG_DIR={}/.claude/\0",
-            f.dir.path().display()
-        )
-        .as_bytes(),
-    );
-    assert_eq!(check(&linker), Signal::Names(A.into()));
-    std::os::unix::fs::symlink(f.dir.path().join(".claude"), f.dir.path().join("alias")).unwrap();
-    f.environ(format!("{home}CLAUDE_CONFIG_DIR={}/alias\0", f.dir.path().display()).as_bytes());
-    assert_eq!(check(&linker), Signal::Absent);
+    // This dir has no transcripts yet.
+    std::fs::remove_dir(f.dir.path().join("claude/projects")).unwrap();
+    assert_eq!(check(&f.linker()), Signal::Absent);
+}
+
+#[test]
+fn a_config_dir_that_is_unknown_or_not_absolute_refuses() {
+    let f = Fixture::new();
+    // The empty value does not fall back to a $HOME that would find the record.
+    std::os::unix::fs::symlink(f.dir.path().join("claude"), f.dir.path().join(".claude")).unwrap();
+    let home = format!("HOME={}\0", f.dir.path().display());
+    f.environ(format!("HC_TERMINAL_ID=t2\0{home}").as_bytes());
+    assert_eq!(per_process(&f, "t2"), Signal::Names(A.into()));
+    for environ in [
+        "HC_TERMINAL_ID=t2\0".to_owned(),
+        "HC_TERMINAL_ID=t2\0HOME=relative\0".to_owned(),
+        "HC_TERMINAL_ID=t2\0CLAUDE_CONFIG_DIR=relative\0".to_owned(),
+        format!("HC_TERMINAL_ID=t2\0CLAUDE_CONFIG_DIR=\0{home}"),
+    ] {
+        f.environ(environ.as_bytes());
+        assert_eq!(per_process(&f, "t2"), Signal::Absent, "{environ:?}");
+    }
+    let dir = |config: Option<&str>, home: Option<&str>| {
+        Environment {
+            terminal: None,
+            claude_config: config.map(str::to_owned),
+            home: home.map(str::to_owned),
+        }
+        .claude_dir()
+    };
+    assert_eq!(dir(Some(""), Some("/h")), None);
+    assert_eq!(dir(Some("rel"), Some("/h")), None);
+    assert_eq!(dir(None, Some("rel")), None);
+    assert_eq!(dir(None, None), None);
+    assert_eq!(dir(Some("/c"), Some("/h")), Some("/c".into()));
+    assert_eq!(dir(None, Some("/h")), Some("/h/.claude".into()));
 }
 
 #[test]
@@ -193,6 +262,40 @@ fn a_record_from_a_reused_pid_or_an_unsafe_file_is_no_evidence() {
     std::fs::remove_file(f.sessions().join("20.json")).unwrap();
     std::fs::write(f.sessions().join("20.json"), vec![b' '; 17 * 1024]).unwrap();
     assert_eq!(per_process(&f, "t2"), Signal::Absent);
+}
+
+#[test]
+fn a_record_of_another_user_is_no_evidence() {
+    let f = Fixture::new();
+    let config = f.dir.path().join("claude");
+    assert_eq!(
+        claude::record(&config, 20, "boot-1", uid()),
+        Signal::Names(A.into())
+    );
+    assert_eq!(
+        claude::record(&config, 20, "boot-1", uid() + 1),
+        Signal::Absent
+    );
+}
+
+#[test]
+fn a_fifo_in_the_records_place_neither_blocks_nor_counts() {
+    let f = Fixture::new();
+    let path = f.sessions().join("20.json");
+    std::fs::remove_file(&path).unwrap();
+    assert!(
+        std::process::Command::new("mkfifo")
+            .arg(&path)
+            .status()
+            .unwrap()
+            .success()
+    );
+    let config = f.dir.path().join("claude");
+    let (done, result) = std::sync::mpsc::channel();
+    let id = uid();
+    std::thread::spawn(move || done.send(claude::record(&config, 20, "boot-1", id)));
+    let signal = result.recv_timeout(std::time::Duration::from_secs(10));
+    assert_eq!(signal, Ok(Signal::Absent));
 }
 
 /// A table whose start token for the PID is gone after the first read (PID reuse mid-read).
@@ -262,6 +365,91 @@ fn hook_and_per_process_record_must_agree() {
     // Without the per-process record, two hook sessions stay ambiguous.
     std::fs::remove_file(f.sessions().join("20.json")).unwrap();
     assert_eq!(decide(), Link::Unavailable);
+}
+
+/// A long-lived session's file: its resume record with subagent lines around it, past the
+/// size a hook file reaches in practice.
+fn big_hook(dir: &Path, session: &str, ts: f64) {
+    let subagent = json!({"v":1,"event":"start","agent":"a","host":"herdr-core","terminal":"t2",
+        "harness":"claude","pid":20,"pstart":"boot-1","ts":ts})
+    .to_string();
+    let resume = json!({"v":1,"event":"session","host":"herdr-core","terminal":"t2",
+        "harness":"claude","pid":20,"pstart":"boot-1","ts":ts,"source":"resume"})
+    .to_string();
+    let mut text = format!("{subagent}\n").repeat(1000);
+    text += &format!("{resume}\n");
+    text += &format!("{subagent}\n").repeat(4000);
+    assert!(text.len() > 512 * 1024);
+    std::fs::write(dir.join(format!("{session}.jsonl")), text).unwrap();
+}
+
+struct Restart<'a> {
+    f: &'a Fixture,
+    hooks: std::path::PathBuf,
+}
+
+impl<'a> Restart<'a> {
+    /// `claude`, then an in-process resume: `startup` for session A in a new small file, and
+    /// `resume` for B, the session Claude's own record names.
+    fn new(f: &'a Fixture) -> Self {
+        let hooks = f.dir.path().join("hooks");
+        std::fs::create_dir_all(&hooks).unwrap();
+        hook(&hooks, A, 1.0);
+        f.record(&json!({"pid":20,"sessionId":B,"procStart":"boot-1","kind":"interactive"}));
+        Self { f, hooks }
+    }
+    fn decide(&self) -> Link {
+        let env = PluginEnv::from_vars(Vec::<(String, String)>::new(), None, uid());
+        let hooks = records::load(&self.hooks);
+        let info = info("t2", &["claude"]);
+        (self.f.linker())
+            .terminal(&env, "t2", "claude", &info, &hooks, &self.f.table)
+            .1
+    }
+    fn lose_per_process_record(&self) {
+        std::fs::remove_file(self.f.sessions().join("20.json")).unwrap();
+    }
+    /// A hook file over the per-file limit; sparse, so the test writes nothing.
+    fn oversized(&self, session: &str) {
+        let file = std::fs::File::create(self.hooks.join(format!("{session}.jsonl"))).unwrap();
+        file.set_len(17 * 1024 * 1024).unwrap();
+    }
+}
+
+#[test]
+fn a_big_hook_file_keeps_its_resume_record_after_a_restart() {
+    let f = Fixture::new();
+    let restart = Restart::new(&f);
+    big_hook(&restart.hooks, B, 2.0);
+    assert_eq!(restart.decide(), Link::Linked(B.into()));
+    // Alone, the two hook sessions stay ambiguous: neither is named, the throwaway least of all.
+    restart.lose_per_process_record();
+    assert_eq!(restart.decide(), Link::Unavailable);
+}
+
+#[test]
+fn an_unread_hook_file_never_lets_the_throwaway_id_link() {
+    let f = Fixture::new();
+    let restart = Restart::new(&f);
+    restart.oversized(B);
+    // The resume record is out of reach and Claude names B: refused, A is not linked.
+    assert_eq!(restart.decide(), Link::Conflict);
+    // Without Claude's record only the throwaway id is left, and it does not name itself.
+    restart.lose_per_process_record();
+    assert_eq!(restart.decide(), Link::Unavailable);
+}
+
+#[test]
+fn an_unread_hook_file_leaves_agreeing_evidence_and_the_record_alone_linking() {
+    let f = Fixture::new();
+    let restart = Restart::new(&f);
+    restart.oversized("33333333-3333-4333-8333-333333333333");
+    // What was read agrees with Claude: as with a lost hook write, the two together link.
+    f.record(&json!({"pid":20,"sessionId":A,"procStart":"boot-1","kind":"interactive"}));
+    assert_eq!(restart.decide(), Link::Linked(A.into()));
+    // The process's only hook record is in the unread file: Claude's record stands alone.
+    std::fs::remove_file(restart.hooks.join(format!("{A}.jsonl"))).unwrap();
+    assert_eq!(restart.decide(), Link::Linked(A.into()));
 }
 
 #[test]

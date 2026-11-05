@@ -53,17 +53,27 @@ means P is absent; it never refuses H or B by itself:
    recorded shape is in `tests/fixtures/hc-get-foreground.json`. Herdr-core terminal numbering is per instance. This check stops a PID
    from another PID namespace, or from a second core instance, from matching an unrelated
    local process that happens to sit in its own `tN`.
-6. **Terminal environment.** `/proc/P/environ` contains `HC_TERMINAL_ID=tN` exactly once.
+6. **Terminal environment.** `/proc/P/environ` contains `HC_TERMINAL_ID=tN` exactly once. Any of
+   the three keys below appearing twice refuses.
    - Only three keys are read: `HC_TERMINAL_ID`, `CLAUDE_CONFIG_DIR` and `HOME`. The buffer is
      bounded (256 KiB) and dropped at once. It is never logged, stored, or compared with
      anything else.
    - If the environment is larger than the bound, or unreadable, the gate refuses. That is
      the safe direction.
    - A process started in another terminal, or in a container, does not carry this value.
-   - The process's effective config dir, `${CLAUDE_CONFIG_DIR:-$HOME/.claude}` from its own
-     exec environment, must equal Panorama's, in either direction; otherwise, or when
-     neither key is set, the gate refuses. Paths compare by component (a trailing slash is
-     the same dir); symlinks are not resolved, so an alias refuses.
+   - The process's effective config dir is `$CLAUDE_CONFIG_DIR`, or `$HOME/.claude` when that key
+     is not set, from its own exec environment. It must be an absolute path, otherwise the
+     gate refuses: that covers an empty or relative value, and neither key being set.
+   - That dir does not have to equal Panorama's: an operator can run several config dirs at once,
+     and each process's record lives in its own. The dir only says where to look. It proves
+     nothing, because the record has to prove itself (§3 P): owned by our uid, and carrying
+     this `pid` and start token. Anything that could set this value already runs as our uid,
+     and could equally have written the record into any other dir.
+   - Its `projects` must be the same directory as the root the collector reads, with symlinks
+     resolved, otherwise the gate refuses. The collector looks an id up by name in its own
+     root only, so an id from a dir with other transcripts could find a same-named transcript
+     the process does not write: a copied dir, or a reused `--session-id`. Several config
+     dirs whose `projects` link to one directory all pass.
 7. Panorama reads the evidence (§3, P).
 8. Panorama reads start token S2 **after** the evidence. If S1 ≠ S2, or the process has
    vanished, the gate refuses (the PID was reused during the read).
@@ -78,12 +88,33 @@ record **matches** when all of these hold:
 - its `pidns`, if supplied, equals Panorama's;
 - the existing `owns` and `first_claude` checks pass (core-host.md).
 
+Panorama reads every hook file, because a session record can sit anywhere in one: a long-lived
+session's file collects subagent lines, before and after its SessionStart records. The read
+is bounded:
+- at most 16 Ki directory entries are looked at;
+- a file over 16 MiB is not read, and costs nothing;
+- at most 32 MiB is read per collect, newest `mtime` first (ties by name), so within the entry
+  bound the set read does not depend on directory order. A file written recently goes
+  first, and older files get what is left. An idle live terminal's file has an old `mtime`,
+  so newer files can use the budget before it, and past the entry bound directory order
+  decides what is seen. Both leave H partial, which is safe.
+
+A hook file that was left out, or could not be read to its end, makes H **partial** for every
+terminal: the reader cannot know which process the file belongs to, and no part of a file
+stands for the rest. A file that vanished after it was listed (pruned) counts as read. `errors[]`
+then gets one entry, `hooks: not every hook file was read`, so the cause of the refusals shows.
+
 How many sessions the matching records name decides H:
-- **One session** names that session.
+- **No session** is absent, partial or not. A partial H then says nothing about the process, so
+  P stands alone, exactly as for a process with no hook configured.
+- **One session** names that session, unless H is partial; a partial H is treated as
+  **more than one session**, because the unread file may hold another.
 - **More than one session** is ambiguous, as core-host.md states. One exception: when P
   (below) is present and names the session of the newest matching record (by `ts`), the two
   agree, and that session links. The newest record on its own never decides. The hook drops
-  a record it cannot write, so the newest surviving record can be stale.
+  a record it cannot write, so the newest surviving record can be stale. A file left unread
+  is the same case as a dropped record: the id that was read links only if P names it. If P
+  names another id, that is a conflict, and with no P there is no link.
 
 Subagent `start`/`stop` records are **not** evidence. They say which session the process was
 running when it last spawned a subagent. After a later in-process switch they are as stale
@@ -100,8 +131,7 @@ executable. The registration code read from its embedded JavaScript does the fol
   the file through `updatePidFile` with `{sessionId: <new>, updatedAt}`.
 - It removes the file on exit.
 
-`<config dir>` is `${CLAUDE_CONFIG_DIR:-$HOME/.claude}` as Panorama resolves it, and §2.6
-makes it equal to the process's own.
+`<config dir>` is the process's own effective config dir (§2.6), not Panorama's.
 
 Anchors in 2.1.318, for re-checking a later version: registration runs only behind the
 concurrent-sessions gate (`f_()`); when it is off there is no file and P is absent. The
@@ -162,7 +192,7 @@ The signals are {H, P} for a Claude row and {B} for a Codex row. Each signal is 
 1. All present signals name the same id: that id links. The link is written as
    `agent_session` `{"kind":"id","value":ID,"source":"panorama:core"}`, the existing seam
    into the collector.
-2. H is ambiguous, but its newest record agrees with P: that id links (§3 H).
+2. H is ambiguous or partial, but its newest record agrees with P: that id links (§3 H).
 3. Any other ambiguous signal, or no signal at all: refuse, with "session ownership
    unavailable".
 4. Present signals disagree: refuse, with "session evidence conflicts". Two consequences:
@@ -208,11 +238,21 @@ A stale link cannot outlive its process. Coverage:
 | Two terminals over one process tree, or the same foreground PID | cross-terminal uniqueness → refuse both |
 | Two Claude processes resumed into one session (shared transcript) | the same id links in two terminals → refuse both |
 | In-process `/resume` or `/clear` | P is rewritten. Until the H record lands, or if it is lost, H and P disagree → refuse |
-| Switch read before Claude's asynchronous record rewrite lands | P names the previous session for at most that window (milliseconds, on Claude's write chain). The next collect corrects it. With the hook configured, the new H record conflicts → refuse. Accepted and stated. |
+| Switch read before Claude's asynchronous record rewrite lands | P names the previous session for at most that window (milliseconds, on Claude's write chain). The next collect corrects it. With the hook configured, the new H record conflicts → refuse, unless its file is unread (see the partial-read row). Accepted and stated. |
 | Codex in-process `/new` (deferred rollout) | rollouts are not evidence; B only |
-| Claude's record rewrite fails after a switch (`updatePidFile` logs and returns, e.g. ENOSPC) | the old `sessionId` stays with a matching `procStart`. With P alone nothing contradicts it: **accepted residual**. With the hook configured, the new H record conflicts → refuse |
+| Claude's record rewrite fails after a switch (`updatePidFile` logs and returns, e.g. ENOSPC) | the old `sessionId` stays with a matching `procStart`. With P alone nothing contradicts it: **accepted residual**. With the hook configured, the new H record conflicts → refuse, unless its file is unread (see the partial-read row) |
 | A hook write is lost after a switch and only the older SessionStart record remains | H alone names the old session (the existing A1 behaviour): **accepted residual** where P is unavailable. Where P is present, it names the new one → conflict → refuse |
-| Process with its own `CLAUDE_CONFIG_DIR` | it differs from Panorama's → P absent; H by its existing rules |
+| Process with its own `CLAUDE_CONFIG_DIR` (several config dirs in use) | its record is read from that dir, through every other gate and file check, when its `projects` is the collector's root (§2.6) |
+| Process whose config dir has other transcripts (copied dir, reused `--session-id`) | its `projects` is not the collector's root → P absent, so its id cannot pick up a same-named transcript through P. H has no config dir to check: a hook record from such a process can still do so. **Accepted residual**, as it was before P could read other dirs |
+| The process's config path is on a hung mount | the `open` blocks the collector, for every terminal, and the §2 reads have no deadline of their own. **Accepted residual**: Claude itself hangs on that dir too. `O_NONBLOCK` covers a FIFO, not this |
+| Process of our uid that sets `CLAUDE_CONFIG_DIR` to a dir holding a forged record | not a new capability: our uid can write `~/.claude/sessions/<pid>.json` too. The uid is the trust boundary, as for the hook records |
+| Config dir controlled by another uid (inherited env, shared path) | the file must be owned by our uid, with `nlink == 1`, opened `O_NOFOLLOW`, and carry this `pid` and start token; a symlink or a file of theirs → absent |
+| Process in another mount namespace: its config path means something else here | the file found here must still carry this `pid` and start token, so it is only ever that process's own record; otherwise absent |
+| Relative or empty `CLAUDE_CONFIG_DIR` or `HOME` | it would resolve from Panorama's cwd, not the process's → P absent |
+| Long-lived session: hook file past any size a tail or head read covers | the whole file is read, within the §3 H bounds; the two records are both seen, and the newest agrees with P |
+| Hook file over the limit, or left out by the budget or the entry bound, or unreadable | H is partial: it never names an id by itself. Agreement with P links; P naming another id conflicts → refuse; no P → refuse. The cost is global and safe: while any file is unread, a terminal that has H but no P stays unlinked, even if the unread file is stale. If the unread file holds the record that would have contradicted P, the old id links: two faults at once, the same case as a dropped hook record. **Accepted residual** |
+| A terminal whose `hc get` failed or ran past the deadline | it enters the cross-terminal rules with no PID and no id, so it cannot refuse the other terminal it shares a process or session with. The other terminal's id is still proved. **Accepted residual** |
+| The collector follows `continued-in` after the proof: a process resumes X while X still reads as continued in Y, the conversation of another terminal | until that process's first message, its root shows Y with no error, and §4's uniqueness sees only the proved ids. **Known gap**, not in this slice |
 | Hook record forged by another local user | the hooks dir is per-user state, and the record must still match the live P, S and terminal; another uid's process fails the gate (P absent) and H's existing owner check |
 | Symlinked or hard-linked per-process record | `O_NOFOLLOW`, `nlink == 1` and the uid check → absent |
 | Oversized or malformed evidence | bounded reads; malformed → absent |
@@ -233,10 +273,11 @@ The operator applies it. Panorama never edits `~/.claude` or `~/.codex`.
 
 - **`src/host/link/` (new):** the gate, P, the decision, and cross-terminal uniqueness. Each
   module stays under 300 non-test lines.
-  - Readers are injected: a `/proc` root path, a Claude config dir, and the kit's
-    `ProcessTable`. Tests therefore use synthetic directories and `FakeProcesses`, never the
-    operator's processes.
+  - Readers are injected: a `/proc` root path, the collector's projects root, and the kit's
+    `ProcessTable`. The config dir comes from that `/proc`. Tests therefore use synthetic
+    directories and `FakeProcesses`, never the operator's processes.
 - **`records.rs`:** returns H as a signal that keeps the newest session, for §4.2.
+- **`records/load.rs`:** the bounded read of the hook files, and whether it was complete (§3 H).
 - **`source.rs`:** calls the decision at the point where it calls
   `claude_session`/`resolve_core` today.
 

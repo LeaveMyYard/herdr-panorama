@@ -14,13 +14,15 @@ pub struct Environment {
 }
 
 impl Environment {
-    /// The process's effective `${CLAUDE_CONFIG_DIR:-$HOME/.claude}`.
+    /// The process's effective `${CLAUDE_CONFIG_DIR:-$HOME/.claude}`. Only an absolute path: a
+    /// relative one (or an empty value) means something else from Panorama's cwd.
     pub fn claude_dir(&self) -> Option<PathBuf> {
-        match (&self.claude_config, &self.home) {
-            (Some(dir), _) => Some(dir.into()),
-            (None, Some(home)) => Some(Path::new(home).join(".claude")),
-            (None, None) => None,
-        }
+        let dir = match (&self.claude_config, &self.home) {
+            (Some(dir), _) => PathBuf::from(dir),
+            (None, Some(home)) => Path::new(home).join(".claude"),
+            (None, None) => return None,
+        };
+        dir.is_absolute().then_some(dir)
     }
 }
 

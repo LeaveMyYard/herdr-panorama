@@ -95,6 +95,7 @@ fn claudes_per_process_record_links_an_already_running_session_without_hooks() {
     let sc = Scenario::new("demo");
     let config = sc.root().join("claude-config");
     std::fs::create_dir_all(config.join("sessions")).unwrap();
+    std::os::unix::fs::symlink(sc.projects(), config.join("projects")).unwrap();
     let t2 = Path::new("t2");
     let owned = owned_agent_with(
         sc.root(),
@@ -117,7 +118,7 @@ fn claudes_per_process_record_links_an_already_running_session_without_hooks() {
         rustix::process::getuid().as_raw(),
     );
     let mut source = CoreSource {
-        link: Linker::system(&env),
+        link: Linker::system(&env, sc.projects()),
         core: Core::new(binary.into_os_string(), Duration::from_secs(1)),
         env,
         hooks_dir: sc.root().join("no-hooks"),
@@ -210,7 +211,7 @@ print(json.dumps(value))
 "#)).unwrap();
     std::fs::set_permissions(&binary, std::fs::Permissions::from_mode(0o700)).unwrap();
     let env = PluginEnv::from_vars(Vec::<(String, String)>::new(), Some(sc.root().into()), 1000);
-    let link = Linker::system(&env);
+    let link = Linker::system(&env, sc.projects());
     let mut source = CoreSource {
         link,
         core: Core::new(binary.into_os_string(), Duration::from_secs(1)),

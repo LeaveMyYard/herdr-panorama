@@ -37,15 +37,15 @@ pub(crate) fn source_mode(env: PluginEnv, core: Core, wait: bool) -> impl FnMut(
 }
 
 fn source_full(env: PluginEnv, core: Core, wait: bool) -> impl FnMut() -> Collected + Send {
+    let projects: std::path::PathBuf = ProjectsRoot::from_env()
+        .map_or_else(|| "~/.claude/projects".into(), |r| r.path().to_path_buf());
     let mut host = CoreSource {
         core: core.clone(),
         env: env.clone(),
         hooks_dir: hooks_dir(&env),
-        link: super::link::Linker::system(&env),
+        link: super::link::Linker::system(&env, projects.clone()),
     };
     let mut config = ConfigFile::resolve(&env, || None);
-    let projects = ProjectsRoot::from_env()
-        .map_or_else(|| "~/.claude/projects".into(), |r| r.path().to_path_buf());
     let mut collector = Collector::new(Options {
         projects,
         hooks_dir: hooks_dir(&env),

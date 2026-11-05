@@ -55,7 +55,12 @@ impl SnapshotSource for CoreSource {
         match self.core.list().and_then(normalize) {
             Err(error) => observation.errors.push(format!("herdr-core: {error}")),
             Ok(mut rows) => {
-                let records = records::load(&self.hooks_dir);
+                let hooks = records::load(&self.hooks_dir);
+                if !hooks.complete {
+                    observation
+                        .errors
+                        .push("hooks: not every hook file was read".to_owned());
+                }
                 let table = SystemProcesses::new();
                 let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
                 let mut links = HashMap::new();
@@ -75,7 +80,7 @@ impl SnapshotSource for CoreSource {
                             address,
                             row["agent"].as_str().unwrap_or(""),
                             info,
-                            &records,
+                            &hooks,
                             &table,
                         )
                     });
