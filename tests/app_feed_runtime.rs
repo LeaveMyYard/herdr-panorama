@@ -203,11 +203,13 @@ fn a_busy_lock_with_reused_or_wrong_command_pid_is_not_adopted() {
         assert!(String::from_utf8_lossy(&out.stderr).contains("ownership cannot be proven"));
     }
     let receipt_before = std::fs::read(install.app.join(RECEIPT)).unwrap();
+    assert!(!r.control(&home).unwrap().0.disabled);
     let started = std::time::Instant::now();
-    assert!(install.quiesce().is_err());
-    assert!(
-        started.elapsed() >= Duration::from_secs(2) && started.elapsed() < Duration::from_secs(3)
-    );
+    let refused = install.quiesce().err().unwrap();
+    // Only the lower bound is timed: load can stretch the wait, never shorten it. That the wait
+    // ends at its deadline is pinned without a clock in src/app_feed/fs/tests.rs.
+    assert!(started.elapsed() >= Duration::from_secs(2));
+    assert!(refused.starts_with("runtime lock unavailable"), "{refused}");
     assert_eq!(
         std::fs::read(install.app.join(RECEIPT)).unwrap(),
         receipt_before

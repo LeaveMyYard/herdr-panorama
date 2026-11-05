@@ -269,14 +269,32 @@ impl Home {
 }
 
 pub fn lock(file: &File, timeout: Duration) -> Result<()> {
-    let deadline = Instant::now() + timeout;
+    poll_lock(
+        || file.try_lock(),
+        timeout,
+        Instant::now,
+        std::thread::sleep,
+    )
+}
+
+/// Retries a busy lock until `timeout`; `now` and `pause` are parameters so tests set the time.
+fn poll_lock(
+    mut attempt: impl FnMut() -> std::result::Result<(), std::fs::TryLockError>,
+    timeout: Duration,
+    now: impl Fn() -> Instant,
+    pause: impl Fn(Duration),
+) -> Result<()> {
+    let deadline = now() + timeout;
     loop {
-        match file.try_lock() {
+        match attempt() {
             Ok(()) => return Ok(()),
-            Err(std::fs::TryLockError::WouldBlock) if Instant::now() < deadline => {
-                std::thread::sleep(Duration::from_millis(25))
+            Err(std::fs::TryLockError::WouldBlock) if now() < deadline => {
+                pause(Duration::from_millis(25))
             }
             Err(e) => return Err(format!("runtime lock unavailable: {e}")),
         }
     }
 }
+
+#[cfg(test)]
+mod tests;
