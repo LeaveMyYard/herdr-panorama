@@ -45,6 +45,7 @@ def test_claude_plugin_manifests():
     market = json.loads((ROOT / ".claude-plugin/marketplace.json").read_text())
     assert plugin["name"] == market["plugins"][0]["name"] == "herdr-panorama"
     assert plugin["version"] == market["plugins"][0]["version"]
+    assert tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"] == plugin["version"]
     server = plugin["mcpServers"]["herdr-panorama"]
     assert server["env"] == {"UV_PROJECT_ENVIRONMENT": "${CLAUDE_PLUGIN_DATA}/venv-" + plugin["version"]}
     assert server["args"][-1] == "mcp" and "${CLAUDE_PLUGIN_ROOT}" in server["args"]
