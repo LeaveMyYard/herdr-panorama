@@ -4,8 +4,11 @@
 #
 #   scripts/privacy-check /private/terms.txt [/private/more-terms.txt ...]
 #
-# Matching is case-insensitive and covers file contents, binaries and file names.
-# It prints counts only, never a term or a matching line, and exits 1 on any hit.
+# Matching is case-insensitive over file names and the raw bytes of file contents.
+# It cannot see text rendered in image or video pixels or held in compressed data,
+# so a pass says nothing about images: view those by hand.
+# It prints counts only, never a term or a matching line. It exits 1 on any hit and
+# 2 when the check itself could not run, so a failed run is never read as a pass.
 set -euo pipefail
 
 if [ "$#" -eq 0 ]; then
@@ -13,19 +16,45 @@ if [ "$#" -eq 0 ]; then
   exit 2
 fi
 
-cd "$(git rev-parse --show-toplevel)"
 terms=$(mktemp)
-trap 'rm -f "$terms"' EXIT
-# An empty pattern would match everything, so blank lines are dropped.
-cat "$@" | sed '/^[[:space:]]*$/d' >"$terms"
+paths=$(mktemp)
+trap 'rm -f "$terms" "$paths"' EXIT
+
+for file in "$@"; do
+  if [ ! -f "$file" ] || [ ! -r "$file" ]; then
+    echo "privacy-check: cannot read terms file: $file" >&2
+    exit 2
+  fi
+  # One file at a time, so a last line with no newline cannot join the next file's
+  # first line. CRs go so CRLF lists match file names too. Blank lines go because an
+  # empty pattern would match everything.
+  awk '{ sub(/\r$/, "") } NF' "$file" >>"$terms"
+done
 if [ ! -s "$terms" ]; then
   echo "privacy-check: no terms in: $*" >&2
   exit 2
 fi
 
-# git grep exits 1 when nothing matches, which is the passing case.
-content=$({ git grep -c -i -F -f "$terms" || true; } | awk -F: '{ n += $NF } END { print n + 0 }')
-names=$(git ls-files | grep -c -i -F -f "$terms" || true)
+cd "$(git rev-parse --show-toplevel)"
+
+# git grep and grep exit 1 when nothing matches, which is the passing case. Anything
+# above that is a failed check, not a clean tree.
+status=0
+counts=$(git grep -c -i -F -f "$terms") || status=$?
+if [ "$status" -gt 1 ]; then
+  echo "privacy-check: git grep failed with status $status" >&2
+  exit 2
+fi
+content=$(printf '%s\n' "$counts" | awk -F: 'NF { n += $NF } END { print n + 0 }')
+
+# -z keeps non-ASCII paths as bytes; plain output quotes them as octal escapes.
+git ls-files -z >"$paths"
+status=0
+names=$(grep -z -c -i -F -f "$terms" "$paths") || status=$?
+if [ "$status" -gt 1 ]; then
+  echo "privacy-check: file-name grep failed with status $status" >&2
+  exit 2
+fi
 
 echo "terms: $(wc -l <"$terms"), content hits: $content, file-name hits: $names"
 [ "$content" -eq 0 ] && [ "$names" -eq 0 ]

@@ -4,7 +4,7 @@ A native Agents sidebar and per-space Swarm graph show each root and its whole
 agent tree. Pane-less agents open Peek, with a read-only transcript
 viewer. Native roots stay visible when no transcript can be associated safely.
 
-![Swarm graph on synthetic design data](../docs/design/herdr-app/state-refresh-v11/v11-d-graph-tab.png)
+![Swarm graph on synthetic design data](preview.png)
 
 This image is a synthetic design render, not a capture of the running app and
 not proof of natural rich-session collection.

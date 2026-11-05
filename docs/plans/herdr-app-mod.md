@@ -128,7 +128,7 @@ app/
   mods/panorama-peek/     the Peek popup
   layouts/panorama.json   clone of main with the two blocks swapped
   keys.json               the keys the mods expect
-  RECIPE.md               for sharing on herdr.dev (layout gallery)
+  RECIPE.md, preview.png  for sharing on herdr.dev (layout gallery)
 ```
 
 - Read `~/.config/herdr-app/AGENTS.md`, `herdr.d.ts`, `gpui-kit.d.ts` (regenerated per app
@@ -172,7 +172,7 @@ C joins them.
 | B mods | B3 | `panorama-spaces` (counts, spinner, click → graph tab) + `panorama-graph` tab | space click creates/selects the first tab; graph matches final D/D2 PNGs and SPEC §6 |
 | B mods | B4 | Peek popup + click routing in sidebar and graph | sidebar rule 2 and graph SPEC §6.6 hold |
 | C integration | C1 | live feed end to end in a real herdr-app; parity floor; perf check of the tick | operator's visual check (below) |
-| C integration | C2 | README section "herdr-app flavour", screenshots, RECIPE.md | docs reviewed |
+| C integration | C2 | README section "herdr-app flavour", screenshots, RECIPE.md/preview.png | docs reviewed |
 
 ### Operator-approved uninstall retention — 2026-11-03
 
