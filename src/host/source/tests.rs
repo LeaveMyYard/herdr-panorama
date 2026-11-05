@@ -50,7 +50,7 @@ fn missing_identity_keeps_plain_roots_and_exposes_availability_errors() {
         Some(dir.path().into()),
         1000,
     );
-    let link = Linker::system(&env);
+    let link = Linker::system(&env, dir.path().join("projects"));
     let mut source = CoreSource {
         link,
         core: Core::new(binary.into_os_string(), Duration::from_secs(1)),

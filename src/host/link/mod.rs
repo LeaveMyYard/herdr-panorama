@@ -10,7 +10,6 @@ pub use proc::{Environment, Proc};
 use super::records::{self, Hooks};
 use herdr_agent_kit::{
     agent_procs::{ProcessTable, claude::first_claude},
-    agent_session::claude::io::ProjectsRoot,
     plugin_env::PluginEnv,
 };
 use serde_json::Value;
@@ -31,19 +30,15 @@ pub struct Linker {
     pub proc: Proc,
     pub uid: u32,
     /// The transcript root the collector looks every linked id up in.
-    pub projects: Option<PathBuf>,
+    pub projects: PathBuf,
 }
 
 impl Linker {
-    pub fn system(env: &PluginEnv) -> Self {
+    pub fn system(env: &PluginEnv, projects: PathBuf) -> Self {
         Self {
             proc: Proc::new("/proc", env.uid()),
             uid: env.uid(),
-            projects: ProjectsRoot::resolve(
-                env.path_var("CLAUDE_CONFIG_DIR").map(Into::into),
-                env.home().map(Into::into),
-            )
-            .map(|root| root.path().to_path_buf()),
+            projects,
         }
     }
 
@@ -114,8 +109,7 @@ impl Linker {
     /// process could find a same-named transcript it does not write.
     fn shares_transcripts(&self, config: &Path) -> bool {
         let resolved = |path: &Path| std::fs::canonicalize(path).ok();
-        resolved(&config.join("projects"))
-            .is_some_and(|own| self.projects.as_deref().and_then(resolved) == Some(own))
+        resolved(&config.join("projects")).is_some_and(|own| resolved(&self.projects) == Some(own))
     }
 }
 

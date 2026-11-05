@@ -56,7 +56,7 @@ impl Fixture {
         Linker {
             proc: Proc::new(self.dir.path().join("proc"), uid()),
             uid: uid(),
-            projects: Some(self.dir.path().join("claude/projects")),
+            projects: self.dir.path().join("claude/projects"),
         }
     }
 }
@@ -175,11 +175,9 @@ fn a_config_dir_with_other_transcripts_than_the_collectors_refuses() {
     assert_eq!(check(&f.linker()), Signal::Names(A.into()));
     // The collector reads another root: an id from here could find a same-named copy there.
     let mut linker = f.linker();
-    linker.projects = Some(f.dir.path().join("panoramas-projects"));
+    linker.projects = f.dir.path().join("panoramas-projects");
     assert_eq!(check(&linker), Signal::Absent);
     std::fs::create_dir(f.dir.path().join("panoramas-projects")).unwrap();
-    assert_eq!(check(&linker), Signal::Absent);
-    linker.projects = None;
     assert_eq!(check(&linker), Signal::Absent);
     // This dir has no transcripts yet.
     std::fs::remove_dir(f.dir.path().join("claude/projects")).unwrap();
