@@ -167,6 +167,29 @@ fn a_listed_file_that_cannot_be_read_leaves_the_load_incomplete() {
 }
 
 #[test]
+fn a_directory_that_cannot_be_listed_or_inspected_leaves_the_load_incomplete() {
+    use std::os::unix::fs::PermissionsExt;
+    // Root reads any directory, so the refusals below cannot be staged for it.
+    if rustix::process::getuid().is_root() {
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    hook_file(dir.path(), A, 400, 1);
+    let mode = |bits| {
+        std::fs::set_permissions(dir.path(), std::fs::Permissions::from_mode(bits)).unwrap();
+    };
+    // 0o000: the listing fails. 0o400: names are listed, but no file can be inspected.
+    mode(0o000);
+    let unlisted = load(dir.path());
+    mode(0o400);
+    let uninspected = load(dir.path());
+    mode(0o700);
+    assert!(!unlisted.complete);
+    assert!(!uninspected.complete);
+    assert!(load(dir.path()).complete);
+}
+
+#[test]
 fn a_file_longer_than_it_was_listed_stops_at_the_limit_and_is_incomplete() {
     let dir = tempfile::tempdir().unwrap();
     hook_file(dir.path(), A, 400, 1);

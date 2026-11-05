@@ -53,7 +53,8 @@ means P is absent; it never refuses H or B by itself:
    recorded shape is in `tests/fixtures/hc-get-foreground.json`. Herdr-core terminal numbering is per instance. This check stops a PID
    from another PID namespace, or from a second core instance, from matching an unrelated
    local process that happens to sit in its own `tN`.
-6. **Terminal environment.** `/proc/P/environ` contains `HC_TERMINAL_ID=tN` exactly once.
+6. **Terminal environment.** `/proc/P/environ` contains `HC_TERMINAL_ID=tN` exactly once. Any of
+   the three keys below appearing twice refuses.
    - Only three keys are read: `HC_TERMINAL_ID`, `CLAUDE_CONFIG_DIR` and `HOME`. The buffer is
      bounded (256 KiB) and dropped at once. It is never logged, stored, or compared with
      anything else.
@@ -237,9 +238,9 @@ A stale link cannot outlive its process. Coverage:
 | Two terminals over one process tree, or the same foreground PID | cross-terminal uniqueness → refuse both |
 | Two Claude processes resumed into one session (shared transcript) | the same id links in two terminals → refuse both |
 | In-process `/resume` or `/clear` | P is rewritten. Until the H record lands, or if it is lost, H and P disagree → refuse |
-| Switch read before Claude's asynchronous record rewrite lands | P names the previous session for at most that window (milliseconds, on Claude's write chain). The next collect corrects it. With the hook configured, the new H record conflicts → refuse. Accepted and stated. |
+| Switch read before Claude's asynchronous record rewrite lands | P names the previous session for at most that window (milliseconds, on Claude's write chain). The next collect corrects it. With the hook configured, the new H record conflicts → refuse, unless its file is unread (see the partial-read row). Accepted and stated. |
 | Codex in-process `/new` (deferred rollout) | rollouts are not evidence; B only |
-| Claude's record rewrite fails after a switch (`updatePidFile` logs and returns, e.g. ENOSPC) | the old `sessionId` stays with a matching `procStart`. With P alone nothing contradicts it: **accepted residual**. With the hook configured, the new H record conflicts → refuse |
+| Claude's record rewrite fails after a switch (`updatePidFile` logs and returns, e.g. ENOSPC) | the old `sessionId` stays with a matching `procStart`. With P alone nothing contradicts it: **accepted residual**. With the hook configured, the new H record conflicts → refuse, unless its file is unread (see the partial-read row) |
 | A hook write is lost after a switch and only the older SessionStart record remains | H alone names the old session (the existing A1 behaviour): **accepted residual** where P is unavailable. Where P is present, it names the new one → conflict → refuse |
 | Process with its own `CLAUDE_CONFIG_DIR` (several config dirs in use) | its record is read from that dir, through every other gate and file check, when its `projects` is the collector's root (§2.6) |
 | Process whose config dir has other transcripts (copied dir, reused `--session-id`) | its `projects` is not the collector's root → P absent, so its id cannot pick up a same-named transcript through P. H has no config dir to check: a hook record from such a process can still do so. **Accepted residual**, as it was before P could read other dirs |
@@ -249,7 +250,9 @@ A stale link cannot outlive its process. Coverage:
 | Process in another mount namespace: its config path means something else here | the file found here must still carry this `pid` and start token, so it is only ever that process's own record; otherwise absent |
 | Relative or empty `CLAUDE_CONFIG_DIR` or `HOME` | it would resolve from Panorama's cwd, not the process's → P absent |
 | Long-lived session: hook file past any size a tail or head read covers | the whole file is read, within the §3 H bounds; the two records are both seen, and the newest agrees with P |
-| Hook file over the limit, or left out by the budget or the entry bound, or unreadable | H is partial: it never names an id by itself. Agreement with P links; P naming another id conflicts → refuse; no P → refuse. The cost is global and safe: while any file is unread, a terminal that has H but no P stays unlinked, even if the unread file is stale |
+| Hook file over the limit, or left out by the budget or the entry bound, or unreadable | H is partial: it never names an id by itself. Agreement with P links; P naming another id conflicts → refuse; no P → refuse. The cost is global and safe: while any file is unread, a terminal that has H but no P stays unlinked, even if the unread file is stale. If the unread file holds the record that would have contradicted P, the old id links: two faults at once, the same case as a dropped hook record. **Accepted residual** |
+| A terminal whose `hc get` failed or ran past the deadline | it enters the cross-terminal rules with no PID and no id, so it cannot refuse the other terminal it shares a process or session with. The other terminal's id is still proved. **Accepted residual** |
+| The collector follows `continued-in` after the proof: a process resumes X while X still reads as continued in Y, the conversation of another terminal | until that process's first message, its root shows Y with no error, and §4's uniqueness sees only the proved ids. **Known gap**, not in this slice |
 | Hook record forged by another local user | the hooks dir is per-user state, and the record must still match the live P, S and terminal; another uid's process fails the gate (P absent) and H's existing owner check |
 | Symlinked or hard-linked per-process record | `O_NOFOLLOW`, `nlink == 1` and the uid check → absent |
 | Oversized or malformed evidence | bounded reads; malformed → absent |

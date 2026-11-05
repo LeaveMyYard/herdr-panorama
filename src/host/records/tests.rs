@@ -44,6 +44,9 @@ fn recorded_terminal_and_current_owned_process_select_one_exact_session() {
     );
     table.insert(20, 1, "claude", "reused-pid", &["claude"]);
     assert!(claude_session(&hooks(&[record("session-a")]), "t2", &info, &table) == Signal::Absent);
+    // The same PID and start token after an exec away from Claude.
+    table.insert(20, 1, "bash", "boot-1", &["bash"]);
+    assert!(claude_session(&hooks(&[record("session-a")]), "t2", &info, &table) == Signal::Absent);
 }
 
 #[test]
