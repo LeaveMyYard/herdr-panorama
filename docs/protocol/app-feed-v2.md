@@ -8,7 +8,9 @@ This is the Rust collector → herdr-app mod contract for the approved
 there are no threads or phases, and every agent below a root is the same kind of
 node, linked by `parent`. It is a full snapshot, never a delta. It extends
 `snapshot --json` (`src/snapshot/json.rs`) with `v`, root `host` and `terminal`,
-and agent `harness`. It does not change that command or the TUI panel protocol.
+and agent `harness`. The same uniform-tree work changed `snapshot --json` itself
+(`orchestrators` became `roots`, with no version field) and took the TUI panel
+protocol to [2.0](panel-v2.md); this version adds nothing further to either.
 The runtime that writes it, its receipt, generations and ownership are
 [app-feed runtime v1](app-feed-runtime-v1.md), unchanged by this version.
 

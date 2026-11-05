@@ -129,7 +129,7 @@ receipt cannot adopt an old generation directory or preexisting feed.
 | `G/writer.lock` | Installer | Empty regular 0600 file; never truncated/replaced while in use. |
 | `G/ownership.json` | Writer | Ownership below; generation and binary fingerprint must match receipt. |
 | `G/start.json` | Ensure | Optional transient-start ledger below; created/replaced only while ensure holds the reserved writer lock before spawn, removed by ensure after a proven start or a permanent failure and by uninstall cleanup. |
-| `G/.start.tmp` | Ensure | Exclusive-create staging for the ledger; leftover is ambiguous and preserved/refused. |
+| `G/.start.tmp` | Ensure | Exclusive-create staging for the ledger; leftover is ambiguous and preserved/refused. No tool removes it; an operator may ([recovery](../../app/README.md#uninstall-and-troubleshoot)). |
 | `G/.ownership.tmp` | Writer | Exclusive-create staging; any leftover is ambiguous and preserved/refused. |
 | `G/.control.tmp` | Installer / failed-start ensure | Exclusive-create staging for control replacement; leftover is ambiguous and preserved/refused. |
 | `data/panorama/feed.json` | Writer | Atomic full feed ([v2](app-feed-v2.md)); bytes must match a recorded ownership digest before replacement/removal. |

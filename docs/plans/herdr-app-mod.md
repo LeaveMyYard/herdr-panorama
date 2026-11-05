@@ -3,13 +3,17 @@
 Status: **approved by the operator for implementation** (2026-11-03). Delivered with the
 `conductor` workflow (lanes, authors, independent reviewers). Baseline: `origin/main`.
 
+**Amended 2026-11-05** ([uniform-agent-tree.md](uniform-agent-tree.md), slice U9): sections 1–4
+now say roots and agents. The operator removed threads and phases on 2026-11-04, and the
+feed is v2: the feed v1 wording in §3 is the plan as approved, kept as history.
+
 ## 1. Goal
 
 herdr-panorama gets a second flavour: a **herdr-app** mod set, beside the existing herdr TUI
 plugin, which keeps working unchanged. In herdr-app, panorama replaces the built-in Agents
 panel in the left sidebar, keeps (and slightly improves) the Spaces section, and adds a
-per-space **graph tab**. It shows the same swarm the TUI shows: orchestrators → threads →
-agents → their subagents, with panorama's statuses and animations, plus a harness icon on
+per-space **graph tab**. It shows the same swarm the TUI shows: roots → their agents →
+their subagents, with panorama's statuses and animations, plus a harness icon on
 every agent row.
 
 The design is final and is the source of truth for the look:
@@ -26,26 +30,26 @@ The design is final and is the source of truth for the look:
 ## 2. Observable behaviour (acceptance)
 
 1. **Sidebar (Agents slot).** A `panorama` mod replaces the `agents` block of the layout.
-   - Orchestrators sit in herdr-app's own priority sections (Needs you → Done → Working →
+   - Roots sit in herdr-app's own priority sections (Needs you → Done → Working →
      Idle), each placed by its most urgent descendant.
-   - Rows: orchestrator → thread → agent → subagent → its subagent (nesting has no fixed limit;
+   - Rows: root → agent → subagent → its subagent (nesting has no fixed limit;
      at least 4 levels render legibly at the sidebar width).
    - Status marks per SPEC: working spinner (the app's own `spinner.svg`, `.spin(900)`),
      reviewing `»`, waiting `?N`, blocked on permission `!`, failed `✗`, done `✓`/dot,
      queued/idle ring.
-   - Animations: spinners; a moving bar under an orchestrator while its agents work; an eased,
+   - Animations: spinners; a moving bar under a root while its agents work; an eased,
      blinking 2px edge on rows that need the operator.
-   - Default folding per SPEC (threads always visible; agents only on the path to something
-     that needs the operator; finished agents folded into "✓ N done · roles"; chevrons fold).
+   - Default folding per SPEC (agents only on the path to something
+     that needs the operator; finished agents folded into "N finished · names"; chevrons fold).
    - **Harness icon on every agent row** (Claude Code, Codex, Gemini, Cursor, Amp, …) from the
      app's own icon set (`program.icon` for terminals; `icons/<harness>.svg` for pane-less
      subagents), full colour or tinted per `program.tint`.
    - **Parity floor:** every agent the stock `agents()` list shows also appears in panorama,
-     even when panorama has no transcript data for it (then as a plain orchestrator row with
-     no threads). The panel must never show fewer agents than the stock one.
-2. **Sidebar clicks.** An orchestrator (has a terminal) → `agent.focus {terminal}` (same as stock).
+     even when panorama has no transcript data for it (then as a plain root row with
+     no agents). The panel must never show fewer agents than the stock one.
+2. **Sidebar clicks.** A root (has a terminal) → `agent.focus {terminal}` (same as stock).
    A pane-less subagent → the mod's own Peek popup (`openOverlay`, kind `popup`): status,
-   error, last message, "Open orchestrator", "Transcript". Chevrons fold/unfold.
+   error, last message, "Open root pane", "Transcript". Chevrons fold/unfold.
 3. **Spaces.** A clone of the shipped `spaces` mod, unchanged apart from: a coral count of
    needs-you items and a spinner while something works in that space; the Spaces block sized
    to its content so the swarm gets the rest of the column.
@@ -57,9 +61,9 @@ The design is final and is the source of truth for the look:
    pins the tab first, so re-move it only when the mod creates it, never fight a user's drag.
 4. **Graph tab.** A `panorama-graph` tab shows that space's swarm using the final D/D2 Swarm
    View 5 deep design: one column per spawn depth, with the computed horizontal window and
-   independently scrolled columns. Final SPEC §6.6 defines the click split: an
-   orchestrator/thread click selects and drills down; double-click or Enter opens its
-   orchestrator. An agent click selects and opens its verified terminal or pane-less Peek.
+   independently scrolled columns. Final SPEC §6.6 defines the click split: a
+   root click selects and drills down; double-click or Enter opens the
+   root. An agent click selects and opens its verified terminal or pane-less Peek.
    `a`/`i` navigate to the existing Inbox or verified permission pane; they never answer,
    type, or allow/deny in the mod.
 5. **Install / uninstall.** One command installs the mods and a `panorama` layout (a clone of
@@ -106,7 +110,7 @@ herdr api snapshot (TUI) ──────┘                          │ watc
   harnesses, a pane-less subagent with an error, inbox questions. The mod lane builds against
   the fixture, so it doesn't wait for the collector.
 - Shape: the existing `snapshot --json` model, versioned (`"v": 1`), plus: `terminal`
-  (address) and `host` per orchestrator, `harness` per agent, nothing herdr-app already knows
+  (address) and `host` per root, `harness` per agent, nothing herdr-app already knows
   (space/tab membership comes from the mod's join with `terminals()`/`panes()`).
 - Delivery: `panorama app-feed --ensure` starts (once, detached, like the inbox worker) a
   watcher that re-collects on change and writes `~/.config/herdr-app/data/panorama/feed.json`
