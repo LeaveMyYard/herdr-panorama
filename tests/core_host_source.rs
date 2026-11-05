@@ -95,6 +95,7 @@ fn claudes_per_process_record_links_an_already_running_session_without_hooks() {
     let sc = Scenario::new("demo");
     let config = sc.root().join("claude-config");
     std::fs::create_dir_all(config.join("sessions")).unwrap();
+    std::fs::create_dir_all(config.join("projects")).unwrap();
     let t2 = Path::new("t2");
     let owned = owned_agent_with(
         sc.root(),
