@@ -34,6 +34,8 @@ Claude process selects a transcript session. Multiple session IDs proven for
 the same terminal/process are ambiguous: no recency or cwd fallback is used,
 except that the newest of them links when Claude's own per-process record for
 that exact process names the same session ([session-linking.md](session-linking.md) §3 H).
+The same holds for one session while any hook file is unread: reads are bounded, and an
+unread file may hold another session of the process.
 Records without core metadata remain valid for the existing TUI; they cannot
 acquire a core terminal. Malformed hooks remain benign and exit zero.
 

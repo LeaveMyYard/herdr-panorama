@@ -7,13 +7,12 @@ mod proc;
 pub use decide::{Link, combine, unique};
 pub use proc::{Environment, Proc};
 
-use super::records::{self, Record};
+use super::records::{self, Hooks};
 use herdr_agent_kit::{
     agent_procs::{ProcessTable, claude::first_claude},
     plugin_env::PluginEnv,
 };
 use serde_json::Value;
-use std::path::PathBuf;
 
 /// One piece of evidence about a terminal's session.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -29,8 +28,6 @@ pub enum Signal {
 pub struct Linker {
     pub proc: Proc,
     pub uid: u32,
-    /// `${CLAUDE_CONFIG_DIR:-$HOME/.claude}` as Panorama resolves it.
-    pub claude_config: Option<PathBuf>,
 }
 
 impl Linker {
@@ -38,10 +35,6 @@ impl Linker {
         Self {
             proc: Proc::new("/proc", env.uid()),
             uid: env.uid(),
-            claude_config: env
-                .path_var("CLAUDE_CONFIG_DIR")
-                .map(PathBuf::from)
-                .or_else(|| env.home().map(|h| h.join(".claude"))),
         }
     }
 
@@ -52,13 +45,13 @@ impl Linker {
         address: &str,
         harness: &str,
         info: &Value,
-        records: &[Record],
+        hooks: &Hooks,
         table: &dyn ProcessTable,
     ) -> (Option<u32>, Link) {
         let pid = foreground(info).map(|f| f.0);
         let signals = if harness == "claude" {
             vec![
-                records::claude_session(records, address, info, table),
+                records::claude_session(hooks, address, info, table),
                 self.per_process(address, info, table),
             ]
         } else {
@@ -70,8 +63,7 @@ impl Linker {
 
     /// Evidence P behind the §2 process gate.
     pub fn per_process(&self, address: &str, info: &Value, table: &dyn ProcessTable) -> Signal {
-        let (Some((pid, name, argv)), Some(config)) = (foreground(info), &self.claude_config)
-        else {
+        let Some((pid, name, argv)) = foreground(info) else {
             return Signal::Absent;
         };
         if address.contains('/') {
@@ -83,22 +75,21 @@ impl Linker {
         let comm = table.stat(pid).map_or(String::new(), |s| s.comm);
         let cmdline = table.cmdline(pid);
         let env = self.proc.environment(pid);
-        // Component-wise path equality; symlinks are not resolved, so an alias refuses (safe).
-        let config_matches = env
-            .as_ref()
-            .and_then(Environment::claude_dir)
-            .is_some_and(|own| &own == config);
+        // The record's location comes from the process; its proof is inside the record (§2.6).
+        let config = env.as_ref().and_then(Environment::claude_dir);
         if first_claude([(pid, comm.as_str(), cmdline.as_slice())]).is_none()
             || name.as_deref() != Some(comm.as_str())
             || argv.map(|a| a.into_iter().filter(|s| !s.is_empty()).collect::<Vec<_>>())
                 != Some(cmdline)
             || !self.proc.owned(pid)
             || env.as_ref().and_then(|e| e.terminal.as_deref()) != Some(address)
-            || !config_matches
         {
             return Signal::Absent;
         }
-        let signal = claude::record(config, pid, &before, self.uid);
+        let Some(config) = config else {
+            return Signal::Absent;
+        };
+        let signal = claude::record(&config, pid, &before, self.uid);
         if table.start(pid).as_deref() != Some(before.as_str()) {
             return Signal::Absent;
         }
