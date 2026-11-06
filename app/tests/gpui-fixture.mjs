@@ -20,3 +20,6 @@ function element(kind, args = []) {
 export const div = () => element('div'), h_flex = () => element('h_flex'), v_flex = () => element('v_flex');
 export const svg = path => element('svg', [path]), image = path => element('image', [path]);
 export class View {}
+const widget = kind => ({ new: () => element(kind) });
+export const Slider = widget('slider'), SliderTrack = widget('track'), SliderIndicator = widget('indicator'), SliderThumb = widget('thumb');
+export const SliderState = widget('slider-state');

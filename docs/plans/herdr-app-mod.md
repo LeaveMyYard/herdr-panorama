@@ -31,7 +31,7 @@ The design is final and is the source of truth for the look:
 
 1. **Sidebar (Agents slot).** A `panorama` mod replaces the `agents` block of the layout.
    - Roots sit in herdr-app's own priority sections (Needs you → Done → Working →
-     Idle), each placed by its most urgent descendant.
+     Waiting → Idle), each placed by its most urgent descendant.
    - Rows: root → agent → subagent → its subagent (nesting has no fixed limit;
      at least 4 levels render legibly at the sidebar width).
    - Status marks per SPEC: working spinner (the app's own `spinner.svg`, `.spin(900)`),

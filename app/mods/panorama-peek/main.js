@@ -121,7 +121,7 @@ export default class PanoramaPeek extends View {
     const rootName = item?.name || root?.title || root?.tab_label || root?.pane_id || '';
     const context = [space?.name, rootName].filter(Boolean).join(' · ');
     const heading = agent ? agentTitle(agent) : rootName, secondary = agent ? [agent.title ? agent.role : null, agent.model].filter(Boolean).join(' · ') : '';
-    const error = agent?.error || this.actionError, status = agent?.status ?? root?.herdr_status;
+    const error = agent?.error || this.actionError, status = agent?.status ?? (item?.status === 'bg' ? 'bg' : root?.herdr_status);
     // V11 C: the subject's state badge, and its state edge down the card's left side.
     return frame.relative().when(Boolean(value), el => el.child(div().absolute().left(0).top(10).bottom(10).w(3).rounded(2).bg(stateOf(status).hue)))
       .child(h_flex().items_center().gap(7).child(icon(iconProgram(harness), 16, t.foreground))

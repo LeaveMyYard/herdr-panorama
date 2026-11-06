@@ -17,7 +17,7 @@ export const STATES = {
   fail: S('Failed', 'Failed', '×', '#ff6b6b', '#d8363e', '#ffffff', 'x'),
   done: S('Done', 'Done', '✓', '#6c9673', '#2c6b4c', '#e3f2e9', 'check'),
   q: S('Queued', 'Queued', '◷', '#8d939d', '#2a2e35', '#d2d6dd', 'ring'),
-  bg: S('Background', 'Background', '⋯', '#b39ddb', '#3b3159', '#e6def8', 'orbit'),
+  bg: S('Waiting', 'Waiting', '⋯', '#b39ddb', '#3b3159', '#e6def8', 'orbit'),
   cxl: S('Cancelled', 'Cancelled', '−', '#89909b', '#24272c', '#c2c7cf', 'minus', '#80868f'),
   inf: S('Inferred done', 'Inferred', '≈', '#8a9a8d', '#26312a', '#c4d3c8', 'check-q'),
   lost: S('Lost', 'Lost', '~', '#c08a8a', '#3a2526', '#e0b4b4', 'tilde'),
@@ -75,7 +75,7 @@ export function badge(status, label, { questions = null, height = 18 } = {}) {
     .child(lead).child(div().flex_none().whitespace_nowrap().font_semibold().child(label ?? s.label));
 }
 
-// The square tile: 18 (graph), 16 (sidebar card) or 14 (tree rows). A count
+// The square tile: 18 (graph), 16 (sidebar card and its first tree level) or 14. A count
 // widens it to ?N, !N or ✓N. Needs-you tiles breathe 70–100% unless `still`.
 export function tile(status, size = 18, count = null, { still = false } = {}) {
   const code = stateCode(status), s = STATES[code];

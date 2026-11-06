@@ -32,7 +32,7 @@ message, plus Open root pane and Transcript.
 
 - Keep every stock root and recursive native terminal child. Enrich only exact
   verified core addresses; never infer ownership from names, folders or agent IDs.
-- Needs-you, Done, Working and Idle follow urgency, with pinned agents first.
+- Needs-you, Done, Working, Waiting and Idle follow urgency, with pinned agents first.
   Working is a native spinner; review is `»`, wait `?N`, permission `!`, failure
   a solid `✗`, done a check/dot, idle a ring. A node's need marks add up its
   descendants.

@@ -82,7 +82,16 @@ export function joinRoots(feed, stock, terminals, panes, spaces, { changes = {},
       space: null, tab: null, nativeChildren: [], isNative: false, status: root.herdr_status, program: null, pinned: false, focused: false, seq: 0,
       changed: 0, aggregate: aggregate(root) });
   }
+  for (const item of roots) { settle(item); item.nativeChildren.forEach(settle); }
   return roots.sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.aggregate.priority - a.aggregate.priority || b.aggregate.urgency - a.aggregate.urgency || b.changed - a.changed || b.seq - a.seq);
+}
+// A root with nothing to answer and nothing running, but live background work (the writer
+// filters `bg` to live entries), is waiting on it, not Idle or Done. Its status is the code
+// `bg`: the word `waiting` is an alias of `wait`, Needs answer. Runs after the native
+// projection, so a child's need or work on the aggregate still wins.
+function settle(item) {
+  if (!item.root.bg?.length || item.aggregate.kinds.length || item.aggregate.working) return;
+  item.status = 'bg'; item.aggregate = { ...item.aggregate, priority: 1.5 };
 }
 // A root known only from the feed: no stock agent, no app space.
 export const feedOnly = item => !item.stock && !item.isNative && item.space === null;
@@ -101,7 +110,7 @@ export function groups(roots) {
     const key = root.pinned ? 'pinned' : String(root.aggregate.priority);
     let group = result.find(group => group.key === key);
     if (!group) {
-      group = { key, label: root.pinned ? 'Pinned' : ({ 4: 'Needs you', 3: 'Done', 2: 'Working', 1: 'Idle' }[key]), tone: root.pinned ? 'dim' : ({ 4: 'blocked', 3: 'done', 2: 'working', 1: 'dim' }[key]), roots: [] };
+      group = { key, label: root.pinned ? 'Pinned' : ({ 4: 'Needs you', 3: 'Done', 2: 'Working', 1.5: 'Waiting', 1: 'Idle' }[key]), tone: root.pinned ? 'dim' : ({ 4: 'blocked', 3: 'done', 2: 'working', 1.5: 'dim', 1: 'dim' }[key]), roots: [] };
       result.push(group);
     }
     group.roots.push(root);
