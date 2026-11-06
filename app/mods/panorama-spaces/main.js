@@ -70,7 +70,10 @@ export default class Spaces extends View {
         else if (command === "agents-scope-space" && localStorage.getItem(SCOPE_KEY) !== null) localStorage.removeItem(SCOPE_KEY);
         else if (command === "agent-resume-on") localStorage.setItem(RESUME_KEY, JSON.stringify("on"));
         else if (command === "agent-resume-off") { localStorage.removeItem(RESUME_KEY); localStorage.removeItem(RESUME_CLICKS_KEY); }
-        else if (command.startsWith("agent-resume-click-")) localStorage.setItem(RESUME_CLICKS_KEY, JSON.stringify({ ...JSON.parse(localStorage.getItem(RESUME_CLICKS_KEY) ?? "{}"), [command.slice(19)]: Date.now() }));
+        else if (command.startsWith("agent-resume-press-")) {
+          const [terminal, loss, token = null] = command.slice(19).split("-");
+          localStorage.setItem(RESUME_CLICKS_KEY, JSON.stringify({ ...JSON.parse(localStorage.getItem(RESUME_CLICKS_KEY) ?? "{}"), [terminal]: { loss: Number(loss), token, at: Date.now() } }));
+        }
       } catch {} } });
     this.swarmPending = new Map();
     this.git = {}; // where() -> { name, branch, ahead, behind, repo, linked }, null: not a repo

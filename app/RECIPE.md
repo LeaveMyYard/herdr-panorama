@@ -52,8 +52,8 @@ message, plus Open root pane and Transcript.
   `a`/`i` navigate to existing Inbox or a verified permission pane; they never
   answer, type or change permissions. `g` goes to the root.
 - Optional, off by default, and only until herdr-app does it itself (herdr-core#13): the sort
-  menu's Resume agents types a resume command into untouched restored shells after a reboot, and
-  the Agents list reports what it did and offers a Resume button for the rest. See
+  menu's Resume agents lists what a core loss took, with a two-step Resume button per pane, and
+  types by itself only into a shell it saw come back after a reboot. See
   `docs/protocol/agent-resume.md`.
 
 ## Built from

@@ -5,9 +5,11 @@
 //! that lands, delete this module, its toggle and its report: nothing else depends on them.
 //!
 //! After a full core stop, crash or reboot, kept terminals come back as plain shells. While
-//! the toggle is on, the writer records each terminal's proved session, and after a loss it
-//! types the harness's resume command, once, into terminals that are provably idle shells.
+//! the toggle is on, the writer records each terminal's proved session. After a reboot it
+//! types the harness's resume command, once, into a shell it saw come back and stay untouched.
+//! Everything else gets a Resume button with a confirm step.
 mod attempt;
+mod click;
 pub mod decide;
 pub mod hc;
 mod launch;
@@ -108,8 +110,8 @@ impl<H: Hc> Resume<H> {
         }
     }
 
-    /// One look, after a collect. With the toggle off this reads one small file, makes no hc
-    /// call, and removes any record so that nothing old can act when it is turned on again.
+    /// One look, after a collect. With the toggle off this makes no hc call, and removes any
+    /// record so that nothing old can act when it is turned on again.
     pub fn tick(
         &mut self,
         home: &Home,
@@ -214,7 +216,8 @@ impl<H: Hc> Resume<H> {
         saved.closed = false;
         saved.core = Some(status.core);
         saved.holders = status.holders;
-        saved.boot = boot;
+        // A failed read must not wipe the id: the next loss would have nothing to compare.
+        saved.boot = boot.or(saved.boot.take());
         if *saved != before {
             self.store.save(home, saved)?;
         }

@@ -1,5 +1,6 @@
 //! The sidebar's toggle, read straight from the store it is kept in.
 use crate::app_feed::fs::Home;
+use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
 
@@ -38,9 +39,18 @@ pub(super) fn toggle(home: &Home) -> Toggle {
     }
 }
 
-/// Resume clicks by terminal, as the time of the click. The sidebar asks through panorama-spaces.
-pub(super) fn clicks(home: &Home) -> HashMap<String, u64> {
-    let read = || -> Option<HashMap<String, u64>> {
+/// One press of a row's button, stored by panorama-spaces.
+#[derive(Clone, Debug, Deserialize)]
+pub(super) struct Click {
+    /// The loss the row belonged to.
+    pub loss: u64,
+    /// The token of the look being confirmed. None: a first click, asking to look.
+    pub token: Option<String>,
+    pub at: u64,
+}
+
+pub(super) fn clicks(home: &Home) -> HashMap<String, Click> {
+    let read = || -> Option<HashMap<String, Click>> {
         let file = home.read(TOGGLE_STORE, TOGGLE_LIMIT, 0o600).ok()??;
         let store: HashMap<String, Value> = serde_json::from_slice(&file.bytes).ok()?;
         serde_json::from_str(store.get(CLICKS_KEY)?.as_str()?).ok()

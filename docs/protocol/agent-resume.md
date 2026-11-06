@@ -8,8 +8,22 @@ on gets refused: `resume.json` and `.resume.tmp` in `receipt.rs` and `runtime.py
 `agents.resume` and `agents.resume.clicks` in `preferences.py`.
 
 After a full core stop, crash or reboot, kept terminals come back as plain shells, at the same
-address and folder. After a reboot, this feature types the agent's resume command into those
-shells when it can prove they are untouched. Anything it can't prove gets a **Resume** button.
+address and folder. This feature lists what was lost and offers a **Resume** button on each one.
+In one narrow case it types the agent's resume command by itself.
+
+**Expect the button, not automatic typing.** Automatic typing needs the writer to see the shell
+come back, and the writer starts with the Panorama layout. herdr-app 0.1.13 opens in `main` every
+time, even after Panorama was selected and closed cleanly, so a person has to switch first.
+Measured with the real app on a simulated reboot, the shell came back about 2.6 s after the app
+started, and the sidebar ran `--ensure` within 0.1 s of the switch:
+
+| Layout switched after app start | Result |
+|---|---|
+| 0.4 s, 1.5 s | typed by itself, in all three panes |
+| 3 s | a button on all three panes |
+
+So a person who switches by hand, or anything slower than that, gets buttons. A later arrival
+has no other proof of an empty line, so the button is the honest result.
 
 It is **off by default**. With it off, the feed writer makes no extra `hc` call and types nothing.
 Each collect it lists `data/`, reads the panorama-spaces store and checks for a record to remove,
@@ -64,10 +78,10 @@ other than the recorded one.
 ## A deliberate stop
 
 `hc server stop` and a crash look the same afterwards: a new core reports `stopped_by_restart`
-either way. So a deliberate stop can't be proved, only a reboot can: the kernel's
-`/proc/sys/kernel/random/boot_id` differs. A loss **without** a new boot id, or on a system with no
-boot id such as macOS, is never typed by itself. It gets a Resume button. On Linux, then, only a
-reboot types by itself.
+either way. So a deliberate stop can't be proved, only a reboot can: the saved and current
+`/proc/sys/kernel/random/boot_id` differ. A missing id on either side proves nothing, and a failed
+read never overwrites a saved id. A loss without two different ids, or on a system with no boot id
+such as macOS, is never typed by itself. On Linux, then, only a reboot can type by itself.
 
 Every `hc` command starts a stopped core, so with the app open the writer's polling brings the
 core back within seconds. That predates this feature. The terminals return as shells, and nothing
@@ -89,19 +103,23 @@ When a new writer starts and finds no loss, every record must be proved again be
 
 All of these must hold. Any that can't be proved means no typing.
 
-Decided when the loss is seen (failing one leaves a Resume button):
+Decided when the loss is seen (failing one means a button, not typing):
 
 1. A proved loss with a new boot id.
 2. The record was proved at the last look, its agent was still there, and it was not `closed`.
 3. The launch is on the allow-list: `claude` alone or with `--resume <id>`, `-r <id>`,
    `--session-id <id>`, `--continue`, `-c`; `codex` alone or with `resume [<id>]`. `--model`,
-   `--effort`, `--verbose` and `--no-daemon` are allowed too. Everything else is shown, not typed,
-   including `--remote-control`, `rc` (herdr#5130), `-p`, `--print`, `--bg`, `--tmux`,
+   `--effort`, `--verbose` and `--no-daemon` are allowed too. Everything else is shown, not typed.
+   An npm-style `node /path/claude` has its script as the first argument, so it's button-only.
+   Also shown, not typed: `--remote-control`, `rc` (herdr#5130), `-p`, `--print`, `--bg`, `--tmux`,
    `--permission-mode`, a prompt argument and anything unknown.
 4. Claude ran under the default config dir, which is what a new shell gets. Codex's isn't checked.
 5. The core has been up at most 5 minutes.
 
-Read from the terminal (failing one is a final skip; the person may be using it):
+Read from the terminal. A program in front of the shell **before** any prompt was seen may be an
+rc file's child, so Panorama keeps watching and ends with a button. After a prompt it's a final
+skip with a button. A terminal that finished, or isn't a known shell, ends with no button, since
+nothing could make it work.
 
 6. Same address and `created_ms`; live, kept, with no `reason`.
 7. No status report; the foreground process is the terminal's own, with the same argv and a name
@@ -115,13 +133,16 @@ A shell can't be asked what is on its command line, and "unchanged" proves nothi
 types and pauses looks settled. So Panorama proves the line is empty by witnessing the first screen:
 
 9. It saw the terminal with no shell yet, or a blank screen, and then read the first drawn screen.
-   Reads run every 200 ms while it waits. If the shell was already up at first sight, it can't
-   prove this, and offers a button.
+   Reads run about every 200 ms while it waits; they run in series and share a thread with
+   collects, so that stretches with many terminals. If the shell was already up at first sight,
+   it can't prove this, and offers a button.
 10. The screen stays **exactly** that first screen for 1.5 s, and is still that at the last look.
     Any change is a final skip: someone typed, or used the shell. A prompt that redraws itself
     lands here too. That costs a button, not a wrong line.
 
-A person who gets keys in within the 200 ms before the first read is not caught.
+Keys from a viewer that land before the first read are still caught: the settle time is shorter
+than the typing gate below, so the last look refuses them. `hc keys` from a program doesn't trip
+that gate, and could land unseen in that gap.
 
 ### Why not `hc send --if idle`
 
@@ -160,22 +181,35 @@ Nothing is retried automatically. A later loss is a new attempt only for a sessi
 
 ## Resume button
 
-Skipped and failed rows get a button once the terminal's screen has been seen at a shell. A click
-replaces the automatic trigger and nothing else. It lifts the rules decided at the loss, and rule 9.
-Rules 6, 7, 8, 10, the typing check and the toggle all still apply, and failing one leaves the
-row with the reason. So a half line typed after the first read still refuses.
+Skipped and failed rows get a button unless nothing could make it work. It takes two steps, because
+only a person can judge a line Panorama can't prove empty.
 
-Rule 9 is what the person takes on: a half line typed **before** Panorama's first read is on that
-first screen, and only they can see it. The button's tooltip says to check the prompt is empty.
+1. **Resume** types nothing. The writer runs the terminal checks (rules 6 to 8) and the typing
+   check, then shows the terminal's last line on the row with **Type here**. If someone is typing,
+   or a check fails, the row says why and there is no **Type here**.
+2. **Type here** sends, if the checks still pass and the screen still matches what was shown.
+   Digits are ignored in that comparison, so a ticking clock can be confirmed; a digit typed onto
+   the line changes its length, so it refuses. Anything else that moves between the clicks refuses,
+   and the person looks again.
 
-The click travels as `panorama-spaces.agent-resume-click-<terminal>`, which stores the click's time
-in `agents.resume.clicks`. The writer acts on a time newer than the loss, once.
+So the person sees the line, half-typed or not, before Enter is pressed. A click lifts rules 1 to 5,
+9 and 10 and nothing else.
+
+A press is `panorama-spaces.agent-resume-press-<terminal>-<loss id>[-<token>]`, stored in
+`agents.resume.clicks`. The writer ignores it unless the loss id matches this row, it is under 60 s
+old, not stamped ahead of the clock, newer than the loss and not already acted on. The token comes
+from the feed, and a view lasts 60 s. So a stored or stale click can't fire later with nobody there.
+
+This proves something asked, not a person: `herdr-app do` can press these too, and any program of
+this user can read the feed and press both. That gives it nothing new: it could type into the
+terminal itself, and the text is fixed.
 
 ## Where it runs
 
 - **Core lost while the app was closed:** a button. This includes quitting the app and rebooting.
-- **App opens first after a reboot:** it waits while there is no holder or shell. If the shell
-  beat the writer, rule 9 can't be met: a button.
+- **App opens first after a reboot:** nothing runs until the Panorama layout is shown. Then it
+  waits while there is no holder or shell. If the shell beat the writer, rule 9 can't be met: a
+  button. Sessions are only recorded while the Panorama layout has been shown since the app opened.
 - **Writer restarts mid-way:** `sending` is spent; the first screen and whether it was witnessed
   are saved; the 1.5 s starts over. Without a reboot it's a button. Otherwise a quit session can
   come back only if the writer alone was killed, the session was quit and the machine rebooted
@@ -202,8 +236,9 @@ the field's `error`. A resumed row can read `sent` for up to 30 s while the new 
 
 ## Known limits
 
-- The two races above: keys in the 200 ms before the first read, and typing inside the last gap.
-- A dialog drawn by the shell itself, stable from its first screen, looks like a prompt.
+- The race above, and `hc keys` from a program before the first read.
+- A dialog drawn by the shell itself, stable from its first screen, looks like a prompt. zsh's
+  first-run menu is one, for a user with no `.zshrc`.
 - The command runs with whatever `claude` or `codex` the shell finds, and enters its history.
 - Tested with real bash, zsh and fish and a stand-in agent, not a real Claude or Codex resume.
 - A session quit in the last moments before a reboot, less than one collect earlier, may look live.

@@ -129,6 +129,11 @@ pub fn track(saved: &mut Saved, linked: &[Linked], get: &dyn Fn(&str) -> Lookup,
     saved.records = next;
 }
 
+/// Proved only by two ids that differ. A missing one proves nothing.
+fn rebooted(saved: &Saved, boot: Option<&str>) -> bool {
+    matches!((saved.boot.as_deref(), boot), (Some(old), Some(new)) if old != new)
+}
+
 /// Why this loss may only be resumed by a click. `None`: the terminal checks decide.
 fn barred(
     saved: &Saved,
@@ -148,7 +153,7 @@ fn barred(
         Some("it was started in a way the resume command can't repeat")
     } else if !record.default_config {
         Some("it ran under another config dir, which a new shell wouldn't use")
-    } else if boot.is_none() || saved.boot.as_deref() == boot {
+    } else if !rebooted(saved, boot) {
         // `hc server stop` and a crash look alike from here; a reboot doesn't.
         Some("stopped without a reboot, maybe on purpose")
     } else if uptime_ms > FRESH_CORE_MS {
@@ -178,6 +183,7 @@ pub fn open(saved: &mut Saved, status: &Status, boot: Option<&str>, now_ms: u64)
         let hold = barred(saved, &record, status.uptime_ms, boot).map(str::to_owned);
         let mut entry = Entry::new(record);
         entry.hold = hold;
+        entry.rebooted = rebooted(saved, boot);
         entries.insert(address, entry);
     }
     saved.loss = Some(Loss {
@@ -190,40 +196,45 @@ pub fn open(saved: &mut Saved, status: &Status, boot: Option<&str>, now_ms: u64)
 pub enum Verdict {
     /// Not decided yet: the shell has not come back.
     Wait,
+    /// A program is in front of the shell. Startup can look like this too.
+    Busy(&'static str),
+    /// Not now, though a person could change that.
     Skip(&'static str),
+    /// Never, whatever a person does.
+    Dead(&'static str),
     Ready,
 }
 
-/// May this terminal be typed into? Anything but a bare shell, in the right folder, in the
-/// terminal the record names, is a final no: the person may be using it by now.
-pub fn judge(record: &Record, term: &Term) -> Verdict {
+/// May this terminal be typed into? It must be a bare known shell, in the right folder, in
+/// the terminal the record names. `rebooted`: pids from before mean nothing.
+pub fn judge(record: &Record, term: &Term, rebooted: bool) -> Verdict {
     if !term.live {
-        return Verdict::Skip("the terminal has finished");
+        return Verdict::Dead("the terminal has finished");
     }
     if term.created_ms != record.created_ms {
-        return Verdict::Skip("this address is a different terminal now");
+        return Verdict::Dead("this address is a different terminal now");
     }
     if !term.keep {
-        return Verdict::Skip("the terminal isn't kept after loss");
+        return Verdict::Dead("the terminal isn't kept after loss");
     }
     let (Some(pid), None) = (term.pid, &term.reason) else {
         return Verdict::Wait;
     };
-    if pid == record.root_pid {
-        return Verdict::Skip("the terminal's program was never replaced");
+    if pid == record.root_pid && !rebooted {
+        return Verdict::Dead("the terminal's program was never replaced");
     }
     if term.reports {
-        return Verdict::Skip("a program is reporting status in the terminal");
+        return Verdict::Busy("a program is reporting status in the terminal");
     }
     let Some(foreground) = &term.foreground else {
         return Verdict::Wait;
     };
     if foreground.pid != pid {
-        return Verdict::Skip("something is running in the terminal");
+        return Verdict::Busy("something is running in the terminal");
     }
     // `exec python3` keeps the pid: only the words show it isn't the shell any more.
     if foreground.argv != term.argv || !SHELLS.contains(&foreground.name.as_str()) {
-        return Verdict::Skip("the terminal's program isn't a shell Panorama knows");
+        return Verdict::Dead("the terminal's program isn't a shell Panorama knows");
     }
     if foreground.cwd != record.cwd {
         return Verdict::Skip("the shell is in a different folder");

@@ -83,6 +83,21 @@ pub struct Entry {
     pub first: Option<String>,
     /// The last click acted on.
     pub click: Option<u64>,
+    /// Nothing a person does can make this terminal typable: no button.
+    pub dead: bool,
+    /// A reboot was proved, so a repeated pid means nothing.
+    pub rebooted: bool,
+    /// What the first click found, shown on the row until the second.
+    pub look: Option<Look>,
+}
+
+/// The terminal as a person is shown it. The send must find the same screen.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Look {
+    pub token: String,
+    pub shape: String,
+    pub line: String,
+    pub at_ms: u64,
 }
 
 impl Entry {
@@ -97,6 +112,9 @@ impl Entry {
             witnessed: false,
             first: None,
             click: None,
+            dead: false,
+            rebooted: false,
+            look: None,
         }
     }
     pub fn end(&mut self, stage: Stage, reason: impl Into<String>) {
@@ -106,10 +124,10 @@ impl Entry {
     pub fn open(&self) -> bool {
         matches!(self.stage, Stage::Waiting | Stage::Sending | Stage::Sent)
     }
-    /// A person may ask for this one: it isn't running, and its screen was seen.
+    /// The button can still lead somewhere for this one.
     pub fn clickable(&self) -> bool {
         matches!(self.stage, Stage::Skipped | Stage::Failed)
-            && self.first.is_some()
+            && !self.dead
             && self.record.command().is_some()
     }
 }
@@ -166,10 +184,11 @@ impl Saved {
                         "command": e.record.command(),
                         "note": e.record.dropped.then_some("started with options that aren't repeated"),
                         "click": e.clickable(),
+                        "look": e.look.as_ref().map(|l| json!({"line":l.line,"token":l.token})),
                     })
                 })
                 .collect();
-            json!({"detected_at": loss.detected_ms as f64 / 1000.0, "entries": entries})
+            json!({"id": loss.detected_ms, "detected_at": loss.detected_ms as f64 / 1000.0, "entries": entries})
         });
         json!({"tracked": self.records.len(), "loss": loss, "error": error})
     }

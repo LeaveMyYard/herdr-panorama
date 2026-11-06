@@ -210,7 +210,7 @@ export function storedScope(text) {
 // Optional agent resume: a stopgap until herdr-app does this itself (herdr-core#13). The
 // choice lives beside the scope, '"on"' or absent; the writer reads it from the store.
 export const RESUME_KEY = 'agents.resume';
-// Clicks on a row's Resume, by terminal, as the click's time. The writer acts on them.
+// The last press of each row's button, by terminal. The writer checks the loss and its age.
 export const RESUME_CLICKS_KEY = 'agents.resume.clicks';
 export function storedResume(text) {
   try { const store = JSON.parse(text); return typeof store?.[RESUME_KEY] === 'string' && JSON.parse(store[RESUME_KEY]) === 'on'; }
@@ -226,10 +226,10 @@ export function resumeSummary(resume) {
   const rows = entries.map(entry => {
     const word = RESUME_WORD[entry?.state] ?? 'unknown';
     count[word] = (count[word] ?? 0) + 1;
-    return { key: `resume-${entry?.terminal}`, terminal: String(entry?.terminal ?? '?'), harness: String(entry?.harness ?? ''), word, reason: entry?.reason ?? '', command: entry?.command ?? '', note: entry?.note ?? '', click: entry?.click === true };
+    return { key: `resume-${entry?.terminal}`, terminal: String(entry?.terminal ?? '?'), harness: String(entry?.harness ?? ''), word, reason: entry?.reason ?? '', command: entry?.command ?? '', note: entry?.note ?? '', click: entry?.click === true, look: entry?.look?.token ? { line: String(entry.look.line ?? ''), token: String(entry.look.token) } : null };
   });
   const order = ['resumed', 'sending', 'sent', 'waiting', 'skipped', 'failed', 'unknown'];
-  return { id: resume.loss.detected_at, rows, text: order.filter(word => count[word]).map(word => `${count[word]} ${word}`).join(' · '), open: rows.some(row => ['waiting', 'sending', 'sent'].includes(row.word)) };
+  return { id: resume.loss.id, rows, text: order.filter(word => count[word]).map(word => `${count[word]} ${word}`).join(' · '), open: rows.some(row => ['waiting', 'sending', 'sent'].includes(row.word)) };
 }
 // Line 2 in All spaces: the card's space and its per-space tab number, so ids stay unambiguous.
 export function cardPlace(item, scope) {

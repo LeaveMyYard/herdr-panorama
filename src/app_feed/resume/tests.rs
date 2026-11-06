@@ -634,7 +634,7 @@ fn every_busy_or_doubtful_terminal_is_shown_and_never_typed_into() {
                 foreground: running,
                 ..shell_term()
             },
-            "running",
+            "before its shell was ready",
         ),
         (
             "reports status",
@@ -642,7 +642,7 @@ fn every_busy_or_doubtful_terminal_is_shown_and_never_typed_into() {
                 reports: true,
                 ..shell_term()
             },
-            "reporting",
+            "before its shell was ready",
         ),
         (
             "wrong folder",
@@ -651,15 +651,6 @@ fn every_busy_or_doubtful_terminal_is_shown_and_never_typed_into() {
                 ..shell_term()
             },
             "folder",
-        ),
-        (
-            "not replaced",
-            Term {
-                pid: Some(20),
-                foreground: Some(fg(20, CWD)),
-                ..shell_term()
-            },
-            "never replaced",
         ),
         (
             "different terminal",
@@ -828,7 +819,7 @@ fn a_shell_first_seen_already_drawn_cannot_prove_its_line_is_empty() {
     rig.settle();
     assert!(rig.sends().is_empty());
     assert_eq!(rig.stage(), Stage::Skipped);
-    assert!(rig.reason().contains("can't prove the line is empty"));
+    assert!(rig.reason().contains("its line is unproved"));
 }
 
 #[test]
@@ -997,7 +988,12 @@ fn losing_without_reboot(rig: &mut Rig) {
 }
 
 fn click(rig: &Rig, at: u64) {
-    let clicks = serde_json::to_string(&json!({"t5": at})).unwrap();
+    let loss = rig.saved().loss.unwrap().detected_ms;
+    press(rig, loss, None, at);
+}
+
+fn press(rig: &Rig, loss: u64, token: Option<String>, at: u64) {
+    let clicks = json!({"t5": {"loss": loss, "token": token, "at": at}}).to_string();
     let store = json!({"agents.resume": "\"on\"", "agents.resume.clicks": clicks});
     std::fs::write(rig.home.path.join(TOGGLE_STORE), store.to_string()).unwrap();
 }
@@ -1035,13 +1031,34 @@ fn no_boot_id_means_a_click_too() {
     assert_eq!(rig.stage(), Stage::Skipped);
 }
 
+/// The two presses: looks, then returns the view the row would show.
+fn looked(rig: &mut Rig) -> Value {
+    pass(1);
+    click(rig, clock());
+    let report = rig.tick(&[]).unwrap();
+    report["loss"]["entries"][0]["look"].clone()
+}
+
+fn confirm(rig: &mut Rig, view: &Value) {
+    pass(1);
+    let loss = rig.saved().loss.unwrap().detected_ms;
+    press(
+        rig,
+        loss,
+        view["token"].as_str().map(str::to_owned),
+        clock(),
+    );
+    rig.tick(&[]);
+}
+
 #[test]
-fn a_click_resumes_what_the_gates_could_not_prove_once() {
+fn the_first_click_only_looks_and_the_second_types_once() {
     let mut rig = Rig::new();
     losing_without_reboot(&mut rig);
-    pass(1);
-    click(&rig, clock());
-    rig.tick(&[]);
+    let view = looked(&mut rig);
+    assert!(rig.sends().is_empty(), "a first click types nothing");
+    assert_eq!(view["line"], "$");
+    confirm(&mut rig, &view);
     let typed = format!("claude --resume {SESSION}");
     assert_eq!(rig.sends(), [("t5".into(), typed)]);
     rig.tick(&[]);
@@ -1054,13 +1071,114 @@ fn a_click_resumes_what_the_gates_could_not_prove_once() {
 }
 
 #[test]
-fn a_click_older_than_the_loss_does_nothing() {
+fn a_half_line_is_shown_before_it_can_be_confirmed() {
     let mut rig = Rig::new();
-    let old = clock();
+    losing_without_reboot(&mut rig);
+    rig.world()
+        .screens
+        .insert("t5".into(), "x\n$ rm -rf build".into());
+    let view = looked(&mut rig);
+    assert_eq!(view["line"], "$ rm -rf build", "the person sees their line");
+    // Typing on after the look: the screen no longer matches what was shown.
+    rig.world()
+        .screens
+        .insert("t5".into(), "x\n$ rm -rf build/".into());
+    confirm(&mut rig, &view);
+    assert!(rig.sends().is_empty());
+    assert!(rig.reason().contains("screen changed"));
+    // A view of the line as it is now can be confirmed.
+    let view = looked(&mut rig);
+    assert_eq!(view["line"], "$ rm -rf build/");
+    confirm(&mut rig, &view);
+    assert_eq!(rig.sends().len(), 1);
+}
+
+#[test]
+fn a_ticking_clock_can_be_confirmed_but_a_typed_digit_cannot() {
+    let mut rig = Rig::new();
+    losing_without_reboot(&mut rig);
+    rig.world().screens.insert("t5".into(), "12:00:01 $".into());
+    let view = looked(&mut rig);
+    rig.world().screens.insert("t5".into(), "12:00:02 $".into());
+    confirm(&mut rig, &view);
+    assert_eq!(rig.sends().len(), 1);
+    let mut rig = Rig::new();
+    losing_without_reboot(&mut rig);
+    rig.world().screens.insert("t5".into(), "12:00:01 $".into());
+    let view = looked(&mut rig);
+    rig.world()
+        .screens
+        .insert("t5".into(), "12:00:01 $ 7".into());
+    confirm(&mut rig, &view);
+    assert!(rig.sends().is_empty());
+}
+
+#[test]
+fn someone_typing_gets_no_view_and_so_no_send() {
+    let mut rig = Rig::new();
+    losing_without_reboot(&mut rig);
+    rig.world().quiet = false;
+    let view = looked(&mut rig);
+    assert_eq!(view, Value::Null);
+    assert!(rig.reason().contains("typing"));
+    assert!(rig.sends().is_empty());
+}
+
+#[test]
+fn clicks_that_are_stale_early_or_for_another_row_do_nothing() {
+    let mut rig = Rig::new();
+    let before = clock();
     pass(10);
     losing_without_reboot(&mut rig);
-    click(&rig, old);
+    let loss = rig.saved().loss.unwrap().detected_ms;
+    let looks = |rig: &mut Rig| {
+        rig.tick(&[]);
+        rig.saved().loss.unwrap().entries["t5"].look.clone()
+    };
+    press(&rig, loss, None, before);
+    assert_eq!(looks(&mut rig), None, "from before the loss");
+    press(&rig, loss + 1, None, clock());
+    assert_eq!(looks(&mut rig), None, "for another loss");
+    press(&rig, loss, None, clock() + 60_000);
+    assert_eq!(looks(&mut rig), None, "stamped in the future");
+    let at = clock();
+    pass(60_001);
+    press(&rig, loss, None, at);
+    assert_eq!(looks(&mut rig), None, "too old: nobody may be there");
+    press(&rig, loss, Some("wrong".into()), clock());
     rig.tick(&[]);
+    assert!(rig.sends().is_empty());
+}
+
+#[test]
+fn a_click_left_in_the_store_is_acted_on_once() {
+    let mut rig = Rig::new();
+    losing_without_reboot(&mut rig);
+    let view = looked(&mut rig);
+    assert_eq!(view["line"], "$");
+    rig.world().screens.insert("t5".into(), "$ later".into());
+    rig.tick(&[]);
+    let look = rig.saved().loss.unwrap().entries["t5"]
+        .look
+        .clone()
+        .unwrap();
+    assert_eq!(look.line, "$", "the same click did not look again");
+}
+
+#[test]
+fn a_view_expires_and_a_token_must_match() {
+    let mut rig = Rig::new();
+    losing_without_reboot(&mut rig);
+    let view = looked(&mut rig);
+    confirm(&mut rig, &json!({"token": "wrong"}));
+    assert!(rig.sends().is_empty());
+    assert!(rig.reason().contains("look again"));
+    let view2 = looked(&mut rig);
+    assert_eq!(view["token"], view2["token"]);
+    pass(60_001);
+    rig.tick(&[]);
+    assert_eq!(rig.saved().loss.unwrap().entries["t5"].look, None);
+    confirm(&mut rig, &view2);
     assert!(rig.sends().is_empty());
 }
 
@@ -1085,44 +1203,166 @@ fn a_click_keeps_every_terminal_gate() {
             "folder",
         ),
     ];
-    for (name, term, reason) in refused {
+    for (name, term, reason) in refused.clone() {
         let mut rig = Rig::new();
         losing_without_reboot(&mut rig);
         rig.set(term);
-        pass(1);
-        click(&rig, clock());
-        rig.tick(&[]);
+        assert_eq!(looked(&mut rig), Value::Null, "{name}");
+        assert!(rig.reason().contains(reason), "{name}: {}", rig.reason());
+    }
+    // And again between the two clicks.
+    for (name, term, reason) in refused {
+        let mut rig = Rig::new();
+        losing_without_reboot(&mut rig);
+        let view = looked(&mut rig);
+        rig.set(term);
+        confirm(&mut rig, &view);
         assert!(rig.sends().is_empty(), "{name}");
         assert!(rig.reason().contains(reason), "{name}: {}", rig.reason());
     }
-    // The screen must still be the first one: this may be a half-typed line.
-    let mut rig = Rig::new();
-    losing_without_reboot(&mut rig);
-    rig.world()
-        .screens
-        .insert("t5".into(), "$ half typed ".into());
-    pass(1);
-    click(&rig, clock());
-    rig.tick(&[]);
-    assert!(rig.sends().is_empty());
-    assert!(rig.reason().contains("screen changed"));
 }
 
 #[test]
-fn a_terminal_never_seen_at_a_shell_offers_no_click() {
+fn a_button_is_only_offered_while_it_can_work() {
+    let mut rig = Rig::new();
+    rig.lost(exec("python3", &["python3"]));
+    let report = rig.tick(&[]).unwrap();
+    assert_eq!(report["loss"]["entries"][0]["click"], false, "not a shell");
+    let mut rig = Rig::new();
+    rig.lost(Term {
+        live: false,
+        ..shell_term()
+    });
+    let report = rig.tick(&[]).unwrap();
+    assert_eq!(report["loss"]["entries"][0]["click"], false, "finished");
+    // Found dead by a click: the button goes.
+    let mut rig = Rig::new();
+    losing_without_reboot(&mut rig);
+    rig.set(exec("python3", &["python3"]));
+    looked(&mut rig);
+    let report = rig.tick(&[]).unwrap();
+    assert_eq!(report["loss"]["entries"][0]["click"], false);
+}
+
+#[test]
+fn a_foreground_child_at_startup_is_waited_for_and_ends_with_a_working_button() {
     let mut rig = Rig::new();
     rig.lost(Term {
         foreground: Some(fg(88, CWD)),
         ..shell_term()
     });
-    let report = rig.tick(&[]).unwrap();
-    assert_eq!(report["loss"]["entries"][0]["click"], false);
-    pass(1);
-    click(&rig, clock());
+    assert_eq!(
+        rig.stage(),
+        Stage::Waiting,
+        "an rc file's child is not a person"
+    );
     rig.set(shell_term());
     rig.tick(&[]);
+    rig.settle();
+    assert!(rig.sends().is_empty(), "the first screen is unknown");
+    assert_eq!(rig.stage(), Stage::Skipped);
+    assert!(rig.reason().contains("before its shell was ready"));
+    let view = looked(&mut rig);
+    confirm(&mut rig, &view);
+    assert_eq!(rig.sends().len(), 1);
+}
+
+#[test]
+fn a_program_after_the_first_prompt_is_a_final_skip_with_a_button() {
+    let mut rig = Rig::new();
+    rig.lost(shell_term());
+    rig.set(Term {
+        foreground: Some(fg(88, CWD)),
+        ..shell_term()
+    });
+    let report = rig.tick(&[]).unwrap();
+    assert_eq!(rig.stage(), Stage::Skipped);
+    assert_eq!(report["loss"]["entries"][0]["click"], true);
+}
+
+#[test]
+fn a_missing_saved_boot_id_never_types_by_itself() {
+    let mut rig = Rig::new();
+    rig.set(agent_term());
+    rig.tick(&[link("t5", SESSION, &["claude"])]);
+    let mut saved = rig.saved();
+    saved.boot = None;
+    let path = rig.home.path.join(GEN).join(store::FILE);
+    std::fs::write(&path, serde_json::to_vec(&saved).unwrap()).unwrap();
+    let mut next = Resume::with(rig.fake.clone(), ID, GEN, rig.locks.clone(), CLOCKS);
+    rig.resume.held = None;
+    next.saved = Some(saved);
+    next.started = true;
+    next.store.load(&rig.home, ID).unwrap();
+    rig.reboot("holder-b");
+    next.tick(&rig.home, &[], &|| true);
+    rig.world().screens.insert("t5".into(), "$ ".into());
+    rig.set(shell_term());
+    next.tick(&rig.home, &[], &|| true);
+    pass(SETTLE_MS);
+    next.tick(&rig.home, &[], &|| true);
     assert!(rig.sends().is_empty());
-    assert!(rig.reason().contains("running"), "its reason stands");
+    assert_eq!(rig.stage(), Stage::Skipped);
+}
+
+#[test]
+fn a_failed_boot_read_keeps_the_saved_id() {
+    fn none() -> Option<String> {
+        None
+    }
+    let mut rig = Rig::new();
+    rig.set(agent_term());
+    rig.tick(&[link("t5", SESSION, &["claude"])]);
+    let id = rig.saved().boot;
+    assert!(id.is_some());
+    rig.resume.boot = none;
+    rig.tick(&[link("t5", OTHER, &["claude"])]);
+    assert_eq!(rig.saved().boot, id);
+}
+
+#[test]
+fn without_a_reboot_the_same_pid_means_nothing_was_lost() {
+    let mut rig = Rig::new();
+    rig.set(agent_term());
+    rig.tick(&[link("t5", SESSION, &["claude"])]);
+    rig.world().status = Some(status("holder-b"));
+    rig.set(Term {
+        reports: false,
+        foreground: Some(fg(20, CWD)),
+        ..agent_term()
+    });
+    rig.tick(&[]);
+    assert_eq!(rig.stage(), Stage::Skipped);
+    assert!(rig.reason().contains("never replaced"));
+}
+
+#[test]
+fn after_a_reboot_a_repeated_pid_means_nothing() {
+    let mut rig = Rig::new();
+    rig.lost(Term {
+        pid: Some(20),
+        foreground: Some(fg(20, CWD)),
+        ..shell_term()
+    });
+    rig.settle();
+    assert_eq!(rig.sends().len(), 1);
+}
+
+#[test]
+fn a_blank_read_is_a_witness_too() {
+    let mut rig = Rig::new();
+    rig.set(agent_term());
+    rig.tick(&[link("t5", SESSION, &["claude"])]);
+    // The shell is up before Panorama looks, but it hasn't drawn yet.
+    BOOT.with(|b| b.set(b.get() + 1));
+    rig.world().status = Some(status("holder-b"));
+    rig.set(shell_term());
+    rig.world().screens.insert("t5".into(), " \n".into());
+    rig.tick(&[]);
+    rig.world().screens.insert("t5".into(), "$ ".into());
+    rig.tick(&[]);
+    rig.settle();
+    assert_eq!(rig.sends().len(), 1);
 }
 
 #[test]
@@ -1466,7 +1706,7 @@ fn a_later_loss_keeps_what_could_not_be_resumed_and_drops_what_was() {
     // A skipped id survives the next loss; a resumed one does not.
     let mut rig = Rig::new();
     rig.lost(Term {
-        foreground: Some(fg(88, CWD)),
+        foreground: Some(fg(77, "/fixture/other")),
         ..shell_term()
     });
     assert_eq!(rig.stage(), Stage::Skipped);

@@ -11,7 +11,7 @@ const { state: host } = await import('./herdr-fixture.mjs');
 
 const fixture = JSON.parse(readFileSync(new URL('../../tests/fixtures/app-feed/swarm.json', import.meta.url)));
 const entry = (terminal, state, reason = null) => ({ terminal, harness: 'claude', session_id: 'id', cwd: '/fixture/project-alpha', state, reason, command: 'claude --resume id' });
-const report = entries => ({ tracked: 0, loss: { detected_at: 5, entries }, error: null });
+const report = entries => ({ tracked: 0, loss: { id: 5, detected_at: 5, entries }, error: null });
 const walk = (node, out = []) => { if (node && typeof node === 'object' && node.calls) { out.push(node); for (const kid of node.kids) walk(kid, out); } return out; };
 const byId = (tree, id) => walk(tree).find(node => node.calls.id?.[0] === id);
 const text = el => walk(el).flatMap(node => node.kids.filter(kid => typeof kid === 'string'));
@@ -53,7 +53,8 @@ test('panorama-spaces stores the toggle under the key the writer reads', () => {
   const spaces = readFileSync(new URL('../mods/panorama-spaces/main.js', import.meta.url), 'utf8');
   assert.match(spaces, /"agent-resume-on"\) localStorage\.setItem\(RESUME_KEY, JSON\.stringify\("on"\)\)/);
   assert.match(spaces, /"agent-resume-off"\) \{ localStorage\.removeItem\(RESUME_KEY\); localStorage\.removeItem\(RESUME_CLICKS_KEY\); \}/);
-  assert.match(spaces, /startsWith\("agent-resume-click-"\)\) localStorage\.setItem\(RESUME_CLICKS_KEY,/);
+  assert.match(spaces, /startsWith\("agent-resume-press-"\)/);
+  assert.match(spaces, /\[terminal\]: \{ loss: Number\(loss\), token, at: Date\.now\(\) \}/);
   const rust = readFileSync(new URL('../../src/app_feed/resume/toggle.rs', import.meta.url), 'utf8');
   assert.ok(rust.includes(`const TOGGLE_KEY: &str = "${RESUME_KEY}";`));
   assert.ok(rust.includes(`const CLICKS_KEY: &str = "${RESUME_CLICKS_KEY}";`));
@@ -92,26 +93,44 @@ test('the sidebar shows the result, opens to each pane with why, and can be hidd
   assert.equal(byId(view.render({}), 'resume-result'), undefined);
 });
 
-test('a pane the gates could not prove gets a Resume button, shown open, and a click asks once', () => {
+test('the first press only looks; the row then shows the line, and only that offers a send', () => {
   host.runs = [];
   const shown = { ...entry('t7', 'skipped', 'stopped without a reboot, maybe on purpose'), click: true, note: 'started with options that aren\'t repeated' };
-  const { view, tree } = sidebar(report([entry('t1', 'resumed'), shown]));
-  const row = byId(tree, 'resume-t7');
-  assert.ok(row, 'open at once: there is something to do');
-  assert.match(row.calls.tooltip[0], /options that aren't repeated/);
+  const resume = report([entry('t1', 'resumed'), shown]);
+  const { view, tree } = sidebar(resume);
+  assert.match(byId(tree, 'resume-t7').calls.tooltip[0], /options that aren't repeated/);
   const go = byId(tree, 'resume-t7-go');
-  assert.match(go.calls.tooltip[0], /Check its prompt is empty/);
+  assert.match(go.calls.tooltip[0], /Nothing is typed yet/);
   assert.equal(byId(tree, 'resume-t1-go'), undefined, 'a resumed pane has none');
+  assert.equal(byId(tree, 'resume-t7-send'), undefined, 'no send before a look');
   click(go, view);
-  assert.deepEqual(host.runs, [['panorama-spaces.agent-resume-click-t7']]);
-  assert.equal(byId(view.render({}), 'resume-t7-go'), undefined, 'one ask per outcome');
+  assert.deepEqual(host.runs, [['panorama-spaces.agent-resume-press-t7-5']]);
+  const looked = report([entry('t1', 'resumed'), { ...shown, look: { line: 'rig$ touch x', token: 'abc123' } }]);
+  const next = sidebar(looked);
+  assert.equal(byId(next.tree, 'resume-t7-go'), undefined);
+  assert.match(text(byId(next.tree, 'resume-t7-look')).join(' '), /rig\$ touch x/);
+  const send = byId(next.tree, 'resume-t7-send');
+  assert.match(send.calls.tooltip[0], /claude --resume id/);
+  click(send, next.view);
+  assert.deepEqual(host.runs.at(-1), ['panorama-spaces.agent-resume-press-t7-5-abc123']);
+});
+
+test('a row saying someone is typing offers no send', () => {
+  const typing = { ...entry('t7', 'skipped', 'someone is typing in the terminal'), click: true };
+  const { tree } = sidebar(report([typing]));
+  assert.equal(byId(tree, 'resume-t7-send'), undefined);
+});
+
+test('a row whose terminal can never work has no button', () => {
+  const { tree } = sidebar(report([{ ...entry('t7', 'skipped', 'the terminal has finished'), click: false }]));
+  assert.equal(byId(tree, 'resume-t7-go'), undefined);
 });
 
 test('the toggle says what it does not protect against', () => {
   const view = new Panorama(); Object.assign(view, { resume: false });
   const tip = byId(view.sortMenu({}), 'resume-toggle').calls.tooltip[0];
   assert.match(tip, /can't check and type in one step/);
-  assert.match(tip, /without a reboot it only offers/);
+  assert.match(tip, /so expect the button/);
 });
 
 test('a result still being worked through cannot be hidden, and a rail draws none', () => {

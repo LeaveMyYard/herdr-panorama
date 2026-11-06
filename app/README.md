@@ -103,18 +103,22 @@ Delete it then.
 
 After a full core stop, crash or reboot, kept terminals come back as plain shells. **Resume agents**,
 in the Agents header's sort menu, is off by default. When it's on, the feed writer records each
-terminal's proved session. After a reboot, it types `claude --resume <id>` or `codex resume <id>`,
-once, into a shell it saw come back and that has stayed exactly as first drawn.
+terminal's proved session, and a **Resume** line at the top of the Agents list shows what a loss did:
+which panes were resumed, which were skipped and why.
 
-Anything else gets a **Resume** button on the **Resume** line at the top of the Agents list: a stop
-without a reboot (which may have been on purpose), a shell that was already up when Panorama looked,
-a loss while the app was closed, or a launch it can't repeat, such as `claude --remote-control`. That
-line also says which panes were resumed, which were skipped and why. Check a pane's prompt is empty
-before clicking: the click presses Enter.
+Skipped panes have a **Resume** button. It types nothing at first: it shows the terminal's last
+line and offers **Type here**, which types `claude --resume <id>` or `codex resume <id>` and presses
+Enter, if the screen hasn't changed.
+
+Expect to use that button. Panorama types by itself only after a reboot, and only into a shell it
+saw come back, which needs the Panorama layout open within about 2.5 s of the app starting. The app
+opens in its main layout, so in practice you switch first and get the buttons. A stop without a
+reboot, which may have been on purpose, always waits for you.
 
 hc can't check and type in one step, so a program started at that exact moment can still receive
 the text, and a person typing then makes the send wait. Only bash, zsh and fish are typed into, and
 only local terminals: remote ones are never recorded. Options such as `--model` aren't repeated.
+Sessions are only recorded while the Panorama layout has been shown.
 Rules: [agent resume](../docs/protocol/agent-resume.md).
 
 ## Uninstall and troubleshoot

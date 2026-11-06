@@ -34,7 +34,9 @@ def valid(key, value):
     if key == 'agents.resume':
         return value == 'on'
     if key == 'agents.resume.clicks':
-        return record(value) and all(integer(item) for item in value.values())
+        return record(value) and all(record(item) and set(item) == {'loss', 'token', 'at'} and integer(item['loss'])
+                                     and integer(item['at']) and (item['token'] is None or isinstance(item['token'], str))
+                                     for item in value.values())
     if key == 'panels':
         return record(value) and all(item is None or isinstance(item, str) for item in value.values())
     if key == 'machines.folded':

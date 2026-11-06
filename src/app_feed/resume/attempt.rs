@@ -1,6 +1,8 @@
 //! Working through a loss: read first, type once, then only read.
 use super::{
-    Resume, decide,
+    Resume,
+    click::shape,
+    decide,
     decide::{SETTLE_MS, SHELL_WAIT_MS, Verdict},
     hc::{Hc, Lookup, Sent},
     state::{Record, Stage},
@@ -11,9 +13,9 @@ use crate::{
     host::source::Linked,
 };
 
+const EARLY: &str = "a program ran before its shell was ready, so the first screen is unknown";
 const CHANGED: &str = "the screen changed after Panorama first saw it, so someone may be using it";
-const UNSEEN: &str =
-    "Panorama first saw this shell after it had started, so it can't prove the line is empty";
+const UNSEEN: &str = "Panorama didn't see this shell start, so its line is unproved";
 
 impl<H: Hc> Resume<H> {
     /// `linked` is `None` between collects, when only the shells being watched are read.
@@ -31,7 +33,7 @@ impl<H: Hc> Resume<H> {
                 (Stage::Waiting, _) => self.attempt(home, &address, allowed)?,
                 (Stage::Sending | Stage::Sent, Some(linked)) => self.confirm(&address, linked),
                 (Stage::Skipped | Stage::Failed, Some(_)) => {
-                    self.click(home, &address, asked.get(&address).copied(), allowed)?
+                    self.click(home, &address, asked.get(&address).cloned(), allowed)?
                 }
                 _ => {}
             }
@@ -56,13 +58,13 @@ impl<H: Hc> Resume<H> {
         decide::confirm(self.entry(address), &lookup, session, arrived, now);
     }
 
-    fn judged(&self, record: &Record, address: &str) -> (Verdict, bool) {
+    pub(super) fn judged(&self, record: &Record, rebooted: bool, address: &str) -> (Verdict, bool) {
         match self.hc.get(address) {
-            Lookup::Gone => (Verdict::Skip("the terminal is gone"), false),
+            Lookup::Gone => (Verdict::Dead("the terminal is gone"), false),
             Lookup::Unknown => (Verdict::Wait, false),
             Lookup::Found(term) => {
                 let lost = term.pid.is_none() || term.reason.is_some();
-                (decide::judge(record, &term), lost)
+                (decide::judge(record, &term, rebooted), lost)
             }
         }
     }
@@ -82,10 +84,28 @@ impl<H: Hc> Resume<H> {
             return Ok(());
         }
         let record = self.entry(address).record.clone();
-        let (verdict, lost) = self.judged(&record, address);
+        let rebooted = self.entry(address).rebooted;
+        let (verdict, lost) = self.judged(&record, rebooted, address);
         match verdict {
+            Verdict::Dead(reason) => {
+                let entry = self.entry(address);
+                entry.dead = true;
+                entry.end(Stage::Skipped, reason);
+                return Ok(());
+            }
             Verdict::Skip(reason) => {
                 self.entry(address).end(Stage::Skipped, reason);
+                return Ok(());
+            }
+            // Before any prompt this may be the shell's own startup: keep watching, for the
+            // button. After one, someone is using the terminal.
+            Verdict::Busy(reason) => {
+                let entry = self.entry(address);
+                if entry.first.is_some() {
+                    entry.end(Stage::Skipped, reason);
+                } else {
+                    entry.hold.get_or_insert_with(|| EARLY.into());
+                }
                 return Ok(());
             }
             Verdict::Wait => {
@@ -120,43 +140,24 @@ impl<H: Hc> Resume<H> {
         match (hold, entry.witnessed) {
             (Some(reason), _) => entry.end(Stage::Skipped, reason),
             (None, false) => entry.end(Stage::Skipped, UNSEEN),
-            (None, true) => return self.fire(home, address, allowed),
+            (None, true) => return self.fire(home, address, &first, false, allowed),
         }
         Ok(())
     }
 
-    /// A person asked. That replaces the automatic trigger and nothing else: the screen must
-    /// still be the first one seen, and every terminal check runs again in `fire`.
-    fn click(
+    /// Spends the attempt on disk, then looks one last time, then types. `expected` is what
+    /// the screen must still be: its digest, or for a click its digest ignoring digits.
+    pub(super) fn fire(
         &mut self,
         home: &Home,
         address: &str,
-        asked: Option<u64>,
+        expected: &str,
+        clicked: bool,
         allowed: &dyn Fn() -> bool,
     ) -> Result<()> {
-        let detected = self
-            .saved
-            .as_ref()
-            .and_then(|s| s.loss.as_ref())
-            .unwrap()
-            .detected_ms;
-        let entry = self.entry(address);
-        let Some(at) = asked.filter(|at| *at > detected && Some(*at) != entry.click) else {
-            return Ok(());
-        };
-        entry.click = Some(at);
-        if !entry.clickable() {
-            return Ok(());
-        }
-        entry.started = false;
-        self.fire(home, address, allowed)
-    }
-
-    /// Spends the attempt on disk, then looks one last time, then types.
-    fn fire(&mut self, home: &Home, address: &str, allowed: &dyn Fn() -> bool) -> Result<()> {
         let now = (self.clock)();
         let entry = self.entry(address);
-        let (Some(command), Some(first)) = (entry.record.command(), entry.first.clone()) else {
+        let Some(command) = entry.record.command() else {
             entry.end(Stage::Skipped, "no resume command");
             return Ok(());
         };
@@ -173,7 +174,7 @@ impl<H: Hc> Resume<H> {
             }
             return Err(error);
         }
-        if let Err(why) = self.last_look(home, address, &first, allowed) {
+        if let Err(why) = self.last_look(home, address, expected, clicked, allowed) {
             self.entry(address).end(Stage::Skipped, why);
             return Ok(());
         }
@@ -193,31 +194,30 @@ impl<H: Hc> Resume<H> {
         &self,
         home: &Home,
         address: &str,
-        first: &str,
+        expected: &str,
+        clicked: bool,
         allowed: &dyn Fn() -> bool,
     ) -> std::result::Result<(), &'static str> {
-        let record = &self
-            .saved
-            .as_ref()
-            .and_then(|s| s.loss.as_ref())
-            .unwrap()
-            .entries[address]
-            .record;
+        let loss = self.saved.as_ref().and_then(|s| s.loss.as_ref()).unwrap();
+        let entry = &loss.entries[address];
         if !self.hc.quiet(address) {
             return Err("someone is typing in the terminal");
         }
-        match self.judged(record, address).0 {
+        match self.judged(&entry.record, entry.rebooted, address).0 {
             Verdict::Ready => {}
-            Verdict::Skip(reason) => return Err(reason),
+            Verdict::Busy(reason) | Verdict::Skip(reason) | Verdict::Dead(reason) => {
+                return Err(reason);
+            }
             Verdict::Wait => return Err("the terminal could not be read"),
         }
-        if self
-            .hc
-            .screen(address)
-            .map(|s| digest(s.as_bytes()))
-            .as_deref()
-            != Some(first)
-        {
+        let seen = self.hc.screen(address).map(|text| {
+            if clicked {
+                shape(&text)
+            } else {
+                digest(text.as_bytes())
+            }
+        });
+        if seen.as_deref() != Some(expected) {
             return Err(CHANGED);
         }
         if toggle(home) != Toggle::On || !allowed() {

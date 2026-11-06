@@ -181,7 +181,7 @@ fn a_recorded_loss_is_typed_once_through_the_real_writer() {
 }
 
 #[test]
-fn a_stop_without_a_reboot_waits_for_a_click_and_a_click_types_once() {
+fn a_stop_without_a_reboot_waits_for_two_clicks_and_types_once() {
     let install = Installed::new();
     serve(&install, &waiting());
     toggle_on(&install);
@@ -199,14 +199,26 @@ fn a_stop_without_a_reboot_waits_for_a_click_and_a_click_types_once() {
     assert!(sends(&install).is_empty(), "nobody asked");
     let entry = install.feed()["resume"]["loss"]["entries"][0].clone();
     assert_eq!(entry["click"], true);
-    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH);
-    let clicks = json!({"t5": now.unwrap().as_millis() as u64}).to_string();
-    let store = json!({"agents.resume": "\"on\"", "agents.resume.clicks": clicks}).to_string();
-    write(
-        &install.app.join("data/panorama-spaces/store.json"),
-        store.as_bytes(),
-        0o600,
-    );
+    let id = install.feed()["resume"]["loss"]["id"].as_u64().unwrap();
+    let press = |token: Value| {
+        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH);
+        let at = now.unwrap().as_millis() as u64;
+        let clicks = json!({"t5": {"loss": id, "token": token, "at": at}}).to_string();
+        let store = json!({"agents.resume": "\"on\"", "agents.resume.clicks": clicks}).to_string();
+        write(
+            &install.app.join("data/panorama-spaces/store.json"),
+            store.as_bytes(),
+            0o600,
+        );
+    };
+    press(Value::Null);
+    install.wait_feed_within(PATIENCE, |v| {
+        v["resume"]["loss"]["entries"][0]["look"].is_object()
+    });
+    assert!(sends(&install).is_empty(), "the first click only looks");
+    let view = install.feed()["resume"]["loss"]["entries"][0]["look"].clone();
+    assert_eq!(view["line"], "$");
+    press(view["token"].clone());
     install.wait_feed_within(PATIENCE, |v| state(v) == "sent");
     std::thread::sleep(Duration::from_millis(1500));
     assert_eq!(sends(&install).len(), 1);
