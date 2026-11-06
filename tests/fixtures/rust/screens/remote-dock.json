@@ -1,0 +1,769 @@
+{
+  "screens": {
+    "initial": [
+      [
+        [
+          " SWARM  ",
+          "#80868f",
+          "#14161b",
+          true
+        ],
+        [
+          "5 orchestrators              ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "?1 !1 ",
+          "#ffb547",
+          "#14161b",
+          true
+        ],
+        [
+          "✗2 ",
+          "#ff6b6b",
+          "#14161b",
+          true
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌ ",
+          "#e2cf9c",
+          "#1e2937",
+          false
+        ],
+        [
+          "? ",
+          "#4d535c",
+          "#1e2937",
+          false
+        ],
+        [
+          " ✗ ",
+          "#ffffff",
+          "#d8363e",
+          true
+        ],
+        [
+          " Claude Code · Billing…      ",
+          "#eceef1",
+          "#1e2937",
+          true
+        ],
+        [
+          "?1 ",
+          "#ffb547",
+          "#1e2937",
+          true
+        ],
+        [
+          "failed ",
+          "#ff6b6b",
+          "#1e2937",
+          false
+        ]
+      ],
+      [
+        [
+          "▌       ",
+          "#e2cf9c",
+          "#1e2937",
+          false
+        ],
+        [
+          "4 active · 4 agents                   ",
+          "#4d535c",
+          "#1e2937",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "○ ",
+          "#8d939d",
+          "#14161b",
+          false
+        ],
+        [
+          "author a1c3d90                         ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "» ",
+          "#8eaee6",
+          "#14161b",
+          false
+        ],
+        [
+          "reviewer a2f81c0                       ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "✗ ",
+          "#ff6b6b",
+          "#14161b",
+          true
+        ],
+        [
+          "fixer b3a9c41                          ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "? ",
+          "#ffb547",
+          "#14161b",
+          true
+        ],
+        [
+          "author c1d2e3f                         ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "└ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          " ✓ ",
+          "#e3f2e9",
+          "#2c6b4c",
+          true
+        ],
+        [
+          " 8 finished · author e1a2b3c, autho…  ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "  ? ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          " ⠸ ",
+          "#d8f2ee",
+          "#1f625c",
+          true
+        ],
+        [
+          " Claude Code · Search …        ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ],
+        [
+          "working ",
+          "#68c2b5",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "        ",
+          null,
+          "#14161b",
+          false
+        ],
+        [
+          " ⠸ ",
+          "#d8f2ee",
+          "#1f625c",
+          true
+        ],
+        [
+          " ",
+          null,
+          "#14161b",
+          false
+        ],
+        [
+          " ⠼ ",
+          "#d8f2ee",
+          "#1f625c",
+          true
+        ],
+        [
+          " ",
+          null,
+          "#14161b",
+          false
+        ],
+        [
+          " ✓2 ",
+          "#e3f2e9",
+          "#2c6b4c",
+          true
+        ],
+        [
+          "  2 active · 2 agents     ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "  ? ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          " ! ",
+          "#1b1203",
+          "#f2a93b",
+          true
+        ],
+        [
+          " Claude Code · Docs si…        ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ],
+        [
+          "blocked ",
+          "#ffb547",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "        ",
+          null,
+          "#14161b",
+          false
+        ],
+        [
+          " ⠧ ",
+          "#d8f2ee",
+          "#1f625c",
+          true
+        ],
+        [
+          "  1 active · 1 agents              ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "  ? ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          " ✓ ",
+          "#e3f2e9",
+          "#2c6b4c",
+          true
+        ],
+        [
+          " Claude Code · Release…           done ",
+          "#80868f",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "        ",
+          null,
+          "#14161b",
+          false
+        ],
+        [
+          " ✓ ",
+          "#e3f2e9",
+          "#2c6b4c",
+          true
+        ],
+        [
+          "  0 active · 0 agents              ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "─ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "devbox ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "─────────────────────────────────────",
+          "#2c313a",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "  ? ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          " ✗ ",
+          "#ffffff",
+          "#d8363e",
+          true
+        ],
+        [
+          " Claude Code · Remote …         ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ],
+        [
+          "failed ",
+          "#ff6b6b",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "        ",
+          null,
+          "#14161b",
+          false
+        ],
+        [
+          " ✗ ",
+          "#ffffff",
+          "#d8363e",
+          true
+        ],
+        [
+          " ",
+          null,
+          "#14161b",
+          false
+        ],
+        [
+          " ? ",
+          "#1b1203",
+          "#f2a93b",
+          true
+        ],
+        [
+          " ",
+          null,
+          "#14161b",
+          false
+        ],
+        [
+          " » ",
+          "#dfe8f8",
+          "#2e4f86",
+          true
+        ],
+        [
+          " +2  4 active · 4 agents   ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "  + ",
+          "#e2cf9c",
+          "#14161b",
+          true
+        ],
+        [
+          "New agent                               ",
+          "#80868f",
+          "#14161b",
+          false
+        ],
+        [
+          "n ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "─────────────────────────────────── ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "z ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "graph ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "──",
+          "#2c313a",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          " ↑↓ ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "move ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "ret ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "open ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "a ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "answer ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "n ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "new ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "pfx+spc ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "back ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ]
+    ]
+  },
+  "source": "Rust's screens for the runs of tests/fixtures/screens/remote-dock.json, written by PANORAMA_BLESS=1 cargo test --test app_screens"
+}

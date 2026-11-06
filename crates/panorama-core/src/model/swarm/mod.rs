@@ -1,9 +1,11 @@
-//! The swarm tree (Python `model.py` dataclasses): a [`Swarm`] of [`Orchestrator`]s, each with
-//! its [`Thread`]s, whose [`Phase`]s and [`Agent`]s the views draw.
+//! The swarm tree (plan `docs/plans/uniform-agent-tree.md` §2.1): a [`Swarm`] of [`Root`]s,
+//! each with its [`Agent`]s, one flat tree (parents before children, `parent: None` a
+//! direct child of the root).
 //!
-//! Field names, defaults and meanings are `model.py`'s; that file documents each field. The
-//! types deserialize from the core's `state.swarm` (protocol 1.x). Unknown fields are
-//! ignored, so a newer minor that adds fields still reads.
+//! Field names, defaults and meanings started as Python `model.py`'s; Python's model still
+//! has threads (its legacy view, plan §8 D7), this one does not. The types deserialize from
+//! the core's `state.swarm` (protocol 2.x). Unknown fields are ignored, so a newer minor
+//! that adds fields still reads.
 //!
 //! Field types are read strictly, unlike Python's `swarm_from_wire`, which never checks
 //! them: a `null` where the model has no `Option`, a wrong JSON type inside a field, or a
@@ -15,7 +17,7 @@ mod codes;
 mod counts;
 
 pub use agent::Agent;
-pub use codes::{HerdrStatus, PhaseState, ThreadSource, ThreadStatus};
+pub use codes::HerdrStatus;
 pub use counts::Counts;
 
 use serde::{Deserialize, Serialize};
@@ -36,61 +38,11 @@ pub struct BgTask {
     pub started: Option<f64>,
 }
 
-/// One step of a thread's plan.
+/// A root: an agent session in a herdr pane, the depth-0 node of its agent tree. Its own
+/// state (herdr status, pending prompt, inbox questions no agent filed, background work) is
+/// on it; everything it spawned, at any depth, is in [`Self::agents`].
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
-pub struct Phase {
-    /// Its name.
-    pub name: String,
-    /// Done, now, next, failed or skipped.
-    pub state: PhaseState,
-    /// When it started.
-    #[serde(default)]
-    pub start: Option<f64>,
-    /// When it ended.
-    #[serde(default)]
-    pub end: Option<f64>,
-    /// A note on it.
-    #[serde(default)]
-    pub note: Option<String>,
-}
-
-/// A piece of work an orchestrator drives, with its plan and its agents.
-#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
-pub struct Thread {
-    /// Its id, unique in its orchestrator.
-    pub id: String,
-    pub name: String,
-    /// Where it was found: explicit, workflow, ref, turn or session.
-    pub source: ThreadSource,
-    #[serde(default)]
-    pub phases: Vec<Phase>,
-    #[serde(default)]
-    pub agents: Vec<Agent>,
-    /// Active, done, failed or cancelled.
-    #[serde(default)]
-    pub status: ThreadStatus,
-    #[serde(default)]
-    pub started: Option<f64>,
-    #[serde(default)]
-    pub ended: Option<f64>,
-    #[serde(default)]
-    pub worktree: Option<String>,
-    #[serde(default)]
-    pub pct: Option<i64>,
-    #[serde(default)]
-    pub flavour: Option<String>,
-}
-
-impl Thread {
-    /// Finished: done or cancelled (Python `Thread.done`; a failed thread is not).
-    pub fn is_done(&self) -> bool {
-        matches!(self.status, ThreadStatus::Done | ThreadStatus::Cancelled)
-    }
-}
-
-/// An orchestrator: an agent session in a herdr pane, with the threads it drives.
-#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
-pub struct Orchestrator {
+pub struct Root {
     /// The herdr pane it runs in: its identity.
     pub pane_id: String,
     /// The harness reported by herdr. Older states contain only Claude sessions.
@@ -98,6 +50,14 @@ pub struct Orchestrator {
     pub harness: String,
     pub tab_id: Option<String>,
     pub tab_label: String,
+    /// What the views call it (plan §2.2): the operator's herdr name, else the session's
+    /// title, first prompt or telling terminal title, else its tab or pane. Empty from a
+    /// producer that predates titles: views fall back to `tab_label` ([`Self::name`]).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub title: String,
+    /// Which rule gave the title (`pane`, `tab`, `session`, `prompt`, `id`); drives no logic.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub title_source: String,
     pub session_id: Option<String>,
     /// What herdr reports for the pane's agent.
     #[serde(default)]
@@ -108,8 +68,6 @@ pub struct Orchestrator {
     pub focused: bool,
     #[serde(default)]
     pub cwd: Option<String>,
-    #[serde(default = "agents_flavour")]
-    pub flavour: String,
     #[serde(default)]
     pub transcript: Option<String>,
     /// Blocked: the questions it asks, or the permission it wants, as the harness words them.
@@ -120,11 +78,14 @@ pub struct Orchestrator {
     pub inbox: Vec<i64>,
     #[serde(default)]
     pub inbox_texts: Vec<String>,
+    /// Every agent it spawned, at any depth, flat: parents before children, `parent: None`
+    /// a direct child of the root (plan `uniform-agent-tree.md` §2.1).
     #[serde(default)]
-    pub threads: Vec<Thread>,
-    /// Done threads older than the window.
+    pub agents: Vec<Agent>,
+    /// Finished agents (done, failed, cancelled) older than the done window, left out of
+    /// [`Self::agents`] (plan §2.4).
     #[serde(default)]
-    pub hidden_done: i64,
+    pub hidden_finished: i64,
     /// The tab's position in its workspace, 1-based (herdr's tab number).
     #[serde(default)]
     pub tab_no: Option<i64>,
@@ -146,14 +107,14 @@ fn claude_harness() -> String {
     "claude".into()
 }
 
-fn agents_flavour() -> String {
-    "agents".into()
-}
-
-impl Orchestrator {
-    /// Every agent of every thread, in order (Python `Orchestrator.agents()`).
-    pub fn agents(&self) -> impl Iterator<Item = &Agent> {
-        self.threads.iter().flat_map(|t| t.agents.iter())
+impl Root {
+    /// The name the views show: its title, else (an older producer) its tab label.
+    pub fn name(&self) -> &str {
+        if self.title.is_empty() {
+            &self.tab_label
+        } else {
+            &self.title
+        }
     }
 }
 
@@ -161,14 +122,14 @@ impl Orchestrator {
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Swarm {
-    pub orchestrators: Vec<Orchestrator>,
+    pub roots: Vec<Root>,
     pub generated_at: f64,
     pub herdr_ok: bool,
     pub inbox_ok: bool,
     /// Sessions or records that could not be read.
     pub errors: Vec<String>,
-    /// The orchestrator pane a docked panel sits next to. Not on the wire: each viewer sets
-    /// it (a per-tab panel: its own tab's orchestrator).
+    /// The root pane a docked panel sits next to. Not on the wire: each viewer sets it (a
+    /// per-tab panel: its own tab's root).
     #[serde(skip)]
     pub docked: Option<String>,
     /// Idle this long (seconds) reads "stale" (config `stale_after`). Missing, `null` or 0
@@ -188,7 +149,7 @@ pub const STALE_AFTER: f64 = 12.0 * 3600.0;
 impl Default for Swarm {
     fn default() -> Self {
         Self {
-            orchestrators: Vec::new(),
+            roots: Vec::new(),
             generated_at: 0.0,
             herdr_ok: true,
             inbox_ok: false,

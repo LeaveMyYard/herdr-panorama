@@ -2,7 +2,7 @@
 
 use super::viewer::{Role, Viewer};
 use super::{Event, Verify};
-use crate::proto::{PROTOCOL, compatible};
+use crate::proto::{PROTOCOL, compatible, key_compatible};
 use serde_json::{Map, Value, json};
 use tokio::sync::{mpsc, oneshot};
 use tokio::time::Instant;
@@ -58,7 +58,15 @@ pub async fn handle(
 ) -> Next {
     if let Some(hello) = msg.get("hello") {
         let hello = object(Some(hello));
-        if !version_text(hello.get("protocol")).is_some_and(|v| compatible(&v)) {
+        let key = hello.get("role").and_then(Value::as_str) == Some("key");
+        let ok = |v: String| {
+            if key {
+                key_compatible(&v)
+            } else {
+                compatible(&v)
+            }
+        };
+        if !version_text(hello.get("protocol")).is_some_and(ok) {
             let line = crate::proto::framing::encode(
                 &json!({"error": {"message": "protocol", "protocol": PROTOCOL}}),
             );
@@ -76,11 +84,7 @@ pub async fn handle(
             }
             _ => None,
         };
-        let role = if hello.get("role").and_then(Value::as_str) == Some("key") {
-            Role::Key
-        } else {
-            Role::Panel
-        };
+        let role = if key { Role::Key } else { Role::Panel };
         v.said_hello(role, pane, str_of(hello.get("tab_id")));
         return Next::Welcomed;
     }

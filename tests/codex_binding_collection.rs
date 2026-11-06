@@ -1,9 +1,9 @@
-//! Explicit binding and per-caller reports through the changed binary, then
+//! Explicit binding, and old per-caller reports left unread, through the changed binary, then
 //! collection. Every process, socket, home, transcript and record is synthetic.
 
 mod codex_support;
 
-use codex_support::{CHILD, Fixture, ROOT_A, snapshot};
+use codex_support::{CHILD, Fixture, GRANDCHILD, ROOT_A, snapshot};
 use herdr_agent_kit::agent_procs::{ProcessTable, SystemProcesses};
 use herdr_agent_kit::herdr_api::fake::{FakeHerdr, Reply};
 use serde_json::{Value, json};
@@ -42,6 +42,11 @@ impl Drop for Foreground {
         let _ = self.0.kill();
         let _ = self.0.wait();
     }
+}
+
+/// No history of the root was read: no last activity, and no agent.
+fn unread(root: &Value) -> bool {
+    root["last_activity"].is_null() && root["agents"].as_array().unwrap().is_empty()
 }
 
 fn model(fixture: &Fixture, fake: &FakeHerdr) -> Value {
@@ -96,11 +101,8 @@ fn explicit_binding_enriches_only_current_owner_and_foreground_reuse_fails_close
         String::from_utf8_lossy(&bound.stderr)
     );
     let resolved = model(&fixture, &fake);
-    assert_eq!(resolved["orchestrators"][0]["session_id"], ROOT_A);
-    assert_eq!(
-        resolved["orchestrators"][0]["threads"][0]["id"],
-        format!("codex:{ROOT_A}")
-    );
+    assert_eq!(resolved["roots"][0]["session_id"], ROOT_A);
+    assert!(resolved["roots"][0]["last_activity"].is_number());
     let before = fixture.calls().len();
     let record = fixture
         .root()
@@ -109,13 +111,8 @@ fn explicit_binding_enriches_only_current_owner_and_foreground_reuse_fails_close
     value["conflicted"] = json!(true);
     std::fs::write(&record, serde_json::to_vec(&value).unwrap()).unwrap();
     let conflicted = model(&fixture, &fake);
-    assert!(conflicted["orchestrators"][0]["session_id"].is_null());
-    assert!(
-        conflicted["orchestrators"][0]["threads"]
-            .as_array()
-            .unwrap()
-            .is_empty()
-    );
+    assert!(conflicted["roots"][0]["session_id"].is_null());
+    assert!(unread(&conflicted["roots"][0]));
     assert_eq!(fixture.calls().len(), before);
     value["conflicted"] = json!(false);
     std::fs::write(&record, serde_json::to_vec(&value).unwrap()).unwrap();
@@ -126,13 +123,8 @@ fn explicit_binding_enriches_only_current_owner_and_foreground_reuse_fails_close
         "pane_id":"codex-a","foreground_processes":[]}})),
     );
     let stale = model(&fixture, &fake);
-    assert!(stale["orchestrators"][0]["session_id"].is_null());
-    assert!(
-        stale["orchestrators"][0]["threads"]
-            .as_array()
-            .unwrap()
-            .is_empty()
-    );
+    assert!(stale["roots"][0]["session_id"].is_null());
+    assert!(unread(&stale["roots"][0]));
     assert_eq!(
         fixture.calls().len(),
         before,
@@ -190,19 +182,19 @@ fn untrusted_binding_directory_never_authorizes_history_reads() {
     let directory = fixture.root().join("state/herdr-panorama/codex-bindings");
     std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o777)).unwrap();
     let untrusted = model(&fixture, &fake);
-    assert!(untrusted["orchestrators"][0]["session_id"].is_null());
+    assert!(untrusted["roots"][0]["session_id"].is_null());
     assert_eq!(fixture.calls().len(), before);
     std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700)).unwrap();
     let displaced = directory.with_file_name("displaced-bindings");
     std::fs::rename(&directory, &displaced).unwrap();
     symlink(&displaced, &directory).unwrap();
     let untrusted = model(&fixture, &fake);
-    assert!(untrusted["orchestrators"][0]["session_id"].is_null());
+    assert!(untrusted["roots"][0]["session_id"].is_null());
     assert_eq!(fixture.calls().len(), before);
 }
 
 #[test]
-fn per_caller_mcp_reports_reach_only_the_verified_child_subtree() {
+fn old_per_caller_reports_are_not_read_and_mcp_writes_none() {
     let fixture = Fixture::new("complete");
     let fake = FakeHerdr::start();
     fake.on(
@@ -233,27 +225,35 @@ fn per_caller_mcp_reports_reach_only_the_verified_child_subtree() {
         .lines()
         .map(|line| serde_json::from_str(line).unwrap())
         .collect();
-    assert!(
-        replies.iter().any(|reply| reply["id"] == 1
-            && reply["result"]["structuredContent"]["status"] == "recorded")
-    );
-    // Attribution needs a complete verified graph, which may legitimately arrive
-    // after a one-shot CLI's short warmup. Its separate tests cover that budget.
+    // threads were removed: the call is ignored and nothing is written
+    assert!(replies.iter().any(
+        |reply| reply["id"] == 1 && reply["result"]["structuredContent"]["status"] == "ignored"
+    ));
+    let events = fixture.root().join("events");
+    assert!(!events.join(format!("{CHILD}.jsonl")).exists());
+    // what an earlier version wrote for that call is no longer read (plan
+    // `uniform-agent-tree.md` §6): the child's subtree is the root's tree as Codex proves it
+    std::fs::create_dir_all(&events).unwrap();
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs_f64();
+    let written = json!({"v": 1, "ts": now, "thread": "child-plan", "name": "Synthetic child plan", "status": "active"});
+    std::fs::write(
+        events.join(format!("{CHILD}.jsonl")),
+        format!("{written}\n"),
+    )
+    .unwrap();
     let mut collector = fixture.collector(true);
     let resolved = serde_json::to_value(codex_support::ready(&mut collector, &snapshot())).unwrap();
-    let root = &resolved["orchestrators"][1];
-    let report = root["threads"]
+    let root = &resolved["roots"][1];
+    assert_eq!(root["session_id"], ROOT_A);
+    let agents: Vec<(&str, &Value)> = root["agents"]
         .as_array()
         .unwrap()
         .iter()
-        .find(|thread| thread["id"] == format!("x:codex:{CHILD}:child-plan"))
-        .unwrap();
-    assert_eq!(report["agents"].as_array().unwrap().len(), 2);
-    assert_eq!(root["threads"][0]["agents"].as_array().unwrap().len(), 1);
-    assert_eq!(root["session_id"], ROOT_A);
-    assert!(
-        !resolved["orchestrators"][2]["threads"]
-            .to_string()
-            .contains("child-plan")
-    );
+        .map(|a| (a["id"].as_str().unwrap(), &a["parent"]))
+        .collect();
+    assert_eq!(agents, [(CHILD, &Value::Null), (GRANDCHILD, &json!(CHILD))]);
+    assert!(!resolved.to_string().contains("child-plan"));
 }

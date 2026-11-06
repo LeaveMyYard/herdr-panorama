@@ -1,7 +1,7 @@
 //! The per-tab panels' manager, inside the core (Python `panels.py`; docs/DESIGN.md "Per-tab
 //! panels" and "As built"). SAFETY: it opens, swaps and closes panes.
 //!
-//! Which tabs get a panel: tabs holding a local Claude orchestrator in the home pane's
+//! Which tabs get a panel: tabs holding a local Claude root in the home pane's
 //! workspace (not the home tab; with `cockpit_follow_tabs = "single"` only tabs where it is
 //! the only pane).
 //!
@@ -14,7 +14,7 @@
 //!   tab's panel (no second one is made), but is never closed.
 //! - **Closed stays closed** (kept in the state dir) until the open key asks there again; a
 //!   panel that dies on its own is made again, at most `CRASH_LIMIT` times per tab.
-//! - **Orphans:** a tab whose orchestrator went away loses its panel after `REMOVE_AFTER`.
+//! - **Orphans:** a tab whose root went away loses its panel after `REMOVE_AFTER`.
 //! - **After a herdr restart** the restored panels are closed only when provably our unused
 //!   panels ([`restored`]).
 //!
@@ -49,7 +49,7 @@ use std::time::{Duration, Instant};
 
 /// herdr's label for a panel pane (the manifest's title for the `panel` entrypoint).
 pub const PANEL_LABEL: &str = "Panorama panel";
-/// A tab without an orchestrator this long loses its panel.
+/// A tab without a root this long loses its panel.
 pub const REMOVE_AFTER: Duration = Duration::from_secs(30);
 /// A create in flight: herdr's snapshot may not show the pane yet.
 pub const CREATING: Duration = Duration::from_secs(15);
@@ -86,7 +86,7 @@ pub struct Manager<O: Ops> {
     creating: BTreeMap<String, Instant>,
     /// Tabs whose new panel could not be swapped left yet.
     pub right: BTreeSet<String>,
-    /// tab → since when it has no orchestrator.
+    /// tab → since when it has no root.
     orphaned: BTreeMap<String, Instant>,
     /// The closed tabs and the panel record, as saved.
     pub(crate) saved: record::Saved,

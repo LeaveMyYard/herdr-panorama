@@ -7,15 +7,15 @@ use crate::model::{HerdrStatus, Status, Swarm};
 
 /// Something in `swarm` (or one of the unseen marks) animates.
 pub fn animated(swarm: &Swarm, unseen: &Marks) -> bool {
-    let all = || swarm.orchestrators.iter().flat_map(|o| o.agents());
+    let all = || swarm.roots.iter().flat_map(|o| o.agents.iter());
     if !unseen.is_empty() && all().any(|a| unseen.contains_key(&a.id)) {
         return true;
     }
-    swarm.orchestrators.iter().any(|o| {
+    swarm.roots.iter().any(|o| {
         matches!(o.herdr_status, HerdrStatus::Working | HerdrStatus::Blocked)
             || !o.inbox.is_empty()
             || !o.bg.is_empty()
-            || o.agents().any(|a| {
+            || o.agents.iter().any(|a| {
                 matches!(
                     a.status,
                     Status::Running

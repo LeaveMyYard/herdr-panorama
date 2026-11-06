@@ -1,0 +1,33 @@
+/* V7: every orchestrator is one container; tree lines are computed per row (fixture.js treeLines). */
+.ag-list.dock{padding:2px 8px 0 8px;--line:#ffffff2e;--box:#14161a;--boxline:#ffffff12}
+/* the container: border on the sides of every row, top on the first, bottom on the last */
+.dk.ent{background:var(--box);border-left:1px solid var(--boxline);border-right:1px solid var(--boxline);border-radius:0}
+.dk.ent.first{border-top:1px solid var(--boxline);border-radius:8px 8px 0 0;margin-top:6px}
+.dk.ent.last{border-bottom:1px solid var(--boxline);border-radius:0 0 8px 8px;margin-bottom:0}
+.dk.ent.first.last{border-radius:8px}
+.dk.l1.first:first-child{margin-top:2px}
+.dk.l2.last{height:23px}
+.dk.it.last{height:26px;margin-bottom:0}
+/* the entry's state edge down the container's left side (the TUI's ┃) */
+.dk.ent::before{content:"";position:absolute;left:3px;top:0;bottom:0;width:2.5px;background:var(--eh,transparent)}
+.dk.ent.first::before{top:7px;border-radius:2px 2px 0 0}
+.dk.ent.last::before{bottom:7px;border-radius:0 0 2px 2px}
+.dk.ent.first.last::before{border-radius:2px}
+.e-fail{--eh:#ff6b6b}.e-blk,.e-wait{--eh:#ffb547}.e-run{--eh:#68c2b5}.e-rev{--eh:#8eaee6}.e-bg{--eh:#b39ddb}.e-done{--eh:#6c9673}.e-idle{--eh:#4d535c}
+/* docked: the selected fill across the whole container, a key-coloured outline */
+.dk.ent.docked,.dk.docked.l1,.dk.docked.l2{background:#1b2532;border-color:#e2cf9c66}
+.dk.ent.docked.it{background:#18202b}
+.dk.ent.hov{background:#1a1c21}
+.dk.l2 .bar{left:28px;right:14px;bottom:1px}
+/* tree rows: the lead sits at the row's padding; no number column */
+.dk-no.none{display:none}
+.dk.it{padding-left:0}
+.dk.l2.sub .dk-c{margin-left:25px}
+.dk.it .state-badge.mini{margin-right:7px}
+.dk.spw .gl:first-of-type{margin-right:7px}
+.dk.pk{background:#262a31!important;border-radius:0}
+/* the lines */
+.tl-v,.tl-h,.tl-e{position:absolute;pointer-events:none;box-sizing:border-box}
+.tl-v{background:var(--line)}.tl-h{background:var(--line)}
+.tl-e{border-left:1.5px solid var(--line);border-bottom:1.5px solid var(--line);border-bottom-left-radius:6px}
+.dk.new{margin-top:12px}

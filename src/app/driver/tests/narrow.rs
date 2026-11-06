@@ -10,7 +10,6 @@ const NARROW: (i32, i32) = (70, 45);
 fn agent(a: &str) -> AgentRef {
     AgentRef {
         pane: "w1:p1".into(),
-        thread: if a == "b3a9c41" { "ref:#44" } else { "ref:#42" }.into(),
         agent: a.into(),
     }
 }
@@ -19,24 +18,10 @@ fn agent(a: &str) -> AgentRef {
 fn narrow_clicks() {
     let mut r = Run::demo("w1:p1", NARROW);
     let now = r.settled();
-    r.click(
-        &Target::Thread {
-            pane: "w1:p1".into(),
-            thread: "ref:#44".into(),
-        },
-        now,
-    );
-    assert_eq!(
-        (r.sel().0, r.sel().1, r.sel().2),
-        (1, Some("w1:p1"), Some("ref:#44"))
-    );
+    // interim (plan `uniform-agent-tree.md` U4), until U5 replaces narrow: no thread
+    // selection, an agent's pod selects it at its depth
     r.click(&Target::Agent(agent("b3a9c41")), now); // its pod
-    assert_eq!(
-        r.sel(),
-        (2, Some("w1:p1"), Some("ref:#44"), Some("b3a9c41"))
-    );
-    r.click(&Target::Done("w1:p1".into()), now);
-    assert!(r.d.app.view.done_open.contains("w1:p1"));
+    assert_eq!(r.sel(), (1, Some("w1:p1"), Some("b3a9c41")));
     r.click(&orch("w1:p2"), now);
     assert_eq!((r.sel().0, r.sel().1), (0, Some("w1:p2")));
     r.click(&Target::Filter(Filter::Running), now);
@@ -55,10 +40,7 @@ fn narrow_expanded_agent_and_its_actions() {
             && r.spot(&Target::Transcript(a.clone())).is_some()
     );
     r.click(&Target::Agent(a.clone()), now);
-    assert_eq!(
-        r.sel(),
-        (2, Some("w1:p1"), Some("ref:#42"), Some("a1c3d90"))
-    );
+    assert_eq!(r.sel(), (1, Some("w1:p1"), Some("a1c3d90")));
     assert!(goes_to(&r.click(&Target::Goto(a), now), "w1:p1"));
 }
 
@@ -95,7 +77,14 @@ fn the_narrow_layout_in_a_side_split() {
     assert!(
         text.contains("Billing API  failed · working") && text.contains("Search refactor  working")
     );
-    assert!(text.contains("PR #42 invoice export"));
+    // the selected root's subagents as cards, its finished ones folded
+    assert!(text.contains("┨ » reviewer a2f81c0"), "{text}");
+    assert!(text.contains("8 finished · author e1a2b3c"), "{text}");
     r.key(Key::Move(1), r.t0);
-    assert!(r.text().lines().nth(4).unwrap().starts_with("▌ ")); // the focus mark on Search refactor
+    let text = r.text();
+    let row = text
+        .lines()
+        .find(|l| l.contains("Search refactor"))
+        .unwrap();
+    assert!(row.starts_with("▌ "), "{text}"); // the focus mark on Search refactor
 }

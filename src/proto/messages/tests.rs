@@ -13,7 +13,7 @@ fn the_viewers_messages_are_the_protocols() {
     .to_json();
     assert_eq!(
         hello,
-        json!({"hello": {"protocol": "1.3", "role": "panel", "pane_id": "w1:p9", "tab_id": null}})
+        json!({"hello": {"protocol": "2.0", "role": "panel", "pane_id": "w1:p9", "tab_id": null}})
     );
     assert_eq!(
         ToCore::Seen(vec!["a".into()]).to_json(),
@@ -33,7 +33,7 @@ fn the_viewers_messages_are_the_protocols() {
 #[test]
 fn the_cores_messages_are_told_by_their_key() {
     assert_eq!(
-        read(json!({"welcome": {"protocol": "1.3"}})),
+        read(json!({"welcome": {"protocol": "2.0"}})),
         FromCore::Welcome
     );
     assert_eq!(
@@ -45,8 +45,8 @@ fn the_cores_messages_are_told_by_their_key() {
         FromCore::Error("refused".into())
     );
     assert_eq!(
-        read(json!({"state": {"protocol": "1.3"}})),
-        FromCore::State(json!({"protocol": "1.3"}).as_object().unwrap().clone())
+        read(json!({"state": {"protocol": "2.0"}})),
+        FromCore::State(json!({"protocol": "2.0"}).as_object().unwrap().clone())
     );
     assert_eq!(read(json!({"state": [1]})), FromCore::Other);
     assert_eq!(

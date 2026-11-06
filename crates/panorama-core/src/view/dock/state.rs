@@ -1,15 +1,16 @@
 //! An entry's state in the docked list (swarm-dock.js `oState`, turn 8's swarm-states.js;
 //! Python `render.dock_state`): done > failed > blocked > working > needs you > waiting >
-//! stale | idle.
+//! stale | idle, over the root's own state and every agent of its tree.
 
-use crate::model::{Agent, HerdrStatus, Orchestrator, Status, Thread, ThreadSource};
+use super::tree_rows::Tree;
+use crate::model::{Agent, HerdrStatus, Root, Status};
 use crate::view::anim::{clock, glyph, spin};
 use crate::view::colour::Rgb;
-use crate::view::orch_state::{Ages, codex_root, orch_state};
+use crate::view::orch_state::{Ages, orch_state};
 use crate::view::palette::{DIM, status};
 use crate::view::text::ago;
 
-/// One orchestrator as its docked entry shows it.
+/// One root as its docked entry shows it.
 #[derive(Debug)]
 pub struct DockState<'a> {
     pub st: Status,
@@ -20,9 +21,11 @@ pub struct DockState<'a> {
     pub working: bool,
     /// Those still going.
     pub live: usize,
-    /// Its threads not done, and those done.
-    pub active: Vec<&'a Thread>,
-    pub done: Vec<&'a Thread>,
+    /// Its agent tree.
+    pub tree: Tree<'a>,
+    /// Its direct subagents still going (live, or with a live descendant), and the finished.
+    pub active: Vec<&'a Agent>,
+    pub done: Vec<&'a Agent>,
     /// Background tasks in flight (the session's and its waiting agents').
     pub bg: usize,
 }
@@ -42,32 +45,11 @@ fn label(st: &Status) -> &'static str {
     }
 }
 
-/// Codex keeps its default child hierarchy in the session thread. Claude session
-/// placeholders stay suppressed, as before.
-fn threads(o: &Orchestrator) -> impl Iterator<Item = &Thread> {
-    o.threads
-        .iter()
-        .filter(|t| o.harness == "codex" || t.source != ThreadSource::Session)
-}
-
 /// The entry's state. herdr reporting the session working counts as working, blocked as
 /// blocked, and the session's open questions are its `?N`.
-pub fn dock_state<'a>(o: &'a Orchestrator, frame: f64, ages: Ages) -> DockState<'a> {
+pub fn dock_state<'a>(o: &'a Root, frame: f64, ages: Ages) -> DockState<'a> {
     let codex = o.harness == "codex";
-    let agents: Vec<&Agent> = o
-        .threads
-        .iter()
-        .filter(|t| codex || t.source != ThreadSource::Session)
-        .flat_map(|thread| {
-            thread.agents.iter().filter(move |agent| {
-                if codex {
-                    !codex_root(o, thread, agent)
-                } else {
-                    !agent.id.starts_with("main:")
-                }
-            })
-        })
-        .collect();
+    let agents: Vec<&Agent> = o.agents.iter().collect();
     let has = |st: Status| agents.iter().any(|a| a.status == st);
     let runner = agents.iter().copied().find(|a| a.status == Status::Running);
     let q = if o.inbox.is_empty() {
@@ -82,7 +64,8 @@ pub fn dock_state<'a>(o: &'a Orchestrator, frame: f64, ages: Ages) -> DockState<
             .iter()
             .filter(|a| a.status == Status::Background)
             .count();
-    let (active, done): (Vec<&Thread>, Vec<&Thread>) = threads(o).partition(|t| !t.is_done());
+    let tree = Tree::of(o);
+    let (active, done) = tree.split(None);
     let stale = ages.is_stale(o);
     let blocked = has(Status::Blocked) || o.herdr_status == HerdrStatus::Blocked;
     let all_done = active.is_empty() && !done.is_empty();
@@ -140,7 +123,7 @@ pub fn dock_state<'a>(o: &'a Orchestrator, frame: f64, ages: Ages) -> DockState<
         q,
         glyph: g,
         working,
-
+        tree,
         active,
         done,
         bg,
@@ -157,22 +140,5 @@ pub fn state_colour(d: &DockState) -> Rgb {
         status(&Status::Background)
     } else {
         DIM
-    }
-}
-
-/// A thread's glyph and the status it shows (swarm-dock.js `tState`): done, else its most
-/// urgent live agent, else idle.
-pub fn thread_glyph(t: &Thread, frame: f64) -> (String, Status) {
-    if t.is_done() {
-        return ("✓".into(), Status::Done);
-    }
-    match t
-        .agents
-        .iter()
-        .filter(|a| a.status.is_live())
-        .min_by_key(|a| a.status.urgency())
-    {
-        Some(a) => (glyph(a, frame), a.status.clone()),
-        None => ("○".into(), Status::Queued),
     }
 }

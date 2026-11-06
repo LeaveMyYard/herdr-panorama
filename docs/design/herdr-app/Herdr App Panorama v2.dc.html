@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Inter',system-ui,sans-serif;color:#eeeeef}
+a{color:#96b2d7}a:hover{color:#b8cce6}
+.frame{position:absolute;display:flex;flex-direction:column;gap:12px}
+.flabel{font:500 14px/1.3 'JetBrains Mono',monospace;color:#3d4045;letter-spacing:.01em;cursor:move}
+.fnote{font-size:14px;line-height:1.5;color:#55585d;max-width:1180px;text-wrap:pretty}
+.hx{--chrome:#101114;--canvas:#131518;--bg:#17191d;--border:#ffffff14;--hover:#ffffff0e;--selected:#ffffff17;--raised:#232427;--popover:#1c1d20;--input:#ffffff24;--fg:#eeeeef;--muted:#98999b;--dim:#696a6d;--accent:#96b2d7;--working:#e5c07b;--blocked:#f0705f;--done:#76a8ff;--idle:#65696f;--rev:#b9a0e2;font-family:'Inter',system-ui,sans-serif;color:var(--fg);-webkit-font-smoothing:antialiased}
+.clip{overflow:hidden;border-radius:12px;box-shadow:0 30px 80px rgba(0,0,0,.30),0 0 0 1px #2a2b2e}
+.win{position:relative;width:1600px;height:900px;display:flex;background:var(--chrome);overflow:hidden}
+.z12{zoom:1.2}
+.z2{zoom:2}
+.side{width:320px;flex:none;display:flex;flex-direction:column;background:var(--chrome);border-right:1px solid var(--border);min-height:0}
+.side.tall{border-right:0}
+.brand{height:46px;flex:none;display:flex;align-items:center;gap:4px;padding:0 10px 0 14px;font-size:13.5px}
+.logo{width:20px;height:20px;border-radius:5px;flex:none}
+.brand-t{font-weight:600;color:var(--fg);margin-left:4px}
+.grow{flex:1;min-width:0}
+.ibtn{width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:6px;color:var(--muted);flex:none}
+.ibtn.dim{color:var(--dim)}
+.ui{display:inline-block;flex:none;background:currentColor;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.i-search{--m:url(ui/search.svg)}
+.i-sidebar{--m:url(ui/sidebar.svg)}
+.i-plus{--m:url(ui/plus.svg)}
+.i-clock{--m:url(ui/clock.svg)}
+.i-settings{--m:url(ui/settings.svg)}
+.i-file{--m:url(ui/file-text.svg)}
+.i-compare{--m:url(ui/git-compare.svg)}
+.i-monitor{--m:url(ui/monitor.svg)}
+.i-branch{--m:url(ui/branch.svg)}
+.i-chev-d{--m:url(ui/chevron-down.svg)}
+.i-chev-r{--m:url(ui/chevron-right.svg)}
+.i-close{--m:url(ui/close.svg)}
+.s11{width:11px;height:11px}
+.s12{width:12px;height:12px}
+.s13{width:13px;height:13px}
+.s14{width:14px;height:14px}
+.s15{width:15px;height:15px}
+.sp-h{height:31px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 10px 0 16px;font-size:11.5px;color:var(--dim)}
+.sp-list{display:flex;flex-direction:column;gap:4px;padding:0 8px 14px}
+.sp{height:30px;flex:none;display:flex;align-items:center;gap:9px;padding:0 8px;border-radius:8px}
+.sp.on{background:var(--selected)}
+.tile{width:18px;height:18px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:#fff;flex:none}
+.sp-name{color:var(--fg);font-size:13px;white-space:nowrap}
+.sp-tail{flex:1;min-width:0;display:flex;justify-content:flex-end;align-items:center;font-size:11.5px;color:var(--dim)}
+.repo{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.agents{flex:1;min-height:0;display:flex;flex-direction:column;border-top:1px solid var(--border)}
+.ag-h{height:41px;flex:none;box-sizing:border-box;padding:14px 16px 5px;display:flex;align-items:center;justify-content:space-between;font-size:11.5px;font-weight:500;color:var(--dim)}
+.ag-list{position:relative;flex:1;min-height:0;overflow:hidden;padding:0 8px;display:flex;flex-direction:column}
+.thumb{position:absolute;right:2px;top:4px;width:4px;height:150px;border-radius:2px;background:#ffffff1c}
+.foot{height:69px;flex:none;box-sizing:border-box;border-top:1px solid var(--border);padding:4px 8px 8px;display:flex;flex-direction:column;font-size:13px}
+.fr{height:28px;flex:none;display:flex;align-items:center;gap:9px;padding:0 8px;border-radius:8px;color:var(--muted)}
+.fr.dim{color:var(--dim)}
+.r{position:relative;display:flex;align-items:center;height:26px;flex:none;padding:0 8px;border-radius:8px;font-size:12.5px}
+.r.orch{height:30px;font-size:13px}
+.r.sec{height:30px;box-sizing:border-box;padding-top:8px;font-size:11px;font-weight:500}
+.r.sel{background:var(--selected)}
+.r.hov{background:var(--hover)}
+.r.pk{background:var(--raised)}
+.seg{position:relative;width:13px;align-self:stretch;flex:none}
+.seg.v::before,.seg.t::before{content:"";position:absolute;left:7px;top:-2px;bottom:0;border-left:1.5px solid var(--input)}
+.seg.t::after,.seg.l::after{content:"";position:absolute;left:7px;top:-2px;height:15px;width:6px;border-left:1.5px solid var(--input);border-bottom:1.5px solid var(--input);border-bottom-left-radius:6px}
+.seg.t,.seg.l{margin-right:4px}
+.hic{width:14px;height:14px;flex:none;margin-right:7px}
+.hic.h16{width:16px;height:16px;margin-right:9px}
+.nm{flex:none;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--fg)}
+.nm.grow{flex:1;min-width:0;max-width:none}
+.nm.th{font-weight:500}
+.nm.ag{color:var(--muted)}
+.nm.quiet{color:var(--muted)}
+.nm.sum{color:var(--dim)}
+.sb{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dim);margin-left:5px}
+.sb.need{color:var(--blocked)}
+.nosb{display:none}
+.secl{white-space:nowrap}
+.secl.need{color:var(--blocked)}
+.secl.done{color:var(--done)}
+.secl.working{color:var(--working)}
+.secl.idle{color:var(--dim)}
+.secn{flex:1;color:var(--dim);margin-left:6px}
+.age{font-size:11px;color:var(--dim);margin-left:8px;flex:none}
+.mk{flex:none;margin-left:6px;box-sizing:border-box}
+.mk.spin{width:12px;height:12px;margin:0 1px 0 8px;background:var(--working);-webkit-mask:url(ui/spinner.svg) center/contain no-repeat;mask:url(ui/spinner.svg) center/contain no-repeat}
+.mk.chip{height:16px;min-width:16px;padding:0 4px;border-radius:4px;font-size:10.5px;font-weight:700;line-height:16px;text-align:center}
+.mk.need{background:#f0705f2b;color:var(--blocked)}
+.mk.fail{background:var(--blocked);color:#141516}
+.mk.rev{background:#b9a0e22b;color:var(--rev)}
+.mk.ok{width:14px;text-align:center;font-size:11px;color:var(--dim)}
+.mk.ring{width:7px;height:7px;margin:0 3px 0 9px;border-radius:4px;border:1.5px solid var(--idle)}
+.mk.dot{width:7px;height:7px;margin:0 3px 0 9px;border-radius:4px;background:var(--done)}
+.mk.pchip{height:18px;line-height:18px;padding:0 6px;border-radius:5px;font-size:10.5px;font-weight:500;color:var(--fg);background:var(--raised)}
+.mk.cnt{font-size:11px;color:var(--dim);margin-left:4px}
+.pips{display:flex;gap:2px;margin-left:8px;flex:none}
+.pip{width:8px;height:4px;border-radius:2px;background:var(--input)}
+.pip.d{background:#5c5d61}
+.pip.n{background:var(--working)}
+.pip.f{background:var(--blocked)}
+.pip.w{background:var(--blocked)}
+.fold{display:flex;align-items:center;gap:3px;height:18px;padding:0 3px;border-radius:4px;font-size:11px;color:var(--dim);margin-left:6px;flex:none}
+.fold.need{color:var(--blocked)}
+.fold.done{color:var(--done)}
+.edge{position:absolute;left:0;top:6px;bottom:6px;width:2px;border-radius:1px;background:var(--blocked)}
+.r.orch::after{content:"";position:absolute;left:0;right:8px;bottom:0;height:1px;background:var(--border)}
+.r.orch .edge{bottom:0;border-radius:1px 1px 0 0}
+.bar{position:absolute;left:0;right:8px;bottom:-0.25px;height:1.5px;background:transparent;overflow:hidden;z-index:1}
+.bar-in{position:absolute;top:0;bottom:0;width:28%;border-radius:1px;background:var(--working);opacity:.85}
+.work{flex:1;display:flex;flex-direction:column;min-width:0}
+.tabs{height:42px;flex:none;box-sizing:border-box;display:flex;align-items:center;gap:3px;padding:0 10px;border-bottom:1px solid var(--border);background:var(--chrome)}
+.tab{height:29px;flex:none;box-sizing:border-box;padding:0 10px;display:flex;align-items:center;gap:7px;border-radius:7px;font-size:12.8px;color:var(--muted)}
+.tab.on{background:#1e1f22;box-shadow:inset 0 0 0 1px #ffffff1a;color:var(--fg)}
+.tab-dot{width:6px;height:6px;border-radius:3px;background:var(--done);flex:none}
+.tic{width:14px;height:14px;flex:none}
+.pbtn{height:26px;flex:none;padding:0 8px;display:flex;align-items:center;gap:5px;border-radius:6px;font-size:12px;color:var(--muted)}
+.wbtn{width:26px;height:26px;flex:none;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--dim)}
+.body{flex:1;min-height:0;padding:8px;background:var(--canvas);display:flex}
+.pane{flex:1;min-width:0;display:flex;flex-direction:column;border:1px solid var(--accent);border-radius:10px;background:var(--bg);overflow:hidden}
+.ph{height:30px;flex:none;box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:1px solid var(--border);font-size:12px}
+.ph-t{font-weight:500;color:var(--fg)}
+.ph-p{flex:1;color:var(--dim)}
+.term{flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 14px;font:13px/19px 'JetBrains Mono',monospace;color:#d2d4d9;overflow:hidden}
+.ln{white-space:pre;min-height:19px}
+.ln.usr{background:#ffffff0b;color:var(--fg);margin:0 -14px;padding:0 14px}
+.ln.dim{color:var(--dim)}
+.ln.err{color:#f0705f}
+.ln.work{color:var(--muted)}
+.ln.hi{color:var(--fg)}
+.ibox{margin-top:auto;border:1px solid #ffffff1f;border-radius:6px;padding:8px 10px;color:var(--dim);display:flex;gap:8px}
+.cur{width:8px;height:17px;background:#d2d4d9}
+.tfoot{display:flex;justify-content:space-between;color:var(--dim);font-size:12px;padding:6px 2px 0}
+.status{height:28px;flex:none;box-sizing:border-box;display:flex;align-items:center;gap:16px;padding:0 14px;border-top:1px solid var(--border);font-size:11.8px;color:var(--muted);background:var(--chrome)}
+.st-l{display:flex;align-items:center;gap:6px}
+.st-dot{width:6px;height:6px;border-radius:3px;background:var(--dim)}
+.st-need{color:var(--blocked)}
+.st-hint{color:var(--dim)}
+.peek{position:absolute;left:328px;top:296px;width:284px;box-sizing:border-box;z-index:5;background:var(--popover);border:1px solid #ffffff1f;border-radius:10px;box-shadow:0 18px 40px rgba(0,0,0,.5);padding:12px;display:flex;flex-direction:column;gap:9px;font-size:12.5px}
+.pk-h{display:flex;align-items:center;gap:8px}
+.pk-n{font-weight:600;color:var(--fg)}
+.pk-meta{font-size:11.5px;color:var(--dim);line-height:1.45}
+.pk-err{background:#f0705f1c;border:1px solid #f0705f40;border-radius:7px;padding:7px 9px;font:11.5px/1.5 'JetBrains Mono',monospace;color:#f6a99e;white-space:pre}
+.pk-k{font-size:11px;color:var(--dim)}
+.pk-msg{color:var(--muted);line-height:1.5;text-wrap:pretty}
+.pk-btns{display:flex;gap:6px}
+.pk-b{height:28px;padding:0 10px;display:flex;align-items:center;gap:6px;border-radius:7px;background:var(--raised);color:var(--fg);font-size:12px}
+.pk-b.solid{background:var(--fg);color:#101114;font-weight:500}
+.kb{font:11px 'JetBrains Mono',monospace;opacity:.6}
+.swg{display:grid;grid-template-columns:5px 5px;gap:2px;flex:none}
+.swg-c{width:5px;height:5px;border-radius:1.5px;background:#5c5d61}
+.swg-c.need{background:var(--blocked)}
+.swg-c.work{background:var(--working)}
+.swg-c.done{background:var(--done)}
+.gh{position:absolute;top:0;font-size:11.5px;font-weight:500;color:var(--dim);display:flex;gap:6px}
+.gh-n{color:#4d4e52}
+.gs{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dim)}
+.gs.need{color:var(--blocked)}
+.gbar{left:10px;right:10px;bottom:-1.5px;height:2px}
+.dn .edge{left:-1.5px;top:8px;bottom:8px;width:2px}
+.tab .mk{margin-left:0}
+.dwrap{flex:1;min-height:0;display:flex;flex-direction:column;padding:10px 16px 8px}
+.crumb{height:22px;flex:none;display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--dim);white-space:nowrap}
+.crumb-l{color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+.crumb-n{color:#4d4e52}
+.crumb-r{color:var(--muted);font-weight:600}
+.dheads{position:relative;height:24px;flex:none}
+.dcanvas{position:relative;flex:1;min-height:0;overflow:hidden}
+.dl{position:absolute;background:var(--input)}
+.dl.on{background:#ffffff4d}
+.dn{position:absolute;box-sizing:border-box;padding:9px 10px 0 12px;border-radius:8px;background:#1d1e21;border:1px solid var(--border);display:flex;flex-direction:column;gap:6px}
+.dn.path{border-color:#ffffff38}
+.dn.sel{border-color:var(--accent);background:#202226}
+.dn.dfold{background:transparent;padding-top:10px}
+.dn.dfold .grow{display:none}
+.dn.dfold .dn-t1{max-width:none;flex:1;min-width:0}
+.dn.dimmed{opacity:.55}
+.dn-1{display:flex;align-items:center;min-width:0;height:18px;gap:0;overflow:hidden}
+.dn-2{display:flex;align-items:center;min-width:0;height:15px;font-size:11.5px;gap:8px;overflow:hidden}
+.dn-t1{flex:0 1 auto;min-width:0;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;color:var(--muted)}
+.dn-t1.b{font-weight:500;color:var(--fg)}
+.dn-t1.hi{color:var(--fg)}
+.dn-t1.wide{max-width:200px}
+.dn-t1.fin{color:var(--dim);font-size:12px;max-width:none;flex:10;min-width:0;margin-left:4px}
+.dn-meta{flex:none;margin-left:6px;font-size:11.5px;color:var(--dim);white-space:nowrap}
+.dn-lab{font-size:11px;font-weight:600;margin-right:2px;white-space:nowrap}
+.dn-lab.need{color:var(--blocked)}
+.dn-lab.rev{color:var(--rev)}
+.dn-lab.run{color:var(--working)}
+.dn-lab.none{display:none}
+.dn-right{flex:none;color:var(--dim)}
+.dn-d{display:flex;flex-direction:column;gap:3px;padding:2px 0 0;font-size:12px}
+.dd{display:flex;align-items:baseline;gap:7px;min-width:0;color:var(--muted);line-height:17px}
+.dd.need{color:var(--blocked)}
+.dd.dcur{color:var(--fg)}
+.dd.dnext{color:var(--dim)}
+.dn-k{flex:none;width:30px;font-size:11px;color:var(--dim)}
+.dd.need .dn-k{color:var(--blocked)}
+.dd.dph .dn-k{width:12px;text-align:center}
+.dn-t{flex:1;min-width:0;text-wrap:pretty}
+.dn-r{flex:none;font-size:11px;color:var(--dim)}
+.dn-acts{display:flex;align-items:center;gap:6px;padding-top:2px}
+.da{height:24px;padding:0 9px;display:flex;align-items:center;gap:6px;border-radius:6px;background:var(--raised);color:var(--fg);font-size:11.5px}
+.da.solid{background:var(--fg);color:#101114;font-weight:500}
+.da.off{color:var(--dim)}
+.pod{width:12px;height:12px;border-radius:3px;flex:none;margin-right:3px;box-sizing:border-box}
+.pod.run{background:#e5c07b2b;box-shadow:inset 0 0 0 1px var(--working)}
+.pod.rev{background:#b9a0e22b;box-shadow:inset 0 0 0 1px var(--rev)}
+.pod.done{background:#5c5d61}
+.pod.q{box-shadow:inset 0 0 0 1px var(--idle)}
+.pod.need{background:#f0705f2b;box-shadow:inset 0 0 0 1px var(--blocked)}
+.pod.fail{background:var(--blocked)}
+.pod.lead{margin-left:0}
+.more{position:absolute;height:20px;padding:0 8px;border-radius:5px;background:var(--raised);color:var(--muted);font-size:11px;line-height:20px}
+.fade-l{position:absolute;left:0;top:0;bottom:0;width:26px;background:linear-gradient(90deg,#17191d,#17191d00)}
+.fade-r{position:absolute;right:0;top:0;bottom:0;width:26px;background:linear-gradient(270deg,#17191d,#17191d00)}
+.hscroll{position:relative;height:6px;flex:none;margin:6px 0 0;border-radius:3px;background:#ffffff0a}
+.hthumb{position:absolute;top:0;bottom:0;border-radius:3px;background:#ffffff33}
+.dkeys{height:22px;flex:none;display:flex;align-items:center;gap:16px;font-size:11.5px;color:var(--dim)}
+.dkeys b{font-weight:500;color:var(--muted)}
+.brow{display:flex;gap:40px;align-items:flex-start}
+.legend{width:262px;box-sizing:border-box;background:var(--chrome);border-radius:10px;padding:14px 14px 16px;display:flex;flex-direction:column;gap:7px;box-shadow:0 0 0 1px #2a2b2e}
+.lg-h{font-size:11.5px;font-weight:500;color:var(--dim);padding:2px 0 4px}
+.lg-h.gap{padding-top:10px}
+.lg{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);min-height:18px}
+.lg-m{width:30px;flex:none;display:flex;align-items:center;justify-content:center;position:relative;height:18px}
+.lg-m .mk{margin:0}
+.lg-t{flex:1;line-height:1.35}
+.lg-t b{font-weight:500;color:var(--fg)}
+.lg-edge{width:2px;height:14px;border-radius:1px;background:var(--blocked)}
+.lg-bar{position:relative;width:28px;height:1.5px;background:var(--border);overflow:hidden}
+.lg-p{font-size:12px;color:var(--muted);line-height:1.45;text-wrap:pretty}
+.lg-p b{font-weight:500;color:var(--fg)}
+</style>
+</helmet>
+
+<sc-for list="{{ wins }}" as="w" hint-placeholder-count="3">
+<section class="frame" style="{{ w.pos }}" data-screen-label="{{ w.screen }}">
+  <div class="flabel" data-drags-parent="1">{{ w.label }}</div>
+  <div class="fnote">{{ w.note }}</div>
+  <div class="clip hx" style="{{ w.clipSt }}">
+  <div class="{{ w.winCls }}">
+    <aside class="side">
+      <div class="brand">
+        <img class="logo" src="ui/herdr.png" alt="">
+        <span class="brand-t">Herdr</span>
+        <span class="grow"></span>
+        <span class="ibtn"><span class="ui i-search s15"></span></span>
+        <span class="ibtn"><span class="ui i-sidebar s15"></span></span>
+      </div>
+      <div class="sp-h"><span>Spaces</span><span class="ibtn dim"><span class="ui i-plus s14"></span></span></div>
+      <div class="sp-list">
+        <sc-for list="{{ w.spaces }}" as="s" hint-placeholder-count="3">
+          <div class="{{ s.cls }}">
+            <span class="tile" style="{{ s.tileSt }}">{{ s.l }}</span>
+            <span class="sp-name">{{ s.name }}</span>
+            <span class="sp-tail"><span class="repo">{{ s.repo }}</span><sc-for list="{{ s.marks }}" as="m" hint-placeholder-count="1"><span class="{{ m.cls }}" style="{{ m.st }}">{{ m.t }}</span></sc-for></span>
+          </div>
+        </sc-for>
+      </div>
+      <div class="agents">
+        <div class="ag-h"><span>Agents</span><span class="ui i-clock s14"></span></div>
+        <div class="ag-list">
+          <sc-for list="{{ w.rows }}" as="r" hint-placeholder-count="20">
+            <div class="{{ r.cls }}">
+              <sc-if value="{{ r.edge }}" hint-placeholder-val="{{ false }}"><span class="edge" style="{{ r.edgeSt }}"></span></sc-if>
+              <sc-for list="{{ r.segs }}" as="g" hint-placeholder-count="1"><span class="{{ g }}"></span></sc-for>
+              <sc-if value="{{ r.hasIc }}" hint-placeholder-val="{{ true }}"><span class="{{ r.icCls }}" style="{{ r.icSt }}"></span></sc-if>
+              <span class="{{ r.nameCls }}">{{ r.name }}</span>
+              <span class="{{ r.subCls }}">{{ r.sub }}</span>
+              <sc-if value="{{ r.hasPips }}" hint-placeholder-val="{{ false }}"><span class="pips"><sc-for list="{{ r.pips }}" as="p" hint-placeholder-count="5"><span class="{{ p }}"></span></sc-for></span></sc-if>
+              <sc-if value="{{ r.hasFold }}" hint-placeholder-val="{{ false }}"><span class="{{ r.foldCls }}"><span class="{{ r.chevCls }}"></span>{{ r.foldN }}</span></sc-if>
+              <sc-if value="{{ r.age }}" hint-placeholder-val="{{ false }}"><span class="age">{{ r.age }}</span></sc-if>
+              <sc-for list="{{ r.marks }}" as="m" hint-placeholder-count="1"><span class="{{ m.cls }}" style="{{ m.st }}">{{ m.t }}</span></sc-for>
+              <sc-if value="{{ r.bar }}" hint-placeholder-val="{{ false }}"><span class="bar"><span class="bar-in" style="{{ r.barSt }}"></span></span></sc-if>
+            </div>
+          </sc-for>
+          <sc-if value="{{ w.thumb }}" hint-placeholder-val="{{ true }}"><span class="thumb"></span></sc-if>
+        </div>
+      </div>
+      <div class="foot">
+        <div class="fr"><span class="ui i-settings s14"></span><span>Settings</span></div>
+        <div class="fr dim"><span class="ui i-plus s14"></span><span>Add machine</span></div>
+      </div>
+    </aside>
+    <div class="work">
+      <div class="tabs">
+        <sc-for list="{{ w.tabs }}" as="t" hint-placeholder-count="2">
+          <div class="{{ t.cls }}">
+            <sc-if value="{{ t.swarm }}" hint-placeholder-val="{{ false }}"><span class="swg"><span class="swg-c need"></span><span class="swg-c work"></span><span class="swg-c"></span><span class="swg-c done"></span></span></sc-if>
+            <sc-if value="{{ t.hasIc }}" hint-placeholder-val="{{ true }}"><span class="tic" style="{{ t.icSt }}"></span></sc-if>
+            <span>{{ t.label }}</span>
+            <sc-if value="{{ t.chip }}" hint-placeholder-val="{{ false }}"><span class="mk chip need" style="margin-left:0">{{ t.chip }}</span></sc-if>
+            <sc-if value="{{ t.spin }}" hint-placeholder-val="{{ false }}"><span class="mk spin" style="{{ spinSt }}"></span></sc-if>
+            <sc-if value="{{ t.dot }}" hint-placeholder-val="{{ false }}"><span class="tab-dot"></span></sc-if>
+            <sc-if value="{{ t.close }}" hint-placeholder-val="{{ false }}"><span class="ui i-close s12" style="color:#696a6d"></span></sc-if>
+          </div>
+        </sc-for>
+        <span class="grow"></span>
+        <span class="wbtn"><span class="ui i-plus s14"></span></span>
+        <span class="pbtn"><span class="ui i-file s14"></span>Files</span>
+        <span class="pbtn"><span class="ui i-compare s14"></span>Changes</span>
+        <span class="wbtn">−</span><span class="wbtn">□</span><span class="wbtn"><span class="ui i-close s13"></span></span>
+      </div>
+      <div class="body">
+        <sc-if value="{{ w.graph }}" hint-placeholder-val="{{ false }}">
+        <div class="pane">
+          <div class="ph"><span class="swg"><span class="swg-c need"></span><span class="swg-c work"></span><span class="swg-c"></span><span class="swg-c done"></span></span><span class="ph-t">Swarm</span><span class="ph-p">Test · 2 orchestrators · 5 threads · 21 agents</span><span class="mk chip fail">✗</span><span class="mk chip need">?2</span><span class="mk spin" style="{{ spinSt }}"></span></div>
+          <div class="dwrap">
+            <div class="crumb"><span class="crumb-l">{{ w.g.left }}</span><span class="crumb-n">{{ w.g.leftN }}</span><span class="grow"></span><span class="crumb-n">{{ w.g.right }}</span><span class="crumb-r">{{ w.g.rightArrow }}</span></div>
+            <div class="dheads"><sc-for list="{{ w.g.heads }}" as="h" hint-placeholder-count="4"><div class="gh" style="{{ h.st }}">{{ h.t }}<span class="gh-n">{{ h.n }}</span></div></sc-for></div>
+            <div class="dcanvas">
+              <sc-for list="{{ w.g.lines }}" as="l" hint-placeholder-count="20"><span class="{{ l.cls }}" style="{{ l.st }}"></span></sc-for>
+              <sc-for list="{{ w.g.nodes }}" as="n" hint-placeholder-count="14">
+                <div class="{{ n.cls }}" style="{{ n.st }}">
+                  <sc-if value="{{ n.edge }}" hint-placeholder-val="{{ false }}"><span class="edge" style="{{ edgeSt }}"></span></sc-if>
+                  <div class="dn-1">
+                    <sc-if value="{{ n.hasIc }}" hint-placeholder-val="{{ true }}"><span class="{{ n.icCls }}" style="{{ n.icSt }}"></span></sc-if>
+                    <sc-for list="{{ n.pods }}" as="q" hint-placeholder-count="0"><span class="{{ q }}"></span></sc-for>
+                    <span class="{{ n.tCls }}">{{ n.title }}</span>
+                    <span class="dn-meta">{{ n.meta }}</span>
+                    <span class="grow"></span>
+                    <span class="{{ n.labelCls }}">{{ n.label }}</span>
+                    <sc-for list="{{ n.marks }}" as="m" hint-placeholder-count="1"><span class="{{ m.cls }}" style="{{ m.st }}">{{ m.t }}</span></sc-for>
+                  </div>
+                  <sc-if value="{{ n.two }}" hint-placeholder-val="{{ true }}">
+                  <div class="dn-2">
+                    <sc-if value="{{ n.hasPips }}" hint-placeholder-val="{{ false }}"><span class="pips" style="margin:0 7px 0 0"><sc-for list="{{ n.pips }}" as="p" hint-placeholder-count="5"><span class="{{ p }}"></span></sc-for></span></sc-if>
+                    <span class="{{ n.sCls }}">{{ n.sub }}</span>
+                    <span class="dn-right">{{ n.right }}</span>
+                  </div>
+                  </sc-if>
+                  <sc-if value="{{ n.hasDetail }}" hint-placeholder-val="{{ false }}">
+                  <div class="dn-d"><sc-for list="{{ n.detail }}" as="d" hint-placeholder-count="3"><div class="{{ d.cls }}"><span class="dn-k">{{ d.k }}</span><span class="dn-t">{{ d.t }}</span><span class="dn-r">{{ d.r }}</span></div></sc-for></div>
+                  </sc-if>
+                  <sc-if value="{{ n.hasActs }}" hint-placeholder-val="{{ false }}">
+                  <div class="dn-acts"><sc-for list="{{ n.acts }}" as="a" hint-placeholder-count="3"><span class="{{ a.cls }}">{{ a.t }}<span class="kb">{{ a.k }}</span></span></sc-for><span class="grow"></span><span class="dn-meta">{{ n.foot }}</span></div>
+                  </sc-if>
+                  <sc-if value="{{ n.bar }}" hint-placeholder-val="{{ false }}"><span class="bar gbar"><span class="bar-in" style="{{ barSt }}"></span></span></sc-if>
+                </div>
+              </sc-for>
+              <sc-for list="{{ w.g.more }}" as="m" hint-placeholder-count="1"><span class="more" style="{{ m.st }}">{{ m.t }}</span></sc-for>
+              <sc-if value="{{ w.g.fadeL }}" hint-placeholder-val="{{ false }}"><span class="fade-l"></span></sc-if>
+              <sc-if value="{{ w.g.fadeR }}" hint-placeholder-val="{{ true }}"><span class="fade-r"></span></sc-if>
+            </div>
+            <div class="hscroll"><span class="hthumb" style="{{ w.g.thumbSt }}"></span></div>
+            <div class="dkeys"><span><b>↑↓</b> move</span><span><b>→</b> open</span><span><b>←</b> back</span><span><b>shift+wheel</b> scroll</span><span><b>⏎</b> pane / peek</span><span><b>a</b> answer</span><span><b>i</b> inbox</span></div>
+          </div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ w.term }}" hint-placeholder-val="{{ true }}">
+        <div class="pane">
+          <div class="ph"><span class="tic" style="{{ icCodex }}"></span><span class="ph-t">Codex</span><span class="ph-p">~/Code/herdr-panorama</span><span class="mk spin" style="{{ spinSt }}"></span></div>
+          <div class="term">
+            <sc-for list="{{ lines }}" as="l" hint-placeholder-count="18"><div class="{{ l.c }}">{{ l.t }}</div></sc-for>
+            <div class="ibox"><span style="color:#eeeeef">›</span><span class="cur"></span><span>Ask Codex to do anything</span></div>
+            <div class="tfoot"><span>⏎ send   ⌃J newline   ⌃T transcript</span><span>86% context left</span></div>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+      <div class="status">
+        <span class="st-l"><span class="ui i-monitor s13"></span>This computer</span>
+        <span class="st-l"><span class="ui i-branch s13"></span>main</span>
+        <span class="st-l"><span class="st-dot"></span>5 agents<span class="st-need">· 1 needs you</span></span>
+        <span class="grow"></span>
+        <span class="st-hint">Ctrl+Shift+P commands</span>
+      </div>
+    </div>
+    <sc-if value="{{ w.peek }}" hint-placeholder-val="{{ false }}">
+      <div class="peek">
+        <div class="pk-h"><span class="hic h16" style="{{ icClaude }}"></span><span class="pk-n">fixer</span><span class="grow" style="color:#696a6d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">PR #142 sidebar mod</span><span class="mk chip fail" style="margin:0">✗</span></div>
+        <div class="pk-meta">Failed 1m ago · Claude Code · sonnet · 9m · 23 tools<br>Subagent of Test · Panorama as a herdr-app mod. It has no pane of its own.</div>
+        <div class="pk-err">npm test exited 1
+3 failing in sidebar.spec.ts</div>
+        <div class="pk-k">Last message</div>
+        <div class="pk-msg">Tree rows are 26px but the fold test still expects 30px. Stopping per the CI-failure rule.</div>
+        <div class="pk-btns"><span class="pk-b solid">Open orchestrator <span class="kb">⏎</span></span><span class="pk-b">Transcript <span class="kb">t</span></span></div>
+      </div>
+    </sc-if>
+  </div>
+  </div>
+</section>
+</sc-for>
+
+<section class="frame" style="left:2040px;top:0px" data-screen-label="B Sidebar 2x">
+  <div class="flabel" data-drags-parent="1">B · The panorama sidebar at 2x, fully expanded: every status, orchestrator → thread → agent → subagent → its subagent</div>
+  <div class="fnote">Same mod, every fold open. Rows that have their own pane (orchestrators) read in full white and focus their pane on click. Subagents have no pane, read muted, and open a Peek card on click (hover state shown on the explorer under PR #144). The legend lists the only marks the panel uses.</div>
+  <div class="brow hx">
+    <div class="clip z2" style="border-radius:10px">
+      <aside class="side tall">
+        <div class="brand">
+          <img class="logo" src="ui/herdr.png" alt="">
+          <span class="brand-t">Herdr</span>
+          <span class="grow"></span>
+          <span class="ibtn"><span class="ui i-search s15"></span></span>
+          <span class="ibtn"><span class="ui i-sidebar s15"></span></span>
+        </div>
+        <div class="sp-h"><span>Spaces</span><span class="ibtn dim"><span class="ui i-plus s14"></span></span></div>
+        <div class="sp-list">
+          <sc-for list="{{ spaces }}" as="s" hint-placeholder-count="3">
+            <div class="{{ s.cls }}">
+              <span class="tile" style="{{ s.tileSt }}">{{ s.l }}</span>
+              <span class="sp-name">{{ s.name }}</span>
+              <span class="sp-tail"><span class="repo">{{ s.repo }}</span><sc-for list="{{ s.marks }}" as="m" hint-placeholder-count="1"><span class="{{ m.cls }}" style="{{ m.st }}">{{ m.t }}</span></sc-for></span>
+            </div>
+          </sc-for>
+        </div>
+        <div class="agents">
+          <div class="ag-h"><span>Agents</span><span class="ui i-clock s14"></span></div>
+          <div class="ag-list" style="padding-bottom:10px">
+            <sc-for list="{{ rowsB }}" as="r" hint-placeholder-count="36">
+              <div class="{{ r.cls }}">
+                <sc-if value="{{ r.edge }}" hint-placeholder-val="{{ false }}"><span class="edge" style="{{ r.edgeSt }}"></span></sc-if>
+                <sc-for list="{{ r.segs }}" as="g" hint-placeholder-count="1"><span class="{{ g }}"></span></sc-for>
+                <sc-if value="{{ r.hasIc }}" hint-placeholder-val="{{ true }}"><span class="{{ r.icCls }}" style="{{ r.icSt }}"></span></sc-if>
+                <span class="{{ r.nameCls }}">{{ r.name }}</span>
+                <span class="{{ r.subCls }}">{{ r.sub }}</span>
+                <sc-if value="{{ r.hasPips }}" hint-placeholder-val="{{ false }}"><span class="pips"><sc-for list="{{ r.pips }}" as="p" hint-placeholder-count="5"><span class="{{ p }}"></span></sc-for></span></sc-if>
+                <sc-if value="{{ r.hasFold }}" hint-placeholder-val="{{ false }}"><span class="{{ r.foldCls }}"><span class="{{ r.chevCls }}"></span>{{ r.foldN }}</span></sc-if>
+                <sc-if value="{{ r.age }}" hint-placeholder-val="{{ false }}"><span class="age">{{ r.age }}</span></sc-if>
+                <sc-for list="{{ r.marks }}" as="m" hint-placeholder-count="1"><span class="{{ m.cls }}" style="{{ m.st }}">{{ m.t }}</span></sc-for>
+                <sc-if value="{{ r.bar }}" hint-placeholder-val="{{ false }}"><span class="bar"><span class="bar-in" style="{{ r.barSt }}"></span></span></sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div class="foot">
+          <div class="fr"><span class="ui i-settings s14"></span><span>Settings</span></div>
+          <div class="fr dim"><span class="ui i-plus s14"></span><span>Add machine</span></div>
+        </div>
+      </aside>
+    </div>
+    <div class="legend z2">
+      <div class="lg-h">Marks, right edge of a row</div>
+      <div class="lg"><span class="lg-m"><span class="mk spin" style="{{ spinSt }}"></span></span><span class="lg-t"><b>Working</b>, the app's own spinner and colour</span></div>
+      <div class="lg"><span class="lg-m"><span class="mk chip rev">»</span></span><span class="lg-t"><b>Reviewing</b></span></div>
+      <div class="lg"><span class="lg-m"><span class="mk chip need">?2</span></span><span class="lg-t"><b>Waiting for an answer</b>, open questions</span></div>
+      <div class="lg"><span class="lg-m"><span class="mk chip need">!</span></span><span class="lg-t"><b>Blocked</b> on a permission</span></div>
+      <div class="lg"><span class="lg-m"><span class="mk chip fail">✗</span></span><span class="lg-t"><b>Failed</b></span></div>
+      <div class="lg"><span class="lg-m"><span class="mk ok">✓</span></span><span class="lg-t"><b>Done</b>, a subagent that finished</span></div>
+      <div class="lg"><span class="lg-m"><span class="mk dot"></span></span><span class="lg-t"><b>Done</b>, an orchestrator you haven't looked at</span></div>
+      <div class="lg"><span class="lg-m"><span class="mk ring"></span></span><span class="lg-t"><b>Queued / idle</b></span></div>
+      <div class="lg-h gap">Motion and structure</div>
+      <div class="lg"><span class="lg-m"><span class="lg-edge" style="{{ edgeSt }}"></span></span><span class="lg-t"><b>Needs you</b>: the left edge eases in and out</span></div>
+      <div class="lg"><span class="lg-m"><span class="lg-bar"><span class="bar-in" style="{{ barSt }}"></span></span></span><span class="lg-t"><b>Agents at work</b> under an orchestrator</span></div>
+      <div class="lg"><span class="lg-m"><span class="pips" style="margin:0"><span class="pip d"></span><span class="pip f"></span><span class="pip"></span></span></span><span class="lg-t"><b>Thread phases</b>: done, now, failed, next</span></div>
+      <div class="lg-h gap">Clicks</div>
+      <div class="lg-p"><b>Orchestrator</b>: focuses its pane. <b>Subagent</b>: opens Peek. <b>Chevron</b>: folds; folded, it shows the count in the most urgent colour.</div>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = { t: 0 };
+  componentDidMount() {
+    const t0 = Date.now();
+    this.iv = setInterval(() => this.setState({ t: Date.now() - t0 }), 50);
+  }
+  componentWillUnmount() { clearInterval(this.iv); }
+  renderVals() {
+    const T = this.state.t;
+    const spinSt = { transform: 'rotate(' + ((T % 900) / 900 * 360).toFixed(1) + 'deg)' };
+    const edgeSt = { opacity: 0.3 + 0.7 * (0.5 - 0.5 * Math.cos(2 * Math.PI * T / 1600)) };
+    const bp = (T % 2400) / 2400;
+    const ease = bp < 0.5 ? 2 * bp * bp : 1 - Math.pow(-2 * bp + 2, 2) / 2;
+    const barSt = { left: (-28 + ease * 128).toFixed(2) + '%' };
+    const TINT = { gemini: true, cursor: true };
+    const ic = h => TINT[h]
+      ? { WebkitMask: 'url(icons/' + h + '.svg) center/contain no-repeat', mask: 'url(icons/' + h + '.svg) center/contain no-repeat', background: '#eeeeef' }
+      : { background: 'url(icons/' + h + '.svg) center/contain no-repeat' };
+    const NEED = { fail: true, blk: true, wait: true };
+    const RANK = { fail: 7, blk: 6, wait: 5, rev: 4, run: 3, q: 2, done: 1 };
+    const mark = (st, q) => st === 'run' ? { cls: 'mk spin', t: '', st: spinSt }
+      : st === 'rev' ? { cls: 'mk chip rev', t: '»', st: {} }
+      : st === 'wait' ? { cls: 'mk chip need', t: '?' + (q || 1), st: {} }
+      : st === 'blk' ? { cls: 'mk chip need', t: '!', st: {} }
+      : st === 'fail' ? { cls: 'mk chip fail', t: '✗', st: {} }
+      : st === 'done' ? { cls: 'mk ok', t: '✓', st: {} }
+      : { cls: 'mk ring', t: '', st: {} };
+
+    const A = (role, h, st, act, x) => Object.assign({ role, h, st, act }, x || {});
+    const SW = [
+      { space: 'Test', title: 'Panorama as a herdr-app mod', h: 'codex', st: 'run', age: '4m', focused: true, threads: [
+        { name: 'PR #142 sidebar mod', ph: 'dddf.', agents: [
+          A('author', 'claude', 'done', 'pushed fix r1'),
+          A('reviewer', 'codex', 'done', 'posted 0B 1H 1M'),
+          A('fixer', 'claude', 'fail', 'npm test exited 1', { peek: true, kids: [A('explorer', 'claude', 'done', 'fetched the CI log')] }),
+        ] },
+        { name: 'PR #144 harness icons', ph: 'ddn..', agents: [
+          A('author', 'claude', 'done', 'pushed r1'),
+          A('reviewer', 'codex', 'rev', 'review r2 · 0B 1H so far', { kids: [
+            A('explorer', 'claude', 'run', 'reading mods/agents/main.js', { hov: true, kids: [A('researcher', 'gemini', 'run', 'checking program.tint')] }),
+          ] }),
+        ] },
+        { name: 'PR #145 retry banner copy', ph: 'w...', agents: [
+          A('author', 'claude', 'wait', '"Retrying…" or "Reconnecting…"?', { q: 1 }),
+        ] },
+      ] },
+      { space: 'Project Alpha', title: 'Sample task 123', h: 'claude', st: 'blk', age: '2m', doneThreads: 2, threads: [
+        { name: 'Sample task 3/7 part A', ph: 'ddw..', agents: [A('implementer', 'claude', 'blk', 'wants Bash(rm -rf build/)')] },
+        { name: 'Sample task 4/7 second part', ph: 'n...', agents: [
+          A('implementer', 'cursor', 'run', 'running tests'),
+          A('task-reviewer', 'claude', 'q', 'queued'),
+        ] },
+      ] },
+      { space: 'Test', title: 'Herdr multi-account limit libraries', h: 'claude', st: 'done', age: '<1m', threads: [
+        { name: 'Compare limiter crates', ph: 'ddd', agents: [A('researcher', 'claude', 'done', 'wrote the comparison')] },
+        { name: 'Prototype token bucket', ph: 'dd', agents: [A('worker', 'claude', 'done', 'pushed a branch')] },
+      ] },
+      { space: 'Project Beta', title: 'Sample task 456 longer title', h: 'codex', st: 'run', age: '22m', threads: [
+        { name: 'Sample task 456 step 1', ph: 'dn.', agents: [
+          A('worker', 'codex', 'run', 'reading sample input 1', { kids: [A('probe', 'claude', 'run', 'running sample check x3')] }),
+        ] },
+        { name: 'Sample task 456 step 2', ph: '...', agents: [A('writer', 'gemini', 'q', 'queued until step 1 is in')] },
+      ] },
+      { space: 'Project Alpha', title: 'Sample task 8', h: 'amp', st: 'q', age: '1h', threads: [] },
+    ];
+
+    const all = a => [a].concat((a.kids || []).flatMap(all));
+    const topOf = list => list.reduce((m, a) => (RANK[a.st] || 0) > (RANK[m] || 0) ? a.st : m, null);
+    const qsum = list => list.filter(a => a.st === 'wait').reduce((s, a) => s + (a.q || 1), 0);
+    const news = a => all(a).some(x => NEED[x.st]);
+    const base = { cls: 'r', segs: [], hasIc: false, icCls: 'hic', icSt: {}, name: '', nameCls: 'nm', sub: '', subCls: 'sb', pips: [], hasPips: false, hasFold: false, foldCls: 'fold', chevCls: 'ui i-chev-d s11', foldN: '', age: '', marks: [], edge: false, edgeSt, bar: false, barSt };
+    const row = o => Object.assign({}, base, o);
+    const segs = (lead, last) => lead.map(l => l ? 'seg v' : 'seg').concat([last ? 'seg l' : 'seg t']);
+
+    const secRow = (label, cls, n) => row({ cls: 'r sec', name: label, nameCls: 'secl ' + cls, sub: String(n), subCls: 'secn' });
+    const orchRow = (o, folded, sel) => {
+      const desc = o.threads.flatMap(t => t.agents.flatMap(all));
+      const needs = [];
+      if (desc.some(a => a.st === 'fail')) needs.push(mark('fail'));
+      if (desc.some(a => a.st === 'blk') && o.st !== 'blk') needs.push(mark('blk'));
+      const q = qsum(desc); if (q) needs.push(mark('wait', q));
+      const own = o.st === 'done' ? { cls: 'mk dot', t: '', st: {} } : mark(o.st);
+      const top = topOf(desc);
+      const n = o.threads.length + (o.doneThreads || 0);
+      return row({
+        cls: 'r orch' + (o.focused && sel ? ' sel' : ''), hasIc: true, icCls: 'hic h16', icSt: ic(o.h),
+        name: o.space, nameCls: o.st === 'q' ? 'nm quiet' : 'nm', sub: '· ' + o.title,
+        hasFold: folded && n > 0, chevCls: folded ? 'ui i-chev-r s11' : 'ui i-chev-d s11', foldN: folded ? String(n) : '',
+        foldCls: folded ? 'fold ' + (NEED[top] ? 'need' : o.st === 'done' ? 'done' : '') : 'fold',
+        age: o.age, marks: needs.concat([own]), edge: needs.length > 0 || o.st === 'blk',
+        bar: desc.some(a => a.st === 'run' || a.st === 'rev'),
+      });
+    };
+    const thRow = (t, sg) => {
+      const fl = t.agents.flatMap(all);
+      return row({ cls: 'r th', segs: sg, name: t.name, nameCls: 'nm grow th', subCls: 'nosb', hasPips: true, pips: t.ph.split('').map(c => 'pip ' + c), marks: [mark(topOf(fl), qsum(fl))] });
+    };
+    const agRow = (a, sg, mode, foldN) => row({
+      cls: 'r ag' + (mode === 'full' && a.hov ? ' hov' : '') + (mode === 'peek' && a.peek ? ' pk' : ''),
+      segs: sg, hasIc: true, icSt: ic(a.h), name: a.role, nameCls: 'nm ag', sub: '· ' + a.act, subCls: NEED[a.st] ? 'sb need' : 'sb',
+      hasFold: !!foldN, chevCls: 'ui i-chev-r s11', foldN: foldN ? String(foldN) : '',
+      marks: (mode === 'full' && a.hov ? [{ cls: 'mk pchip', t: 'Peek', st: {} }] : []).concat([mark(a.st, a.q)]),
+      edge: !!NEED[a.st],
+    });
+    const sumRow = (sg, text, sub) => row({ cls: 'r sum', segs: sg, name: text, nameCls: 'nm sum', sub: sub ? '· ' + sub : '', subCls: sub ? 'sb' : 'nosb' });
+
+    // Expanded: every agent and subagent.
+    const treeFull = (list, lead, out) => list.forEach((a, i) => {
+      const last = i === list.length - 1;
+      out.push(agRow(a, segs(lead, last), 'full'));
+      if (a.kids) treeFull(a.kids, lead.concat([!last]), out);
+    });
+    // Default: threads always; agents only on the path to something that needs you;
+    // finished agents fold into one line, healthy subtrees into the fold count.
+    const treeNews = (list, lead, out, mode) => {
+      const shown = list.filter(news);
+      const done = list.filter(a => a.st === 'done' && !news(a));
+      const items = shown.map(a => ({ a })).concat(done.length ? [{ sum: done }] : []);
+      items.forEach((it, i) => {
+        const last = i === items.length - 1;
+        if (it.sum) { out.push(sumRow(segs(lead, last), '✓ ' + it.sum.length + ' done', it.sum.map(a => a.role).join(', '))); return; }
+        const a = it.a;
+        const kidsNews = (a.kids || []).some(news);
+        out.push(agRow(a, segs(lead, last), mode, kidsNews ? 0 : (a.kids || []).length));
+        if (kidsNews) treeNews(a.kids, lead.concat([!last]), out, mode);
+      });
+    };
+    const build = (mode, sel = true, data = SW) => {
+      const out = [];
+      const sections = [['Needs you', 'need', o => o.threads.some(t => t.agents.some(news)) || o.st === 'blk'], ['Done', 'done', o => o.st === 'done'], ['Working', 'working', o => o.st === 'run'], ['Idle', 'idle', o => o.st === 'q']];
+      const used = new Set();
+      sections.forEach(([label, cls, test]) => {
+        const members = data.filter(o => !used.has(o) && test(o));
+        if (!members.length) return;
+        members.forEach(o => used.add(o));
+        out.push(secRow(label, cls, members.length));
+        members.forEach(o => {
+          const folded = cls === 'done' || cls === 'idle';
+          out.push(orchRow(o, folded, sel));
+          if (folded) return;
+          const kids = o.threads.map(t => ({ t })).concat(o.doneThreads ? [{ sum: o.doneThreads }] : []);
+          kids.forEach((k, i) => {
+            const last = i === kids.length - 1;
+            if (k.sum) { out.push(sumRow(segs([], last), '✓ ' + k.sum + ' tasks done', 'part 1, part 2')); return; }
+            out.push(thRow(k.t, segs([], last)));
+            if (mode === 'full') treeFull(k.t.agents, [!last], out);
+            else if (k.t.agents.some(news)) treeNews(k.t.agents, [!last], out, mode);
+          });
+        });
+      });
+      return out;
+    };
+
+    const spaces = [
+      { l: 'T', name: 'Test', repo: 'herdr-panorama', cls: 'sp on', tileSt: { background: '#22a99a' }, marks: [{ cls: 'mk chip need', t: '2', st: { marginLeft: '8px' } }, mark('run')] },
+      { l: 'A', name: 'Project Alpha', repo: '', cls: 'sp', tileSt: { background: '#e3814f' }, marks: [{ cls: 'mk chip need', t: '1', st: {} }, mark('run')] },
+      { l: 'B', name: 'Project Beta', repo: '', cls: 'sp', tileSt: { background: '#5b8def' }, marks: [mark('run')] },
+    ];
+
+    const lines = [
+      { t: '› Run the panorama mod PRs with /review-cycle (auto, github)', c: 'ln usr' },
+      { t: ' ', c: 'ln' },
+      { t: '• Spawned 3 threads: PR #142 sidebar mod, PR #144 harness icons,', c: 'ln hi' },
+      { t: '  PR #145 retry banner copy.', c: 'ln hi' },
+      { t: ' ', c: 'ln' },
+      { t: '• Ran gh pr checks 142', c: 'ln hi' },
+      { t: '  └ ✗ test   npm test exited 1 · 3 failing in sidebar.spec.ts', c: 'ln err' },
+      { t: ' ', c: 'ln' },
+      { t: '• Asked the operator (Q14): "Retrying…" or "Reconnecting…" for the banner?', c: 'ln hi' },
+      { t: '  └ PR #145 waits on the answer; #142 and #144 go on meanwhile.', c: 'ln dim' },
+      { t: ' ', c: 'ln' },
+      { t: '• PR #144: the reviewer is on r2; its explorer reads mods/agents/main.js', c: 'ln hi' },
+      { t: '  └ explorer → researcher (Gemini) is checking program.tint per harness', c: 'ln dim' },
+      { t: ' ', c: 'ln' },
+      { t: '• The #142 failure is real: tree rows are 26px and the fold test still', c: 'ln' },
+      { t: '  expects 30px. I will send it back to the fixer after you look at it.', c: 'ln' },
+      { t: ' ', c: 'ln' },
+      { t: '◦ Working (2m 14s • esc to interrupt)', c: 'ln work' },
+    ];
+
+    // Frames D and D2: the Swarm tab, a herdr-app restyle of Swarm View 5 deep (5d):
+    // orchestrators | threads | depth 1 | depth 2 | ... one column per depth of the selected thread's tree.
+    const sh = (i, st, act, age, tools) => A('shard', 'codex', st, act, { id: 's' + i, model: 'mini', age, tools });
+    const DEEP = [
+      A('reviewer', 'codex', 'rev', 'review r2 · 0B 1H so far', { id: 'v1', model: 'gpt-5', age: '21m', tools: 52, kids: [
+        A('explorer', 'claude', 'done', 'mapped the icon call sites', { id: 'e1', model: 'haiku', age: '19m', tools: 9 }),
+        A('researcher', 'claude', 'run', 'tracing program.tint lookups', { id: 'r1', model: 'opus', age: '16m', tools: 38, kids: [
+          A('explorer', 'claude', 'done', 'listed programs.json readers', { id: 'e3', model: 'haiku', age: '12m', tools: 7 }),
+          A('researcher', 'gemini', 'run', 'checking the icon table on reload', { id: 'r2', model: 'gemini 2.5', age: '11m', tools: 24, kids: [
+            A('checker', 'claude', 'wait', 'paused · asks about the Gemini tile', { id: 'c1', model: 'sonnet', age: '7m', tools: 11, q: 1, qs: ['Tint Gemini white like the other glyphs, or keep its purple tile?'], kids: [
+              A('probe', 'claude', 'run', 'rendering every icon at 14px', { id: 'p1', model: 'haiku', age: '2m', tools: 4 }),
+              A('probe', 'claude', 'done', 'compared tinted and full colour', { id: 'p2', model: 'haiku', age: '5m', tools: 6 }),
+            ] }),
+          ] }),
+          A('fixer', 'cursor', 'fail', 'stopped: icons.spec.ts fails', { id: 'f1', model: 'cursor', age: '9m', tools: 14, err: 'npm test exited 1 · 2 failing' }),
+        ] }),
+        A('batch', 'codex', 'run', 'scanning 6 icon sets', { id: 'b1', model: 'gpt-5', age: '10m', tools: 19, kids: [
+          sh(1, 'run', 'lobehub icons a…m', '4m', 12), sh(2, 'run', 'lobehub icons n…z', '4m', 9), sh(3, 'done', 'lucide: 41 icons', '9m', 31),
+          sh(4, 'done', 'simple-icons: 12', '9m', 22), sh(5, 'done', 'devicons: 7', '8m', 27), sh(6, 'q', 'queued', '0m', 0),
+        ] }),
+      ] }),
+      A('author', 'claude', 'done', 'pushed r1', { id: 'a2', model: 'sonnet', age: '44m', tools: 88 }),
+    ];
+    const T144 = { name: 'PR #144 harness icons', ph: 'dddn..', cur: 'review r2', agents: DEEP,
+      phases: [['author', 'd', '09:02–09:20'], ['review r1', 'd', '09:24–09:38'], ['fix r1', 'd', '09:41–09:43'], ['review r2', 'n', 'since 09:43'], ['CI', 'x', ''], ['merge', 'x', '']] };
+    const SW2 = SW.map((o, i) => i === 0 ? Object.assign({}, o, { threads: o.threads.map(t => t.name.startsWith('PR #144') ? T144 : Object.assign({ cur: t.name.startsWith('PR #142') ? 'CI · 3 failing' : 'author · waits on Q14' }, t)) }) : o);
+    const spacesD = spaces.map((sp, i) => i === 0 ? Object.assign({}, sp, { marks: [{ cls: 'mk chip need', t: '4', st: { marginLeft: '8px' } }, mark('run')] }) : sp);
+    const LIVE = a => a.st !== 'done' && a.st !== 'cxl';
+    const SHOWN = a => LIVE(a) || a.st === 'fail' || (a.kids || []).some(SHOWN);
+    const depthOf = (list, d) => Math.max(0, ...list.filter(SHOWN).map(a => Math.max(d, depthOf(a.kids || [], d + 1))));
+    const LBLT = { run: 'running', rev: 'reviewing', wait: 'needs answer', blk: 'blocked', fail: 'failed', done: 'done', q: 'queued' };
+    const POD = st => 'pod ' + (st === 'wait' || st === 'blk' ? 'need' : st);
+    const OW = 236, TW = 300, DW = 272, CG = 36, GW = 1230, CH = 676, VG = 10;
+    const PHG = { d: '✓', n: '▸', f: '✗', w: '?', x: '·' };
+    const deep = (selId, focusCol) => {
+      const orchs = SW2.filter(o => o.space === 'Test');
+      const O = orchs[0], T = T144;
+      const flat = [];
+      const walk = (list, d, parent) => list.forEach(a => { a._d = d; a._p = parent; flat.push(a); walk(a.kids || [], d + 1, a); });
+      walk(T.agents, 1, null);
+      const selA = selId ? flat.find(a => a.id === selId) : null;
+      const path = []; for (let a = selA; a; a = a._p) path.unshift(a);
+      const onPath = new Set(path);
+      const D = depthOf(T.agents, 1);
+      const cols = [{ w: OW, t: 'Orchestrators', n: orchs.length }, { w: TW, t: 'Threads', n: O.threads.length }]
+        .concat(Array.from({ length: D }, (_, i) => ({ w: DW, t: 'Depth ' + (i + 1), n: flat.filter(a => a._d === i + 1).length })));
+      const last = cols.length - 1;
+      const span = (lo, hi) => { let n = 0; for (let i = lo; i <= hi; i++) n += cols[i].w + (i > lo ? CG : 0); return n; };
+      // the window: the focused column, its parents' column and, if it fits, its children's; then more, right first
+      const f = focusCol, fit = GW - 24;
+      let lo = f <= 1 ? 0 : f - 1, hi = Math.min(last, Math.max(f + 1, 2));
+      while (hi > f && span(lo, hi) > fit) hi--;
+      while (lo < f && span(lo, hi) > fit) lo++;
+      while (hi + 1 <= last && span(lo, hi + 1) <= fit) hi++;
+      while (lo > 0 && span(lo - 1, hi) <= fit) lo--;
+      let x = lo === 0 ? 0 : 24;
+      for (let i = lo; i <= hi; i++) { if (i > lo) x += CG; cols[i].x = x; x += cols[i].w; }
+      const vis = i => i >= lo && i <= hi;
+      const nodes = [], lines = [];
+      const L = (cls, x, y, w, h) => lines.push({ cls, st: { left: x + 'px', top: y + 'px', width: Math.max(0, w) + 'px', height: Math.max(0, h) + 'px' } });
+      const link = (px, py, cx, kids, onFn) => {
+        if (!kids.length) return;
+        const sx = cx - CG / 2;
+        L(kids.some(onFn) ? 'dl on' : 'dl', px, py - 0.75, sx - px, 1.5);
+        const ys = kids.map(k => k.y + k.mid);
+        const top = Math.min(py, ys[0]), bot = Math.max(py, ...ys);
+        L('dl', sx - 0.75, top, 1.5, bot - top);
+        kids.forEach(k => L(onFn(k) ? 'dl on' : 'dl', sx, k.y + k.mid - 0.75, cx - sx, 1.5));
+      };
+      const N = o => {
+        const n = Object.assign({ cls: 'dn', hasIc: false, icCls: 'hic', icSt: {}, pods: [], title: '', tCls: 'dn-t1', meta: '', label: '', labelCls: 'dn-lab none', marks: [], two: true, hasPips: false, pips: [], sub: '', sCls: 'gs', right: '', hasDetail: false, detail: [], hasActs: false, acts: [], foot: '', edge: false, bar: false, mid: 27 }, o);
+        n.st = { left: n.x + 'px', top: n.y + 'px', width: n.w + 'px', height: n.h + 'px' };
+        nodes.push(n); return n;
+      };
+      // orchestrators (this space only) and the selected orchestrator's threads
+      const oNodes = [], tNodes = [];
+      orchs.forEach((o, i) => {
+        const r = orchRow(o, false, false), y = i * 64;
+        oNodes.push({ y, mid: 27, on: o === O });
+        if (vis(0)) N({ cls: 'dn' + (o === O ? ' path' : '') + (o.st === 'done' ? ' dimmed' : ''), x: cols[0].x, y, w: OW, h: 54, hasIc: true, icCls: 'hic h16', icSt: ic(o.h), title: o.title, tCls: 'dn-t1 b wide', marks: r.marks, sub: (o.h === 'codex' ? 'Codex' : 'Claude Code') + ' · ' + o.age + ' · tab ' + (i + 1), edge: r.edge, bar: r.bar });
+      });
+      let ty = 0, tSelY = 0;
+      O.threads.forEach(t => {
+        const fl = t.agents.flatMap(all), top = topOf(fl), isSel = t === T, big = isSel && focusCol === 1;
+        const phs = big ? t.phases : [];
+        const h = big ? 64 + phs.length * 20 : 54;
+        if (isSel) tSelY = ty;
+        tNodes.push({ y: ty, mid: 27, on: isSel });
+        if (vis(1)) N({ cls: 'dn' + (big ? ' sel' : isSel ? ' path' : ''), x: cols[1].x, y: ty, w: TW, h, title: t.name, tCls: 'dn-t1 b wide', marks: [mark(top, qsum(fl))], hasPips: true, pips: t.ph.split('').map(c => 'pip ' + c),
+          sub: big ? t.cur + ' · 21m · ' + fl.length + ' agents, ' + D + ' levels' : t.cur, sCls: NEED[top] ? 'gs need' : 'gs',
+          hasDetail: big, detail: phs.map(([nm, st, tm]) => ({ cls: 'dd dph' + (st === 'n' ? ' dcur' : st === 'x' ? ' dnext' : ''), k: PHG[st], t: nm, r: tm })) });
+        ty += h + VG;
+      });
+      if (vis(0) && vis(1)) link(cols[0].x + OW, 27, cols[1].x, tNodes, k => k.on);
+      // the agent tree: each column stacks its cards; children start level with the agent that spawned them,
+      // and an agent with children starts below the previous group's last child, so lines never share rows
+      const detailOf = a => [{ cls: 'dd', k: 'now', t: a.act, r: '' }]
+        .concat((a.qs || []).map(q => ({ cls: 'dd need', k: '?', t: q, r: '' })))
+        .concat(a.err ? [{ cls: 'dd need', k: '✗', t: a.err, r: '' }] : []);
+      const dH = a => detailOf(a).reduce((s, l) => s + Math.ceil(l.t.length / 34) * 17 + 3, 0);
+      const cur = {}, trunk = {}, groups = [];
+      const place = (list, d, y0, parent) => {
+        const lv = list.filter(SHOWN), fin = list.filter(a => !SHOWN(a)), kids = [];
+        const at = (n, hasKids) => {
+          n.y = Math.max(cur[d] ?? 0, y0, hasKids && trunk[d + 1] != null ? trunk[d + 1] - n.mid + 16 : -1e9);
+          cur[d] = n.y + n.h + VG; kids.push(n);
+        };
+        lv.forEach(a => {
+          const n = { a, d, h: a === selA ? 68 + dH(a) : 54, mid: 27 };
+          const hk = (a.kids || []).some(SHOWN) || (a.kids || []).length > 0;
+          at(n, hk);
+          if (hk) place(a.kids, d + 1, n.y, n);
+        });
+        if (fin.length) at({ fold: fin, d, h: 40, mid: 20 }, false);
+        const lk = kids[kids.length - 1];
+        trunk[d] = Math.max(trunk[d] ?? -1e9, lk.y + lk.mid);
+        groups.push({ parent, d, kids });
+      };
+      place(T.agents, 1, 0, null);
+      const more = [];
+      groups.forEach(g => g.kids.forEach(n => {
+        const ci = 1 + n.d; if (!vis(ci)) return;
+        const c = cols[ci];
+        if (n.fold) {
+          const roles = {}; n.fold.forEach(a => { roles[a.role] = (roles[a.role] || 0) + 1; });
+          N({ cls: 'dn dfold', x: c.x, y: n.y, w: c.w, h: 40, mid: 20, two: false, pods: n.fold.slice(0, 4).map(a => POD(a.st)),
+            title: n.fold.length + ' finished · ' + Object.entries(roles).map(([r, k]) => k > 1 ? r + ' ×' + k : r).join(', '), tCls: 'dn-t1 fin' });
+          return;
+        }
+        const a = n.a, isSel = a === selA, onP = onPath.has(a), kidsOff = (a.kids || []).some(SHOWN) && !vis(ci + 1);
+        const o = { cls: 'dn' + (isSel ? ' sel' : onP ? ' path' : ''), x: c.x, y: n.y, w: c.w, h: n.h, hasIc: true, icSt: ic(a.h),
+          title: a.role, tCls: 'dn-t1' + (isSel || onP ? ' hi' : ''), meta: a.id + ' · ' + a.model, marks: [mark(a.st, a.q)],
+          sub: a.act, sCls: NEED[a.st] ? 'gs need' : 'gs', right: kidsOff ? '› ' + a.kids.length : a.age + (a.tools ? ' · ' + a.tools + ' calls' : ''),
+          edge: !!NEED[a.st], bar: a.st === 'run' || a.st === 'rev' };
+        if (isSel) Object.assign(o, { label: LBLT[a.st], labelCls: 'dn-lab ' + (NEED[a.st] ? 'need' : a.st), marks: [], two: false, hasDetail: true, detail: detailOf(a), hasActs: true,
+          acts: [{ cls: 'da solid', t: 'Peek', k: '⏎' }, { cls: 'da', t: 'Transcript', k: 't' }, { cls: a.st === 'wait' || a.st === 'blk' ? 'da' : 'da off', t: a.st === 'blk' ? 'Allow / deny' : 'Answer', k: 'a' }],
+          meta: a.id + ' · ' + a.model + ' · ' + a.age, foot: '' });
+        N(o);
+      }));
+      groups.forEach(g => {
+        const ci = 1 + g.d; if (!vis(ci)) return;
+        const c = cols[ci], onFn = k => !!(k.a && onPath.has(k.a));
+        if (g.parent) { const pv = vis(ci - 1); link(pv ? cols[ci - 1].x + cols[ci - 1].w : 0, g.parent.y + g.parent.mid, c.x, g.kids, onFn); }
+        else link(vis(1) ? cols[1].x + TW : 0, tSelY + 27, c.x, g.kids, onFn);
+      });
+      for (let i = lo; i <= hi; i++) {
+        const below = nodes.filter(n => n.x === cols[i].x && n.y + n.h > CH - 30).length;
+        if (below) more.push({ t: '↓ ' + below + ' more below', st: { left: (cols[i].x + 10) + 'px', top: (CH - 26) + 'px' } });
+      }
+      const names = [O.title, T.name].concat(path.map(a => a.role + ' ' + a.id));
+      const nr = last - hi, total = span(0, last);
+      return {
+        left: lo > 0 ? '‹ ' + names.slice(0, lo).join(' › ') : '', leftN: lo > 0 ? lo + ' column' + (lo > 1 ? 's' : '') + ' left' : '',
+        right: nr > 0 ? 'depth ' + hi + (nr > 1 ? '–' + (last - 1) : '') + ' · ' + nr + ' column' + (nr > 1 ? 's' : '') + ' right' : '', rightArrow: nr > 0 ? '›' : '',
+        heads: cols.slice(lo, hi + 1).map(c => ({ t: c.t, n: String(c.n), st: { left: c.x + 'px' } })),
+        lines, nodes, more, fadeL: lo > 0, fadeR: nr > 0,
+        thumbSt: { left: ((lo === 0 ? 0 : span(0, lo - 1) + CG) / total * 100).toFixed(2) + '%', width: (span(lo, hi) / total * 100).toFixed(2) + '%' },
+      };
+    };
+    const gD = deep(null, 1), gD2 = deep('c1', 5);
+    const tabsTerm = [
+      { cls: 'tab on', hasIc: true, icSt: ic('codex'), label: '1', spin: true, close: true },
+      { cls: 'tab', hasIc: true, icSt: ic('claude'), label: '2', dot: true },
+    ];
+    const tabsGraph = [
+      { cls: 'tab on', swarm: true, hasIc: false, label: 'Swarm', chip: '4', close: false },
+      { cls: 'tab', hasIc: true, icSt: ic('codex'), label: '1', spin: true },
+      { cls: 'tab', hasIc: true, icSt: ic('claude'), label: '2', dot: true },
+    ];
+    const rowsA = build('news');
+    const rowsD = build('news', false, SW2);
+    const rowsC = build('peek');
+    const rowsB = build('full');
+    const wins = [
+      { screen: 'A herdr-app window', pos: { left: '0px', top: '0px' }, clipSt: { width: '1920px', height: '1080px' }, winCls: 'win z12',
+        label: 'A · herdr-app, default layout, with the panorama mod in the Agents slot (shown at the app\'s 1.2 zoom, like the screenshot)',
+        note: 'Only the sidebar changes. Brand row, Spaces, tab bar, pane card and status bar are the shipped mods. Spaces gains one thing: how many items need you in that space, and a spinner when something works there. The Agents list becomes the swarm: orchestrators sorted into the shipped priority sections, their threads below, and agents only on the path to something that needs you. Codex runs the focused orchestrator; its workers are Claude, Cursor and Gemini.',
+        spaces, rows: rowsA, peek: false, thumb: false, tabs: tabsTerm, term: true, graph: false, g: gD },
+      { screen: 'C Peek', pos: { left: '0px', top: '1240px' }, clipSt: { width: '1288px', height: '1800px' }, winCls: 'win z2',
+        label: 'C · 2x, the same window cropped: clicking a subagent with no pane opens Peek',
+        note: 'herdr-app peeks a pane-less sub-agent with terminal.peek. A Claude Task subagent has no terminal at all, so panorama opens its own popup overlay instead: status, error, last message, and a way back to the orchestrator that owns it.',
+        spaces, rows: rowsC, peek: true, thumb: false, tabs: tabsTerm, term: true, graph: false, g: gD },
+      { screen: 'D Swarm tab', pos: { left: '0px', top: '3240px' }, clipSt: { width: '1920px', height: '1080px' }, winCls: 'win z12',
+        label: 'D · Clicking a space opens its Swarm tab first: Swarm View 5 deep, restyled to herdr-app. One column per depth; the rest scrolls sideways',
+        note: 'Columns: orchestrators of this space | threads of the selected orchestrator | depth 1 | depth 2 | … as deep as the selected thread goes. Columns keep their width and align left. The view shows the focused column, the one before it and, if it fits, the one after, then as many more as fit. Here the thread is selected, so orchestrators, threads and depths 1–2 show; depths 3–5 are off to the right (named above the columns, "› n" on cards whose children are off-screen, scrollbar below).',
+        spaces: spacesD, rows: rowsD, peek: false, thumb: true, tabs: tabsGraph, term: false, graph: true, g: gD },
+      { screen: 'D2 Swarm tab scrolled', pos: { left: '0px', top: '4480px' }, clipSt: { width: '1920px', height: '1080px' }, winCls: 'win z12',
+        label: 'D2 · The same tab after → → → → onto the checker at depth 4: the window scrolled right to depths 2–5',
+        note: 'The selected path lights up (brighter borders and lines); the selected card opens with what it is doing, its question and actions (Peek, Transcript, Answer). Orchestrators, threads and depth 1 scrolled off to the left and are named on the breadcrumb line. Each column scrolls vertically on its own ("↓ n more below"). shift+wheel or a horizontal wheel scrolls without moving the selection; the next selection change scrolls back to it.',
+        spaces: spacesD, rows: rowsD, peek: false, thumb: true, tabs: tabsGraph, term: false, graph: true, g: gD2 },
+    ];
+
+    return { wins, spaces, rowsB, lines, spinSt, edgeSt, barSt, icCodex: ic('codex'), icClaude: ic('claude') };
+  }
+}
+</script>
+</body>
+</html>

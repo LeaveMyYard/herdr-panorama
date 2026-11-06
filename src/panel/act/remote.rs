@@ -1,4 +1,4 @@
-//! An orchestrator on another herdr machine (Python `SwarmApp._goto_remote`). herdr's API
+//! A root on another herdr machine (Python `SwarmApp._goto_remote`). herdr's API
 //! cannot switch this herdr to another machine, so the pane is focused on that machine's own
 //! server (in front once herdr shows that machine) and the operator is told where it is.
 

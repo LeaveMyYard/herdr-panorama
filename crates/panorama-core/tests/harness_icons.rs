@@ -6,7 +6,7 @@ use panorama_core::view::{Target, View, render_dock, render_graph};
 use serde_json::json;
 
 fn swarm() -> Swarm {
-    serde_json::from_value(json!({"orchestrators":[
+    serde_json::from_value(json!({"roots":[
         {"pane_id":"claude-pane","tab_label":"same title","harness":"claude", "herdr_status":"working"},
         {"pane_id":"codex-pane","tab_label":"same title","harness":"codex", "herdr_status":"blocked"}
     ]})).unwrap()
@@ -18,15 +18,15 @@ fn vendor_codepoints_and_text_fallback_are_exact() {
     assert_eq!(CLAUDE as u32, 0xe1a0);
     assert_eq!(CODEX as u32, 0xe1a1);
     for (o, glyph, text) in [
-        (&sw.orchestrators[0], CLAUDE, "Claude Code"),
-        (&sw.orchestrators[1], CODEX, "Codex"),
+        (&sw.roots[0], CLAUDE, "Claude Code"),
+        (&sw.roots[1], CODEX, "Codex"),
     ] {
         let name = title(o, HarnessIcons::Font);
         assert_eq!(name, format!("{glyph} same title"));
         assert_eq!(trunc(&name, 4), format!("{glyph} s…"));
         assert_eq!(title(o, HarnessIcons::Text), format!("{text} · same title"));
     }
-    let mut o = sw.orchestrators[0].clone();
+    let mut o = sw.roots[0].clone();
     for harness in ["other", ""] {
         o.harness = harness.into();
         assert_eq!(
@@ -36,10 +36,9 @@ fn vendor_codepoints_and_text_fallback_are_exact() {
     }
     // Missing harness in old wire data still has the established Claude default.
     let sw: Swarm =
-        serde_json::from_value(json!({"orchestrators":[{"pane_id":"old","tab_label":"old tab"}]}))
-            .unwrap();
+        serde_json::from_value(json!({"roots":[{"pane_id":"old","tab_label":"old tab"}]})).unwrap();
     assert_eq!(
-        title(&sw.orchestrators[0], HarnessIcons::Font),
+        title(&sw.roots[0], HarnessIcons::Font),
         format!("{CLAUDE} old tab")
     );
 }
@@ -87,5 +86,5 @@ fn icon_titles_keep_layout_geometry_navigation_and_raw_labels() {
         assert_eq!(screen.columns, plain.columns);
         view.harness_icons = HarnessIcons::Font;
     }
-    assert!(sw.orchestrators.iter().all(|o| o.tab_label == "same title"));
+    assert!(sw.roots.iter().all(|o| o.tab_label == "same title"));
 }

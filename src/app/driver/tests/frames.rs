@@ -25,9 +25,10 @@ fn spinner_frames_advance_without_changing_width() {
     let widths = |t: &str| t.lines().map(|l| l.chars().count()).collect::<Vec<_>>();
     assert_eq!(r.d.shown().unwrap().w(), WIDE.0);
     assert_eq!(widths(&first), widths(&second)); // each row as wide as before (Python's)
-    let o = &r.d.app.swarm.orchestrators[1];
+    let o = &r.d.app.swarm.roots[1];
     assert!(
-        o.agents()
+        o.agents
+            .iter()
             .any(|a| a.status == panorama_core::model::Status::Running)
     );
 }
@@ -47,7 +48,7 @@ fn frames_never_rearm_or_move_the_cursor() {
     assert_eq!(r.d.app.swarm, swarm);
     assert!(r.d.app.armed(now)); // not a background change
     r.key(Key::Move(1), now); // keys keep working at once
-    assert_eq!(r.d.app.view.thread.as_deref(), Some("ref:#44"));
+    assert_eq!(r.d.app.view.agent.as_deref(), Some("a2f81c0"));
     assert!(goes_to(&r.key(Key::Goto, now), "w1:p1"));
 }
 

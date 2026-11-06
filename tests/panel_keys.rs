@@ -1,10 +1,14 @@
 //! The panel's keys against the narrow app-screen golden (`screens/demo-narrow.json`,
 //! captured from Python's `SwarmApp` at 70 columns): a panel whose tab has no orchestrator
 //! shows the narrow layout, and its keys walk it as Python's do. Each snap after a key
-//! press is drawn from the panel's own state, cell for cell.
+//! press is drawn from the panel's own state, cell for cell, against the app's screens of the
+//! same run (`rust/screens/demo-narrow.json` since the uniform tree's depth columns, plan
+//! `uniform-agent-tree.md` U4, D5).
 
 #[path = "harness_goldens/mod.rs"]
 mod harness_goldens;
+#[path = "v1_wire/mod.rs"]
+mod v1_wire;
 
 use panorama::panel::input::Key;
 use panorama::panel::model::Panel;
@@ -16,10 +20,10 @@ use std::time::{Duration, Instant};
 
 fn fixture(rel: &str) -> Value {
     let path = format!("{}/tests/fixtures/{rel}", env!("CARGO_MANIFEST_DIR"));
-    harness_goldens::adapt(
+    v1_wire::fixture(harness_goldens::adapt(
         rel,
         serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap(),
-    )
+    ))
 }
 
 fn cell(ch: char, fg: &str, bg: &str, bold: bool) -> String {
@@ -82,6 +86,7 @@ fn cells(s: &Screen) -> Vec<String> {
 #[test]
 fn the_demos_keys_walk_the_narrow_layout_as_pythons() {
     let file = fixture("screens/demo-narrow.json");
+    let owned = fixture("rust/screens/demo-narrow.json");
     let run = &file["runs"][0];
     let swarm = fixture(run["input"].as_str().unwrap())["swarm"].clone();
     let t0 = Instant::now();
@@ -119,7 +124,7 @@ fn the_demos_keys_walk_the_narrow_layout_as_pythons() {
             "frame" => assert_eq!(step["n"], 0),
             "snap" => {
                 let name = step["name"].as_str().unwrap();
-                let want = golden(&file["screens"][name]);
+                let want = golden(&owned["screens"][name]);
                 let got = cells(&panel.paint(70, 45, &f));
                 for (y, (a, b)) in want.iter().zip(&got).enumerate() {
                     assert_eq!(a, b, "{name}: row {y}");

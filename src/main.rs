@@ -7,12 +7,23 @@
 
 fn main() {
     match std::env::args().nth(1).as_deref() {
+        Some("app-inbox") => {
+            let args: Vec<String> = std::env::args().skip(2).collect();
+            std::process::exit(panorama::app_inbox::run(&args))
+        }
+        Some("app-feed") => {
+            let args: Vec<String> = std::env::args().skip(2).collect();
+            std::process::exit(panorama::app_feed::cli::run(&args))
+        }
         Some("panel") => std::process::exit(panorama::panel::run()),
         Some("tui") => std::process::exit(panorama::app::run::tui()),
         Some("contract") => match panorama::contract::answer(std::env::args().nth(2).as_deref()) {
             Some(answer) => println!("{answer}"),
             None => std::process::exit(2),
         },
+        Some("hook") if std::env::args().nth(2).as_deref() == Some("setup") => {
+            std::process::exit(panorama::hook::setup::main())
+        }
         Some("hook") => std::process::exit(panorama::hook::main(
             std::env::args().nth(2).as_deref().unwrap_or(""),
         )),

@@ -4,16 +4,15 @@ use super::actions::actions;
 use super::boxes::jn;
 use super::details::agent_detail_lines;
 use super::edge::sweep_pos;
-use super::phases::cur_idx;
 use super::pods::{Pods, pods_row};
-use crate::model::{Agent, Thread};
+use crate::model::{Agent, Root};
 use crate::view::palette::LINE;
 use crate::view::screen::Screen;
 use crate::view::state::View;
 use serde_json::{Value, json};
 
-fn thread(v: Value) -> Thread {
-    let mut t = json!({"id": "t", "name": "n", "source": "turn"});
+fn root(v: Value) -> Root {
+    let mut t = json!({"pane_id": "p", "tab_id": null, "tab_label": "t", "session_id": null});
     t.as_object_mut()
         .unwrap()
         .extend(v.as_object().unwrap().clone());
@@ -24,63 +23,11 @@ fn agent(v: Value) -> Agent {
     serde_json::from_value(v).unwrap()
 }
 
-fn phases(states: &[&str]) -> Value {
-    states
-        .iter()
-        .enumerate()
-        .map(|(i, s)| json!({"name": format!("p{i}"), "state": s}))
-        .collect()
-}
-
 fn text(lines: &[Vec<crate::view::seg::Seg>]) -> Vec<String> {
     lines
         .iter()
         .map(|l| l.iter().map(|s| s.text.as_str()).collect())
         .collect()
-}
-
-#[test]
-fn a_current_phase_with_an_end_still_counts_from_its_start() {
-    // Python's phase_sub: `now` uses now - start even when an end is set
-    let t =
-        thread(json!({"phases": [{"name": "p", "state": "now", "start": 100.0, "end": 200.0}]}));
-    assert_eq!(
-        super::phases::phase_sub(
-            &t,
-            &View {
-                now: 1000.0,
-                ..View::default()
-            }
-        ),
-        "p · 15m"
-    );
-}
-
-#[test]
-fn the_current_phase() {
-    assert_eq!(cur_idx(&thread(json!({}))), None);
-    assert_eq!(
-        cur_idx(&thread(json!({"phases": phases(&["done", "now", "next"])}))),
-        Some(1)
-    );
-    assert_eq!(
-        cur_idx(&thread(
-            json!({"phases": phases(&["done", "failed", "now"])})
-        )),
-        Some(1)
-    );
-    assert_eq!(
-        cur_idx(&thread(
-            json!({"phases": phases(&["done", "skipped", "done"])})
-        )),
-        Some(2)
-    );
-    assert_eq!(
-        cur_idx(&thread(
-            json!({"phases": phases(&["done", "next", "next"])})
-        )),
-        Some(0)
-    );
 }
 
 #[test]
@@ -120,13 +67,13 @@ fn pods_show_live_first_and_fold_the_finished_when_short_of_room() {
                 .map(|i| json!({"id": format!("d{i}"), "status": "done", "started": f64::from(i)})),
         )
         .collect();
-    let t = thread(json!({"agents": ags}));
+    let t = root(json!({"agents": ags}));
     let mut s = Screen::new(40, 1);
     pods_row(
         &mut s,
         0,
         0,
-        &t,
+        &t.agents.iter().collect::<Vec<_>>(),
         &View::default(),
         Pods {
             max_n: 6,
@@ -140,7 +87,7 @@ fn pods_show_live_first_and_fold_the_finished_when_short_of_room() {
         &mut s,
         0,
         0,
-        &t,
+        &t.agents.iter().collect::<Vec<_>>(),
         &View::default(),
         Pods {
             max_n: 2,
@@ -310,23 +257,26 @@ fn marks_count_the_questions_no_agent_filed() {
 }
 
 #[test]
-fn top_only_pods_are_the_threads_own_then_nested() {
-    // Python's pods_row(top_only=True) on the same thread (captured): the pod on the
-    // selected agent's path is bracketed
+fn pods_are_click_targets_selecting_their_agent() {
     use crate::view::target::Target;
-    let t = thread(json!({"agents": [
+    let t = root(json!({"agents": [
         {"id": "a", "status": "run"}, {"id": "b", "status": "done"},
-        {"id": "c", "parent": "a", "status": "run"}, {"id": "d", "parent": "c", "status": "run"},
     ]}));
     let mut s = Screen::new(40, 1);
     let p = Pods {
         max_n: 6,
-        sel_agent: Some("d"),
+        sel_agent: Some("a"),
         orch: Some("p"),
-        top_only: true,
     };
-    pods_row(&mut s, 1, 0, &t, &View::default(), p);
-    assert_eq!(s.text(), "[ ⠋ ] ✓  +2 nested");
+    pods_row(
+        &mut s,
+        1,
+        0,
+        &t.agents.iter().collect::<Vec<_>>(),
+        &View::default(),
+        p,
+    );
+    assert_eq!(s.text(), "[ ⠋ ] ✓");
     let agents: Vec<(i32, i32, String)> = s
         .targets
         .iter()
@@ -336,14 +286,6 @@ fn top_only_pods_are_the_threads_own_then_nested() {
         })
         .collect();
     assert_eq!(agents, [(1, 4, "a".into()), (5, 8, "b".into())]);
-    let mut s = Screen::new(40, 1);
-    let p = Pods {
-        max_n: 1,
-        top_only: true,
-        ..Pods::default()
-    };
-    pods_row(&mut s, 1, 0, &t, &View::default(), p);
-    assert_eq!(s.text(), "  ⠋  +1 done +2 nested");
 }
 
 #[test]

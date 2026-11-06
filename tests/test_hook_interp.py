@@ -108,15 +108,15 @@ def test_warm_cache_never_touches_python3(tmp_path):
     assert [r["event"] for r in recorded(tmp_path)] == ["start", "stop", "start", "stop"]
 
 
-def test_warm_cache_session_start_output_passes_through(tmp_path):
+def test_warm_cache_session_start_prints_nothing(tmp_path):
     path, log = shim(tmp_path)
     data = tmp_path / "data"
     env = base_env(tmp_path, path, data)
     env["HERDR_PANE_ID"] = "w1:p1"
     run(env)
     p = run(env, "SessionStart", {"session_id": "s", "source": "startup"})
-    assert p.returncode == 0 and calls(log) == 1
-    assert json.loads(p.stdout)["hookSpecificOutput"]["hookEventName"] == "SessionStart"
+    assert (p.returncode, p.stdout, p.stderr) == (0, "", "") and calls(log) == 1
+    assert [r["event"] for r in recorded(tmp_path)][-1] == "session"
 
 
 def test_cache_used_even_when_python3_is_broken(tmp_path):
@@ -252,21 +252,20 @@ def session_start_env(tmp_path, data):
     return env
 
 
-def assert_only_the_session_json(p):
-    assert p.returncode == 0 and p.stderr == ""
-    assert len(p.stdout.splitlines()) == 1  # nothing but hooks.py's one JSON object reaches the model
-    assert json.loads(p.stdout)["hookSpecificOutput"]["hookEventName"] == "SessionStart"
+def assert_nothing_said(p):
+    # the shim leaks nothing, and SessionStart itself no longer says anything to the model
+    assert (p.returncode, p.stdout, p.stderr) == (0, "", "")
 
 
-def test_cold_session_start_prints_only_its_json(tmp_path):
+def test_cold_session_start_prints_nothing(tmp_path):
     data = tmp_path / "data" / "nested"
     p = run(session_start_env(tmp_path, data), "SessionStart", {"session_id": "s", "source": "startup"})
-    assert_only_the_session_json(p)
+    assert_nothing_said(p)
     assert (data / "python-interpreter").exists()
 
 
 @pytest.mark.skipif(os.geteuid() == 0, reason="root ignores directory permissions")
-def test_session_start_on_an_unwritable_dir_prints_only_its_json(tmp_path):
+def test_session_start_on_an_unwritable_dir_prints_nothing(tmp_path):
     data = tmp_path / "data"
     data.mkdir()
     data.chmod(0o500)
@@ -274,14 +273,14 @@ def test_session_start_on_an_unwritable_dir_prints_only_its_json(tmp_path):
         p = run(session_start_env(tmp_path, data), "SessionStart", {"session_id": "s", "source": "startup"})
     finally:
         data.chmod(0o700)
-    assert_only_the_session_json(p)
+    assert_nothing_said(p)
 
 
-def test_session_start_with_data_path_a_file_prints_only_its_json(tmp_path):
+def test_session_start_with_data_path_a_file_prints_nothing(tmp_path):
     data = tmp_path / "data"
     data.write_text("x")
     p = run(session_start_env(tmp_path, data), "SessionStart", {"session_id": "s", "source": "startup"})
-    assert_only_the_session_json(p)
+    assert_nothing_said(p)
 
 
 @pytest.mark.parametrize("warm", [False, True])

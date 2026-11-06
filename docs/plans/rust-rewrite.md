@@ -1,5 +1,9 @@
 # Rust rewrite of herdr-panorama and herdr-inbox: plan
 
+**Note, 2026-11-05.** The Rust model has since diverged from Python on purpose: it has one
+uniform agent tree, with no threads or phases ([uniform-agent-tree.md](uniform-agent-tree.md)).
+Parity below means the older model; the frozen Python entrypoint keeps it.
+
 Status: **draft for the operator's decision**. Nothing is built yet. This plan covers both plugins:
 
 - herdr-panorama (`~/Code/herdr-panorama`, main `dfcbced`);
@@ -850,6 +854,30 @@ real herdr and Claude Code runs (the rule from `tests/fixtures/README.md`).
    - Composer ANSI screens: the existing `tests/fixtures/composer/*.ansi`.
 7. **A test ledger.** A CSV maps each of the 1,505 collected Python tests to its Rust test, or to
    "retired" with a reason (for example, the venv tests). A phase is done when its rows are filled.
+
+**Divergence: the uniform agent tree** (`docs/plans/uniform-agent-tree.md`, slice U3, R3).
+From U3 the Rust collector no longer matches Python's model on purpose, so items 2 and 3 stop
+being parity checks for the collected scenarios:
+
+- Rust builds one agent tree per root: no thread grouping (explicit, workflow, ref, turn,
+  orphan), no phases, no session `main:` card (the root carries its own state), no Codex
+  `main:codex:` root agent or turn phases. On the 1.x wires each root carries one thread,
+  `agents`. A failed agent ages out of `done_window` like a done one (D4). A Workflow run's
+  agents are root children (D8).
+- The model goldens are now Rust's own: `tests/fixtures/rust/model/*.json`, at the times and
+  conditions of Python's capture (`tests/fixtures/model/*.json`, which stays as Python's
+  record and is still checked against the Python code by `tests/test_goldens.py`).
+- The app-screen goldens of the collected scenarios (`screens/scenario-*.json`) keep their
+  captured runs; their screens are Rust's own, `tests/fixtures/rust/screens/`. The screens of
+  captured wire swarms are unchanged and still Python's.
+- `PANORAMA_BLESS=1 cargo test --test model_goldens --test app_screens` rewrites the Rust
+  goldens; the rewrite is reviewed as a diff.
+- `tests/collect_agent_ids.rs` keeps the guarantee that matters across the change: over every
+  scenario, each root holds the agents it held before U3 (`tests/fixtures/collect/agent-ids-pre-u3.json`),
+  but the session card and D4's aged failures.
+
+The Python fallback is not changed (uniform plan D7): its own core still speaks panel 1.x with
+threads.
 
 D3 (decided: skip the refactor): the Python Part 1 refactor of #22/#36 would restructure code that
 this plan then replaces. Only items 2, 3 and 5 touch the Python code, and only in test code.

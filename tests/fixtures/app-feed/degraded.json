@@ -1,0 +1,20 @@
+{
+  "v": 2,
+  "generated_at": 1800000000.0,
+  "herdr_ok": false,
+  "inbox_ok": false,
+  "errors": [
+    "herdr-core: fixture source unavailable",
+    "inbox: fixture database unavailable"
+  ],
+  "counts": {
+    "roots": 0,
+    "agents": 0,
+    "running": 0,
+    "waiting": 0,
+    "questions": 0,
+    "blocked": 0,
+    "failed": 0
+  },
+  "roots": []
+}

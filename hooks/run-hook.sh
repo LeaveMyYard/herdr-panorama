@@ -28,7 +28,7 @@ shift
 # then KILL; where there is no timeout(1), as on stock macOS, perl's alarm ends the probed
 # process after 2 s (only that process: a child it left holding the output would keep the
 # probe waiting); unbounded with neither) falls through to Python.
-CLAUDE_CONTRACT=1
+CLAUDE_CONTRACT=2
 case $0 in
 */*) here=${0%/*} ;;
 *) here=. ;;

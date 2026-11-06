@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+"""Build self-contained native mod bundles from one owned shared source."""
+import argparse
+import json
+from pathlib import Path
+import re
+import sys
+
+root = Path(__file__).resolve().parents[1]
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--check', action='store_true', help='refuse missing or stale generated copies')
+args = parser.parse_args()
+errors = []
+for manifest in sorted((root / 'app/mods').glob('panorama*/bundle.json')):
+    data = json.loads(manifest.read_text())
+    if (not isinstance(data, dict) or set(data) != {'shared'} or not isinstance(data['shared'], list)
+            or not all(isinstance(name, str) for name in data['shared']) or len(set(data['shared'])) != len(data['shared'])):
+        parser.exit(1, f'Invalid bundle manifest: {manifest}\n')
+    requested = set(data['shared'])
+    for name in data['shared']:
+        if not isinstance(name, str) or not re.fullmatch(r'[a-z][a-z0-9-]*\.js', name):
+            parser.exit(1, f'Unsafe shared module: {name}\n')
+        source = root / 'app/shared' / name
+        text = source.read_text()
+        imports = set(re.findall(r'''from\s+['"]\./([^'"]+)['"]''', text))
+        if not imports <= requested:
+            parser.exit(1, f'Missing shared dependencies for {name}: {sorted(imports - requested)}\n')
+        # Asset paths resolve from the app root, so each copy names its own mod.
+        content = f'// Generated from app/shared/{name} by scripts/app-build.\n' + text.replace('__PANORAMA_MOD__', manifest.parent.name)
+        target = manifest.parent / name
+        if target.is_symlink():
+            parser.exit(1, f'Refusing generated symlink: {target}\n')
+        if args.check:
+            if not target.is_file() or target.read_text() != content:
+                errors.append(str(target.relative_to(root)))
+        else:
+            target.write_text(content)
+    # state.js draws mod-owned glyphs: copy each shared glyph byte-for-byte as state-<name>.svg.
+    glyphs = {f'state-{p.name}': p.read_bytes() for p in sorted((root / 'app/shared/glyphs').glob('*.svg'))} if 'state.js' in requested else {}
+    for stale in sorted(set(p.name for p in manifest.parent.glob('state-*.svg')) - set(glyphs)):
+        if args.check:
+            errors.append(str((manifest.parent / stale).relative_to(root)))
+        else:
+            (manifest.parent / stale).unlink()
+    for name, data in glyphs.items():
+        target = manifest.parent / name
+        if target.is_symlink():
+            parser.exit(1, f'Refusing generated symlink: {target}\n')
+        if args.check:
+            if not target.is_file() or target.read_bytes() != data:
+                errors.append(str(target.relative_to(root)))
+        else:
+            target.write_bytes(data)
+# The installer ships an explicit inventory; keep it in step with the bundles.
+sys.path.insert(0, str(root / 'app/installer'))
+sys.dont_write_bytecode = True
+from manifest import GLYPHS, STATE_MODS
+bundled = sorted(m.parent.name for m in (root / 'app/mods').glob('panorama*/bundle.json') if 'state.js' in json.loads(m.read_text())['shared'])
+glyph_names = sorted(p.stem for p in (root / 'app/shared/glyphs').glob('*.svg'))
+if bundled != sorted(STATE_MODS) or glyph_names != sorted(GLYPHS):
+    parser.exit(1, f'Installer STATE_MODS/GLYPHS differ from bundles {bundled} / glyphs {glyph_names}\n')
+if errors:
+    parser.exit(1, 'Stale native bundles; run scripts/app-build:\n' + '\n'.join(errors) + '\n')
+print('Native bundles match shared source.' if args.check else 'Built self-contained native bundles.')

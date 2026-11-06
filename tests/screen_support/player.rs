@@ -137,10 +137,14 @@ impl<'a> Player<'a> {
                     self.paint(Painted::Other);
                 }
                 "select" => {
+                    // Python's columns: orchestrators, threads, then depth n at n + 1; the
+                    // uniform tree has no thread column (plan `uniform-agent-tree.md` U4), so
+                    // a thread's focus is its root's, an agent's its depth
                     let v = &mut self.d.app.graph.view;
-                    v.thread = step["thread"].as_str().map(Into::into);
-                    v.agent = step["agent"].as_str().map(Into::into);
-                    v.focus = step["focus"].as_u64().unwrap() as usize;
+                    if let Some(a) = step["agent"].as_str() {
+                        v.agent = Some(a.into());
+                    }
+                    v.focus = (step["focus"].as_u64().unwrap() as usize).saturating_sub(1);
                     self.paint(Painted::Other);
                 }
                 "snap" => {

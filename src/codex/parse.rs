@@ -1,4 +1,5 @@
-//! Only display fields are retained: no tool arguments, outputs, reasoning or raw errors.
+//! Only display fields are retained: no tool arguments, outputs, reasoning or raw errors. A
+//! spawned thread's own task name (its agent path's last segment) is a display field.
 use super::{Thread, Tool, Turn, TurnStatus};
 use serde_json::Value;
 
@@ -40,13 +41,27 @@ pub(super) fn thread(v: &Value, expected: &str) -> Option<Thread> {
         parent_thread_id,
         forked_from_id: id(v, "forkedFromId"),
         name: text(v, "name"),
+        task_name: task_name(v),
         nickname: text(v, "agentNickname"),
+        preview: text(v, "preview"),
         role: text(v, "agentRole"),
         model: text(v, "model"),
         created_at: time(v, "createdAt").unwrap_or_default(),
         updated_at: time(v, "updatedAt").unwrap_or_default(),
         ..Thread::default()
     })
+}
+/// A spawned thread's task name: the last segment of its agent path (`/root/a/review_auth`
+/// gives `review auth`). Codex sets the path only when the spawner names the task.
+fn task_name(v: &Value) -> Option<String> {
+    let path = v
+        .get("source")?
+        .get("subAgent")?
+        .get("thread_spawn")?
+        .get("agent_path")?
+        .as_str()?;
+    let (_, last) = path.trim_end_matches('/').rsplit_once('/')?;
+    (last != "root").then(|| clean(&last.replace('_', " ")))
 }
 pub(super) fn turn(v: &Value) -> Option<Turn> {
     Some(Turn {

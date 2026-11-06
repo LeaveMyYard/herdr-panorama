@@ -1,4 +1,4 @@
-//! Before going to an orchestrator: does herdr still have its pane? (The core's state may be
+//! Before going to a root: does herdr still have its pane? (The core's state may be
 //! old; Python `PanelApp.action_goto`.)
 
 use herdr_agent_kit::herdr_api::Herdr;

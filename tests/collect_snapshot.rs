@@ -7,7 +7,6 @@ use serde_json::json;
 fn collector(dir: &std::path::Path) -> Collector {
     Collector::new(Options {
         projects: dir.to_path_buf(),
-        events_dir: dir.join("events"),
         hooks_dir: dir.join("hooks"),
         procs: false,
         pane_pid: Box::new(|_| None),
@@ -34,16 +33,12 @@ fn collector_finds_the_docked_agent_and_tab_numbers() {
     let sw = c.collect(Some(&snap), None, 0.0, 3600.0, 3600.0);
     assert_eq!(sw.docked.as_deref(), Some("w1:p7"));
     let got: Vec<_> = sw
-        .orchestrators
+        .roots
         .iter()
         .map(|o| (o.pane_id.as_str(), o.tab_no))
         .collect();
     assert_eq!(got, [("w1:p1", Some(1)), ("w1:p7", Some(2))]);
-    let labels: Vec<_> = sw
-        .orchestrators
-        .iter()
-        .map(|o| o.tab_label.as_str())
-        .collect();
+    let labels: Vec<_> = sw.roots.iter().map(|o| o.tab_label.as_str()).collect();
     assert_eq!(labels, ["a", "b"]);
 }
 
@@ -52,10 +47,10 @@ fn herdr_down_or_an_empty_snapshot_has_no_orchestrators() {
     let dir = tempfile::tempdir().unwrap();
     let mut c = collector(dir.path());
     let down = c.collect(None, None, 5.0, 3600.0, 60.0);
-    assert!(!down.herdr_ok && !down.inbox_ok && down.orchestrators.is_empty());
+    assert!(!down.herdr_ok && !down.inbox_ok && down.roots.is_empty());
     assert_eq!((down.generated_at, down.stale_after), (5.0, 60.0));
     let empty = c.collect(Some(&json!({})), Some(&[]), 5.0, 3600.0, 60.0);
-    assert!(empty.herdr_ok && empty.inbox_ok && empty.orchestrators.is_empty());
+    assert!(empty.herdr_ok && empty.inbox_ok && empty.roots.is_empty());
 }
 
 #[test]
@@ -70,7 +65,7 @@ fn two_agents_in_one_tab_carry_their_pane_and_others_are_skipped() {
     });
     let sw = collector(dir.path()).collect(Some(&snap), None, 0.0, 3600.0, 3600.0);
     let got: Vec<_> = sw
-        .orchestrators
+        .roots
         .iter()
         .map(|o| {
             (
@@ -89,7 +84,7 @@ fn two_agents_in_one_tab_carry_their_pane_and_others_are_skipped() {
             ("w1:p4", "zsh", "unknown")
         ]
     );
-    assert_eq!(sw.orchestrators[3].tab_no, None); // a tab herdr did not list
+    assert_eq!(sw.roots[3].tab_no, None); // a tab herdr did not list
 }
 
 #[test]
@@ -120,8 +115,8 @@ fn codex_without_history_keeps_exact_identity_and_never_reads_claude_history() {
     let mut c = collector(dir.path());
     c.self_pane = Some("panel".into());
     let sw = c.collect(Some(&snap), None, 1.0, 3600.0, 60.0);
-    assert_eq!(sw.orchestrators.len(), 4);
-    let x = &sw.orchestrators[1];
+    assert_eq!(sw.roots.len(), 4);
+    let x = &sw.roots[1];
     assert_eq!(
         (&*x.harness, x.session_id.as_deref()),
         ("codex", Some("same"))
@@ -131,11 +126,11 @@ fn codex_without_history_keeps_exact_identity_and_never_reads_claude_history() {
     assert!(x.focused);
     assert_eq!(x.cwd.as_deref(), Some("/synthetic"));
     assert_eq!(x.workspace_id.as_deref(), Some("w"));
-    for x in &sw.orchestrators[1..] {
-        assert!(x.transcript.is_none() && x.threads.is_empty() && x.last_activity.is_none());
+    for x in &sw.roots[1..] {
+        assert!(x.transcript.is_none() && x.agents.is_empty() && x.last_activity.is_none());
     }
-    assert!(sw.orchestrators[2].session_id.is_none());
-    assert!(sw.orchestrators[3].session_id.is_none());
+    assert!(sw.roots[2].session_id.is_none());
+    assert!(sw.roots[3].session_id.is_none());
     // A Codex-only tab is dockable too.
     let mut only = snap;
     only["agents"].as_array_mut().unwrap().remove(0);

@@ -1,4 +1,4 @@
-//! The per-tab panels' core, server side (Python `core.py`; `docs/protocol/panel-v1.md`): it
+//! The per-tab panels' core, server side (Python `core.py`; `docs/protocol/panel-v2.md`): it
 //! publishes panorama's state to the panel viewers on a local socket. One core per herdr
 //! session.
 //!

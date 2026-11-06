@@ -2,7 +2,7 @@
 
 <h3 align="center">Run a swarm of Claude Code agents in herdr and see, at a glance, which one needs you</h3>
 
-<p align="center">herdr panorama draws every Claude Code orchestrator in your <a href="https://herdr.dev">herdr</a> session, the threads of work it drives and the subagents it spawned, like an Argo resource graph with small coloured status tiles. It reads what Claude Code already writes, types into a pane only when you start a new agent from it, and puts what failed, blocked or asked a question in front.</p>
+<p align="center">herdr panorama draws every Claude Code and Codex agent in your <a href="https://herdr.dev">herdr</a> session and every subagent it spawned as one tree, like an Argo resource graph with small coloured status tiles. It reads what Claude Code already writes, types into a pane only when you start a new agent from it, and puts what failed, blocked or asked a question in front.</p>
 
 <p align="center"><a href="docs/media/herdr-demo.mp4"><img src="docs/screenshots/hero.gif" width="88%" alt="The swarm view on demo data: orchestrator cards with spinners and blinking attention edges, a PR thread with its steps, and its agents"></a></p>
 
@@ -33,26 +33,71 @@ command = "leavemyyard.herdr-panorama.open"
 description = "swarm view"
 ```
 
-**Status: proof of concept.** It implements design 2a "Graph · squares are subagents"
+**Status: proof of concept.** It grew from design 2a "Graph · squares are subagents"
 (reference copy and render in [docs/design/](docs/design/)). The design, the data sources and the
 open questions are in [docs/DESIGN.md](docs/DESIGN.md).
+
+**Rust view and Python view.** This page describes the Rust app: every root (a pane running
+Claude Code or Codex) with its whole agent tree, every agent titled by its spawner. `herdr plugin
+install` alone does not build it, so a plain install runs the frozen Python entrypoint, which
+keeps its legacy view with orchestrator and thread columns, phases and Claude sessions only. To
+get the Rust app, run `cargo build --release` in the plugin root (with `CARGO_TARGET_DIR`
+set, add `--target-dir target`, because only `target/release/panorama` there counts). A build that is out of date with the checkout falls back
+the same way. The screenshots and clips on this page were recorded before the tree and still show
+those columns.
 
 **Local Codex support is available in the Rust view.** Claude Code and Codex panes share
 the list, navigation and launcher. Exact session associations add Codex turns, tools and
 child-agent history; unbound panes remain visible. See [Codex setup and limits](docs/codex.md)
-for optional hooks, existing-session binding and MCP reporting. The Python entrypoint remains
+for optional hooks and existing-session binding. The Python entrypoint remains
 Claude-only during the Rust port.
 
 | Full screen (160 columns) | Side split (70 columns) |
 |---|---|
 | ![](docs/screenshots/wide-160x45.png) | ![](docs/screenshots/narrow-70x45.png) |
 
+## herdr-app flavour
+
+Panorama also runs as native herdr-app mods: an Agents sidebar, a Swarm graph per
+space, and a Peek popup with a read-only transcript viewer. Native agent roots
+and their terminal children remain visible when transcript enrichment is unavailable.
+
+From a reviewed checkout, install an optimized Rust `panorama` binary into your
+existing app home:
+
+```sh
+scripts/app-install install --app-home "$HOME/.config/herdr-app" \
+  --binary /absolute/path/to/reviewed/panorama
+```
+
+Choose the layout yourself with `ctrl-shift-l`, or:
+
+```sh
+herdr-app do layout.switch '{"name":"panorama"}'
+```
+
+The installer does not select a layout, change hook configuration, or alter the
+TUI installation. An agent tree requires a verified current session association;
+older unbound sessions appear as basic native roots. See the [app guide](app/README.md)
+for requirements, controls, uninstall and recovery.
+
+Approved uninstall retention is limited to `panorama.feed:null` and
+`panorama.feed.owner:null`, the exact `data/panorama-spaces/store.json` and
+`data/panorama-tabs/store.json` preferences, and host-owned
+`layouts/.state/panorama.json`, with necessary parents. This grants no installer
+deletion or adoption authority over personal/host files.
+
+![Swarm graph on synthetic design data](app/preview.png)
+
+*Synthetic design render, not a capture of the running app; it does not demonstrate
+natural session ingestion.*
+
 ## Pick your setup
 
 ### 🗺️ Graph only: panorama in its own tab
 
 The default. Panorama opens as the first tab, `◆ panorama`, and your key jumps back to it from
-anywhere. Enter on an orchestrator goes to its pane; the full graph stays one key away. Details
+anywhere. Enter on a root goes to its pane; the full graph stays one key away. Details
 in [Use it as your home tab](#use-it-as-your-home-tab).
 
 ```toml
@@ -63,7 +108,7 @@ cockpit = false    # the default
 
 ### 🧭 Cockpit: a slim list beside the agent you are working with
 
-Every orchestrator's tab gets a narrow panorama panel on its left, with that agent's chat on the
+Every root's tab gets a narrow panorama panel on its left, with that agent's chat on the
 right. ↑/↓ in a panel switch to the next chat, its tab and its panel, while the keyboard stays in
 the panels; Enter goes into the agent, and your open key brings you back. With herdr's own
 sidebar hidden, the panels become the agent list. The panel's background shows where the keyboard is: `#14161b` while panorama has it,
@@ -131,7 +176,7 @@ herdr plugin install LeaveMyYard/herdr-inbox
 
 ## What it shows
 
-- **Orchestrators**: every herdr pane running Claude Code, named by its tab, with its state
+- **Roots**: every herdr pane running Claude Code or Codex, with its state
   (failed, blocked, needs you, working, reviewing, waiting, stale, idle, all done). **Waiting** ⠁ (a dot circling the cell):
   herdr says idle, but a Bash it put in the background or a Monitor watch is still running, so it
   will wake up by itself; its tasks are listed. **Stale** ◌: idle for longer than `stale_after`
@@ -139,11 +184,13 @@ herdr plugin install LeaveMyYard/herdr-inbox
   state and blinks when something needs you, and a bar sweeps along the bottom while it works. It
   also carries `✗` failed,
   `!` blocked (permission prompt or question dialog) and `?N` open
-  [herdr-inbox](https://github.com/LeaveMyYard/herdr-inbox) questions.
-- **Threads** of the selected orchestrator: native Workflow runs, PR/issue review cycles, or one
-  per operator prompt, each with its phases (`✓ author 09:02–09:20`, `» review r2 since 09:43`).
-- **Agents** of the selected thread: status, role, model, last tool call, age, tool calls, open
-  questions, last message. Finished agents fold into one card.
+  [herdr-inbox](https://github.com/LeaveMyYard/herdr-inbox) questions. A root is titled by the
+  name you gave its pane or tab, else its session title, first prompt or terminal title.
+- **Agents** of the selected root, at every depth: one column per depth and the same card in
+  each, with status, model, last tool call, age, tool calls, open questions and last message,
+  and its role in the expanded card. Each agent is titled by what its spawner
+  called it. Marks add up the tree, so a root shows what any agent under it needs. Finished
+  siblings fold into one `n finished` card per parent; `+N older` counts those past `done_window`.
 
 Status is colour and glyph: `?` needs answer · `!` blocked · `✗` failed · `⠋` running ·
 `»` reviewing · `⠁` waiting on its background work · `○` queued · `✓` done · `✓?` done, inferred from silence (not recorded) ·
@@ -187,10 +234,10 @@ By default panorama lives in its own tab, `◆ panorama`, first in the tab bar:
   never opened a second time.
 - The key (`prefix+space`) jumps back to it from anywhere, and opens it again
   if you closed it.
-- **Enter** on an orchestrator, or **g** on any card, goes to that agent's pane.
+- **Enter** on a root, or **g** on any card, goes to that agent's pane.
   In the home tab, `a`/`i` open the inbox over panorama, and nothing closes it
   except `q`.
-- **`+ New agent`** (the row under the orchestrator cards, or **n**) starts a new
+- **`+ New agent`** (the row under the root cards, or **n**) starts a new
   Claude Code agent. Fill in a name, a working directory and an optional first
   prompt. The name is also the tab label, and it is made to fit herdr's agent
   names (`Billing export` becomes `billing-export`).
@@ -206,13 +253,13 @@ To use the popup instead, set `home_tab = false` in the plugin's `config.toml`. 
 ### Cockpit (experimental)
 
 With herdr's sidebar hidden, panorama can sit as the agent list on the left of every
-orchestrator's tab: one panel per tab, drawn from the home panorama (which stays in its own
+root's tab: one panel per tab, drawn from the home panorama (which stays in its own
 tab). Turn it on in the plugin's `config.toml`:
 
 ```toml
 cockpit = true        # default false while experimental
 cockpit_width = 46    # the panels' columns on the left
-cockpit_follow_tabs = "any" # "single": a panel only in tabs where the orchestrator is the only pane
+cockpit_follow_tabs = "any" # "single": a panel only in tabs where the root is the only pane
 dock_keep_focus = true # switching chats leaves the keyboard in the panels (default true)
 dock_on_arrows = true  # ↑/↓ in a panel switch the chats (default true)
 ```
@@ -227,22 +274,23 @@ agent when herdr stopped, herdr's session restore brings that pane back as a pla
 labelled `◆ panorama`. Panorama never closes it: the older version kept no record that would
 prove the shell is its own unused pane. Close it by hand in that tab.
 
-- **Panels.** When the home panorama starts, every orchestrator tab gets its panel on the left
-  of the agent. A tab that gets an orchestrator later gets its panel when you visit it. Agents
+- **Panels.** When the home panorama starts, every root's tab gets its panel on the left
+  of the agent. A tab that gets a root later gets its panel when you visit it. Agents
   never move; closing a tab closes its panel with it.
 - **Browse the chats.** In a panel, ↑/↓ switch the chats themselves: once the arrows rest for
-  0.2 s, herdr shows the highlighted orchestrator's tab with the keyboard on its panel. A click
-  on another orchestrator does the same at once. **Enter** (or **g**) goes into the highlighted
+  0.2 s, herdr shows the highlighted root's tab with the keyboard on its panel. A click
+  on another root does the same at once. **Enter** (or **g**) goes into the highlighted
   agent; your open key brings you back.
 - `dock_on_arrows = false`: the arrows only move the highlight, and Enter on another
-  orchestrator switches to it, keeping the keyboard in the panels (Enter on this tab's own one
+  root switches to it, keeping the keyboard in the panels (Enter on this tab's own one
   goes into it). `dock_keep_focus = false`: Enter always goes into the agent, and the arrows
   never switch (they would leave the keyboard in an agent).
 - **Closed stays closed.** Close a tab's panel and that tab stays without one; your open key in
   that tab makes and focuses a new one. Elsewhere the open key takes you to the home tab.
 - Docked, panorama shows the compact list from design 3a with design 9e's coloured tiles:
-  per orchestrator its tab number, a state tile, `?N` and one tile per thread; the docked one
-  lists its threads (a tile each) with their agents instead.
+  per root its tab number, a state tile, `?N`, one tile per active direct subagent and `✓n` for
+  the finished ones; the docked one lists two layers of agents instead, deeper agents as a run
+  of glyphs on their row.
 - The panel's background shows whether panorama has the keyboard: `#14161b` while it does,
   `#101215` when not. `panel_bg` / `focus_bg` in panorama's config change them;
   `panel_colors = "herdr"` takes them from herdr's theme instead (`[theme]` and
@@ -258,9 +306,19 @@ The view works without it. The plugin adds, for the sessions where it is install
 - `SubagentStart` / `SubagentStop` hooks that record exact start and stop times. Agents that
   ended then show as a confirmed `done` instead of `done?`. An agent that started but never
   stopped, and whose Claude process is gone, shows as `lost`.
-- an MCP tool, `report_thread(thread_id, title, phase, phases_done, next, status, agents)`, that
-  orchestrators call to declare threads and phases (the same format as `panorama emit`);
-- one short line of session instructions (inside herdr only) asking orchestrators to use it.
+- a `SessionStart` hook that records the session's Claude process (a resume shows up as a new
+  one). It says nothing to the agent.
+
+**Removed: threads.** Earlier versions asked agents, in one line of session
+instructions, to call an MCP tool, `report_thread`, and offered `panorama emit` to declare
+threads by hand. Panorama now shows every agent and subagent as one tree, named by its spawner,
+so both are gone: the instruction is no longer sent, `report_thread` is still listed but
+records nothing (it answers `ignored`), and the Rust `panorama emit` records nothing and says so
+on stderr. It exits 0, apart from the cases in
+[issue #165](https://github.com/LeaveMyYard/herdr-panorama/issues/165). (The frozen Python entrypoint's `panorama emit` still writes, for its
+own legacy thread view.) A later release removes them. Report files under
+`${XDG_STATE_HOME:-~/.local/state}/herdr-panorama/events/` are left in place; the Rust view no
+longer needs them, and you can delete them.
 
 ```
 /plugin install herdr-panorama --marketplace LeaveMyYard/herdr-panorama
@@ -269,18 +327,19 @@ The view works without it. The plugin adds, for the sessions where it is install
 or `claude plugin marketplace add LeaveMyYard/herdr-panorama` then
 `claude plugin install herdr-panorama@herdr-panorama`. The hooks need `python3` on `PATH` (stdlib only): the interpreter it resolves to is cached in the plugin's
 data directory (`${CLAUDE_PLUGIN_DATA}/python-interpreter`) and run directly afterwards, so a pyenv-style shim
-costs its 60–75 ms once, not on every hook. The MCP server needs `uv`.
+costs its 60–75 ms once, not on every hook. The (deprecated) MCP server needs `uv` unless the
+plugin root has the Rust binary built.
 
 ## Configure
 
 `config.toml` in the plugin's config dir (`herdr plugin config-dir leavemyyard.herdr-panorama`):
 
 ```toml
-done_window = "1h"   # how long finished threads stay visible (seconds, or "90m", "2h30m")
+done_window = "1h"   # how long finished (done or failed) agents stay visible (seconds, or "90m", "2h30m"); roots stay while their pane does
 home_tab = true      # panorama in its own first tab (false: the key opens a popup)
-cockpit = false      # experimental: a panorama panel left of every orchestrator (see above)
+cockpit = false      # experimental: a panorama panel left of every root (see above)
 cockpit_width = 46   # the panels' width
-cockpit_follow_tabs = "any" # or "single": panels only in one-pane orchestrator tabs
+cockpit_follow_tabs = "any" # or "single": panels only in tabs where the root is the only pane
 dock_keep_focus = true # panels: switching chats keeps the keyboard in the panels
 dock_on_arrows = true  # panels: ↑/↓ switch the chats; Enter goes into the agent
 panel_colors = "fixed" # docked panel background: "fixed" (#14161b focused, #101215 not) or "herdr" (herdr's theme)
@@ -291,14 +350,14 @@ machines = "all"     # herdr's saved SSH machines to show: "all", "none" or ["la
 highlight_unseen = true # pulse what failed, asked or finished since you last looked
 harness_icons = "auto" # Rust: real harness marks when mapped; "font" forces, "text" uses names
 animation_fps = 20   # how smoothly pulses and blinks fade (2..30): lower it on a slow terminal or remote link
-stale_after = "12h"  # an orchestrator idle this long (nothing in flight) reads "stale"
+stale_after = "12h"  # a root idle this long (nothing in flight) reads "stale"
 ```
 
 **Unseen.** A new failure, a new question or a finished agent makes its card pulse slowly in
-the event's colour (red, amber, green; the most urgent wins), and its thread and orchestrator
-with it. A finished agent makes them pulse more quietly. In the docked panel the orchestrator's
-two lines and the thread glyph pulse. It stops when you click the card, press Enter on it,
-go to or dock next to its orchestrator, or focus that pane in herdr. The marks survive a
+the event's colour (red, amber, green; the most urgent wins), and its root with it. A finished
+agent makes them pulse more quietly. In the docked panel the root's two lines and the agent's
+row pulse. It stops when you click the card, press Enter on it, go to or dock next to its root,
+or focus that pane in herdr. The marks survive a
 restart and are shared by every panorama of the machine.
 
 **Other machines.** Agents on herdr's saved SSH machines (`herdr machine list`) appear in the
@@ -315,10 +374,10 @@ The default is 1 hour. The `PANORAMA_DONE_WINDOW` environment variable overrides
 | Key | Action |
 |---|---|
 | `↑` `↓` / `j` `k` | Move in the focused column |
-| `→` `l` / `enter` | Open the next column (`enter` on a folded card unfolds it) |
-| `←` `h` | Back |
-| `g` | Go to the orchestrator's pane |
-| `a` | Answer: herdr-inbox opened on that agent's (or orchestrator's) questions, the pane for blocking prompts. Click: `a answer` in an agent card, `?N` on an orchestrator card |
+| `→` `l` / `enter` | Into the selected card's children, one depth column on (`enter` on a folded card unfolds it) |
+| `←` `h` | Back to the parent |
+| `g` | Go to the root's pane |
+| `a` | Answer: herdr-inbox opened on that agent's (or root's) questions, the pane for blocking prompts. Click: `a answer` in an agent card, `?N` on a root card |
 | `i` | herdr-inbox |
 | `t` | Show the transcript path |
 | `f` | Filter: all / running / needs me |
@@ -326,7 +385,7 @@ The default is 1 hour. The `PANORAMA_DONE_WINDOW` environment variable overrides
 | `q` `esc` | Close (in the home tab only `q`) |
 
 The mouse works too, in both layouts: click a card to select it, click the
-selected card again to go to its pane, click `✓ n complete` / `n finished` to
+selected card again to go to its pane, click `n finished` to
 unfold, `+ New agent` for the form, the header's `all` / `running` /
 `needs me` to filter, and `g` / `t` / `a` in an expanded agent card to act.
 The wheel scrolls a column. A card that a refresh just moved under the pointer
@@ -334,12 +393,19 @@ ignores clicks for a second.
 
 From a shell:
 
+With the Rust app built:
+
 ```sh
-uv run panorama snapshot            # text summary of the derived model
-uv run panorama snapshot --json     # the full model
-uv run panorama snapshot --counts   # numbers only
-uv run panorama tui
+target/release/panorama snapshot            # text summary of the derived model
+target/release/panorama snapshot --json     # the full model: `roots`, each with a flat `agents` list
+target/release/panorama snapshot --counts   # numbers only
+target/release/panorama tui
 ```
+
+The JSON has no version field and changed with the tree: `orchestrators` became `roots`, and
+`threads`, `phases`, `active_threads` and `hidden_done` are gone. A script that reads the old
+keys gets nothing, and no error. `uv run panorama …` runs the frozen Python entrypoint, which
+keeps the old shape.
 
 ## FAQ and troubleshooting
 

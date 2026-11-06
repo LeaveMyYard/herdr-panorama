@@ -1,8 +1,8 @@
 //! `panorama hook <kind>`: the opt-in Claude Code hooks (Python `hooks.py`), fast, silent and
 //! never failing. `subagent-start` and `subagent-stop` append one record per event to the
 //! session's hook file, which the scanner reads; `session-start` records the session's
-//! process (a resume shows up as a new one), prunes hook files older than 14 days and, the
-//! first time a session starts inside herdr, prints the one line about `report_thread`.
+//! process (a resume shows up as a new one) and prunes hook files older than 14 days. No hook
+//! prints anything: SessionStart's `report_thread` instruction was removed with threads.
 //!
 //! Exit status 0 always: for SubagentStop, exit 2 would keep the subagent running and feed its
 //! stderr back to the agent, so nothing on this path may ever exit 2. Bad input, an unwritable
@@ -16,6 +16,7 @@
 
 pub mod record;
 pub mod session;
+pub mod setup;
 
 use herdr_agent_kit::agent_procs::claude::claude_process_here;
 use herdr_agent_kit::agent_procs::own_pidns;
@@ -30,10 +31,10 @@ pub type Identity = Option<(u32, String, Option<String>)>;
 
 /// What a hook reads besides its payload.
 pub struct Ctx {
+    pub host: crate::host::Context,
+    pub harness: &'static str,
     /// Where hook files live.
     pub hooks_dir: PathBuf,
-    /// Inside herdr (`HERDR_PANE_ID` or `HERDR_ENV`).
-    pub in_herdr: bool,
     /// Now (POSIX seconds).
     pub now: f64,
     /// The Claude process above this one, if it is recognised.
@@ -44,8 +45,9 @@ impl Ctx {
     /// From the environment and this process's ancestry.
     pub fn from_env(env: &PluginEnv) -> Self {
         Self {
+            host: crate::host::Context::from_env(env),
+            harness: "claude",
             hooks_dir: crate::collect::paths::hooks_dir(env),
-            in_herdr: env.in_herdr(),
             now: crate::snapshot::now(),
             identity: Box::new(|| {
                 claude_process_here().map(|(pid, start)| (pid, start, own_pidns()))
@@ -66,24 +68,23 @@ pub fn payload(raw: &str) -> Map<String, Value> {
         .unwrap_or_default()
 }
 
-/// One hook run: the payload on `input`, the output (if any) on `output`. Always 0.
+/// One hook run: the payload on `input`. Nothing is written to `output` (it is kept so the
+/// silence is what callers and tests see). Always 0.
 pub fn run(kind: &str, input: &mut dyn Read, output: &mut dyn Write, cx: &Ctx) -> i32 {
-    let out = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         let mut raw = String::new();
-        input.read_to_string(&mut raw).ok()?;
+        if input.read_to_string(&mut raw).is_err() {
+            return;
+        }
         let payload = payload(&raw);
         match kind {
             "subagent-start" => record::record("start", &payload, cx),
             "subagent-stop" => record::record("stop", &payload, cx),
-            "session-start" => return session::session_start(&payload, cx),
+            "session-start" => session::session_start(&payload, cx),
             _ => {}
         }
-        None
     }));
-    if let Ok(Some(text)) = out {
-        let _ = output.write_all(text.as_bytes());
-        let _ = output.flush();
-    }
+    let _ = output.flush();
     0
 }
 

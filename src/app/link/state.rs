@@ -1,4 +1,4 @@
-//! The core's full snapshot for the panels (Python `protocol.state_message`; protocol 1.3):
+//! The core's full snapshot for the panels (protocol 2.0; Python's `protocol.state_message` is 1.x):
 //! the model, the unseen marks, herdr's focused pane, the visible tab, each tab's panel and
 //! the filter every view shows. Always whole, never a delta.
 

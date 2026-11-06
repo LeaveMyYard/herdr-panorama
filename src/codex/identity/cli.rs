@@ -14,6 +14,42 @@ use std::{
 
 const MAX_INPUT: usize = 64 * 1024;
 
+fn execute_core(
+    env: &PluginEnv,
+    terminal: &str,
+    id: &str,
+    automatic: bool,
+    explicit: bool,
+) -> Result<(), &'static str> {
+    let options = Options::from_env(env).ok_or("CODEX_HOME or HOME is required")?;
+    let table = || -> Box<dyn ProcessTable> { Box::new(SystemProcesses::new()) };
+    let owner = if explicit {
+        None
+    } else {
+        Some(
+            owner::ancestor(table().as_ref(), parent_pid())
+                .ok_or("no owned embedded Codex process")?,
+        )
+    };
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(|_| "cannot start identity runtime")?;
+    runtime.block_on(super::core::bind(
+        &crate::host::Core::default(),
+        env,
+        &options,
+        terminal,
+        bind::Request {
+            pane: &crate::host::context::pane_key(terminal),
+            id,
+            automatic,
+            owner,
+        },
+        &table,
+    ))
+}
+
 pub(super) fn candidate(value: &Value) -> Option<(&str, &str)> {
     if value.get("hook_event_name")?.as_str()? != "SessionStart"
         || value.get("agent_id").is_some()
@@ -89,8 +125,12 @@ pub fn hook() -> i32 {
         let value: Value = serde_json::from_slice(&bytes).ok()?;
         let (id, source) = candidate(&value)?;
         let env = PluginEnv::from_env();
-        let pane = env.pane_id()?;
-        let _ = execute(&env, pane, id, source, false);
+        if let Some(terminal) = env.var("HC_TERMINAL_ID") {
+            let _ = execute_core(&env, terminal, id, true, false);
+        } else {
+            let pane = env.pane_id()?;
+            let _ = execute(&env, pane, id, source, false);
+        }
         Some(())
     });
     let _ = std::io::stdout().write_all(b"{}\n");
@@ -112,12 +152,23 @@ pub(super) fn arguments(args: &[String]) -> Result<(&str, Option<&str>), &'stati
 /// An explicitly chosen pane permits binding existing shared-daemon sessions.
 pub fn manual(args: &[String]) -> i32 {
     let env = PluginEnv::from_env();
-    let result = arguments(args).and_then(|(id, pane)| {
-        let target = pane
-            .or_else(|| env.pane_id())
-            .ok_or("pass --pane PANE_ID outside an embedded Codex pane")?;
-        execute(&env, target, id, "manual", pane.is_some())
-    });
+    let result = if let [id, flag, terminal] = args
+        && flag == "--terminal"
+    {
+        execute_core(&env, terminal, id, false, true)
+    } else {
+        arguments(args).and_then(|(id, pane)| {
+            if pane.is_none()
+                && let Some(terminal) = env.var("HC_TERMINAL_ID")
+            {
+                return execute_core(&env, terminal, id, false, false);
+            }
+            let target = pane
+                .or_else(|| env.pane_id())
+                .ok_or("pass --pane PANE_ID outside an embedded Codex pane")?;
+            execute(&env, target, id, "manual", pane.is_some())
+        })
+    };
     match result {
         Ok(()) => 0,
         Err(why) => {

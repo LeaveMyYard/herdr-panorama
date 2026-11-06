@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn machine_groups_start_once_per_machine_id() {
-    let o = |id: Option<&str>, label: Option<&str>| -> Orchestrator {
+    let o = |id: Option<&str>, label: Option<&str>| -> Root {
         serde_json::from_value(
             serde_json::json!({"pane_id": "p", "tab_id": null, "tab_label": "x",
             "session_id": null, "machine_id": id, "machine": label}),

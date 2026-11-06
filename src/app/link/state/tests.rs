@@ -6,18 +6,19 @@ fn fixture() -> Value {
         env!("CARGO_MANIFEST_DIR"),
         "/tests/fixtures/inputs/swarm-design9.json"
     );
-    serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+    crate::v1_wire::fixture(serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap())
 }
 
 #[test]
 fn the_swarm_goes_out_as_python_sent_it() {
-    // the fixture's swarm is Python's own wire form (swarm_to_wire): read and written back,
-    // every field is the same
+    // the fixture's swarm is Python's wire form (swarm_to_wire), read as 2.x: read and
+    // written back, every field is the same
     let mut wire = fixture()["swarm"].clone();
     let swarm: Swarm = serde_json::from_value(wire.clone()).unwrap();
     let msg = state_message(&swarm, &Marks::new(), &Published::default(), None);
-    for o in wire["orchestrators"].as_array_mut().unwrap() {
+    for o in wire["roots"].as_array_mut().unwrap() {
         o["harness"] = json!("claude");
+        o["hidden_finished"] = json!(0);
     }
     assert_eq!(msg["state"]["swarm"], wire);
 }

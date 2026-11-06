@@ -37,7 +37,7 @@ pub struct Switched {
     pub took_back: bool,
 }
 
-/// Switches to the tab of the orchestrator in `target`. `panes_of`: tab -> its panel;
+/// Switches to the tab of the root in `target`. `panes_of`: tab -> its panel;
 /// `my_pane`: the switching panel's own pane.
 pub async fn switch(
     h: &Herdr,

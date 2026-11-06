@@ -54,7 +54,7 @@ fn every_card_is_a_click_target_and_question_marks_answer() {
     assert_eq!(s.target_at(xq + 1, 2).cloned(), answer);
     assert_eq!(s.target_at(xq + 3, 2), Some(&orch("w1:p1")));
     assert_eq!(s.target_at(20, 3), Some(&orch("w1:p1"))); // the second line too
-    assert_eq!(s.target_at(20, 12), Some(&orch("w1:p3"))); // the docked one's thread list
+    assert_eq!(s.target_at(20, 12), Some(&orch("w1:p3"))); // the docked one's agent list
     assert_eq!(s.target_at(20, 4), None); // the gap between entries
 }
 
@@ -95,7 +95,7 @@ fn the_panel_lays_out_to_the_width_it_gets() {
             ..design_view(4.0)
         };
         let rows = lines(&render_dock(&sw, &v, w, 45, None, NO_SESSIONS));
-        for o in &sw.orchestrators {
+        for o in &sw.roots {
             let tag = format!(" {} ", o.tab_no.unwrap());
             let row = rows
                 .iter()
@@ -119,20 +119,18 @@ fn the_panel_lays_out_to_the_width_it_gets() {
     }
 }
 
-/// test_glyph_spacing.py `many_threads`: one orchestrator with `n` running threads.
-fn many_threads(n: usize) -> Swarm {
-    let threads: Vec<_> = (0..n)
-        .map(|i| {
-            json!({"id": format!("t{i}"), "name": format!("thread {i}"), "source": "turn",
-            "agents": [{"id": format!("a{i}"), "status": "run", "seq": i}]})
-        })
+/// test_glyph_spacing.py `many_threads`, in the uniform tree's shape (plan
+/// `uniform-agent-tree.md` U5): one root with `n` running direct subagents.
+fn many_subagents(n: usize) -> Swarm {
+    let agents: Vec<_> = (0..n)
+        .map(|i| json!({"id": format!("a{i}"), "status": "run", "seq": i}))
         .collect();
-    serde_json::from_value(json!({"orchestrators": [{"pane_id": "w1:p1", "tab_id": "t",
-        "tab_label": "busy", "session_id": "s", "tab_no": 1, "threads": threads}]}))
+    serde_json::from_value(json!({"roots": [{"pane_id": "w1:p1", "tab_id": "t",
+        "tab_label": "busy", "session_id": "s", "tab_no": 1, "agents": agents}]}))
     .unwrap()
 }
 
-/// An entry's second line: its thread tiles and a "+n", before the counts.
+/// An entry's second line: its direct subagents' tiles and a "+n", before the counts.
 fn line_two(row: &str) -> Vec<String> {
     let head = row.split(" active · ").next().unwrap();
     let head = head.rsplit_once("  ").map_or(head, |(a, _)| a);
@@ -147,7 +145,7 @@ fn counts_row(s: &Screen) -> String {
 }
 
 #[test]
-fn many_threads_keep_the_counts_whole() {
+fn many_subagents_keep_the_counts_whole() {
     // test_review_m_many_threads_keep_the_counts_whole[15/30 × 36/46]
     for n in [15, 30] {
         for w in [36, 46] {
@@ -155,7 +153,7 @@ fn many_threads_keep_the_counts_whole() {
                 orch: Some("w1:p1".into()),
                 ..View::default()
             };
-            let s = render_dock(&many_threads(n), &v, w, 45, None, NO_SESSIONS);
+            let s = render_dock(&many_subagents(n), &v, w, 45, None, NO_SESSIONS);
             let row = counts_row(&s);
             let row = row.trim_end();
             assert!(
@@ -173,14 +171,14 @@ fn many_threads_keep_the_counts_whole() {
 }
 
 #[test]
-fn a_few_threads_show_every_glyph() {
+fn a_few_subagents_show_every_glyph() {
     // test_a_few_threads_show_every_glyph
     let v = View {
         orch: Some("w1:p1".into()),
         ..View::default()
     };
     let row = counts_row(&render_dock(
-        &many_threads(3),
+        &many_subagents(3),
         &v,
         46,
         45,
@@ -198,7 +196,7 @@ fn the_cursor_has_no_highlight_only_the_mouse_has() {
     use panorama_core::view::palette::DOCK_HOV;
     let sw = swarm();
     let other = sw
-        .orchestrators
+        .roots
         .iter()
         .find(|o| sw.docked.as_deref() != Some(o.pane_id.as_str()))
         .unwrap();

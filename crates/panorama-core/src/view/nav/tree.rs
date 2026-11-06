@@ -1,8 +1,8 @@
-//! A thread's agent tree as cards, depth first (Python `render.tree_entries`, `split_group`,
+//! A root's agent tree as cards, depth first (Python `render.tree_entries`, `split_group`,
 //! `path_ids`): each group of siblings shows its live (or failed) agents, and those with such
 //! a descendant; the finished rest fold into one "n finished" card.
 
-use crate::model::{Agent, Thread, TreeKids};
+use crate::model::{Agent, Root, TreeKids};
 use crate::view::filter::Filter;
 use crate::view::state::{FIN_CARD, View};
 use std::collections::HashMap;
@@ -15,9 +15,9 @@ const MAX_DEPTH: usize = 64;
 pub struct TreeEntry {
     /// The agent's id, or [`FIN_CARD`] + the group key for a "n finished" card.
     pub ident: String,
-    /// 1: the thread's own agents.
+    /// 1: the root's own agents.
     pub depth: usize,
-    /// The group: the thread's id, or the id of the agent that spawned it.
+    /// The group: the root's pane id, or the id of the agent that spawned it.
     pub key: String,
     /// A "n finished" card's folded agents (empty for an agent's card).
     pub fin: Vec<String>,
@@ -91,11 +91,11 @@ fn has<'a>(
     v
 }
 
-/// The thread's tree as cards, depth first.
-pub fn tree_entries(t: &Thread, view: &View) -> Vec<TreeEntry> {
-    let kids = TreeKids::of(t);
+/// The root's tree as cards, depth first.
+pub fn tree_entries(o: &Root, view: &View) -> Vec<TreeEntry> {
+    let kids = TreeKids::of(o);
     let mut out = vec![];
-    group(&kids, None, &t.id, 1, view, &mut out);
+    group(&kids, None, &o.pane_id, 1, view, &mut out);
     out
 }
 
@@ -139,12 +139,12 @@ fn group(
 }
 
 /// The selected agent and the agents that spawned it, outermost first.
-pub fn path_ids(t: Option<&Thread>, aid: Option<&str>) -> Vec<String> {
-    let (Some(t), Some(aid)) = (t, aid) else {
+pub fn path_ids(o: Option<&Root>, aid: Option<&str>) -> Vec<String> {
+    let (Some(o), Some(aid)) = (o, aid) else {
         return vec![];
     };
-    let kids = TreeKids::of(t);
-    let parent: HashMap<&str, &str> = t
+    let kids = TreeKids::of(o);
+    let parent: HashMap<&str, &str> = o
         .agents
         .iter()
         .flat_map(|p| {
@@ -154,7 +154,7 @@ pub fn path_ids(t: Option<&Thread>, aid: Option<&str>) -> Vec<String> {
         })
         .collect();
     let mut out: Vec<String> = vec![];
-    let mut cur = t.agents.iter().find(|a| a.id == aid).map(|a| a.id.as_str());
+    let mut cur = o.agents.iter().find(|a| a.id == aid).map(|a| a.id.as_str());
     while let Some(c) = cur.filter(|c| !out.iter().any(|o| o == c)) {
         out.push(c.to_owned());
         cur = parent.get(c).copied();
@@ -164,31 +164,31 @@ pub fn path_ids(t: Option<&Thread>, aid: Option<&str>) -> Vec<String> {
 }
 
 /// The group an agent (or a "n finished" card) is in: the id of the agent that spawned it,
-/// else the thread's id (Python `parent_key`).
-pub fn parent_key(t: &Thread, ident: &str) -> String {
+/// else the root's pane id (Python `parent_key`).
+pub fn parent_key(o: &Root, ident: &str) -> String {
     if let Some(key) = ident.strip_prefix(FIN_CARD) {
         return key.to_owned();
     }
-    let p = path_ids(Some(t), Some(ident));
+    let p = path_ids(Some(o), Some(ident));
     if p.len() > 1 {
         p[p.len() - 2].clone()
     } else {
-        t.id.clone()
+        o.pane_id.clone()
     }
 }
 
-/// The depth of an agent (or a "n finished" card) in the thread's tree; 1 when unknown
+/// The depth of an agent (or a "n finished" card) in the root's tree; 1 when unknown
 /// (Python `agent_depth`).
-pub fn agent_depth(t: Option<&Thread>, ident: Option<&str>) -> usize {
-    let (Some(t), Some(ident)) = (t, ident) else {
+pub fn agent_depth(o: Option<&Root>, ident: Option<&str>) -> usize {
+    let (Some(o), Some(ident)) = (o, ident) else {
         return 1;
     };
     if let Some(key) = ident.strip_prefix(FIN_CARD) {
-        return if key == t.id {
+        return if key == o.pane_id {
             1
         } else {
-            path_ids(Some(t), Some(key)).len() + 1
+            path_ids(Some(o), Some(key)).len() + 1
         };
     }
-    path_ids(Some(t), Some(ident)).len().max(1)
+    path_ids(Some(o), Some(ident)).len().max(1)
 }

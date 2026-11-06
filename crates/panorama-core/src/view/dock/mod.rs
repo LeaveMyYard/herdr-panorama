@@ -1,6 +1,6 @@
 //! The docked panel (designs 3a and 9e, turn 10's focus look; Python `render.dock_panel`):
-//! a header line, one entry per orchestrator the filter shows, `+ New agent`, and the
-//! footer. Every entry is a click target for its orchestrator; its `?N` answers it.
+//! a header line, one entry per root the filter shows, `+ New agent`, and the
+//! footer. Every entry is a click target for its root; its `?N` answers it.
 
 mod chrome;
 mod items;
@@ -18,7 +18,7 @@ use super::seg::Seg;
 use super::state::{NEW_ROW, View};
 use super::target::Target;
 use super::{machines, scroll};
-use crate::model::{Orchestrator, Swarm};
+use crate::model::{Root, Swarm};
 use row::{RowLook, dock_row};
 
 /// The list's canvas: entries past this many rows are cut (Python `TALL`).
@@ -53,12 +53,7 @@ pub fn dock_panel(swarm: &Swarm, view: &View, w: i32, h: i32, stale: bool) -> Sc
 }
 
 /// The entries and `+ New agent` on a tall canvas; the selected one's rows and the height.
-fn list(
-    swarm: &Swarm,
-    view: &View,
-    orchs: &[&Orchestrator],
-    w: i32,
-) -> (Screen, Option<(i32, i32)>, i32) {
+fn list(swarm: &Swarm, view: &View, orchs: &[&Root], w: i32) -> (Screen, Option<(i32, i32)>, i32) {
     let mut cv = Screen::new(w, TALL);
     let ages = Ages::of(view, swarm);
     let (mut y, mut sel) = (0, None);

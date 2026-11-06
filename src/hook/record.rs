@@ -21,6 +21,12 @@ pub fn normalize_agent_id(value: &str) -> &str {
 
 /// Append `fields` (and the process identity) to the session's hook file.
 pub fn append(session: &str, mut fields: Vec<(String, J)>, cx: &Ctx) -> io::Result<()> {
+    if cx.host.host == crate::host::Host::Core {
+        fields.push(("host".into(), J::str(cx.host.host.code())));
+        fields.push(("terminal".into(), J::opt_str(cx.host.terminal.clone())));
+        fields.push(("pane_id".into(), J::opt_str(cx.host.pane_id.clone())));
+        fields.push(("harness".into(), J::str(cx.harness)));
+    }
     if let Some((pid, start, pidns)) = (cx.identity)() {
         fields.push(("pid".into(), J::Int(i64::from(pid))));
         fields.push(("pstart".into(), J::Str(start)));

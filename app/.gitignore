@@ -1,0 +1,4 @@
+# Generated beside each mod by herdr-app check (not runtime sources).
+mods/*/gpui-kit.d.ts
+mods/*/jsconfig.json
+installer/__pycache__/

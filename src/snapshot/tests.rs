@@ -20,18 +20,20 @@ fn the_format_comes_from_the_flags() {
 }
 
 #[test]
-fn an_empty_swarm_prints_as_python_prints_it() {
+fn an_empty_swarm_prints_its_totals_and_no_roots() {
     let swarm = Swarm {
         generated_at: 1.5,
         ..Swarm::default()
     };
     let out = render(&swarm, Format::Json, 0.0);
-    assert!(out.starts_with("{\n  \"generated_at\": 1.5,\n  \"herdr_ok\": true,\n  \"inbox_ok\": false,\n  \"errors\": [],\n  \"counts\": {\n    \"orchestrators\": 0,"), "{out}");
-    assert!(out.ends_with("  \"orchestrators\": []\n}\n"), "{out}");
+    assert!(out.starts_with("{\n  \"generated_at\": 1.5,\n  \"herdr_ok\": true,\n  \"inbox_ok\": false,\n  \"errors\": [],\n  \"counts\": {\n    \"roots\": 0,\n    \"agents\": 0,"), "{out}");
+    assert!(out.ends_with("  \"roots\": []\n}\n"), "{out}");
     assert_eq!(render(&swarm, Format::Text, 0.0), "");
     let counts = render(&swarm, Format::Counts, 0.12345);
     assert!(
-        counts.contains("\"by_source\": {},") && counts.contains("\"seconds\": 0.123\n"),
+        counts.contains("\"agent_status\": {},")
+            && counts.contains("\"hidden_finished\": 0,")
+            && counts.contains("\"seconds\": 0.123\n"),
         "{counts}"
     );
 }

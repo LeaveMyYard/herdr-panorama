@@ -1,0 +1,54 @@
+/* V5 = the V3 look (filled labelled badges, state edges, tinted surfaces) with its
+   geometry fixed, plus the TUI dock structure. Overrides proposal.css (V3, unchanged). */
+@font-face{font-family:'Inter V4';font-weight:400;src:local('Inter'),local('Inter Regular'),url('fonts/Inter-Regular.ttf')}
+@font-face{font-family:'Inter V4';font-weight:500;src:local('Inter Medium'),url('fonts/Inter-Medium.ttf')}
+@font-face{font-family:'Inter V4';font-weight:600 700;src:local('Inter SemiBold'),url('fonts/Inter-SemiBold.ttf')}
+.hx,.gallery,.legend,.state-badge{font-family:'Inter V4','Inter',system-ui,sans-serif!important}
+
+/* ---- badges: hug their label; compact tiles are true squares ---- */
+.state-badge,.dn .state-badge,.peek .state-badge,.legend .state-badge,.gallery-top .state-badge{
+  width:auto!important;min-width:0!important;max-width:none!important;height:18px;padding:0 7px 0 6px!important;gap:4px;
+  border-radius:5px;font-size:10px;font-weight:600;letter-spacing:0}
+.state-badge.mini,.state-badge.deep,.dn .state-badge.mini{width:18px!important;min-width:18px!important;max-width:18px!important;height:18px;padding:0!important;gap:0}
+.state-badge.mini.wide,.state-badge.deep.wide,.dn .state-badge.mini.wide{width:auto!important;max-width:none!important;padding:0 4px!important;gap:1px}
+.peek .state-badge{height:20px;font-size:10.5px;padding:0 8px 0 7px!important}
+.gallery-top .state-badge{height:22px;font-size:11px;padding:0 9px 0 8px!important}
+.legend .state-badge{min-width:0!important}
+.badge-symbol{display:inline-flex;align-items:center;justify-content:center;font-weight:700}
+.gsym{width:11px;height:11px;background:currentColor;-webkit-mask:var(--g) center/contain no-repeat;mask:var(--g) center/contain no-repeat}
+.mini .gsym,.deep .gsym{width:13px;height:13px}
+.gallery-top .gsym{width:13px;height:13px}
+.g-check{--g:url(glyphs/check.svg)}.g-x{--g:url(glyphs/x.svg)}.g-review{--g:url(glyphs/review.svg)}.g-spin{--g:url(glyphs/spin.svg)}
+.g-ring{--g:url(glyphs/ring.svg)}.g-dashed{--g:url(glyphs/dashed.svg)}.g-orbit{--g:url(glyphs/orbit.svg)}.g-minus{--g:url(glyphs/minus.svg)}
+.g-tilde{--g:url(glyphs/tilde.svg)}.g-check-q{--g:url(glyphs/check-q.svg)}
+.badge-n{font-weight:700}
+.st-run .gsym{animation:status-spin 900ms linear infinite}
+.export .gsym{animation:none!important}
+
+/* ---- sidebar: every row its own box, with air between boxes ---- */
+.ag-list{gap:2px}
+.r .state-badge+.state-badge{margin-left:3px}
+/* a collapsed orchestrator: one box of two lines, as the TUI dock entry */
+.r.entry-top{border-radius:7px 7px 0 0!important}
+.r.entry-top::after{display:none}
+.r.entry-bot{height:24px;margin-top:-2px;border-radius:0 0 7px 7px!important;padding-left:33px}
+.r.entry-bot+.r:not(.sec){margin-top:4px}
+.r.tl .state-badge.tile{margin:0 3px 0 0}
+.r.tl .nm.tlc{flex:1;min-width:0;max-width:none;margin-left:5px;font-size:11.5px;color:#7d838c}
+.r.tl .bar{left:33px;right:12px}
+/* the focused orchestrator heads its open tree */
+.r.entry-head{margin-bottom:0}
+.r.tl .nm.tlc{margin-left:0}
+.r.tl .tile + .nm.tlc{margin-left:5px}
+.dn-t1.wide{flex:0 1 auto!important}
+.dn.orch-card .dn-t1.wide{flex:1 1 auto!important}
+/* B legend: a fixed badge column so labels line up */
+.state-legend-row{display:grid!important;grid-template-columns:100px 1fr;align-items:center;column-gap:10px}
+.state-legend-row .state-badge{justify-self:start}
+.state-legend-row small{display:none!important}
+.legend{gap:8px}
+.legend .lg-h.gap{padding-top:12px}
+.legend-note{margin:0}
+/* finished folds: green ✓ tiles, as the TUI's fold pods */
+.dn.dfold .pod{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:4px;color:#e3f2e9}
+.dn.dfold .pod::before{content:"";width:11px;height:11px;background:currentColor;-webkit-mask:url(glyphs/check.svg) center/contain no-repeat;mask:url(glyphs/check.svg) center/contain no-repeat}

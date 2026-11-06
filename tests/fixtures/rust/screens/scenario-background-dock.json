@@ -1,0 +1,1215 @@
+{
+  "screens": {
+    "initial": [
+      [
+        [
+          " SWARM  ",
+          "#80868f",
+          "#14161b",
+          true
+        ],
+        [
+          "2 orchestrators              ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "?0 !0 ",
+          "#ffb547",
+          "#14161b",
+          true
+        ],
+        [
+          "✗0 ",
+          "#ff6b6b",
+          "#14161b",
+          true
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌ ",
+          "#e2cf9c",
+          "#1e2937",
+          false
+        ],
+        [
+          "1 ",
+          "#4d535c",
+          "#1e2937",
+          false
+        ],
+        [
+          " ⠁ ",
+          "#e6def8",
+          "#3b3159",
+          true
+        ],
+        [
+          " Claude Code · Release         ",
+          "#eceef1",
+          "#1e2937",
+          true
+        ],
+        [
+          "waiting ",
+          "#b39ddb",
+          "#1e2937",
+          false
+        ]
+      ],
+      [
+        [
+          "▌       ",
+          "#e2cf9c",
+          "#1e2937",
+          false
+        ],
+        [
+          "1 active · 1 agents · 4 bg            ",
+          "#4d535c",
+          "#1e2937",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          " ⠈ ",
+          "#e6def8",
+          "#3b3159",
+          true
+        ],
+        [
+          " Wait for the rollout        ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ],
+        [
+          "bash 13m ",
+          "#80868f",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          " ⠐ ",
+          "#e6def8",
+          "#3b3159",
+          true
+        ],
+        [
+          " Run the smoke suite         ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ],
+        [
+          "bash 12m ",
+          "#80868f",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          " ⠠ ",
+          "#e6def8",
+          "#3b3159",
+          true
+        ],
+        [
+          " Watch the error rate     ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ],
+        [
+          "monitor 11m ",
+          "#80868f",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "└ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "⠁ ",
+          "#b39ddb",
+          "#14161b",
+          false
+        ],
+        [
+          "Check the canary metrics               ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "  2 ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          " ○ ",
+          "#9aa0aa",
+          "#2a2e35",
+          true
+        ],
+        [
+          " Claude Code · Cache              ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ],
+        [
+          "idle ",
+          "#80868f",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "        0 active · 0 agents                   ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "  + ",
+          "#e2cf9c",
+          "#14161b",
+          true
+        ],
+        [
+          "New agent                               ",
+          "#80868f",
+          "#14161b",
+          false
+        ],
+        [
+          "n ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "─────────────────────────────────── ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "z ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "graph ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "──",
+          "#2c313a",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          " ↑↓ ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "move ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "ret ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "open ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "a ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "answer ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "n ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "new ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "pfx+spc ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "back ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ]
+    ],
+    "key down": [
+      [
+        [
+          " SWARM  ",
+          "#80868f",
+          "#14161b",
+          true
+        ],
+        [
+          "2 orchestrators              ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "?0 !0 ",
+          "#ffb547",
+          "#14161b",
+          true
+        ],
+        [
+          "✗0 ",
+          "#ff6b6b",
+          "#14161b",
+          true
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌ ",
+          "#e2cf9c",
+          "#1e2937",
+          false
+        ],
+        [
+          "1 ",
+          "#4d535c",
+          "#1e2937",
+          false
+        ],
+        [
+          " ⠁ ",
+          "#e6def8",
+          "#3b3159",
+          true
+        ],
+        [
+          " Claude Code · Release         ",
+          "#eceef1",
+          "#1e2937",
+          true
+        ],
+        [
+          "waiting ",
+          "#b39ddb",
+          "#1e2937",
+          false
+        ]
+      ],
+      [
+        [
+          "▌       ",
+          "#e2cf9c",
+          "#1e2937",
+          false
+        ],
+        [
+          "1 active · 1 agents · 4 bg            ",
+          "#4d535c",
+          "#1e2937",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          " ⠈ ",
+          "#e6def8",
+          "#3b3159",
+          true
+        ],
+        [
+          " Wait for the rollout        ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ],
+        [
+          "bash 13m ",
+          "#80868f",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          " ⠐ ",
+          "#e6def8",
+          "#3b3159",
+          true
+        ],
+        [
+          " Run the smoke suite         ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ],
+        [
+          "bash 12m ",
+          "#80868f",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          " ⠠ ",
+          "#e6def8",
+          "#3b3159",
+          true
+        ],
+        [
+          " Watch the error rate     ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ],
+        [
+          "monitor 11m ",
+          "#80868f",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "└ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "⠁ ",
+          "#b39ddb",
+          "#14161b",
+          false
+        ],
+        [
+          "Check the canary metrics               ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "› ",
+          "#80868f",
+          "#1d1f24",
+          false
+        ],
+        [
+          "2 ",
+          "#4d535c",
+          "#1d1f24",
+          false
+        ],
+        [
+          " ○ ",
+          "#9aa0aa",
+          "#2a2e35",
+          true
+        ],
+        [
+          " Claude Code · Cache              ",
+          "#eceef1",
+          "#1d1f24",
+          false
+        ],
+        [
+          "idle ",
+          "#80868f",
+          "#1d1f24",
+          false
+        ]
+      ],
+      [
+        [
+          "        0 active · 0 agents                   ",
+          "#4d535c",
+          "#1d1f24",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "  + ",
+          "#e2cf9c",
+          "#14161b",
+          true
+        ],
+        [
+          "New agent                               ",
+          "#80868f",
+          "#14161b",
+          false
+        ],
+        [
+          "n ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "─────────────────────────────────── ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "z ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "graph ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "──",
+          "#2c313a",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          " ↑↓ ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "move ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "ret ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "open ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "a ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "answer ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "n ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "new ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "pfx+spc ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "back ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ]
+    ]
+  },
+  "source": "Rust's screens for the runs of tests/fixtures/screens/scenario-background-dock.json, written by PANORAMA_BLESS=1 cargo test --test app_screens"
+}

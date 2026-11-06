@@ -1,0 +1,213 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Panorama TUI Dock</title><link rel="stylesheet" href="base.css"><link rel="stylesheet" href="proposal.css"><link rel="stylesheet" href="v5.css"><link rel="stylesheet" href="v6.css"><link rel="stylesheet" href="v7.css"><link rel="stylesheet" href="v8.css"><link rel="stylesheet" href="v9.css"><link rel="stylesheet" href="v10.css"><link rel="stylesheet" href="v11.css"></head><body><header class="preview-nav"><strong>Panorama / V11 uniform agent tree</strong><span>Synthetic design proposal · no implementation</span><nav></nav></header><main id="stage"></main><template id="source"><sc-for list="{{ wins }}" as="w" hint-placeholder-count="3">
+<section class="frame" style="{{ w.pos }}" data-screen-label="{{ w.screen }}">
+  <div class="flabel" data-drags-parent="1">{{ w.label }}</div>
+  <div class="fnote">{{ w.note }}</div>
+  <div class="clip hx" style="{{ w.clipSt }}">
+  <div class="{{ w.winCls }}">
+    <aside class="side">
+      <div class="brand">
+        <img class="logo" src="../ui/herdr.png" alt="">
+        <span class="brand-t">Herdr</span>
+        <span class="grow"></span>
+        <span class="ibtn"><span class="ui i-search s15"></span></span>
+        <span class="ibtn"><span class="ui i-sidebar s15"></span></span>
+      </div>
+      <div class="sp-h"><span>Spaces</span><span class="ibtn dim"><span class="ui i-plus s14"></span></span></div>
+      <div class="sp-list">
+        <sc-for list="{{ w.spaces }}" as="s" hint-placeholder-count="3">
+          <div class="{{ s.cls }}">
+            <span class="tile" style="{{ s.tileSt }}">{{ s.l }}</span>
+            <span class="sp-name">{{ s.name }}</span>
+            <span class="sp-tail"><span class="repo">{{ s.repo }}</span><sc-for list="{{ s.marks }}" as="m" hint-placeholder-count="1"><span class="{{ m.cls }}" style="{{ m.st }}">{{ m.t }}</span></sc-for></span>
+          </div>
+        </sc-for>
+      </div>
+      <div class="agents">
+        <div class="ag-h"><span>Agents</span><span class="grow"></span><span class="dk-tot"><b class="{{ w.tot.wait ? 't-wait' : 't-wait zero' }}">?{{ w.tot.wait }}</b><b class="{{ w.tot.blk ? 't-blk' : 't-blk zero' }}">!{{ w.tot.blk }}</b><b class="{{ w.tot.fail ? 't-fail' : 't-fail zero' }}">✗{{ w.tot.fail }}</b></span><span class="ui i-clock s14"></span></div>
+        <div class="ag-list dock">
+          <sc-for list="{{ w.rows }}" as="R" hint-placeholder-count="20">
+            <div class="{{ R.cls }}" style="{{ R.st }}">
+              <sc-for list="{{ R.lines }}" as="L" hint-placeholder-count="0"><span class="{{ L.cls }}" style="{{ L.st }}"></span></sc-for>
+              <span class="{{ R.noCls }}">{{ R.no }}</span>
+              <sc-for list="{{ R.lead }}" as="q" hint-placeholder-count="1"><span class="{{ q.cls }}">{{ q.t }}</span></sc-for>
+              <sc-if value="{{ R.hasIc }}" hint-placeholder-val="{{ true }}"><span class="hic dk-ic" style="{{ R.icSt }}"></span></sc-if>
+              <span class="{{ R.nameCls }}">{{ R.name }}</span>
+              <span class="grow"></span>
+              <sc-for list="{{ R.right }}" as="m" hint-placeholder-count="1"><span class="{{ m.cls }}">{{ m.t }}</span></sc-for>
+              <sc-if value="{{ R.bar }}" hint-placeholder-val="{{ false }}"><span class="bar"><span class="bar-in" style="{{ barSt }}"></span></span></sc-if>
+            </div>
+          </sc-for>
+          <sc-if value="{{ w.thumb }}" hint-placeholder-val="{{ true }}"><span class="thumb"></span></sc-if>
+        </div>
+      </div>
+      <div class="foot">
+        <div class="fr"><span class="ui i-settings s14"></span><span>Settings</span></div>
+        <div class="fr dim"><span class="ui i-plus s14"></span><span>Add machine</span></div>
+      </div>
+    </aside>
+    <div class="work">
+      <div class="tabs">
+        <sc-for list="{{ w.tabs }}" as="t" hint-placeholder-count="2">
+          <div class="{{ t.cls }}">
+            <sc-if value="{{ t.swarm }}" hint-placeholder-val="{{ false }}"><span class="swg"><span class="swg-c need"></span><span class="swg-c work"></span><span class="swg-c"></span><span class="swg-c done"></span></span></sc-if>
+            <sc-if value="{{ t.hasIc }}" hint-placeholder-val="{{ true }}"><span class="tic" style="{{ t.icSt }}"></span></sc-if>
+            <span>{{ t.label }}</span>
+            <sc-if value="{{ t.chip }}" hint-placeholder-val="{{ false }}"><span class="mk chip need" style="margin-left:0">{{ t.chip }}</span></sc-if>
+            <sc-if value="{{ t.spin }}" hint-placeholder-val="{{ false }}"><span class="mk spin" style="{{ spinSt }}"></span></sc-if>
+            <sc-if value="{{ t.dot }}" hint-placeholder-val="{{ false }}"><span class="tab-dot"></span></sc-if>
+            <sc-if value="{{ t.close }}" hint-placeholder-val="{{ false }}"><span class="ui i-close s12" style="color:#696a6d"></span></sc-if>
+          </div>
+        </sc-for>
+        <span class="grow"></span>
+        <span class="wbtn"><span class="ui i-plus s14"></span></span>
+        <span class="pbtn"><span class="ui i-file s14"></span>Files</span>
+        <span class="pbtn"><span class="ui i-compare s14"></span>Changes</span>
+        <span class="wbtn">−</span><span class="wbtn">□</span><span class="wbtn"><span class="ui i-close s13"></span></span>
+      </div>
+      <div class="body">
+        <sc-if value="{{ w.graph }}" hint-placeholder-val="{{ false }}">
+        <div class="pane">
+          <div class="ph"><span class="swg"><span class="swg-c need"></span><span class="swg-c work"></span><span class="swg-c"></span><span class="swg-c done"></span></span><span class="ph-t">Swarm</span><span class="ph-p">Test · 2 sessions · 21 agents</span><span class="mk chip fail">✗</span><span class="mk chip need">?2</span><span class="mk spin" style="{{ spinSt }}"></span></div>
+          <div class="dwrap">
+            <div class="crumb"><span class="crumb-l">{{ w.g.left }}</span><span class="crumb-n">{{ w.g.leftN }}</span><span class="grow"></span><span class="crumb-n">{{ w.g.right }}</span><span class="crumb-r">{{ w.g.rightArrow }}</span></div>
+            <div class="dheads"><sc-for list="{{ w.g.heads }}" as="h" hint-placeholder-count="4"><div class="gh" style="{{ h.st }}">{{ h.t }}<span class="gh-n">{{ h.n }}</span></div></sc-for></div>
+            <div class="dcanvas">
+              <sc-for list="{{ w.g.lines }}" as="l" hint-placeholder-count="20"><span class="{{ l.cls }}" style="{{ l.st }}"></span></sc-for>
+              <sc-for list="{{ w.g.nodes }}" as="n" hint-placeholder-count="14">
+                <div class="{{ n.cls }}" style="{{ n.st }}">
+                  <sc-if value="{{ n.edge }}" hint-placeholder-val="{{ false }}"><span class="edge" style="{{ edgeSt }}"></span></sc-if>
+                  <div class="dn-1">
+                    <sc-if value="{{ n.hasIc }}" hint-placeholder-val="{{ true }}"><span class="{{ n.icCls }}" style="{{ n.icSt }}"></span></sc-if>
+                    <sc-for list="{{ n.pods }}" as="q" hint-placeholder-count="0"><span class="{{ q }}"></span></sc-for>
+                    <span class="{{ n.tCls }}">{{ n.title }}</span>
+                    <span class="dn-meta">{{ n.meta }}</span>
+                    <span class="grow"></span>
+                    <span class="{{ n.labelCls }}">{{ n.label }}</span>
+                    <sc-for list="{{ n.marks }}" as="m" hint-placeholder-count="1"><span class="{{ m.cls }}" style="{{ m.st }}">{{ m.t }}</span></sc-for>
+                  </div>
+                  <sc-if value="{{ n.two }}" hint-placeholder-val="{{ true }}">
+                  <div class="dn-2">
+                    <sc-if value="{{ n.hasPips }}" hint-placeholder-val="{{ false }}"><span class="pips" style="margin:0 7px 0 0"><sc-for list="{{ n.pips }}" as="p" hint-placeholder-count="5"><span class="{{ p }}"></span></sc-for></span></sc-if>
+                    <span class="{{ n.sCls }}">{{ n.sub }}</span>
+                    <span class="dn-right">{{ n.right }}</span>
+                  </div>
+                  </sc-if>
+                  <sc-if value="{{ n.hasDetail }}" hint-placeholder-val="{{ false }}">
+                  <div class="dn-d"><sc-for list="{{ n.detail }}" as="d" hint-placeholder-count="3"><div class="{{ d.cls }}"><span class="dn-k">{{ d.k }}</span><span class="dn-t">{{ d.t }}</span><span class="dn-r">{{ d.r }}</span></div></sc-for></div>
+                  </sc-if>
+                  <sc-if value="{{ n.hasActs }}" hint-placeholder-val="{{ false }}">
+                  <div class="dn-acts"><sc-for list="{{ n.acts }}" as="a" hint-placeholder-count="3"><span class="{{ a.cls }}">{{ a.t }}<span class="kb">{{ a.k }}</span></span></sc-for><span class="grow"></span><span class="dn-meta">{{ n.foot }}</span></div>
+                  </sc-if>
+                  <sc-if value="{{ n.bar }}" hint-placeholder-val="{{ false }}"><span class="bar gbar"><span class="bar-in" style="{{ barSt }}"></span></span></sc-if>
+                </div>
+              </sc-for>
+              <sc-for list="{{ w.g.more }}" as="m" hint-placeholder-count="1"><span class="more" style="{{ m.st }}">{{ m.t }}</span></sc-for>
+              <sc-if value="{{ w.g.fadeL }}" hint-placeholder-val="{{ false }}"><span class="fade-l"></span></sc-if>
+              <sc-if value="{{ w.g.fadeR }}" hint-placeholder-val="{{ true }}"><span class="fade-r"></span></sc-if>
+            </div>
+            <div class="hscroll"><span class="hthumb" style="{{ w.g.thumbSt }}"></span></div>
+            <div class="dkeys"><span><b>↑↓</b> move</span><span><b>→</b> open</span><span><b>←</b> back</span><span><b>shift+wheel</b> scroll</span><span><b>⏎</b> pane / peek</span><span><b>a</b> answer</span><span><b>i</b> inbox</span></div>
+          </div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ w.term }}" hint-placeholder-val="{{ true }}">
+        <div class="pane">
+          <div class="ph"><span class="tic" style="{{ icCodex }}"></span><span class="ph-t">Codex</span><span class="ph-p">~/Code/herdr-panorama</span><span class="mk spin" style="{{ spinSt }}"></span></div>
+          <div class="term">
+            <sc-for list="{{ lines }}" as="l" hint-placeholder-count="18"><div class="{{ l.c }}">{{ l.t }}</div></sc-for>
+            <div class="ibox"><span style="color:#eeeeef">›</span><span class="cur"></span><span>Ask Codex to do anything</span></div>
+            <div class="tfoot"><span>⏎ send   ⌃J newline   ⌃T transcript</span><span>86% context left</span></div>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+      <div class="status">
+        <span class="st-l"><span class="ui i-monitor s13"></span>This computer</span>
+        <span class="st-l"><span class="ui i-branch s13"></span>main</span>
+        <span class="st-l"><span class="st-dot"></span>5 agents<span class="st-need">· 1 needs you</span></span>
+        <span class="grow"></span>
+        <span class="st-hint">Ctrl+Shift+P commands</span>
+      </div>
+    </div>
+    <sc-if value="{{ w.peek }}" hint-placeholder-val="{{ false }}">
+      <div class="peek">
+        <div class="pk-h"><span class="hic h16" style="{{ icClaude }}"></span><span class="pk-n">Fix PR #142 fold test</span><span class="grow" style="color:#696a6d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">fixer · sonnet</span><span class="mk chip fail" style="margin:0">✗</span></div>
+        <div class="pk-meta">Failed 1m ago · Claude Code · sonnet · 9m · 23 tools<br>Subagent of Test · Panorama as a herdr-app mod. It has no pane of its own.</div>
+        <div class="pk-err">npm test exited 1
+3 failing in sidebar.spec.ts</div>
+        <div class="pk-k">Last message</div>
+        <div class="pk-msg">Tree rows are 26px but the fold test still expects 30px. Stopping per the CI-failure rule.</div>
+        <div class="pk-btns"><span class="pk-b solid">Open orchestrator <span class="kb">⏎</span></span><span class="pk-b">Transcript <span class="kb">t</span></span></div>
+      </div>
+    </sc-if>
+  </div>
+  </div>
+</section>
+</sc-for>
+
+<section class="frame" style="left:2040px;top:0px" data-screen-label="B Sidebar 2x">
+  <div class="flabel" data-drags-parent="1">B · The panorama sidebar at 2x, fully expanded: every status, orchestrator → thread → agent → subagent → its subagent</div>
+  <div class="fnote">Same mod, every fold open. Rows that have their own pane (orchestrators) read in full white and focus their pane on click. Subagents have no pane, read muted, and open a Peek card on click (hover state shown on the explorer under PR #144). The legend lists the only marks the panel uses.</div>
+  <div class="brow hx">
+    <div class="clip z2" style="border-radius:10px">
+      <aside class="side tall">
+        <div class="brand">
+          <img class="logo" src="../ui/herdr.png" alt="">
+          <span class="brand-t">Herdr</span>
+          <span class="grow"></span>
+          <span class="ibtn"><span class="ui i-search s15"></span></span>
+          <span class="ibtn"><span class="ui i-sidebar s15"></span></span>
+        </div>
+        <div class="sp-h"><span>Spaces</span><span class="ibtn dim"><span class="ui i-plus s14"></span></span></div>
+        <div class="sp-list">
+          <sc-for list="{{ spaces }}" as="s" hint-placeholder-count="3">
+            <div class="{{ s.cls }}">
+              <span class="tile" style="{{ s.tileSt }}">{{ s.l }}</span>
+              <span class="sp-name">{{ s.name }}</span>
+              <span class="sp-tail"><span class="repo">{{ s.repo }}</span><sc-for list="{{ s.marks }}" as="m" hint-placeholder-count="1"><span class="{{ m.cls }}" style="{{ m.st }}">{{ m.t }}</span></sc-for></span>
+            </div>
+          </sc-for>
+        </div>
+        <div class="agents">
+          <div class="ag-h"><span>Agents</span><span class="grow"></span><span class="dk-tot"><b class="{{ totB.wait ? 't-wait' : 't-wait zero' }}">?{{ totB.wait }}</b><b class="{{ totB.blk ? 't-blk' : 't-blk zero' }}">!{{ totB.blk }}</b><b class="{{ totB.fail ? 't-fail' : 't-fail zero' }}">✗{{ totB.fail }}</b></span><span class="ui i-clock s14"></span></div>
+          <div class="ag-list dock" style="padding-bottom:10px">
+          <sc-for list="{{ rowsB }}" as="R" hint-placeholder-count="20">
+            <div class="{{ R.cls }}" style="{{ R.st }}">
+              <sc-for list="{{ R.lines }}" as="L" hint-placeholder-count="0"><span class="{{ L.cls }}" style="{{ L.st }}"></span></sc-for>
+              <span class="{{ R.noCls }}">{{ R.no }}</span>
+              <sc-for list="{{ R.lead }}" as="q" hint-placeholder-count="1"><span class="{{ q.cls }}">{{ q.t }}</span></sc-for>
+              <sc-if value="{{ R.hasIc }}" hint-placeholder-val="{{ true }}"><span class="hic dk-ic" style="{{ R.icSt }}"></span></sc-if>
+              <span class="{{ R.nameCls }}">{{ R.name }}</span>
+              <span class="grow"></span>
+              <sc-for list="{{ R.right }}" as="m" hint-placeholder-count="1"><span class="{{ m.cls }}">{{ m.t }}</span></sc-for>
+              <sc-if value="{{ R.bar }}" hint-placeholder-val="{{ false }}"><span class="bar"><span class="bar-in" style="{{ barSt }}"></span></span></sc-if>
+            </div>
+          </sc-for>
+          </div>
+        </div>
+        <div class="foot">
+          <div class="fr"><span class="ui i-settings s14"></span><span>Settings</span></div>
+          <div class="fr dim"><span class="ui i-plus s14"></span><span>Add machine</span></div>
+        </div>
+      </aside>
+    </div>
+    <div class="legend z2">
+      <div class="lg-h">Marks, right edge of a row</div>
+      <div class="lg"><span class="lg-m"><span class="mk spin" style="{{ spinSt }}"></span></span><span class="lg-t"><b>Working</b>, the app's own spinner and colour</span></div>
+      <div class="lg"><span class="lg-m"><span class="mk chip rev">»</span></span><span class="lg-t"><b>Reviewing</b></span></div>
+      <div class="lg"><span class="lg-m"><span class="mk chip need">?2</span></span><span class="lg-t"><b>Waiting for an answer</b>, open questions</span></div>
+      <div class="lg"><span class="lg-m"><span class="mk chip need">!</span></span><span class="lg-t"><b>Blocked</b> on a permission</span></div>
+      <div class="lg"><span class="lg-m"><span class="mk chip fail">✗</span></span><span class="lg-t"><b>Failed</b></span></div>
+      <div class="lg"><span class="lg-m"><span class="mk ok">✓</span></span><span class="lg-t"><b>Done</b>, a subagent that finished</span></div>
+      <div class="lg"><span class="lg-m"><span class="mk dot"></span></span><span class="lg-t"><b>Done</b>, an orchestrator you haven't looked at</span></div>
+      <div class="lg"><span class="lg-m"><span class="mk ring"></span></span><span class="lg-t"><b>Queued / idle</b></span></div>
+      <div class="lg-h gap">Motion and structure</div>
+      <div class="lg"><span class="lg-m"><span class="lg-edge" style="{{ edgeSt }}"></span></span><span class="lg-t"><b>Needs you</b>: the left edge eases in and out</span></div>
+      <div class="lg"><span class="lg-m"><span class="lg-bar"><span class="bar-in" style="{{ barSt }}"></span></span></span><span class="lg-t"><b>Agents at work</b> under an orchestrator</span></div>
+      <div class="lg"><span class="lg-m"><span class="pips" style="margin:0"><span class="pip d"></span><span class="pip f"></span><span class="pip"></span></span></span><span class="lg-t"><b>Thread phases</b>: done, now, failed, next</span></div>
+      <div class="lg-h gap">Clicks</div>
+      <div class="lg-p"><b>Orchestrator</b>: focuses its pane. <b>Subagent</b>: opens Peek. <b>Chevron</b>: folds; folded, it shows the count in the most urgent colour.</div>
+    </div>
+  </div>
+</section>
+</template><script src="fixture.js"></script><script src="preview.js"></script></body></html>

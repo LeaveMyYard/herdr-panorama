@@ -1,0 +1,1371 @@
+{
+  "screens": {
+    "initial": [
+      [
+        [
+          " SWARM  ",
+          "#80868f",
+          "#14161b",
+          true
+        ],
+        [
+          "4 orchestrators              ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "?2 !1 ",
+          "#ffb547",
+          "#14161b",
+          true
+        ],
+        [
+          "✗1 ",
+          "#ff6b6b",
+          "#14161b",
+          true
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌ ",
+          "#e2cf9c",
+          "#302e3b",
+          false
+        ],
+        [
+          "1 ",
+          "#4d535c",
+          "#302e3b",
+          false
+        ],
+        [
+          " ✗ ",
+          "#ffffff",
+          "#d8363e",
+          true
+        ],
+        [
+          " Claude Code · Billing…      ",
+          "#eceef1",
+          "#302e3b",
+          true
+        ],
+        [
+          "?2 ",
+          "#ffb547",
+          "#302e3b",
+          true
+        ],
+        [
+          "failed ",
+          "#ff6b6b",
+          "#302e3b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌       ",
+          "#e2cf9c",
+          "#302e3b",
+          false
+        ],
+        [
+          "3 active · 3 agents                   ",
+          "#4d535c",
+          "#302e3b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "» ",
+          "#8eaee6",
+          "#14161b",
+          false
+        ],
+        [
+          "Review PR #42 round 2                  ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "✗",
+          "#ff6b6b",
+          "#643133",
+          true
+        ],
+        [
+          " Fix CI for PR #44                      ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "?",
+          "#ffb547",
+          "#644b27",
+          true
+        ],
+        [
+          " Draft retry banner copy                ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "└ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          " ✓ ",
+          "#e3f2e9",
+          "#367152",
+          true
+        ],
+        [
+          " 3 finished · Author PR #42… +1 older ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "  2 ",
+          "#4d535c",
+          "#141719",
+          false
+        ],
+        [
+          " ⠙ ",
+          "#d8f2ee",
+          "#1f625c",
+          true
+        ],
+        [
+          " Claude Code · Search …        ",
+          "#c3c7cd",
+          "#141719",
+          false
+        ],
+        [
+          "working ",
+          "#68c2b5",
+          "#141719",
+          false
+        ]
+      ],
+      [
+        [
+          "        ",
+          null,
+          "#141719",
+          false
+        ],
+        [
+          " ⠙ ",
+          "#d8f2ee",
+          "#1f625c",
+          true
+        ],
+        [
+          " ",
+          null,
+          "#141719",
+          false
+        ],
+        [
+          " ⠹ ",
+          "#d8f2ee",
+          "#1f625c",
+          true
+        ],
+        [
+          " ",
+          null,
+          "#141719",
+          false
+        ],
+        [
+          " ✓ ",
+          "#e3f2e9",
+          "#2c6b4c",
+          true
+        ],
+        [
+          "  2 active · 2 agents      ",
+          "#4d535c",
+          "#141719",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "  3 ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          " ! ",
+          "#1b1203",
+          "#f2a93b",
+          true
+        ],
+        [
+          " Claude Code · Docs si…        ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ],
+        [
+          "blocked ",
+          "#ffb547",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "        ",
+          null,
+          "#14161b",
+          false
+        ],
+        [
+          " ⠋ ",
+          "#d8f2ee",
+          "#1f625c",
+          true
+        ],
+        [
+          "  1 active · 1 agents              ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "  4 ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          " ✓ ",
+          "#e3f2e9",
+          "#2c6b4c",
+          true
+        ],
+        [
+          " Claude Code · Release…           done ",
+          "#80868f",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "        ",
+          null,
+          "#14161b",
+          false
+        ],
+        [
+          " ✓ ",
+          "#e3f2e9",
+          "#2c6b4c",
+          true
+        ],
+        [
+          "  0 active · 0 agents              ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "  + ",
+          "#e2cf9c",
+          "#14161b",
+          true
+        ],
+        [
+          "New agent                               ",
+          "#80868f",
+          "#14161b",
+          false
+        ],
+        [
+          "n ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "─────────────────────────────────── ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "z ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "graph ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "──",
+          "#2c313a",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          " ↑↓ ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "move ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "ret ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "open ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "a ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "answer ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "n ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "new ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "pfx+spc ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "back ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ]
+    ],
+    "key down": [
+      [
+        [
+          " SWARM  ",
+          "#80868f",
+          "#14161b",
+          true
+        ],
+        [
+          "4 orchestrators              ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "?2 !1 ",
+          "#ffb547",
+          "#14161b",
+          true
+        ],
+        [
+          "✗1 ",
+          "#ff6b6b",
+          "#14161b",
+          true
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌ ",
+          "#e2cf9c",
+          "#302e3b",
+          false
+        ],
+        [
+          "1 ",
+          "#4d535c",
+          "#302e3b",
+          false
+        ],
+        [
+          " ✗ ",
+          "#ffffff",
+          "#d8363e",
+          true
+        ],
+        [
+          " Claude Code · Billing…      ",
+          "#eceef1",
+          "#302e3b",
+          true
+        ],
+        [
+          "?2 ",
+          "#ffb547",
+          "#302e3b",
+          true
+        ],
+        [
+          "failed ",
+          "#ff6b6b",
+          "#302e3b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌       ",
+          "#e2cf9c",
+          "#302e3b",
+          false
+        ],
+        [
+          "3 active · 3 agents                   ",
+          "#4d535c",
+          "#302e3b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "» ",
+          "#8eaee6",
+          "#14161b",
+          false
+        ],
+        [
+          "Review PR #42 round 2                  ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "✗",
+          "#ff6b6b",
+          "#643133",
+          true
+        ],
+        [
+          " Fix CI for PR #44                      ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "├ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "?",
+          "#ffb547",
+          "#644b27",
+          true
+        ],
+        [
+          " Draft retry banner copy                ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "▌  ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "└ ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          " ✓ ",
+          "#e3f2e9",
+          "#367152",
+          true
+        ],
+        [
+          " 3 finished · Author PR #42… +1 older ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "› ",
+          "#80868f",
+          "#1a1f22",
+          false
+        ],
+        [
+          "2 ",
+          "#4d535c",
+          "#1a1f22",
+          false
+        ],
+        [
+          " ⠙ ",
+          "#d8f2ee",
+          "#1f625c",
+          true
+        ],
+        [
+          " Claude Code · Search …        ",
+          "#eceef1",
+          "#1a1f22",
+          false
+        ],
+        [
+          "working ",
+          "#68c2b5",
+          "#1a1f22",
+          false
+        ]
+      ],
+      [
+        [
+          "        ",
+          null,
+          "#1a1f22",
+          false
+        ],
+        [
+          " ⠙ ",
+          "#d8f2ee",
+          "#1f625c",
+          true
+        ],
+        [
+          " ",
+          null,
+          "#1a1f22",
+          false
+        ],
+        [
+          " ⠹ ",
+          "#d8f2ee",
+          "#1f625c",
+          true
+        ],
+        [
+          " ",
+          null,
+          "#1a1f22",
+          false
+        ],
+        [
+          " ✓ ",
+          "#e3f2e9",
+          "#2c6b4c",
+          true
+        ],
+        [
+          "  2 active · 2 agents      ",
+          "#4d535c",
+          "#1a1f22",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "  3 ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          " ! ",
+          "#1b1203",
+          "#f2a93b",
+          true
+        ],
+        [
+          " Claude Code · Docs si…        ",
+          "#c3c7cd",
+          "#14161b",
+          false
+        ],
+        [
+          "blocked ",
+          "#ffb547",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "        ",
+          null,
+          "#14161b",
+          false
+        ],
+        [
+          " ⠋ ",
+          "#d8f2ee",
+          "#1f625c",
+          true
+        ],
+        [
+          "  1 active · 1 agents              ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "  4 ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          " ✓ ",
+          "#e3f2e9",
+          "#2c6b4c",
+          true
+        ],
+        [
+          " Claude Code · Release…           done ",
+          "#80868f",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "        ",
+          null,
+          "#14161b",
+          false
+        ],
+        [
+          " ✓ ",
+          "#e3f2e9",
+          "#2c6b4c",
+          true
+        ],
+        [
+          "  0 active · 0 agents              ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "  + ",
+          "#e2cf9c",
+          "#14161b",
+          true
+        ],
+        [
+          "New agent                               ",
+          "#80868f",
+          "#14161b",
+          false
+        ],
+        [
+          "n ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "                                              ",
+          null,
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          "─────────────────────────────────── ",
+          "#2c313a",
+          "#14161b",
+          false
+        ],
+        [
+          "z ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "graph ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "──",
+          "#2c313a",
+          "#14161b",
+          false
+        ]
+      ],
+      [
+        [
+          " ↑↓ ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "move ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "ret ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "open ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "a ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "answer ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "n ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "new ",
+          "#4d535c",
+          "#14161b",
+          false
+        ],
+        [
+          "pfx+spc ",
+          "#e2cf9c",
+          "#14161b",
+          false
+        ],
+        [
+          "back ",
+          "#4d535c",
+          "#14161b",
+          false
+        ]
+      ]
+    ]
+  },
+  "source": "Rust's screens for the runs of tests/fixtures/screens/scenario-demo-dock.json, written by PANORAMA_BLESS=1 cargo test --test app_screens"
+}

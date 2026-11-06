@@ -6,8 +6,8 @@
 use super::actions::Actions;
 use super::effect::Effect;
 use crate::ui::graph::toggle;
-use panorama_core::view::nav::{agent_depth, find_orch, find_thread};
-use panorama_core::view::state::{DONE_CARD, FIN_CARD};
+use panorama_core::view::nav::{agent_depth, find_orch};
+use panorama_core::view::state::FIN_CARD;
 use panorama_core::view::target::AgentRef;
 use panorama_core::view::{NEW_ROW, Screen, Target};
 use std::time::Instant;
@@ -38,60 +38,51 @@ pub trait Clicks: Actions {
             }
             Target::Orch(pane) => self.click_orch(&pane, false, now),
             Target::AnswerOrch(pane) => self.click_orch(&pane, true, now),
-            Target::Done(pane) => {
-                let card = format!("{DONE_CARD}{pane}");
-                if self.armed(now) && self.shown(&pane, Some(&card), None) {
-                    self.point(&pane, Some(&card), None);
-                    toggle(&mut self.view.done_open, &pane); // what Enter does on it
-                }
-                vec![]
-            }
-            Target::Thread { pane, thread } => {
-                if self.shown(&pane, Some(&thread), None) {
-                    self.point(&pane, Some(&thread), None);
-                }
-                vec![]
-            }
+            Target::GotoOrch(pane) => self.click_root_hint(&pane, false, now),
+            Target::TranscriptOrch(pane) => self.click_root_hint(&pane, true, now),
             Target::Agent(r) => self.click_agent(r, now),
             Target::Goto(r) => self.click_action(ActionKind::Goto, r, now),
             Target::Transcript(r) => self.click_action(ActionKind::Transcript, r, now),
             Target::Answer(r) => self.click_action(ActionKind::Answer, r, now),
             // the wide graph's (the app wires it, P4 8a); no panel view draws one
-            Target::Fin {
-                pane,
-                thread,
-                group,
-            } => self.click_fin(&pane, &thread, group.as_deref(), now),
+            Target::Fin { pane, group } => self.click_fin(&pane, group.as_deref(), now),
+        }
+    }
+
+    /// A root's `g` or `t` (`transcript`) hint: armed like its key.
+    fn click_root_hint(&mut self, pane: &str, transcript: bool, now: Instant) -> Vec<Effect> {
+        if !self.shown(pane, None) || !self.armed(now) {
+            return vec![];
+        }
+        self.point(pane, None);
+        if transcript {
+            self.transcript(now)
+        } else {
+            self.goto(false, now)
         }
     }
 
     /// A group's "n finished" card (the wide graph's): it folds and unfolds like Enter on it,
     /// armed like Enter; its agents are seen.
-    fn click_fin(
-        &mut self,
-        pane: &str,
-        thread: &str,
-        group: Option<&str>,
-        now: Instant,
-    ) -> Vec<Effect> {
-        let key = group.unwrap_or(thread);
+    fn click_fin(&mut self, pane: &str, group: Option<&str>, now: Instant) -> Vec<Effect> {
+        let key = group.unwrap_or(pane);
         let fid = format!("{FIN_CARD}{key}");
         let mut out = vec![];
-        if !self.armed(now) || !self.shown(pane, Some(thread), Some(&fid)) {
+        if !self.armed(now) || !self.shown(pane, Some(&fid)) {
             return out;
         }
-        self.point(pane, Some(thread), Some(&fid));
+        self.point(pane, Some(&fid));
         let fin = self.fin_agents(key);
         self.seen(fin, &mut out);
         toggle(&mut self.view.fin_open, key);
         out
     }
 
-    /// An orchestrator: in the docked list one click switches to it (what Enter then does);
+    /// A root: in the docked list one click switches to it (what Enter then does);
     /// in the narrow layout it selects, and a second click goes to its pane. Its `?N`
     /// answers it.
     fn click_orch(&mut self, pane: &str, answer: bool, now: Instant) -> Vec<Effect> {
-        if !self.shown(pane, None, None) {
+        if !self.shown(pane, None) {
             return vec![];
         }
         let again = self.view.orch.as_deref() == Some(pane) && self.view.focus == 0;
@@ -99,43 +90,42 @@ pub trait Clicks: Actions {
             if !self.armed(now) {
                 return vec![];
             }
-            self.point(pane, None, None);
+            self.point(pane, None);
             return self.answer(now);
         }
         if self.dock() {
-            self.point(pane, None, None);
+            self.point(pane, None);
             return self.goto(true, now);
         }
         if again {
             return self.goto(false, now); // the selected card, clicked again: its pane (g)
         }
-        self.point(pane, None, None);
+        self.point(pane, None);
         vec![]
     }
 
     /// An agent's card or pod: select it; the selected one, clicked again: its pane.
     fn click_agent(&mut self, r: AgentRef, now: Instant) -> Vec<Effect> {
-        if !self.shown(&r.pane, Some(&r.thread), Some(&r.agent)) {
+        if !self.shown(&r.pane, Some(&r.agent)) {
             return vec![];
         }
         let mut out = vec![];
         self.seen(vec![r.agent.clone()], &mut out); // a click on an unseen card: seen
-        let t = find_thread(find_orch(&self.swarm, Some(&r.pane)), Some(&r.thread));
+        let o = find_orch(&self.swarm, Some(&r.pane));
         let selected = self.view.orch.as_deref() == Some(&r.pane)
-            && self.view.thread.as_deref() == Some(&r.thread)
             && self.view.agent.as_deref() == Some(&r.agent)
-            && self.view.focus == 1 + agent_depth(t, Some(&r.agent));
+            && self.view.focus == agent_depth(o, Some(&r.agent));
         if selected {
             out.extend(self.goto(false, now));
         } else {
-            self.point(&r.pane, Some(&r.thread), Some(&r.agent));
+            self.point(&r.pane, Some(&r.agent));
         }
         out
     }
 
     /// An agent's `g`, `t` or `a` hint: armed like its key.
     fn click_action(&mut self, kind: ActionKind, r: AgentRef, now: Instant) -> Vec<Effect> {
-        if !self.shown(&r.pane, Some(&r.thread), Some(&r.agent)) {
+        if !self.shown(&r.pane, Some(&r.agent)) {
             return vec![];
         }
         let mut out = vec![];
@@ -143,7 +133,7 @@ pub trait Clicks: Actions {
         if !self.armed(now) {
             return out;
         }
-        self.point(&r.pane, Some(&r.thread), Some(&r.agent));
+        self.point(&r.pane, Some(&r.agent));
         out.extend(match kind {
             ActionKind::Goto => self.goto(false, now),
             ActionKind::Transcript => self.transcript(now),

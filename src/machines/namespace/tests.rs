@@ -1,7 +1,7 @@
 use super::*;
-use panorama_core::model::Orchestrator;
+use panorama_core::model::Root;
 
-fn orch(pane: &str, tab: Option<&str>, label: &str) -> Orchestrator {
+fn orch(pane: &str, tab: Option<&str>, label: &str) -> Root {
     serde_json::from_value(serde_json::json!({
         "pane_id": pane, "tab_id": tab, "tab_label": label, "session_id": "s",
     }))
@@ -18,12 +18,12 @@ fn namespacing_keeps_machines_apart() {
     o.inbox = vec![3];
     o.inbox_texts = vec!["q".into()];
     let mut sw = Swarm {
-        orchestrators: vec![o],
+        roots: vec![o],
         ..Swarm::default()
     };
     sw.docked = Some("w1:p1".into());
     let sw = namespace(sw, &devbox());
-    let o = &sw.orchestrators[0];
+    let o = &sw.roots[0];
     assert_eq!(o.pane_id, "abc123:w1:p1");
     assert_eq!(o.tab_id.as_deref(), Some("abc123:w1:t1"));
     assert_eq!(o.machine.as_deref(), Some("devbox"));
@@ -35,12 +35,12 @@ fn namespacing_keeps_machines_apart() {
 #[test]
 fn a_missing_or_empty_tab_id_stays_as_it_is() {
     let sw = Swarm {
-        orchestrators: vec![orch("w1:p1", None, "a"), orch("w1:p2", Some(""), "b")],
+        roots: vec![orch("w1:p1", None, "a"), orch("w1:p2", Some(""), "b")],
         ..Swarm::default()
     };
     let sw = namespace(sw, &devbox());
-    assert_eq!(sw.orchestrators[0].tab_id, None);
-    assert_eq!(sw.orchestrators[1].tab_id.as_deref(), Some(""));
+    assert_eq!(sw.roots[0].tab_id, None);
+    assert_eq!(sw.roots[1].tab_id.as_deref(), Some(""));
 }
 
 #[test]
@@ -48,11 +48,11 @@ fn two_machines_with_one_label_stay_apart_and_colons_are_fine() {
     let mut ids = Vec::new();
     for mid in ["aaa", "bbb"] {
         let part = Swarm {
-            orchestrators: vec![orch("w1:p1", Some("w1:t1"), &format!("work on {mid}"))],
+            roots: vec![orch("w1:p1", Some("w1:t1"), &format!("work on {mid}"))],
             ..Swarm::default()
         };
         let sw = namespace(part, &Machine::new(mid, "lab:1", "host"));
-        ids.push(sw.orchestrators[0].pane_id.clone());
+        ids.push(sw.roots[0].pane_id.clone());
     }
     assert_eq!(ids, ["aaa:w1:p1", "bbb:w1:p1"]);
     assert_eq!(local_id(&ids[0], "aaa"), "w1:p1");

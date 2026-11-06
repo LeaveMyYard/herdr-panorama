@@ -26,7 +26,7 @@ pub fn marks_of(agents: &[&Agent], blocked: bool, extra_q: usize) -> Vec<Seg> {
 }
 
 /// The marks right-aligned at `xr`, one space apart; with `orch`, the `?N` mark is a click
-/// target answering that orchestrator. Their width (0 when none).
+/// target answering that root. Their width (0 when none).
 pub fn marks_right(s: &mut Screen, xr: i32, y: i32, mk: &[Seg], orch: Option<&str>) -> i32 {
     let w = mk.iter().map(|m| m.len() + 1).sum::<i32>() - 1;
     let mut x = xr - w;

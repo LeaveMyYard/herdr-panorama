@@ -7,7 +7,7 @@ use super::effect::{Effect, Toast};
 use super::host::Host;
 use crate::ui::graph::toggle;
 use panorama_core::model::{HerdrStatus, Status};
-use panorama_core::view::state::{DONE_CARD, FIN_CARD};
+use panorama_core::view::state::FIN_CARD;
 use panorama_core::view::{Filter, NEW_ROW};
 use std::time::Instant;
 
@@ -18,30 +18,27 @@ to its pane; wheel scrolls a column, shift+wheel scrolls the columns sideways";
 
 /// The action keys, for every [`Host`].
 pub trait Actions: Host {
-    /// Enter: + New agent; an orchestrator, where Enter goes to panes: into its agent (with
-    /// the arrows switching the chats, Enter is the way in); a done or finished card: unfold
-    /// it; else open the next column.
+    /// Enter: + New agent; a root, where Enter goes to panes: into its agent (with the arrows
+    /// switching the chats, Enter is the way in); a finished card: unfold it; else open the
+    /// next column.
     fn enter(&mut self, now: Instant) -> Vec<Effect> {
         let mut out = vec![];
         if !self.armed(now) {
             return out;
         }
         let (focus, orch) = (self.view.focus, self.view.orch.clone());
-        let thread = self.view.thread.clone().unwrap_or_default();
         let agent = self.view.agent.clone().unwrap_or_default();
         if focus == 0 && orch.as_deref() == Some(NEW_ROW) {
             return self.new_agent();
         } else if focus == 0 && self.enter_goes_to_pane() && orch.is_some() {
             let switch = !self.arrows_mode();
             return self.goto(switch, now);
-        } else if let Some(pane) = thread.strip_prefix(DONE_CARD).filter(|_| focus == 1) {
-            toggle(&mut self.view.done_open, pane);
-        } else if let Some(key) = agent.strip_prefix(FIN_CARD).filter(|_| focus >= 2) {
+        } else if let Some(key) = agent.strip_prefix(FIN_CARD).filter(|_| focus >= 1) {
             let fin = self.fin_agents(key);
             self.seen(fin, &mut out);
             toggle(&mut self.view.fin_open, key);
         } else {
-            if focus >= 2 && !agent.is_empty() {
+            if focus >= 1 && !agent.is_empty() {
                 self.seen(vec![agent], &mut out);
             }
             self.right();
@@ -55,7 +52,7 @@ pub trait Actions: Host {
         if !self.usable(&mut out) || !self.armed(now) {
             return out;
         }
-        let (o, _, a) = self.selection();
+        let (o, a) = self.selection();
         let Some(o) = o else { return out };
         if let Some(m) = &o.machine {
             let text = format!(
@@ -65,8 +62,7 @@ pub trait Actions: Host {
             out.push(Effect::Toast(Toast::new(Some("another machine"), text, 6)));
             return out;
         }
-        // on an orchestrator: its own state and questions, not a remembered agent's
-        let a = if self.view.focus == 0 { None } else { a };
+        // on a root: its own state and questions, not a remembered agent's (`selection`)
         let blocked = match a {
             Some(a) => a.status == Status::Blocked,
             None => o.herdr_status == HerdrStatus::Blocked,
@@ -108,7 +104,7 @@ pub trait Actions: Host {
         if !self.armed(now) {
             return vec![];
         }
-        let (o, _, a) = self.selection();
+        let (o, a) = self.selection();
         let path = a
             .and_then(|a| a.transcript.clone())
             .or_else(|| o.and_then(|o| o.transcript.clone()));

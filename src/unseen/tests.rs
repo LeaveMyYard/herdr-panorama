@@ -1,5 +1,5 @@
 use super::*;
-use panorama_core::model::{Agent, Orchestrator, Status, Swarm, Thread};
+use panorama_core::model::{Agent, Root, Status, Swarm};
 use serde_json::json;
 
 fn agent(id: &str, st: &str, qids: &[i64], ended: Option<f64>) -> Agent {
@@ -16,25 +16,23 @@ fn a(id: &str, st: &str) -> Agent {
     agent(id, st, &[], None)
 }
 
-fn orch(agents: Vec<Agent>, pane: &str, focused: bool) -> Orchestrator {
-    let thread: Thread =
-        serde_json::from_value(json!({"id": "t1", "name": "t", "source": "turn"})).unwrap();
-    let mut o: Orchestrator =
+fn orch(agents: Vec<Agent>, pane: &str, focused: bool) -> Root {
+    let mut o: Root =
         serde_json::from_value(json!({"pane_id": pane, "tab_id": "t", "tab_label": "o", "session_id": "s", "focused": focused})).unwrap();
-    o.threads = vec![Thread { agents, ..thread }];
+    o.agents = agents;
     o
 }
 
 fn swarm(agents: Vec<Agent>) -> Swarm {
     Swarm {
-        orchestrators: vec![orch(agents, "w1:p1", false)],
+        roots: vec![orch(agents, "w1:p1", false)],
         ..Swarm::default()
     }
 }
 
 fn focused(agents: Vec<Agent>) -> Swarm {
     Swarm {
-        orchestrators: vec![orch(agents, "w1:p1", true)],
+        roots: vec![orch(agents, "w1:p1", true)],
         ..Swarm::default()
     }
 }
@@ -223,12 +221,12 @@ fn remote_agents_are_keyed_by_machine_in_the_state_file() {
     let mut o = orch(vec![a("a", "run")], "m1:w1:p1", false);
     o.machine = Some("box".into());
     o.machine_id = Some("m1".into());
-    let sw = |o: &Orchestrator| Swarm {
-        orchestrators: vec![o.clone()],
+    let sw = |o: &Root| Swarm {
+        roots: vec![o.clone()],
         ..Swarm::default()
     };
     t.update(&sw(&o), 1.0);
-    o.threads[0].agents[0].status = Status::Failed;
+    o.agents[0].status = Status::Failed;
     assert_eq!(t.update(&sw(&o), 2.0), marks(&[("a", Fail)]));
     let keys: Vec<String> = file(&t)["agents"]
         .as_object()
@@ -306,7 +304,7 @@ fn focus_on_another_machine_s_pane_is_not_looking() {
         o.machine = Some("box".into());
         o.machine_id = Some("m1".into());
         Swarm {
-            orchestrators: vec![o],
+            roots: vec![o],
             ..Swarm::default()
         }
     };

@@ -1,5 +1,5 @@
-//! The core ↔ panel protocol, viewer side (`docs/protocol/panel-v1.md`; Python
-//! `protocol.py` and `panel.PanelClient`).
+//! The core ↔ panel protocol, viewer side (`docs/protocol/panel-v2.md`; Python's
+//! `protocol.py` and `panel.PanelClient` speak 1.x, its legacy threads view).
 //!
 //! Newline-delimited JSON over the core's Unix socket, one object per line. `protocol` is
 //! "MAJOR.MINOR": a peer with another major is refused, a minor only adds fields, and
@@ -17,9 +17,10 @@ pub mod messages;
 pub mod socket;
 pub mod state;
 
-/// The protocol this viewer speaks: 1.1 the panels map and open, 1.2 focusing, 1.3 the
-/// shared filter.
-pub const PROTOCOL: &str = "1.3";
+/// The protocol this viewer speaks. 2.0: `state.swarm` is the uniform agent tree (`roots`,
+/// each with one flat `agents` list; no threads or phases). Before it, 1.1 the panels map and
+/// open, 1.2 focusing, 1.3 the shared filter, 1.4 the agents' and roots' titles.
+pub const PROTOCOL: &str = "2.0";
 
 /// A longer line is refused and the connection closed.
 pub const MAX_LINE: usize = 4 * 1024 * 1024;
@@ -32,6 +33,14 @@ pub fn major(version: &str) -> Option<i64> {
 /// A peer of this version can be talked to: the same major.
 pub fn compatible(version: &str) -> bool {
     major(version).is_some() && major(version) == major(PROTOCOL)
+}
+
+/// An open key (a `hello` with `"role": "key"`) of this version can be answered: the same
+/// major, or 1. A key connection sends `open` and reads `opened`, which 2.0 left as they were,
+/// and it gets no `state`; herdr's open action runs the Python `panorama open`, which says
+/// 1.x, also when the core is this one.
+pub fn key_compatible(version: &str) -> bool {
+    compatible(version) || major(version) == Some(1)
 }
 
 #[cfg(test)]

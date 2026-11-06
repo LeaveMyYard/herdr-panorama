@@ -1,14 +1,12 @@
 use super::*;
 use crate::codex::{Thread, Tool, Turn, TurnStatus};
-use crate::collect::events::Channel;
-use panorama_core::model::{HerdrStatus, PhaseState, Status, ThreadStatus};
+use panorama_core::model::{HerdrStatus, Status};
 use serde_json::json;
 
 mod history;
 mod identity;
-mod reports;
 
-fn pane(id: &str) -> Orchestrator {
+fn pane(id: &str) -> Root {
     serde_json::from_value(json!({
         "pane_id":"w1:p1", "tab_id":"w1:t1", "tab_label":"Synthetic work",
         "session_id":id, "harness":"codex", "herdr_status":"working"
@@ -55,14 +53,11 @@ fn observed() -> Observation {
     }
 }
 
-fn channel() -> Channel {
-    Channel::new(std::path::PathBuf::from("synthetic-unused-events.jsonl"))
+/// The tree the observation gives the pane.
+fn apply(pane: &mut Root, observation: Option<&Observation>) -> Tree {
+    enrich(pane, observation).1
 }
 
-fn apply(pane: &mut Orchestrator, observation: Option<&Observation>, channel: &Channel) {
-    let reports = [channels::Reports {
-        source: pane.session_id.clone().unwrap(),
-        declarations: channel.threads.clone(),
-    }];
-    enrich(pane, observation, &reports, 40.0, 3600.0);
+fn ids(tree: &Tree) -> Vec<&str> {
+    tree.agents.iter().map(|a| a.id.as_str()).collect()
 }

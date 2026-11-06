@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 pub(super) const BUDGET: Duration = Duration::from_millis(750);
 const POLL: Duration = Duration::from_millis(10);
 
-pub(super) fn collect(mut refresh: impl FnMut() -> (Swarm, bool)) -> Swarm {
+pub(crate) fn collect(mut refresh: impl FnMut() -> (Swarm, bool)) -> Swarm {
     let start = Instant::now();
     with_clock(&mut refresh, BUDGET, || start.elapsed(), std::thread::sleep)
 }

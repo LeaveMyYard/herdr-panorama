@@ -1,10 +1,10 @@
-//! The wide graph, design 2a (Python `render.render` from 120 columns): the header, the
-//! columns of orchestrators, threads and agents by depth with the links between them, the
-//! legend of tiles and the wide key hints.
+//! The wide graph, design 2a (Python `render.render` from 120 columns) with depth-only
+//! columns (plan `uniform-agent-tree.md` §4): the header, the columns by depth (the roots
+//! are depth 0) with the links between them, the legend of tiles and the wide key hints.
 //!
-//! Each column is drawn on its own tall canvas: the orchestrators ([`orchs`]), the selected
-//! orchestrator's threads ([`threads`]), and the selected thread's agent tree ([`place`]d in
-//! its depth columns on one canvas). [`layout`] decides which columns fit around the focus.
+//! Every depth draws the same [`card`]: the roots' column ([`orchs`], [`root_card`]) on its
+//! own tall canvas, the selected root's agent tree ([`place`]d in its depth columns,
+//! [`agent_card`]) on one canvas. [`layout`] decides which columns fit around the focus.
 //!
 //! Every colour tick renders the page in full (Python restyled the animated cells instead;
 //! its restyle tests are retired on that ground, and come back if a later optimisation
@@ -12,14 +12,14 @@
 
 pub mod agent_card;
 mod agents;
+pub mod card;
 pub mod column;
 mod fin_card;
 pub mod layout;
 pub mod orchs;
 pub mod place;
+pub mod root_card;
 mod sideways;
-pub mod thread_card;
-pub mod threads;
 mod wide;
 
 use super::chrome;

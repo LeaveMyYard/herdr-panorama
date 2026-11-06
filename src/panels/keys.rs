@@ -11,7 +11,7 @@ use std::collections::BTreeSet;
 /// What the open key did.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum OpenKey {
-    /// Not in an orchestrator tab: the caller shows the home tab.
+    /// Not in a root tab: the caller shows the home tab.
     Home,
     /// The tab's panel has the focus.
     Panel,
@@ -22,7 +22,7 @@ pub enum OpenKey {
 }
 
 impl<O: Ops> Manager<O> {
-    /// In an orchestrator tab with a panel, focus the panel; in one without (closed by hand, or
+    /// In a root tab with a panel, focus the panel; in one without (closed by hand, or
     /// not made yet), clear its closed mark, make it and focus it; anywhere else: home.
     pub async fn open_key(
         &mut self,

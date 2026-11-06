@@ -25,15 +25,14 @@ fn a_panels_seen_clears_the_view_and_reaches_the_tracker_and_its_file() {
     use crate::unseen::{Event, Tracker};
     use std::sync::Arc;
     let (sw, now) = wire("design9");
-    let agent = sw.orchestrators[0].threads[0].agents[0].id.clone();
+    let agent = sw.roots[0].agents[0].id.clone();
     let mut r = Run::new((sw.clone(), now), "w1:p3", false, (100, 45));
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("unseen.json");
     let tracker = Arc::new(Tracker::new(path.clone(), Box::new(|| true)));
     let mut ended = sw.clone();
     let status = |s: &mut Swarm, code: &str| {
-        s.orchestrators[0].threads[0].agents[0].status =
-            panorama_core::model::Status::from_code(code);
+        s.roots[0].agents[0].status = panorama_core::model::Status::from_code(code);
     };
     status(&mut ended, "run");
     tracker.update(&ended, 1.0);

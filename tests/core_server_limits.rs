@@ -140,7 +140,7 @@ async fn a_second_incompatible_hello_is_answered_then_closed() {
     let mut v = connect(&sock).await;
     hello(&mut v, json!({})).await;
     assert!(lines(&mut v, 1).await[0].get("welcome").is_some());
-    v.write_all(&line(json!({"hello": {"protocol": "2.0"}})))
+    v.write_all(&line(json!({"hello": {"protocol": "1.4"}})))
         .await
         .unwrap();
     let got = lines(&mut v, 1).await;

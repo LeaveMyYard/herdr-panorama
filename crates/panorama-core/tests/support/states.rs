@@ -3,20 +3,12 @@
 
 use super::design::design_swarm;
 use super::fixture;
-use panorama_core::model::{BgTask, Orchestrator, Status, Swarm};
+use panorama_core::model::{BgTask, Root, Status, Swarm};
 use serde_json::Value;
 
 /// The design's clock (test_states.py `NOW`).
 pub const NOW: f64 = 1_800_000_000.0;
 const NOW_MIN: i64 = 10 * 60 + 4; // the design's clock, 10:04
-
-fn flavour(key: &str) -> &'static str {
-    match key {
-        "co" => "coordinator",
-        "pr" => "pr-review",
-        _ => "superpowers",
-    }
-}
 
 /// Minutes from `hh:mm` back to the design's 10:04.
 fn minutes(hhmm: &str) -> i64 {
@@ -40,18 +32,16 @@ pub fn states_swarm(data: &Value) -> Swarm {
     sw.docked = Some("w1:p5".into());
     let orchs = data["orchs"].as_array().unwrap();
     let by_tab = |tab: i64| orchs.iter().find(|o| o["tab"] == tab).unwrap();
-    let known = sw.orchestrators.len() as i64;
-    for o in &mut sw.orchestrators {
+    let known = sw.roots.len() as i64;
+    for o in &mut sw.roots {
         let d = by_tab(o.tab_no.unwrap());
         o.last_activity = Some(NOW - d["last"].as_f64().unwrap() * 60.0);
-        o.flavour = flavour(d["fl"].as_str().unwrap()).into();
     }
     for d in orchs.iter().filter(|d| d["tab"].as_i64().unwrap() > known) {
         let tab = d["tab"].as_i64().unwrap();
-        let mut o: Orchestrator = serde_json::from_value(serde_json::json!({
+        let mut o: Root = serde_json::from_value(serde_json::json!({
             "pane_id": format!("w1:p{tab}"), "tab_id": format!("w1:t{tab}"),
             "tab_label": d["name"], "session_id": null, "herdr_status": "idle", "tab_no": tab,
-            "flavour": flavour(d["fl"].as_str().unwrap()),
             "last_activity": NOW - d["last"].as_f64().unwrap() * 60.0,
         }))
         .unwrap();
@@ -61,25 +51,15 @@ pub fn states_swarm(data: &Value) -> Swarm {
                 .unwrap_or_else(|| minutes(b["since"].as_str().unwrap()));
             o.bg.push(bg_task(format!("b{tab}{i}"), b, age));
         }
-        sw.orchestrators.push(o);
+        sw.roots.push(o);
     }
     let d1 = &data["n1"];
-    let n1 = sw
-        .orchestrators
-        .iter_mut()
-        .flat_map(|o| &mut o.threads)
-        .flat_map(|t| &mut t.agents);
+    let n1 = sw.roots.iter_mut().flat_map(|o| &mut o.agents);
     let n1 = n1.into_iter().find(|a| a.id == "n1").unwrap();
     n1.status = Status::Background;
     n1.activity = d1["act"].as_str().unwrap().into();
     n1.last_message = d1["msg"].as_str().unwrap().into();
     n1.tool_calls = d1["tools"].as_i64().unwrap();
-    n1.phases = d1["phs"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|p| p.as_i64().unwrap())
-        .collect();
     n1.started = Some(NOW - 74.0 * 60.0); // "1h14m"
     n1.bg = d1["bg"]
         .as_array()

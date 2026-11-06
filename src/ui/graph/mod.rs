@@ -13,8 +13,8 @@ mod pointer;
 mod vertical;
 
 use crate::ui::selection;
-use panorama_core::model::{Agent, Orchestrator, Swarm, Thread};
-use panorama_core::view::nav::{find_agent, find_orch, find_thread, tree_entries};
+use panorama_core::model::{Agent, Root, Swarm};
+use panorama_core::view::nav::{find_agent, find_orch, tree_entries};
 use panorama_core::view::state::FIN_CARD;
 use panorama_core::view::{NEW_ROW, View};
 
@@ -25,18 +25,18 @@ pub struct Graph {
     pub swarm: Swarm,
     /// What is drawn: the selection, the filter, the unseen marks, the scroll.
     pub view: View,
-    /// Where the arrows resume from while no orchestrator is selected.
+    /// Where the arrows resume from while no root is selected.
     pub(crate) parked: Option<String>,
 }
 
 impl Graph {
-    /// The selectable rows: the orchestrators the filter shows, then `+ New agent`.
+    /// The selectable rows: the roots the filter shows, then `+ New agent`.
     pub fn shown_ids(&self) -> Vec<String> {
         selection::shown_ids(&self.swarm, &self.view)
     }
 
     /// After a refresh or a filter change: every selection that still exists stays, an
-    /// orchestrator no longer shown is parked (Python `SwarmApp.resolve`).
+    /// root no longer shown is parked (Python `SwarmApp.resolve`).
     pub(crate) fn resolve(&mut self) {
         if let Some(p) = selection::resolve(&self.swarm, &mut self.view) {
             self.parked = Some(p);
@@ -50,35 +50,32 @@ impl Graph {
         self.view.hcol = None;
     }
 
-    /// Where the arrows resume from while no orchestrator is selected.
+    /// Where the arrows resume from while no root is selected.
     pub fn parked(&self) -> Option<&str> {
         self.parked.as_deref()
     }
 
-    /// What the action keys act on: (orchestrator, thread, agent); nothing while the focused
-    /// column's cursor is parked, or on + New agent (Python `_selection`).
-    pub(crate) fn selection(&self) -> (Option<&Orchestrator>, Option<&Thread>, Option<&Agent>) {
+    /// What the action keys act on: (root, agent), the agent only with the keyboard in the
+    /// tree (on a root its own card's keys act on it); nothing while the focused column's
+    /// cursor is parked, or on + New agent (Python `_selection`).
+    pub(crate) fn selection(&self) -> (Option<&Root>, Option<&Agent>) {
         if self.cur(self.view.focus).is_none() || self.view.orch.as_deref() == Some(NEW_ROW) {
-            return (None, None, None);
+            return (None, None);
         }
         let o = find_orch(&self.swarm, self.view.orch.as_deref());
-        let t = find_thread(o, self.view.thread.as_deref());
-        let a = if self.view.focus >= 2 || t.is_some() {
-            find_agent(t, self.view.agent.as_deref())
-        } else {
-            None
-        };
-        (o, t, a)
+        let a = (self.view.focus >= 1)
+            .then(|| find_agent(o, self.view.agent.as_deref()))
+            .flatten();
+        (o, a)
     }
 
     /// The agents folded into a group's "n finished" card (Python `_fin_agents`).
     pub(crate) fn fin_agents(&self, key: &str) -> Vec<String> {
-        let o = find_orch(&self.swarm, self.view.orch.as_deref());
-        let Some(t) = find_thread(o, self.view.thread.as_deref()) else {
+        let Some(o) = find_orch(&self.swarm, self.view.orch.as_deref()) else {
             return vec![];
         };
         let card = format!("{FIN_CARD}{key}");
-        tree_entries(t, &self.view)
+        tree_entries(o, &self.view)
             .into_iter()
             .find(|e| e.ident == card)
             .map_or(vec![], |e| e.fin)

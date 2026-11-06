@@ -44,12 +44,14 @@ use tokio::sync::{mpsc, watch};
 pub use crate::ui::end::End;
 pub use crate::ui::term::{HANGUP_CHECK, hung_up_error as hung_up};
 
-/// Where the panel's herdr side runs: its plugin, its root, the new-agent popup's mark, the
-/// home directory (the popup's default directory).
+/// Where the panel's herdr side runs: its plugin, its root, its state dir, the new-agent
+/// popup's mark, the home directory (the popup's default directory).
 #[derive(Clone, Debug)]
 pub struct Place {
     pub plugin_id: String,
     pub root: Option<PathBuf>,
+    /// The plugin's state dir (`panel-launch.log` goes there).
+    pub state: PathBuf,
     pub new_agent_mark: PathBuf,
     pub home: String,
 }
@@ -61,6 +63,7 @@ impl Place {
         Self {
             plugin_id: env.plugin_id(PANORAMA_ID).to_owned(),
             root: env.plugin_root().map(std::path::Path::to_path_buf),
+            state: panorama::state_dir(env),
             new_agent_mark: super::act::new_agent::marker(
                 &panorama::state_dir(env),
                 &panorama::session_key(env),
@@ -93,6 +96,8 @@ pub struct Actor {
     pacing: Pacing,
     no_core: NoCoreClock,
     arrow_at: Option<Instant>,
+    /// A core refused this panel's hello; said once in `panel-launch.log`.
+    refused: bool,
 }
 
 impl Actor {
@@ -122,6 +127,7 @@ impl Actor {
             pacing: Pacing::default(),
             no_core: NoCoreClock::started(Instant::now()),
             arrow_at: None,
+            refused: false,
         }
     }
 

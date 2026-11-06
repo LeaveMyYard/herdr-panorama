@@ -1,8 +1,11 @@
 //! The docked panel against the app-screen goldens (tests/fixtures/README.md, "Behaviour
-//! goldens"): the home app docked next to an agent, captured headless from Python. Only the
-//! snaps a pure render reproduces are here (a key's effect on the cursor is given as the
-//! view the app was left with; the key handling itself is the panel app's to test). Fixed by the capture: no herdr config (panorama's fixed colours), the open key
-//! unbound, frame 0 unless the name says otherwise.
+//! goldens"): the home app docked next to an agent. The runs are Python's captures; the
+//! screens are Rust's own since the uniform agent tree (plan `uniform-agent-tree.md` U5, D5),
+//! `tests/fixtures/rust/screens/`, written by the app's `PANORAMA_BLESS=1 cargo test --test
+//! app_screens` and reviewed as a diff. Only the snaps a pure render reproduces are here (a
+//! key's effect on the cursor is given as the view the app was left with; the key handling
+//! itself is the panel app's to test). Fixed by the capture: no herdr config (panorama's
+//! fixed colours), the open key unbound, frame 0 unless the name says otherwise.
 
 mod support;
 
@@ -39,9 +42,10 @@ fn check(file: &str, snap: &str, view: impl FnOnce(&serde_json::Value) -> View) 
         size[1].as_i64().unwrap() as i32,
     );
     let got = render_dock(&swarm, &view(run), w, h, None, NO_SESSIONS);
+    let rust = fixture(&format!("rust/screens/{file}"));
     assert_same(
         &format!("{file} {snap}"),
-        &golden(&golden_file["screens"][snap]),
+        &golden(&rust["screens"][snap]),
         &cells(&got),
     );
 }

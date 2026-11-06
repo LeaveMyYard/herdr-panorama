@@ -11,7 +11,7 @@ fn state(extra: Value) -> State {
         "/tests/fixtures/inputs/swarm-design9.json"
     );
     let fixture: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-    let mut st = json!({ "swarm": fixture["swarm"] });
+    let mut st = json!({ "swarm": crate::v1_wire::swarm(fixture["swarm"].clone()) });
     st.as_object_mut()
         .unwrap()
         .extend(extra.as_object().unwrap().clone());
@@ -83,9 +83,9 @@ fn a_tab_without_an_orchestrator_shows_the_graph_with_the_shown_one_opened() {
     p.on_connected(true);
     feed(&mut p, state(json!({"visible_tabs": ["w1:t1"]})));
     assert_eq!(p.swarm.docked, None);
-    // Python's initial selection: the shown orchestrator, its first thread and agent
+    // Python's initial selection: the shown root and its first depth-1 agent
     assert_eq!(p.view.orch.as_deref(), Some("w1:p1"));
-    assert!(p.view.thread.is_some() && p.view.agent.is_some());
+    assert!(p.view.agent.is_some());
     let f = Frame {
         now: 0.0,
         frame: 0.0,
@@ -226,12 +226,12 @@ fn the_shown_orchestrator_is_selected_again_when_the_filter_shows_it_again() {
         let mut st = state(json!({"visible_tabs": ["w1:t3"], "filter": "needs"}));
         let o = st
             .swarm
-            .orchestrators
+            .roots
             .iter_mut()
             .find(|o| o.pane_id == "w1:p3")
             .unwrap();
         o.inbox = serde_json::from_value(inbox).unwrap();
-        for a in o.threads.iter_mut().flat_map(|t| t.agents.iter_mut()) {
+        for a in o.agents.iter_mut() {
             a.question_ids.clear();
             if a.status == panorama_core::model::Status::Waiting {
                 a.status = panorama_core::model::Status::Running;

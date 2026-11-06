@@ -1,0 +1,102 @@
+{
+  "install_id": "0123456789abcdef0123456789abcdef",
+  "binary_entry": {
+    "sha256": "64ebca93757ec4c6995c8b2e690dbd80ba04ad2126139f82568e7e7adb02b092",
+    "mode": 493
+  },
+  "binary_fixture_bytes": "fixture binary\n",
+  "feed_fixture": "tests/fixtures/app-feed/degraded.json",
+  "paths": {
+    "receipt": "data/panorama/install.json",
+    "binary": "data/panorama/bin/panorama",
+    "generation": "data/panorama/runtime/0123456789abcdef0123456789abcdef",
+    "control": "data/panorama/runtime/0123456789abcdef0123456789abcdef/control.json",
+    "writer_lock": "data/panorama/runtime/0123456789abcdef0123456789abcdef/writer.lock",
+    "ownership": "data/panorama/runtime/0123456789abcdef0123456789abcdef/ownership.json",
+    "ownership_temp": "data/panorama/runtime/0123456789abcdef0123456789abcdef/.ownership.tmp",
+    "control_temp": "data/panorama/runtime/0123456789abcdef0123456789abcdef/.control.tmp",
+    "feed": "data/panorama/feed.json",
+    "feed_temp": "data/panorama/.feed-0123456789abcdef0123456789abcdef.tmp"
+  },
+  "enabled_control": {
+    "v": 1,
+    "install_id": "0123456789abcdef0123456789abcdef",
+    "disabled": false
+  },
+  "disabled_control": {
+    "v": 1,
+    "install_id": "0123456789abcdef0123456789abcdef",
+    "disabled": true
+  },
+  "initial_ownership": {
+    "v": 1,
+    "install_id": "0123456789abcdef0123456789abcdef",
+    "binary_sha256": "64ebca93757ec4c6995c8b2e690dbd80ba04ad2126139f82568e7e7adb02b092",
+    "writer_pid": 4242,
+    "writer_start": "fixture-start",
+    "writer_pidns": null,
+    "feed_sha256": null,
+    "pending_feed_sha256": null
+  },
+  "prepared_ownership": {
+    "v": 1,
+    "install_id": "0123456789abcdef0123456789abcdef",
+    "binary_sha256": "64ebca93757ec4c6995c8b2e690dbd80ba04ad2126139f82568e7e7adb02b092",
+    "writer_pid": 4242,
+    "writer_start": "fixture-start",
+    "writer_pidns": null,
+    "feed_sha256": null,
+    "pending_feed_sha256": "d61d859df337222b77dd3c1ca411bc5bead429b1339d8950f2ec4acd342722c2"
+  },
+  "committed_ownership": {
+    "v": 1,
+    "install_id": "0123456789abcdef0123456789abcdef",
+    "binary_sha256": "64ebca93757ec4c6995c8b2e690dbd80ba04ad2126139f82568e7e7adb02b092",
+    "writer_pid": 4242,
+    "writer_start": "fixture-start",
+    "writer_pidns": null,
+    "feed_sha256": "d61d859df337222b77dd3c1ca411bc5bead429b1339d8950f2ec4acd342722c2",
+    "pending_feed_sha256": null
+  },
+  "generation_fence": {
+    "install_id": "0123456789abcdef0123456789abcdef",
+    "replacement_install_id": "fedcba9876543210fedcba9876543210",
+    "ensure_args": [
+      "app-feed",
+      "--ensure",
+      "--app-home",
+      "/fixture/app",
+      "--install-id",
+      "0123456789abcdef0123456789abcdef"
+    ],
+    "inbox_available_args": [
+      "app-inbox",
+      "--available",
+      "--app-home",
+      "/fixture/app",
+      "--install-id",
+      "0123456789abcdef0123456789abcdef"
+    ],
+    "inbox_open_args": [
+      "app-inbox",
+      "--open",
+      "--question",
+      "14",
+      "--app-home",
+      "/fixture/app",
+      "--install-id",
+      "0123456789abcdef0123456789abcdef"
+    ]
+  },
+  "empty_mod_data_dirs": [
+    "data/panorama-spaces",
+    "data/panorama-graph",
+    "data/panorama-peek",
+    "data/panorama-tabs",
+    "data/panorama-pane"
+  ],
+  "retained_preference_files": [
+    "data/panorama-spaces/store.json",
+    "data/panorama-tabs/store.json"
+  ]
+}

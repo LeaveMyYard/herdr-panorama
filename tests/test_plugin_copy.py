@@ -22,7 +22,7 @@ pytestmark = pytest.mark.skipif(shutil.which("uv") is None, reason="needs uv")
 
 @pytest.fixture
 def installed(tmp_path):
-    copy = tmp_path / "cache" / "herdr-panorama" / "herdr-panorama" / "0.1.1"
+    copy = tmp_path / "cache" / "herdr-panorama" / "herdr-panorama" / "0.2.0"
     files = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard"], cwd=ROOT,
                            capture_output=True, text=True, check=True).stdout.split()
     for rel in files:
@@ -64,7 +64,9 @@ def test_hooks_run_from_the_copy(installed, tmp_path):
     assert events == ["start", "stop"]
     p = subprocess.run(hook_argv(copy, data, "SessionStart"), input='{"session_id":"s","source":"startup"}',
                        capture_output=True, text=True, timeout=180, env=env, cwd=copy)
-    assert json.loads(p.stdout)["hookSpecificOutput"]["hookEventName"] == "SessionStart", p.stderr
+    assert p.returncode == 0 and p.stdout == "", p.stderr  # no instruction: SessionStart says nothing
+    events = [json.loads(x)["event"] for x in (tmp_path / "hooks" / "s.jsonl").read_text().splitlines()]
+    assert events == ["start", "stop", "session"]
     assert not (copy / ".venv" / "bin" / "python").exists()  # the copy was left alone
 
 

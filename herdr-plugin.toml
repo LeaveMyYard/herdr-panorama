@@ -1,8 +1,8 @@
 id = "leavemyyard.herdr-panorama"
 name = "herdr panorama"
-version = "0.1.1"
+version = "0.2.0"
 min_herdr_version = "0.9.0"
-description = "Read-only swarm view: Claude Code orchestrators, the threads they drive and the subagents they spawned."
+description = "Read-only swarm view: Claude Code sessions and every agent and subagent they spawned, as one tree."
 platforms = ["linux", "macos"]
 
 # `herdr plugin install` runs this once in the install directory.

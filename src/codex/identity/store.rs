@@ -20,6 +20,12 @@ pub(super) struct Association {
     pub owner_start: String,
     pub embedded: bool,
     pub conflicted: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub host: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub terminal: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pidns: Option<String>,
 }
 impl Association {
     fn valid(&self, pane: &str) -> bool {
@@ -68,7 +74,7 @@ pub(super) fn resolve_with(
     }
     let dir = Directory::open(env, false).ok()?;
     let a = read(dir.file(&name(pane_id)?, false).ok()?, pane_id)?;
-    if a.conflicted {
+    if a.conflicted || a.host.is_some() || a.terminal.is_some() || a.pidns.is_some() {
         return None;
     }
     let info: ProcessInfo = serde_json::from_value(process()?.get("process_info")?.clone()).ok()?;
@@ -94,6 +100,12 @@ pub(super) struct Store {
 impl Store {
     pub fn lock(env: &PluginEnv, pane: &str) -> Result<Self, &'static str> {
         let name = name(pane).ok_or("invalid pane ID")?;
+        Self::lock_named(env, name)
+    }
+    pub fn core_lock(env: &PluginEnv, address: &str) -> Result<Self, &'static str> {
+        Self::lock_named(env, core_name(address).ok_or("invalid core address")?)
+    }
+    fn lock_named(env: &PluginEnv, name: String) -> Result<Self, &'static str> {
         let dir =
             Directory::open(env, true).map_err(|_| "cannot open private binding directory")?;
         let lock = dir
@@ -123,4 +135,19 @@ impl Store {
         }
         self.dir.replace(&self.name, &bytes)
     }
+}
+
+fn core_name(address: &str) -> Option<String> {
+    crate::host::context::valid_address(address).then(|| format!("core-{}", name(address).unwrap()))
+}
+
+pub(super) fn core_existing(env: &PluginEnv, address: &str) -> Option<Association> {
+    let dir = Directory::open(env, false).ok()?;
+    let association = read(
+        dir.file(&core_name(address)?, false).ok()?,
+        &crate::host::context::pane_key(address),
+    )?;
+    (association.host.as_deref() == Some("herdr-core")
+        && association.terminal.as_deref() == Some(address))
+    .then_some(association)
 }

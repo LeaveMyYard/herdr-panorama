@@ -45,6 +45,7 @@ def test_claude_plugin_manifests():
     market = json.loads((ROOT / ".claude-plugin/marketplace.json").read_text())
     assert plugin["name"] == market["plugins"][0]["name"] == "herdr-panorama"
     assert plugin["version"] == market["plugins"][0]["version"]
+    assert tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"] == plugin["version"]
     server = plugin["mcpServers"]["herdr-panorama"]
     assert server["env"] == {"UV_PROJECT_ENVIRONMENT": "${CLAUDE_PLUGIN_DATA}/venv-" + plugin["version"]}
     assert server["args"][-1] == "mcp" and "${CLAUDE_PLUGIN_ROOT}" in server["args"]
@@ -61,7 +62,7 @@ def test_claude_plugin_manifests():
 
 # The two launchers that probe the binary the same way: scripts/panel (the panel contract, a bare
 # number) and scripts/tui (the view contract, `tui <n>`), each with the command it runs.
-LAUNCHERS = {"panel": ("panel", "1"), "tui": ("tui", "tui 1")}
+LAUNCHERS = {"panel": ("panel", "2"), "tui": ("tui", "tui 2")}
 
 
 def _launch(root, env_extra=None, timeout=10, stdin=None, launcher="panel", path=None):
@@ -92,7 +93,7 @@ def _stub(path, body):
     path.chmod(0o755)
 
 
-RUST_OK = 'if [ "$1" = contract ]; then echo 1; exit 0; fi; echo rust "$@"'
+RUST_OK = 'if [ "$1" = contract ]; then echo 2; exit 0; fi; echo rust "$@"'
 
 
 def test_the_panel_runs_the_rust_viewer_when_built_else_the_venv_else_uv(tmp_path):
@@ -121,13 +122,14 @@ def test_a_shared_cargo_target_dir_is_not_looked_at(tmp_path):
 @pytest.mark.parametrize("case,body", [
     # #78 M-1: a build from before `panel` (main.rs printed its version for anything)
     ("stale", 'echo "panorama 0.1.0"'),
-    ("another contract", 'if [ "$1" = contract ]; then echo 2; exit 0; fi; echo rust "$@"'),
-    # #78 final pass L-3: the compare is exact, not a prefix ("11", "1.5" are not contract 1)
-    ("contract 11", 'if [ "$1" = contract ]; then echo 11; exit 0; fi; echo rust "$@"'),
-    ("contract 1.5", 'if [ "$1" = contract ]; then echo 1.5; exit 0; fi; echo rust "$@"'),
+    # a build from before protocol 2 (uniform-agent-tree U6): it speaks 1.x to the core
+    ("another contract", 'if [ "$1" = contract ]; then echo 1; exit 0; fi; echo rust "$@"'),
+    # #78 final pass L-3: the compare is exact, not a prefix ("22", "2.5" are not contract 2)
+    ("contract 22", 'if [ "$1" = contract ]; then echo 22; exit 0; fi; echo rust "$@"'),
+    ("contract 2.5", 'if [ "$1" = contract ]; then echo 2.5; exit 0; fi; echo rust "$@"'),
     ("panics at start", 'echo "thread main panicked" >&2; exit 101'),
     ("cannot exec", "exit 126"),
-], ids=["stale", "another-contract", "contract-11", "contract-1.5", "panics", "cannot-exec"])
+], ids=["stale", "another-contract", "contract-22", "contract-2.5", "panics", "cannot-exec"])
 def test_a_binary_that_does_not_speak_the_contract_falls_back_to_the_venv(tmp_path, case, body):
     """The reviewer's case: such a binary used to be exec'd as the panel, died at once, and three
     deaths gave the tab up for the core's life. Now the venv's viewer runs, and the fallback is
@@ -136,7 +138,7 @@ def test_a_binary_that_does_not_speak_the_contract_falls_back_to_the_venv(tmp_pa
     _stub(tmp_path / "target" / "release" / "panorama", body)
     out, err = _launch(tmp_path)
     assert out == "venv panel", case
-    assert "using the Python viewer" in err and "needs 1" in err
+    assert "using the Python viewer" in err and "needs 2" in err
     assert "using the Python viewer" in (tmp_path / "state" / "panel-launch.log").read_text()
 
 

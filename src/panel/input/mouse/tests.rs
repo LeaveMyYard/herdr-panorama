@@ -133,10 +133,10 @@ fn a_wide_panel_folds_a_finished_card_on_click_and_reports_its_agents_seen() {
         .find(|h| matches!(h.target, Target::Fin { .. }))
         .expect("a finished card is drawn")
         .clone();
-    let Target::Fin { thread, group, .. } = &fin.target else {
+    let Target::Fin { pane, group } = &fin.target else {
         unreachable!()
     };
-    let key = group.clone().unwrap_or_else(|| thread.clone());
+    let key = group.clone().unwrap_or_else(|| pane.clone());
     let out = p.click(fin.x0 + 1, fin.y, &s, t);
     assert!(p.view.fin_open.contains(&key));
     assert!(
@@ -219,6 +219,6 @@ fn an_unarmed_click_in_the_docked_list_may_select_but_never_switches() {
         "{out:?}"
     );
     p.input.armed_at = t;
-    p.graph.swarm.orchestrators.retain(|o| o.pane_id != "w1:p4"); // the model changed, not repainted
+    p.graph.swarm.roots.retain(|o| o.pane_id != "w1:p4"); // the model changed, not repainted
     assert!(p.click(x, y, &s, t).is_empty());
 }

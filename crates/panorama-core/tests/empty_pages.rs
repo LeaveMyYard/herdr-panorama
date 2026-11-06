@@ -16,7 +16,7 @@ fn herdr_down_shows_the_retry_page() {
     // the model golden of the same run: `panorama snapshot --json` with herdr down
     let mut snap = fixture("model/demo.json")["snapshots"]["+0m herdr down"].clone();
     snap.as_object_mut().unwrap().remove("counts");
-    let swarm: Swarm = serde_json::from_value(snap).unwrap();
+    let swarm: Swarm = serde_json::from_value(support::v1_wire::swarm(snap)).unwrap();
     assert!(!swarm.herdr_ok);
     let view = View {
         now: run["now"].as_f64().unwrap(),

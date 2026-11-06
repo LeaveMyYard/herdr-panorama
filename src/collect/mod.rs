@@ -1,7 +1,8 @@
 //! The swarm model from herdr's snapshot and the transcripts (Python `collect.py`): which
 //! sessions are live or blocked (herdr), one kit [`Scanner`] per Claude Code session (agents,
-//! statuses, nesting), thread grouping, the explicit thread channel, and herdr-inbox's open
-//! questions.
+//! statuses, nesting) built into one agent tree per root ([`tree`]), and herdr-inbox's open
+//! questions. The explicit thread channel's files are no longer read (plan
+//! `uniform-agent-tree.md` §6).
 //!
 //! A [`Collector`] lives as long as the view; each [`Collector::collect`] stats unchanged
 //! files and reads only the appended bytes of changed ones.
@@ -10,28 +11,28 @@
 //! - the kit's fold never fails a record, so there is no "N unreadable records" error;
 //! - an agent's `agent_type` or `tool_use_id`, or herdr's `agent_session.value`, that is not a
 //!   string reads as its text (Python passes the JSON value through);
-//! - where Python raises inside one orchestrator and reports it in `errors` (a list as an
-//!   agent's `agentType`: unhashable; a non-string `cwd`), Rust shows the orchestrator: those
-//!   values are read as text or as absent. A panic is still contained per orchestrator
+//! - where Python raises inside one root and reports it in `errors` (a list as an
+//!   agent's `agentType`: unhashable; a non-string `cwd`), Rust shows the root: those
+//!   values are read as text or as absent. A panic is still contained per root
 //!   ([`contain`]).
 //!
 //! [`Scanner`]: herdr_agent_kit::agent_session::claude::Scanner
 
 pub mod agents;
 mod codex;
-pub mod events;
 pub mod liveness;
 pub mod mirror;
 mod orchestrator;
 pub mod paths;
 pub mod py;
+pub mod roles;
 pub mod sessions;
 pub mod text;
-pub mod threads;
+pub mod title;
+pub mod tree;
 
 pub use orchestrator::pending_prompt;
 
-use events::Channel;
 use herdr_agent_kit::internal::inbox_contract::sqlite::OpenQuestion;
 use liveness::{PanePid, PanePids};
 use panorama_core::model::Swarm;
@@ -39,15 +40,12 @@ use py::str_of;
 use serde_json::{Map, Value};
 use sessions::Sessions;
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 /// Where a collector reads, and how.
 pub struct Options {
     /// Claude Code's `projects` dir (or a remote machine's mirror of it).
     pub projects: PathBuf,
-    /// The explicit thread channel's dir.
-    pub events_dir: PathBuf,
     /// The hook records' dir.
     pub hooks_dir: PathBuf,
     /// Whether background tasks can be checked against this machine's processes (false for
@@ -57,16 +55,15 @@ pub struct Options {
     pub pane_pid: Box<PanePid>,
 }
 
-/// The collector: its sessions, channels and pane processes, kept across collects.
+/// The collector: its sessions and pane processes, kept across collects.
 pub struct Collector {
     codex: Option<codex::Details>,
     codex_identity: Option<codex::identity::LocalIdentity>,
     sessions: Sessions,
-    channels: HashMap<String, Channel>,
-    events_dir: PathBuf,
     procs: bool,
     pids: RefCell<PanePids>,
     window: f64,
+    core_source: bool,
     /// The view's own pane: the agent in its tab is the one it is docked by.
     pub self_pane: Option<String>,
 }
@@ -94,9 +91,9 @@ fn tab_of(a: &Map<String, Value>) -> Value {
     a.get("tab_id").cloned().unwrap_or(Value::Null)
 }
 
-/// One orchestrator's collect, contained: a panic in it (untrusted transcript text) becomes
+/// One root's collect, contained: a panic in it (untrusted transcript text) becomes
 /// an entry in `errors`, `<pane>: panic: <message>` (at most 300 characters), and the other
-/// orchestrators are still collected (Python's `try/except` around `_orchestrator`).
+/// roots are still collected (Python's `try/except` around `_orchestrator`).
 pub fn contain<T>(pane: &str, f: impl FnOnce() -> T) -> Result<T, String> {
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).map_err(|p| {
         let msg = p
@@ -115,19 +112,24 @@ impl Collector {
             codex: None,
             codex_identity: None,
             sessions: Sessions::new(options.projects, options.hooks_dir),
-            channels: HashMap::new(),
-            events_dir: options.events_dir,
             procs: options.procs,
             pids: RefCell::new(PanePids::new(options.pane_pid)),
             window: 0.0,
+            core_source: false,
             self_pane: None,
         }
+    }
+
+    /// Only the core adapter supplies sessions after exact process-backed ownership proof.
+    pub fn with_core_source(mut self) -> Self {
+        self.core_source = true;
+        self
     }
 
     /// Enable local Codex observations explicitly. Remote mirrors and bare test
     /// collectors never discover or read this machine's Codex home implicitly.
     pub fn with_codex(mut self, options: crate::codex::Options) -> Self {
-        self.codex = Some(codex::Details::new(options, self.events_dir.clone()));
+        self.codex = Some(codex::Details::new(options));
         self
     }
 
@@ -147,7 +149,7 @@ impl Collector {
     pub fn codex_pending(&self, swarm: &Swarm) -> bool {
         self.codex.as_ref().is_some_and(|details| {
             swarm
-                .orchestrators
+                .roots
                 .iter()
                 .any(|orchestrator| details.pending(orchestrator))
         })
@@ -159,8 +161,8 @@ impl Collector {
     }
 
     /// The swarm at `now`: herdr's `snapshot` (`None`: herdr is down), the inbox's open
-    /// questions (`None`: no inbox), finished threads shown for `window` seconds, idle
-    /// orchestrators stale after `stale_after`.
+    /// questions (`None`: no inbox), finished agents shown for `window` seconds, idle
+    /// roots stale after `stale_after`.
     pub fn collect(
         &mut self,
         snapshot: Option<&Value>,
@@ -170,11 +172,11 @@ impl Collector {
         stale_after: f64,
     ) -> Swarm {
         self.window = window;
+        if self.core_source {
+            self.pids.borrow_mut().clear();
+        }
         if let Some(identity) = self.codex_identity.as_mut() {
             identity.begin_collect();
-        }
-        if let Some(details) = self.codex.as_mut() {
-            details.begin_collect();
         }
         let mut swarm = Swarm {
             generated_at: now,
@@ -229,9 +231,14 @@ impl Collector {
             match contain(&pane, || {
                 self.orchestrator(a, tab, n, open_qs.unwrap_or(&[]), now)
             }) {
-                Ok(mut o) => {
+                Ok((mut o, agents)) => {
                     o.tab_no = tab_no(&tab_of(a));
-                    swarm.orchestrators.push(o);
+                    if o.title.is_empty() {
+                        let (t, src) = title::root_fallback(&o.harness, o.tab_no, &o.pane_id);
+                        (o.title, o.title_source) = (t, src.to_owned());
+                    }
+                    tree::plant(&mut o, agents);
+                    swarm.roots.push(o);
                 }
                 Err(e) => swarm.errors.push(e),
             }

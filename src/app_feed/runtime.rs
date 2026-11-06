@@ -1,0 +1,190 @@
+//! The lifetime lock outlives collection helpers; stop checks never need the home lock.
+use super::{
+    World,
+    fs::{Home, Result},
+    journal::Journal,
+    liveness::{self, Idle, State},
+    receipt::Receipt,
+    serialize,
+    triggers::Triggers,
+};
+use crate::{collect::paths::hooks_dir, host::Core};
+use herdr_agent_kit::plugin_env::PluginEnv;
+use std::{
+    io::Write,
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+    time::{Duration, Instant},
+};
+
+/// Test-only startup faults at `stage`, `PANORAMA_TEST_START=<stage>:<fault>`: `<ms>` delays,
+/// `exit` exits, `hold-exit` exits leaving a helper holding the lifetime lock, and (at
+/// `ready`) `foreign` / `garbage` acknowledge wrongly. Release builds have no such knob.
+#[cfg(debug_assertions)]
+fn test_fault(stage: &str) {
+    let Ok(value) = std::env::var("PANORAMA_TEST_START") else {
+        return;
+    };
+    match value.split_once(':') {
+        Some((at, "exit")) if at == stage => std::process::exit(3),
+        Some((at, "hold-exit")) if at == stage => {
+            // Stdin is the lifetime lock description; the helper keeps it locked.
+            let _ = std::process::Command::new("sleep")
+                .arg("4")
+                .stdin(std::process::Stdio::inherit())
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .spawn();
+            std::process::exit(3)
+        }
+        Some((at, ms)) if at == stage => {
+            if let Ok(ms) = ms.parse() {
+                std::thread::sleep(Duration::from_millis(ms));
+            }
+        }
+        _ => {}
+    }
+}
+#[cfg(not(debug_assertions))]
+fn test_fault(_: &str) {}
+
+#[cfg(debug_assertions)]
+fn acknowledgement(id: &str) -> String {
+    match std::env::var("PANORAMA_TEST_START").as_deref() {
+        Ok("ready:foreign") => "READY ffffffffffffffffffffffffffffffff\n".into(),
+        Ok("ready:garbage") => "garbage\n".into(),
+        _ => format!("READY {id}\n"),
+    }
+}
+#[cfg(not(debug_assertions))]
+fn acknowledgement(id: &str) -> String {
+    format!("READY {id}\n")
+}
+
+pub fn watch(home: Home, r: Receipt, _lifetime: std::fs::File) -> Result<()> {
+    test_fault("register");
+    let mut journal = Journal::open(&home, &r)?;
+    let stop = Arc::new(AtomicBool::new(false));
+    let monitor_stop = stop.clone();
+    let monitor_path = home.path.clone();
+    let monitor_id = r.id.clone();
+    let monitor_sha = r.binary_sha.clone();
+    let monitor = std::thread::spawn(move || {
+        let opened = Home::open(&monitor_path);
+        while !monitor_stop.load(Ordering::Relaxed) {
+            let valid = opened.as_ref().ok().is_some_and(|h| {
+                Receipt::read(h).is_ok_and(|r| {
+                    r.id == monitor_id && r.binary_sha == monitor_sha && r.enabled(h).is_ok()
+                })
+            });
+            if !valid {
+                monitor_stop.store(true, Ordering::Relaxed);
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(100));
+        }
+    });
+    let result = (|| {
+        let env = PluginEnv::from_env();
+        let core = Core::default().with_stop(stop.clone());
+        let mut source = crate::host::collect::app_source(env.clone(), core.clone());
+        let mut triggers = Triggers::new(
+            core,
+            vec![
+                hooks_dir(&env),
+                env.xdg_state_home().join("herdr-panorama/codex-bindings"),
+            ],
+        );
+        test_fault("ready");
+        // A parent that stopped waiting has closed the pipe; that is not a writer failure.
+        let mut out = std::io::stdout();
+        let _ = out
+            .write_all(acknowledgement(&r.id).as_bytes())
+            .and_then(|()| out.flush());
+        let start = Instant::now();
+        let mut idle = Idle::default();
+        let mut app = State::Unknown;
+        let mut next_probe = Instant::now();
+        let mut next_collect = Instant::now();
+        let mut last_collect = Instant::now() - Duration::from_secs(5);
+        let mut last: Option<World> = None;
+        let mut dirty_pending = true;
+        while !stop.load(Ordering::Relaxed) {
+            if Instant::now() >= next_probe {
+                let previous = app;
+                app = liveness::probe(&home.path, &stop);
+                if app == State::Running && previous != State::Running {
+                    next_collect = Instant::now();
+                }
+                next_probe = Instant::now() + Duration::from_secs(2);
+                if idle.observe(app, start.elapsed()) {
+                    break;
+                }
+                if app != State::Running {
+                    triggers.pause();
+                }
+                if app == State::Unknown {
+                    let mut degraded = last.clone().unwrap_or_else(|| World {
+                        swarm: panorama_core::model::Swarm {
+                            generated_at: crate::snapshot::now(),
+                            herdr_ok: false,
+                            inbox_ok: false,
+                            ..Default::default()
+                        },
+                        roots: Vec::new(),
+                    });
+                    degraded
+                        .swarm
+                        .errors
+                        .push("herdr-app status unavailable; last collection retained".into());
+                    if !stop.load(Ordering::Relaxed) {
+                        journal.publish(&home, &r, &serialize::bytes(&degraded)?)?;
+                    }
+                }
+            }
+            if app == State::Running {
+                dirty_pending |= triggers.changed();
+                if (dirty_pending && last_collect.elapsed() >= Duration::from_millis(500))
+                    || Instant::now() >= next_collect
+                {
+                    dirty_pending = false;
+                    let collected = source();
+                    let pending = collected.pending;
+                    let mut world = World::from(collected);
+                    if stop.load(Ordering::Relaxed) {
+                        break;
+                    }
+                    if triggers.event_error {
+                        world
+                            .swarm
+                            .errors
+                            .push("herdr-core events unavailable; polling".into());
+                    }
+                    if !world.swarm.inbox_ok {
+                        world.swarm.errors.push("inbox source unavailable".into());
+                    }
+                    journal.publish(&home, &r, &serialize::bytes(&world)?)?;
+                    triggers.observe(&world);
+                    last = Some(world);
+                    last_collect = Instant::now();
+                    next_collect = Instant::now()
+                        + if pending {
+                            Duration::from_millis(100)
+                        } else {
+                            Duration::from_secs(5)
+                        };
+                }
+            }
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        // Source/observer and event helpers drop and reap before lifetime ownership is released.
+        drop(triggers);
+        drop(source);
+        Ok(())
+    })();
+    stop.store(true, Ordering::Relaxed);
+    let _ = monitor.join();
+    result
+}

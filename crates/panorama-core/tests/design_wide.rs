@@ -1,7 +1,12 @@
-//! The wide graph's depth columns against the design's renders, cell for cell: turn 5's
-//! direction 5d (`design_5d.json`, keys V4–V6) and turn 7's wider cards
-//! (`design_7.json`, keys W*, R* and the sweep strip S). Python's tests/test_deep.py
-//! `test_5d_matches_the_design_cell_for_cell` and tests/test_wide.py.
+//! The wide graph's depth columns at the views of the design's renders: turn 5's direction 5d
+//! (`design_5d.json`, keys V4–V6) and turn 7's wider cards (`design_7.json`, keys W*, R* and
+//! the sweep strip S). Python's tests/test_deep.py `test_5d_matches_the_design_cell_for_cell`
+//! and tests/test_wide.py.
+//!
+//! The designs draw the thread column the uniform tree removed (plan `uniform-agent-tree.md`
+//! U4, D5), so the pages are compared with Rust's own reviewed renders,
+//! `tests/fixtures/rust/screens/design-{5d-wide,7}.json` (`PANORAMA_BLESS=1`). The sweep strip
+//! has no thread in it and still matches the design.
 
 mod support;
 
@@ -12,42 +17,25 @@ use panorama_core::view::cards::edge::edge;
 use panorama_core::view::orch_state::OrchState;
 use panorama_core::view::palette::LINE;
 use panorama_core::view::{Screen, View, render_graph};
-use support::tree_design::{NOW, TID, tree_swarm};
-use support::{NO_SESSIONS, Shown, cells, fixture, golden, wire_swarm};
+use support::owned::check_owned;
+use support::tree_design::{NOW, tree_swarm};
+use support::{NO_SESSIONS, fixture, golden, wire_swarm};
 
-/// The view on the design's thread with `agent` selected in column `focus`.
-fn view_for(agent: Option<&str>, focus: usize, frame: f64) -> View {
-    View {
+/// The view on the design's root with `agent` selected (else its first) and the keyboard in
+/// column `focus`.
+fn view_for(sw: &Swarm, agent: Option<&str>, focus: usize, frame: f64) -> View {
+    let mut v = View {
         orch: Some("w1:p3".into()),
-        thread: Some(TID.into()),
-        agent: agent.map(Into::into),
         focus,
         now: NOW,
         frame,
         ..View::default()
+    };
+    panorama_core::view::nav::default_children(sw, &mut v);
+    if let Some(a) = agent {
+        v.agent = Some(a.into());
     }
-}
-
-/// Rows 2..41 from column `x0` on: the line above the columns and the columns.
-fn assert_rows(name: &str, want: &[Vec<Shown>], got: &[Vec<Shown>], x0: usize) {
-    let mut diffs = vec![];
-    for y in 2..42 {
-        for x in x0..want[y].len() {
-            if want[y][x] != got[y][x] {
-                let row: String = got[y].iter().map(|c| c.ch).collect();
-                diffs.push(format!(
-                    "({x},{y}) want {:?} got {:?}\n  got row {row:?}",
-                    want[y][x], got[y][x]
-                ));
-            }
-        }
-    }
-    assert!(
-        diffs.is_empty(),
-        "{name}: {} cells differ, first:\n{}",
-        diffs.len(),
-        diffs[..diffs.len().min(3)].join("\n")
-    );
+    v
 }
 
 fn frames(file: &serde_json::Value) -> Vec<String> {
@@ -69,40 +57,29 @@ fn the_tree_swarm_port_builds_what_python_built() {
 }
 
 #[test]
-fn design_5d_cell_for_cell() {
+fn design_5d_views() {
     let deep = fixture("design_5d.json");
     let sw: Swarm = wire_swarm("inputs/swarm-deep.json", None);
-    // V4: the focus on the thread (2a, the depth columns to the right; compared from the
-    // thread→agent links); V5: on b1 at depth 2; V6: on c1 at depth 4
+    // V4: the focus on the root (the depth columns to the right); V5: on b1 at depth 2;
+    // V6: on c1 at depth 4
     for key in frames(&deep) {
         let frame: f64 = key.parse().unwrap();
-        for (look, sel, focus, x0) in [
-            ("V4", None, 1, 89),
-            ("V5", Some("b1"), 3, 0),
-            ("V6", Some("c1"), 5, 0),
+        for (look, sel, focus) in [
+            ("V4", None, 0),
+            ("V5", Some("b1"), 2),
+            ("V6", Some("c1"), 4),
         ] {
-            let got = render_graph(
-                &sw,
-                &view_for(sel, focus, frame),
-                160,
-                45,
-                None,
-                NO_SESSIONS,
-            );
-            assert_rows(
-                &format!("5d {look} frame {key}"),
-                &golden(&deep["frames"][&key][look]),
-                &cells(&got),
-                x0,
-            );
+            let v = view_for(&sw, sel, focus, frame);
+            let got = render_graph(&sw, &v, 160, 45, None, NO_SESSIONS);
+            check_owned("design-5d-wide.json", &format!("{look} frame {key}"), &got);
         }
     }
 }
 
 /// The depth-2 agent tracing the manifest cache (test_wide.py `r1_id`).
 fn r1(sw: &Swarm) -> String {
-    let t = &sw.orchestrators[0].threads[0];
-    t.agents
+    sw.roots[0]
+        .agents
         .iter()
         .find(|a| a.depth == 2 && a.activity.starts_with("tracing"))
         .unwrap()
@@ -111,37 +88,25 @@ fn r1(sw: &Swarm) -> String {
 }
 
 #[test]
-fn design_7_wide_cards_cell_for_cell() {
+fn design_7_wide_cards() {
     let wide = fixture("design_7.json");
     let sw = tree_swarm(&wide);
     let r1 = r1(&sw);
-    // W*: the focus on the thread (from the thread→agent links rightwards: the orchestrator
-    // and thread columns are the design's mock); R*: the focus on depth 2, the whole width
+    // W*: the focus on the root; R*: the focus on depth 2, the whole width
     let looks = [
-        ("W160", 160, None, 89),
-        ("W240", 240, None, 99),
-        ("W320", 320, None, 111),
-        ("R160", 160, Some(&r1), 0),
-        ("R320", 320, Some(&r1), 0),
+        ("W160", 160, None),
+        ("W240", 240, None),
+        ("W320", 320, None),
+        ("R160", 160, Some(&r1)),
+        ("R320", 320, Some(&r1)),
     ];
     for key in frames(&wide) {
         let frame: f64 = key.parse().unwrap();
-        for (look, w, sel, x0) in looks {
-            let focus = if sel.is_some() { 3 } else { 1 };
-            let got = render_graph(
-                &sw,
-                &view_for(sel.map(String::as_str), focus, frame),
-                w,
-                45,
-                None,
-                NO_SESSIONS,
-            );
-            assert_rows(
-                &format!("7 {look} frame {key}"),
-                &golden(&wide["frames"][&key][look]),
-                &cells(&got),
-                x0,
-            );
+        for (look, w, sel) in looks {
+            let focus = if sel.is_some() { 2 } else { 0 };
+            let v = view_for(&sw, sel.map(String::as_str), focus, frame);
+            let got = render_graph(&sw, &v, w, 45, None, NO_SESSIONS);
+            check_owned("design-7.json", &format!("{look} frame {key}"), &got);
         }
     }
 }

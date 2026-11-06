@@ -14,22 +14,17 @@ fn wire(name: &str) -> Swarm {
         env!("CARGO_MANIFEST_DIR")
     );
     let v: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-    serde_json::from_value(v["swarm"].clone()).unwrap()
+    serde_json::from_value(crate::v1_wire::swarm(v["swarm"].clone())).unwrap()
 }
 
 fn demo() -> Swarm {
     wire("demo")
 }
 
-/// `(focus, orch, thread, agent)` (test_tui.py `sel`).
-fn sel(app: &App) -> (usize, Option<&str>, Option<&str>, Option<&str>) {
+/// `(focus, orch, agent)` (test_tui.py `sel`, without the thread since the uniform tree).
+fn sel(app: &App) -> (usize, Option<&str>, Option<&str>) {
     let v = &app.view;
-    (
-        v.focus,
-        v.orch.as_deref(),
-        v.thread.as_deref(),
-        v.agent.as_deref(),
-    )
+    (v.focus, v.orch.as_deref(), v.agent.as_deref())
 }
 
 /// An app opened from `pane` that got the demo at `t0`, its keys armed again after.
@@ -45,10 +40,7 @@ fn loaded(pane: &str) -> (App, Instant) {
 fn the_first_selection_follows_the_invoking_pane() {
     // test_tui.py::test_initial_selection_follows_the_invoking_pane
     let (app, t0) = loaded("w1:p2");
-    assert_eq!(
-        sel(&app),
-        (0, Some("w1:p2"), Some("wf:wf_search"), Some("j1a2b3c"))
-    );
+    assert_eq!(sel(&app), (0, Some("w1:p2"), Some("j1a2b3c")));
     assert!(!app.armed(t0) && app.armed(t0 + ARM)); // the first paint arms the keys later
     // a pane that is not an orchestrator: the first row
     let mut app = App::new(Some("w9:p9".into()), false, t0);
@@ -63,12 +55,9 @@ fn the_cursor_tracks_identity_when_a_refresh_reorders() {
     let later = t0 + Duration::from_secs(5);
     app.armed_at = t0;
     let mut sw = demo();
-    sw.orchestrators.reverse(); // a new tab order arrives in the background
+    sw.roots.reverse(); // a new tab order arrives in the background
     app.apply(sw, Marks::new(), later);
-    assert_eq!(
-        sel(&app),
-        (0, Some("w1:p2"), Some("wf:wf_search"), Some("j1a2b3c"))
-    );
+    assert_eq!(sel(&app), (0, Some("w1:p2"), Some("j1a2b3c")));
     assert!(app.armed(later)); // the same card: not armed again
     assert_eq!(nav(&app.swarm, &app.view)[0][0], "w1:p4"); // the arrows see the new order
 }
@@ -78,9 +67,9 @@ fn a_vanished_target_parks_the_cursor() {
     // test_tui.py::test_a_vanished_target_parks_the_cursor
     let (mut app, t0) = loaded("w1:p1");
     let mut sw = demo();
-    sw.orchestrators.retain(|o| o.pane_id != "w1:p1");
+    sw.roots.retain(|o| o.pane_id != "w1:p1");
     app.apply(sw, Marks::new(), t0 + Duration::from_secs(5));
-    assert_eq!(sel(&app), (0, None, None, None));
+    assert_eq!(sel(&app), (0, None, None));
     assert_eq!(app.parked(), Some("w1:p1")); // where the arrows resume from
 }
 
@@ -91,7 +80,7 @@ fn a_background_change_under_the_cursor_arms_the_keys_again() {
     let (mut app, t0) = loaded("w1:p1");
     let later = t0 + Duration::from_secs(5);
     let mut sw = demo();
-    let a = &mut sw.orchestrators[0].threads[0].agents[1];
+    let a = &mut sw.roots[0].agents[1];
     assert_eq!(app.view.agent.as_deref(), Some(a.id.as_str()));
     a.status = panorama_core::model::Status::Done; // the selected agent changed under the cursor
     app.apply(sw, Marks::new(), later);
@@ -99,7 +88,7 @@ fn a_background_change_under_the_cursor_arms_the_keys_again() {
     let (mut app, t0) = loaded("w1:p2");
     let later = t0 + Duration::from_secs(5);
     let mut sw = demo();
-    sw.orchestrators[1].inbox = vec![9]; // `a` would now open the inbox
+    sw.roots[1].inbox = vec![9]; // `a` would now open the inbox
     app.apply(sw, Marks::new(), later);
     assert!(!app.armed(later));
 }

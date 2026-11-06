@@ -361,10 +361,8 @@ pub fn orch(panes: &[&str]) -> Swarm {
         .iter()
         .map(|p| json!({"pane_id": p, "tab_label": ""}))
         .collect();
-    serde_json::from_value(
-        json!({"orchestrators": os, "generated_at": 0.0, "herdr_ok": true,
-                                  "inbox_ok": true, "errors": []}),
-    )
+    serde_json::from_value(json!({"roots": os, "generated_at": 0.0, "herdr_ok": true,
+                                  "inbox_ok": true, "errors": []}))
     .unwrap()
 }
 

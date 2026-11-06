@@ -4,7 +4,7 @@
 //! (`link/tests/acts.rs`).
 
 use super::*;
-use panorama_core::model::Orchestrator;
+use panorama_core::model::Root;
 use panorama_core::view::target::AgentRef;
 
 const WIDE: (i32, i32) = (160, 45);
@@ -16,10 +16,9 @@ fn a_click_on_an_agent_cards_answer_deep_links_its_question() {
     r.key(Key::Right, now);
     r.key(Key::Move(1), now);
     r.key(Key::Move(1), now);
-    r.key(Key::Right, now); // PR #48: the asking agent, its card expanded
+    r.key(Key::Move(1), now); // PR #48: the asking agent, its card expanded
     let answer = Target::Answer(AgentRef {
         pane: "w1:p1".into(),
-        thread: "ref:#48".into(),
         agent: "c1d2e3f".into(),
     });
     assert!(r.spot(&answer).is_some());
@@ -58,12 +57,12 @@ fn a_mark_that_moved_in_the_last_refresh_ignores_clicks() {
     let mark = Target::AnswerOrch("w1:p1".into());
     let (_, y) = r.spot(&mark).unwrap();
     let mut sw = wire("demo").0;
-    let new_one: Orchestrator = serde_json::from_value(serde_json::json!({
+    let new_one: Root = serde_json::from_value(serde_json::json!({
         "pane_id": "w1:p0", "tab_id": "w1:t0", "tab_label": "New one", "session_id": "s0",
         "herdr_status": "idle",
     }))
     .unwrap();
-    sw.orchestrators.insert(0, new_one);
+    sw.roots.insert(0, new_one);
     r.refresh(sw, now); // the selected card is the same (no re-arm), every ?N moved down
     assert!(r.d.app.armed(now));
     let moved = r.spot(&mark).unwrap();

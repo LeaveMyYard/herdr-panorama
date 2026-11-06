@@ -1,5 +1,5 @@
 //! A frame of the panel (Python `SwarmApp.repaint` plus `PanelApp.decorate`): the docked view
-//! of its tab's orchestrator in herdr's theme, focused or not; the graph when its tab has
+//! of its tab's root in herdr's theme, focused or not; the graph when its tab has
 //! none (Python's `_update_dock`): the narrow layout, or the wide one from 120 columns;
 //! dimmed with the notice while there is no core.
 

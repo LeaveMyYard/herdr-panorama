@@ -28,7 +28,7 @@ fn a_refresh_that_changes_the_selected_card_re_arms_them_and_one_that_does_not_d
     assert!(!p.on_key(Key::Goto, t + TICK).is_empty());
     // the selected orchestrator (Data Pipeline) changes its state: keys wait 400 ms
     let mut st = state(json!({"visible_tabs": ["w1:t2"], "focused_pane": "w1:p90"}));
-    st.swarm.orchestrators[1].herdr_status = panorama_core::model::HerdrStatus::Working;
+    st.swarm.roots[1].herdr_status = panorama_core::model::HerdrStatus::Working;
     p.on_state(st, t);
     assert!(p.on_key(Key::Goto, t + ARM - TICK).is_empty());
     assert!(!p.on_key(Key::Goto, t + ARM).is_empty());
@@ -42,7 +42,7 @@ fn a_refresh_that_docks_the_panel_re_arms_the_keys() {
     p.on_key(Key::Right, t);
     p.on_key(Key::Right, t);
     let mut st = state(json!({"visible_tabs": ["w1:t1"], "focused_pane": "w1:p90"}));
-    st.swarm.orchestrators[0].tab_id = Some("w1:t9".into());
+    st.swarm.roots[0].tab_id = Some("w1:t9".into());
     let t1 = t + Duration::from_secs(5);
     p.on_state(st, t1);
     assert!(p.input.dock && p.view.focus == 0);
@@ -67,15 +67,9 @@ fn armed_clicks_wait_like_their_keys() {
             orch: Some("w1:p1".into()),
             ..Default::default()
         };
-        let thread = panorama_core::view::nav::nav(&p.swarm, &v)[1][0].clone();
-        let v = panorama_core::view::View {
-            thread: Some(thread.clone()),
-            ..v
-        };
-        let agent = panorama_core::view::nav::nav(&p.swarm, &v)[2][0].clone();
+        let agent = panorama_core::view::nav::nav(&p.swarm, &v)[1][0].clone();
         AgentRef {
             pane: "w1:p1".into(),
-            thread,
             agent,
         }
     };
@@ -83,12 +77,7 @@ fn armed_clicks_wait_like_their_keys() {
         let (mut p, t0) = loaded_at("w1:t9", "w1:t1");
         let s = screen_with(t);
         let cursor = |p: &crate::panel::model::Panel| {
-            (
-                p.view.orch.clone(),
-                p.view.thread.clone(),
-                p.view.agent.clone(),
-                p.view.focus,
-            )
+            (p.view.orch.clone(), p.view.agent.clone(), p.view.focus)
         };
         let before = cursor(&p);
         let early = p.click(0, 0, &s, t0 + ARM - TICK);
@@ -113,13 +102,10 @@ fn armed_clicks_wait_like_their_keys() {
         o.iter()
             .any(|e| matches!(e, Effect::OpenInbox { .. } | Effect::Goto { .. }))
     });
-    // the done card: unfolding is what Enter does, armed like Enter
-    let (mut p, t0) = loaded_at("w1:t9", "w1:t1");
-    let s = screen_with(Target::Done("w1:p5".into()));
-    p.click(0, 0, &s, t0 + ARM - TICK);
-    assert!(!p.view.done_open.contains("w1:p5"));
-    p.click(0, 0, &s, t0 + ARM);
-    assert!(p.view.done_open.contains("w1:p5"));
+    // a root's own hints, armed like their keys
+    acts(Target::GotoOrch("w1:p1".into()), |o| {
+        o.iter().any(|e| matches!(e, Effect::Goto { .. }))
+    });
 }
 
 #[test]

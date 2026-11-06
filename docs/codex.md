@@ -13,8 +13,8 @@ checkout does not install, restart, or activate a running plugin.
 
 ## Harness icons
 
-Orchestrator titles can use the real Claude and Codex marks from **Herdr Agent
-Icons Max** (U+E1A0 and U+E1A1), followed by the tab label. Launcher choices and
+Root titles can use the real Claude and Codex marks from **Herdr Agent
+Icons Max** (U+E1A0 and U+E1A1), followed by the title. Launcher choices and
 help keep their full harness names. The font is distributed by
 [herdr-radar](https://github.com/hhdebb/herdr-radar) and
 [herdr-icon-agent-ui](https://github.com/qintmb/herdr-icon-agent-ui); Panorama
@@ -111,19 +111,46 @@ never overridden by the local store.
 
 ## What the details mean
 
-One Codex session card contains its recorded turns as chronological phases and
-its exact parent/child agent tree. It shows bounded prompt/summary text, model,
-the latest recorded tool, and the tool count in the loaded turn window. Counts
-are not all-time totals. An exactly associated session shows its default
-descendant hierarchy without MCP reports. The compact dock keeps its existing presentation: session/thread
-tiles, indented rows for agents that spawned children, and child status glyphs
-on the right (leaf agents are glyphs). Open the expanded graph to navigate full
+A Codex root is its pane: its own state (herdr's status, inbox questions) is on
+the root, and no agent stands for the root thread. Below it is its exact
+parent/child agent tree, at any depth; the root's own children have no parent.
+Each agent shows bounded prompt/summary text, model, the latest recorded tool,
+and the tool count in the loaded turn window. Counts are not all-time totals.
+Turns are not phases (plan `uniform-agent-tree.md` U3). The compact dock shows one tile per
+active direct subagent; the docked entry lists two layers of agents, with deeper agents as
+status glyphs on the right of their row. Open the expanded graph to navigate full
 agent cards by depth; the narrow graph offers selectable agent pods and the
 selected agent's details.
 History-only children stay unknown, including in the compact dock.
 
-Explicit `report_thread` declarations can organize the
-same children without duplicating them or replacing the root card.
+### How Codex agents are named
+
+A Codex root is named by, in order: a pane name you set in herdr; its tab's
+label, when you named the tab and the tab holds only this agent; the root
+thread's `name` (from `/rename` or Codex's own title); the first line of its
+first prompt (Codex's thread `preview`, else the earliest prompt read); a
+telling terminal title; else
+`Codex · tab N`.
+
+A subagent, at any depth, is named by, in order:
+
+1. **The task name its spawner gave it.** Codex 0.166.0's app-server schema
+   (`codex app-server generate-json-schema`) puts it in the spawned thread's own
+   `thread/read` record, as the last segment of
+   `source.subAgent.thread_spawn.agent_path` (`/root/review_auth` reads as
+   `review auth`). Codex sets the path only when the spawner passes a
+   `task_name`; older spawns have none.
+2. Its thread's `name`, when set.
+3. Codex's `agentNickname` (`Euclid`, `Lovelace`, …). It is stable but it is
+   Codex's choice, not the spawner's.
+4. The first line of its first prompt (the thread's `preview`, else the
+   earliest prompt read).
+5. Its `agentRole` and short thread id, else `agent <short id>`.
+
+The spawn item itself (`collabAgentToolCall`) carries the spawner's whole
+`prompt`, not a name; Panorama reads only its receiver ids, never its prompt.
+Naming reads nothing beyond the thread records Panorama already fetches, so it
+does not change any read budget.
 
 Herdr supplies the root pane's runtime state. Persisted completed, failed, or
 interrupted turns describe historical work. A completed turn, idle pane, or
@@ -166,38 +193,25 @@ its descendant can appear. Rejected metadata never allocates persisted scan stat
 so foreign references cannot reset a valid branch's older backfill. Oversized graphs,
 truncated display history, unsupported/failed reads and exhausted limits remain
 partial. Cached ancestry never refreshes metadata proof merely by reuse. Only a
-fresh, complete, verified descendant graph permits reading child report files.
-Each child's reports can claim only its own verified subtree, root reports take
-precedence, and declaration IDs include their source thread to prevent sibling
-collisions. Report reads are capped per collection and do not read arbitrary
-paths supplied in a report.
+Report files are no longer read at all.
 
-## Optional `report_thread` MCP server
+## Removed: the `report_thread` MCP server
 
-Merge [codex/config.example.toml](../codex/config.example.toml) into your chosen
-Codex configuration only when opting in. Set `command` to the absolute Rust
-binary path:
+Threads were removed, so there is nothing to report: Panorama shows every agent
+and subagent as one tree, under the name its spawner gave it. The example
+`[mcp_servers.herdr_panorama]` block is gone from
+[codex/config.example.toml](../codex/config.example.toml). If you merged it into
+your Codex configuration, delete it there yourself; Panorama never edits Codex
+configuration. Until you do, `panorama mcp` keeps answering for the rest of this
+release: `report_thread` is still listed, records nothing and answers
+`{"status": "ignored", "reason": "threads were removed"}`, whatever caller
+`_meta.threadId` it carries. The Rust `panorama emit` likewise records nothing and
+says so on stderr. A later release removes both.
 
-```toml
-[mcp_servers.herdr_panorama]
-command = "/absolute/path/to/panorama"
-args = ["mcp"]
-```
-
-Codex supplies the exact caller in each MCP call's `_meta.threadId`. Panorama
-uses it separately for root and child callers; the shared `_meta.sessionId` is
-not an identity key. An invalid supplied thread ID is refused. MCP reporting
-does not register or change the pane association.
-
-From a Codex shell tool, the Rust `emit` command can resolve the exact
-`CODEX_THREAD_ID`, or you can pass `--session` explicitly:
-
-```sh
-/absolute/path/to/panorama emit --session THREAD_ID --thread work --status active
-```
-
-`CODEX_SESSION_ID` is deliberately ignored because it may identify the shared
-session tree. Existing Claude reporting keeps its own fallback behavior.
+Report files an earlier version wrote under the state directory's
+`herdr-panorama/events/` are left in place; the Rust binary no longer writes
+or reads them (only the frozen Python entrypoint still does), and you can
+delete them.
 
 ## Compatibility and limits
 
@@ -207,5 +221,5 @@ readers can ignore the extra field but do not preserve it on re-emission.
 
 Remote Codex panes remain visible from herdr metadata; detailed remote history
 is a follow-up, and a remote pane never reads this machine's local Codex home or
-association store. Inbox answer delivery to Codex is also a follow-up. Optional
-MCP reporting, pane visibility, and session registration do not enable it.
+association store. Inbox answer delivery to Codex is also a follow-up. Pane visibility and session
+registration do not enable it.

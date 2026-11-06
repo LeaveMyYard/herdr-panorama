@@ -5,7 +5,7 @@ use super::*;
 use crate::ui::graph::Graph;
 use crate::ui::selection::initial;
 use panorama_core::model::Swarm;
-use panorama_core::view::state::{DONE_CARD, FIN_CARD};
+use panorama_core::view::state::FIN_CARD;
 use panorama_core::view::{Filter, NEW_ROW, Unseen};
 use serde_json::Value;
 use std::ops::{Deref, DerefMut};
@@ -65,7 +65,7 @@ fn stub(home: bool) -> Stub {
         env!("CARGO_MANIFEST_DIR")
     );
     let v: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-    let swarm: Swarm = serde_json::from_value(v["swarm"].clone()).unwrap();
+    let swarm: Swarm = serde_json::from_value(crate::v1_wire::swarm(v["swarm"].clone())).unwrap();
     let mut graph = Graph {
         swarm,
         ..Graph::default()
@@ -81,7 +81,7 @@ fn stub(home: bool) -> Stub {
 
 #[test]
 fn enter_on_an_orchestrator_goes_to_its_pane_only_where_the_view_says_so() {
-    // a popup (Python `SwarmApp` without home mode): Enter opens the threads
+    // a popup (Python `SwarmApp` without home mode): Enter opens the root's depth 1
     let mut popup = stub(false);
     assert!(popup.enter(Instant::now()).is_empty());
     assert!(popup.gone_to.is_empty() && popup.view.focus == 1);
@@ -108,30 +108,30 @@ fn seen_clears_the_marks_here_and_reports_them() {
 
 #[test]
 fn enter_inside_the_arming_window_does_nothing() {
-    // Python arms the whole of `action_enter`: + New agent, a fin card, a done card alike
+    // Python arms the whole of `action_enter`: + New agent and a fin card alike
     let mut s = stub(true);
     s.armed = false;
     s.view.orch = Some(NEW_ROW.into());
     assert!(s.enter(Instant::now()).is_empty());
     let mut s = stub(false);
     s.armed = false;
-    let fin = format!("{FIN_CARD}ref:#42");
-    s.point("w1:p1", Some("ref:#42"), Some(&fin));
+    let fin = format!("{FIN_CARD}w1:p1");
+    s.point("w1:p1", Some(&fin));
     assert!(s.enter(Instant::now()).is_empty() && s.view.fin_open.is_empty());
     s.armed = true;
     s.enter(Instant::now());
-    assert!(s.view.fin_open.contains("ref:#42"));
+    assert!(s.view.fin_open.contains("w1:p1"));
 }
 
 #[test]
-fn enter_on_a_done_card_unfolds_it_and_again_folds_it() {
+fn enter_on_the_roots_finished_card_unfolds_it_and_again_folds_it() {
     let mut s = stub(false);
-    let card = format!("{DONE_CARD}w1:p1");
-    s.point("w1:p1", Some(&card), None);
+    let card = format!("{FIN_CARD}w1:p1");
+    s.point("w1:p1", Some(&card));
     s.enter(Instant::now());
-    assert!(s.view.done_open.contains("w1:p1"));
+    assert!(s.view.fin_open.contains("w1:p1"));
     s.enter(Instant::now());
-    assert!(!s.view.done_open.contains("w1:p1"));
+    assert!(!s.view.fin_open.contains("w1:p1"));
 }
 
 #[test]
@@ -153,9 +153,10 @@ fn the_inbox_key_needs_the_inbox() {
 fn answer_on_a_blocked_agent_goes_to_its_pane() {
     // the agent itself is blocked (its session not): a blocking prompt is answered in the pane
     let mut s = stub(false);
-    s.swarm.orchestrators[2].herdr_status = panorama_core::model::HerdrStatus::Idle;
-    s.point("w1:p3", Some("main:w1:p3"), Some("main:w1:p3"));
-    assert_eq!(s.view.focus, 2);
+    s.swarm.roots[2].herdr_status = panorama_core::model::HerdrStatus::Idle;
+    s.swarm.roots[2].agents[0].status = panorama_core::model::Status::Blocked;
+    s.point("w1:p3", Some("d1e2f3a"));
+    assert_eq!(s.view.focus, 1);
     s.answer(Instant::now());
     assert_eq!(s.gone_to, [false]);
 }

@@ -104,7 +104,7 @@ pub(super) async fn viewer(dir: &Path) -> BufReader<UnixStream> {
     let mut s = UnixStream::connect(dir.join("s").join("core.sock"))
         .await
         .unwrap();
-    s.write_all(b"{\"hello\": {\"protocol\": \"1.3\"}}\n")
+    s.write_all(b"{\"hello\": {\"protocol\": \"2.0\"}}\n")
         .await
         .unwrap();
     let mut r = BufReader::new(s);

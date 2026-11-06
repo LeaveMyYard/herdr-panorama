@@ -89,7 +89,7 @@ impl<O: Ops> Manager<O> {
     }
 
     /// Duplicates (keep one, a connected one first; close the provable rest) and orphans (a
-    /// tab whose orchestrator went away keeps its panel for `REMOVE_AFTER`).
+    /// tab whose root went away keeps its panel for `REMOVE_AFTER`).
     async fn close_extras(
         &mut self,
         sv: &mut Survey,

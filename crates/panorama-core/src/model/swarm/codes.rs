@@ -1,6 +1,6 @@
-//! The small code words of the swarm tree: what herdr says of a pane, a thread's status and
-//! source, a phase's state. Each reads from its wire string; a word this version does not
-//! know is kept as `Other`, so nothing sent is lost.
+//! The small code words of the swarm tree: what herdr says of a root's pane. Each reads from
+//! its wire string; a word this version does not know is kept as `Other`, so nothing sent is
+//! lost.
 
 use serde::{Deserialize, Serialize};
 
@@ -60,7 +60,7 @@ macro_rules! code_enum {
 }
 
 code_enum! {
-    /// What herdr reports for an orchestrator's pane (`unknown` until it says).
+    /// What herdr reports for a root's pane (`unknown` until it says).
     HerdrStatus, default Unknown {
         /// The agent is working.
         Working = "working",
@@ -72,52 +72,6 @@ code_enum! {
         Done = "done",
         /// herdr did not say.
         Unknown = "unknown",
-    }
-}
-
-code_enum! {
-    /// A thread's status.
-    ThreadStatus, default Active {
-        /// Going.
-        Active = "active",
-        /// Finished.
-        Done = "done",
-        /// Failed: it stays shown, it needs the operator.
-        Failed = "failed",
-        /// Cancelled.
-        Cancelled = "cancelled",
-    }
-}
-
-code_enum! {
-    /// Where a thread was found.
-    ThreadSource {
-        /// Reported through the explicit channel.
-        Explicit = "explicit",
-        /// A workflow run.
-        Workflow = "workflow",
-        /// A reference (a PR, an issue) in the agents' descriptions.
-        Ref = "ref",
-        /// One turn of the session.
-        Turn = "turn",
-        /// The session's own work.
-        Session = "session",
-    }
-}
-
-code_enum! {
-    /// A phase's state.
-    PhaseState {
-        /// Done.
-        Done = "done",
-        /// The current one.
-        Now = "now",
-        /// Still to come.
-        Next = "next",
-        /// Failed.
-        Failed = "failed",
-        /// Skipped.
-        Skipped = "skipped",
     }
 }
 

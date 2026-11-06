@@ -1,0 +1,1273 @@
+{
+ "source": "the agents of every root, collected by 294b24c (before slice U3 of docs/plans/uniform-agent-tree.md) over each scenario at these times, windows and inbox states; `end` is the agent's ended, else its last record",
+ "runs": {
+  "collect/deep": {
+   "now": {
+    "inbox": false,
+    "now": 1000003600.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": 1000000181.0,
+        "id": "d2",
+        "parent": "a1",
+        "status": "run"
+       },
+       {
+        "end": 1000000241.0,
+        "id": "d3",
+        "parent": "d2",
+        "status": "run"
+       },
+       {
+        "end": 1000000301.0,
+        "id": "d4",
+        "parent": "d3",
+        "status": "run"
+       },
+       {
+        "end": 1000000361.0,
+        "id": "d5",
+        "parent": "d4",
+        "status": "run"
+       },
+       {
+        "end": 1000000421.0,
+        "id": "d6",
+        "parent": "d5",
+        "status": "run"
+       },
+       {
+        "end": 1000000481.0,
+        "id": "d7",
+        "parent": "d6",
+        "status": "run"
+       },
+       {
+        "end": 1000000541.0,
+        "id": "d8",
+        "parent": "d7",
+        "status": "run"
+       },
+       {
+        "end": 1000000601.0,
+        "id": "d9",
+        "parent": "d8",
+        "status": "run"
+       },
+       {
+        "end": 1000003540.0,
+        "id": "d10",
+        "parent": "d9",
+        "status": "run"
+       },
+       {
+        "end": 1000000360.009,
+        "id": "a1",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p1"
+     }
+    ],
+    "window": 600.0
+   }
+  },
+  "scenario-background": {
+   "+0m": {
+    "inbox": true,
+    "now": 1791969300.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": 1791968940.0,
+        "id": "g1canary0000000001",
+        "parent": null,
+        "status": "bg"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [],
+      "pane": "w1:p2"
+     }
+    ],
+    "window": 3600.0
+   },
+   "+0m no inbox": {
+    "inbox": false,
+    "now": 1791969300.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": 1791968940.0,
+        "id": "g1canary0000000001",
+        "parent": null,
+        "status": "bg"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [],
+      "pane": "w1:p2"
+     }
+    ],
+    "window": 3600.0
+   },
+   "+0m wide": {
+    "inbox": true,
+    "now": 1791969300.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": 1791968940.0,
+        "id": "g1canary0000000001",
+        "parent": null,
+        "status": "bg"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [],
+      "pane": "w1:p2"
+     }
+    ],
+    "window": 1000000000.0
+   },
+   "+60m": {
+    "inbox": true,
+    "now": 1791972900.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": 1791968940.0,
+        "id": "g1canary0000000001",
+        "parent": null,
+        "status": "bg"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [],
+      "pane": "w1:p2"
+     }
+    ],
+    "window": 3600.0
+   },
+   "+60m wide": {
+    "inbox": true,
+    "now": 1791972900.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": 1791968940.0,
+        "id": "g1canary0000000001",
+        "parent": null,
+        "status": "bg"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [],
+      "pane": "w1:p2"
+     }
+    ],
+    "window": 1000000000.0
+   }
+  },
+  "scenario-continued": {
+   "+0m": {
+    "inbox": true,
+    "now": 1791969600.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p1",
+        "parent": null,
+        "status": "wait"
+       },
+       {
+        "end": 1791969480.0,
+        "id": "p2backfill00000001",
+        "parent": null,
+        "status": "run"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [],
+      "pane": "w1:p2"
+     }
+    ],
+    "window": 3600.0
+   },
+   "+0m no inbox": {
+    "inbox": false,
+    "now": 1791969600.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": 1791969480.0,
+        "id": "p2backfill00000001",
+        "parent": null,
+        "status": "run"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [],
+      "pane": "w1:p2"
+     }
+    ],
+    "window": 3600.0
+   },
+   "+0m wide": {
+    "inbox": true,
+    "now": 1791969600.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p1",
+        "parent": null,
+        "status": "wait"
+       },
+       {
+        "end": 1791969480.0,
+        "id": "p2backfill00000001",
+        "parent": null,
+        "status": "run"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [],
+      "pane": "w1:p2"
+     }
+    ],
+    "window": 1000000000.0
+   },
+   "+120m": {
+    "inbox": true,
+    "now": 1791976800.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p1",
+        "parent": null,
+        "status": "wait"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [],
+      "pane": "w1:p2"
+     }
+    ],
+    "window": 3600.0
+   },
+   "+120m wide": {
+    "inbox": true,
+    "now": 1791976800.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p1",
+        "parent": null,
+        "status": "wait"
+       },
+       {
+        "end": 1791969480.0,
+        "id": "p2backfill00000001",
+        "parent": null,
+        "status": "inf"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [],
+      "pane": "w1:p2"
+     }
+    ],
+    "window": 1000000000.0
+   }
+  },
+  "scenario-demo": {
+   "+0m": {
+    "inbox": true,
+    "now": 1791972600.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p1",
+        "parent": null,
+        "status": "wait"
+       },
+       {
+        "end": 1791972480.0,
+        "id": "b3fixer00000000001",
+        "parent": null,
+        "status": "fail"
+       },
+       {
+        "end": 1791970200.009,
+        "id": "b1author0000000001",
+        "parent": null,
+        "status": "done"
+       },
+       {
+        "end": 1791972241.0,
+        "id": "c1banner0000000001",
+        "parent": null,
+        "status": "wait"
+       },
+       {
+        "end": 1791972420.0,
+        "id": "a4review0000000002",
+        "parent": null,
+        "status": "rev"
+       },
+       {
+        "end": 1791971220.009,
+        "id": "a1author0000000001",
+        "parent": null,
+        "status": "done"
+       },
+       {
+        "end": 1791970680.009,
+        "id": "a2review0000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [
+       {
+        "end": 1791972541.0,
+        "id": "w2build00000000001",
+        "parent": null,
+        "status": "run"
+       },
+       {
+        "end": 1791972481.0,
+        "id": "w3build00000000002",
+        "parent": null,
+        "status": "run"
+       },
+       {
+        "end": 1791969601.0,
+        "id": "w1plan000000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p2"
+     },
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p3",
+        "parent": null,
+        "status": "blk"
+       },
+       {
+        "end": 1791972301.0,
+        "id": "d1guide00000000001",
+        "parent": null,
+        "status": "run"
+       }
+      ],
+      "pane": "w1:p3"
+     },
+     {
+      "agents": [
+       {
+        "end": 1791969300.009,
+        "id": "r1notes00000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p4"
+     }
+    ],
+    "window": 3600.0
+   },
+   "+0m no inbox": {
+    "inbox": false,
+    "now": 1791972600.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": 1791972480.0,
+        "id": "b3fixer00000000001",
+        "parent": null,
+        "status": "fail"
+       },
+       {
+        "end": 1791970200.009,
+        "id": "b1author0000000001",
+        "parent": null,
+        "status": "done"
+       },
+       {
+        "end": 1791972420.0,
+        "id": "a4review0000000002",
+        "parent": null,
+        "status": "rev"
+       },
+       {
+        "end": 1791971220.009,
+        "id": "a1author0000000001",
+        "parent": null,
+        "status": "done"
+       },
+       {
+        "end": 1791970680.009,
+        "id": "a2review0000000001",
+        "parent": null,
+        "status": "done"
+       },
+       {
+        "end": 1791972241.0,
+        "id": "c1banner0000000001",
+        "parent": null,
+        "status": "run"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [
+       {
+        "end": 1791972541.0,
+        "id": "w2build00000000001",
+        "parent": null,
+        "status": "run"
+       },
+       {
+        "end": 1791972481.0,
+        "id": "w3build00000000002",
+        "parent": null,
+        "status": "run"
+       },
+       {
+        "end": 1791969601.0,
+        "id": "w1plan000000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p2"
+     },
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p3",
+        "parent": null,
+        "status": "blk"
+       },
+       {
+        "end": 1791972301.0,
+        "id": "d1guide00000000001",
+        "parent": null,
+        "status": "run"
+       }
+      ],
+      "pane": "w1:p3"
+     },
+     {
+      "agents": [
+       {
+        "end": 1791969300.009,
+        "id": "r1notes00000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p4"
+     }
+    ],
+    "window": 3600.0
+   },
+   "+0m wide": {
+    "inbox": true,
+    "now": 1791972600.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p1",
+        "parent": null,
+        "status": "wait"
+       },
+       {
+        "end": 1791972480.0,
+        "id": "b3fixer00000000001",
+        "parent": null,
+        "status": "fail"
+       },
+       {
+        "end": 1791970200.009,
+        "id": "b1author0000000001",
+        "parent": null,
+        "status": "done"
+       },
+       {
+        "end": 1791972241.0,
+        "id": "c1banner0000000001",
+        "parent": null,
+        "status": "wait"
+       },
+       {
+        "end": 1791972420.0,
+        "id": "a4review0000000002",
+        "parent": null,
+        "status": "rev"
+       },
+       {
+        "end": 1791971220.009,
+        "id": "a1author0000000001",
+        "parent": null,
+        "status": "done"
+       },
+       {
+        "end": 1791968940.009,
+        "id": "a3explore000000001",
+        "parent": "a1author0000000001",
+        "status": "done"
+       },
+       {
+        "end": 1791970680.009,
+        "id": "a2review0000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [
+       {
+        "end": 1791972541.0,
+        "id": "w2build00000000001",
+        "parent": null,
+        "status": "run"
+       },
+       {
+        "end": 1791972481.0,
+        "id": "w3build00000000002",
+        "parent": null,
+        "status": "run"
+       },
+       {
+        "end": 1791969601.0,
+        "id": "w1plan000000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p2"
+     },
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p3",
+        "parent": null,
+        "status": "blk"
+       },
+       {
+        "end": 1791972301.0,
+        "id": "d1guide00000000001",
+        "parent": null,
+        "status": "run"
+       }
+      ],
+      "pane": "w1:p3"
+     },
+     {
+      "agents": [
+       {
+        "end": 1791969300.009,
+        "id": "r1notes00000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p4"
+     }
+    ],
+    "window": 1000000000.0
+   },
+   "+180m": {
+    "inbox": true,
+    "now": 1791983400.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p1",
+        "parent": null,
+        "status": "wait"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [],
+      "pane": "w1:p2"
+     },
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p3",
+        "parent": null,
+        "status": "blk"
+       }
+      ],
+      "pane": "w1:p3"
+     },
+     {
+      "agents": [],
+      "pane": "w1:p4"
+     }
+    ],
+    "window": 3600.0
+   },
+   "+180m wide": {
+    "inbox": true,
+    "now": 1791983400.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p1",
+        "parent": null,
+        "status": "wait"
+       },
+       {
+        "end": 1791972480.0,
+        "id": "b3fixer00000000001",
+        "parent": null,
+        "status": "fail"
+       },
+       {
+        "end": 1791970200.009,
+        "id": "b1author0000000001",
+        "parent": null,
+        "status": "done"
+       },
+       {
+        "end": 1791972241.0,
+        "id": "c1banner0000000001",
+        "parent": null,
+        "status": "inf"
+       },
+       {
+        "end": 1791972420.0,
+        "id": "a4review0000000002",
+        "parent": null,
+        "status": "inf"
+       },
+       {
+        "end": 1791971220.009,
+        "id": "a1author0000000001",
+        "parent": null,
+        "status": "done"
+       },
+       {
+        "end": 1791968940.009,
+        "id": "a3explore000000001",
+        "parent": "a1author0000000001",
+        "status": "done"
+       },
+       {
+        "end": 1791970680.009,
+        "id": "a2review0000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [
+       {
+        "end": 1791972541.0,
+        "id": "w2build00000000001",
+        "parent": null,
+        "status": "inf"
+       },
+       {
+        "end": 1791972481.0,
+        "id": "w3build00000000002",
+        "parent": null,
+        "status": "inf"
+       },
+       {
+        "end": 1791969601.0,
+        "id": "w1plan000000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p2"
+     },
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p3",
+        "parent": null,
+        "status": "blk"
+       },
+       {
+        "end": 1791972301.0,
+        "id": "d1guide00000000001",
+        "parent": null,
+        "status": "inf"
+       }
+      ],
+      "pane": "w1:p3"
+     },
+     {
+      "agents": [
+       {
+        "end": 1791969300.009,
+        "id": "r1notes00000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p4"
+     }
+    ],
+    "window": 1000000000.0
+   },
+   "+30m": {
+    "inbox": true,
+    "now": 1791974400.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p1",
+        "parent": null,
+        "status": "wait"
+       },
+       {
+        "end": 1791972480.0,
+        "id": "b3fixer00000000001",
+        "parent": null,
+        "status": "fail"
+       },
+       {
+        "end": 1791972241.0,
+        "id": "c1banner0000000001",
+        "parent": null,
+        "status": "inf"
+       },
+       {
+        "end": 1791972420.0,
+        "id": "a4review0000000002",
+        "parent": null,
+        "status": "inf"
+       },
+       {
+        "end": 1791971220.009,
+        "id": "a1author0000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [
+       {
+        "end": 1791972541.0,
+        "id": "w2build00000000001",
+        "parent": null,
+        "status": "run"
+       },
+       {
+        "end": 1791972481.0,
+        "id": "w3build00000000002",
+        "parent": null,
+        "status": "run"
+       }
+      ],
+      "pane": "w1:p2"
+     },
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p3",
+        "parent": null,
+        "status": "blk"
+       },
+       {
+        "end": 1791972301.0,
+        "id": "d1guide00000000001",
+        "parent": null,
+        "status": "inf"
+       }
+      ],
+      "pane": "w1:p3"
+     },
+     {
+      "agents": [],
+      "pane": "w1:p4"
+     }
+    ],
+    "window": 3600.0
+   },
+   "+30m wide": {
+    "inbox": true,
+    "now": 1791974400.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p1",
+        "parent": null,
+        "status": "wait"
+       },
+       {
+        "end": 1791972480.0,
+        "id": "b3fixer00000000001",
+        "parent": null,
+        "status": "fail"
+       },
+       {
+        "end": 1791970200.009,
+        "id": "b1author0000000001",
+        "parent": null,
+        "status": "done"
+       },
+       {
+        "end": 1791972241.0,
+        "id": "c1banner0000000001",
+        "parent": null,
+        "status": "inf"
+       },
+       {
+        "end": 1791972420.0,
+        "id": "a4review0000000002",
+        "parent": null,
+        "status": "inf"
+       },
+       {
+        "end": 1791971220.009,
+        "id": "a1author0000000001",
+        "parent": null,
+        "status": "done"
+       },
+       {
+        "end": 1791968940.009,
+        "id": "a3explore000000001",
+        "parent": "a1author0000000001",
+        "status": "done"
+       },
+       {
+        "end": 1791970680.009,
+        "id": "a2review0000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [
+       {
+        "end": 1791972541.0,
+        "id": "w2build00000000001",
+        "parent": null,
+        "status": "run"
+       },
+       {
+        "end": 1791972481.0,
+        "id": "w3build00000000002",
+        "parent": null,
+        "status": "run"
+       },
+       {
+        "end": 1791969601.0,
+        "id": "w1plan000000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p2"
+     },
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p3",
+        "parent": null,
+        "status": "blk"
+       },
+       {
+        "end": 1791972301.0,
+        "id": "d1guide00000000001",
+        "parent": null,
+        "status": "inf"
+       }
+      ],
+      "pane": "w1:p3"
+     },
+     {
+      "agents": [
+       {
+        "end": 1791969300.009,
+        "id": "r1notes00000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p4"
+     }
+    ],
+    "window": 1000000000.0
+   },
+   "+420m": {
+    "inbox": true,
+    "now": 1791997800.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p1",
+        "parent": null,
+        "status": "wait"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [],
+      "pane": "w1:p2"
+     },
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p3",
+        "parent": null,
+        "status": "blk"
+       }
+      ],
+      "pane": "w1:p3"
+     },
+     {
+      "agents": [],
+      "pane": "w1:p4"
+     }
+    ],
+    "window": 3600.0
+   },
+   "+420m wide": {
+    "inbox": true,
+    "now": 1791997800.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p1",
+        "parent": null,
+        "status": "wait"
+       },
+       {
+        "end": 1791972480.0,
+        "id": "b3fixer00000000001",
+        "parent": null,
+        "status": "fail"
+       },
+       {
+        "end": 1791970200.009,
+        "id": "b1author0000000001",
+        "parent": null,
+        "status": "done"
+       },
+       {
+        "end": 1791972241.0,
+        "id": "c1banner0000000001",
+        "parent": null,
+        "status": "inf"
+       },
+       {
+        "end": 1791972420.0,
+        "id": "a4review0000000002",
+        "parent": null,
+        "status": "inf"
+       },
+       {
+        "end": 1791971220.009,
+        "id": "a1author0000000001",
+        "parent": null,
+        "status": "done"
+       },
+       {
+        "end": 1791968940.009,
+        "id": "a3explore000000001",
+        "parent": "a1author0000000001",
+        "status": "done"
+       },
+       {
+        "end": 1791970680.009,
+        "id": "a2review0000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [
+       {
+        "end": 1791972541.0,
+        "id": "w2build00000000001",
+        "parent": null,
+        "status": "inf"
+       },
+       {
+        "end": 1791972481.0,
+        "id": "w3build00000000002",
+        "parent": null,
+        "status": "inf"
+       },
+       {
+        "end": 1791969601.0,
+        "id": "w1plan000000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p2"
+     },
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p3",
+        "parent": null,
+        "status": "blk"
+       },
+       {
+        "end": 1791972301.0,
+        "id": "d1guide00000000001",
+        "parent": null,
+        "status": "inf"
+       }
+      ],
+      "pane": "w1:p3"
+     },
+     {
+      "agents": [
+       {
+        "end": 1791969300.009,
+        "id": "r1notes00000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p4"
+     }
+    ],
+    "window": 1000000000.0
+   },
+   "+780m": {
+    "inbox": true,
+    "now": 1792019400.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p1",
+        "parent": null,
+        "status": "wait"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [],
+      "pane": "w1:p2"
+     },
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p3",
+        "parent": null,
+        "status": "blk"
+       }
+      ],
+      "pane": "w1:p3"
+     },
+     {
+      "agents": [],
+      "pane": "w1:p4"
+     }
+    ],
+    "window": 3600.0
+   },
+   "+780m wide": {
+    "inbox": true,
+    "now": 1792019400.0,
+    "roots": [
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p1",
+        "parent": null,
+        "status": "wait"
+       },
+       {
+        "end": 1791972480.0,
+        "id": "b3fixer00000000001",
+        "parent": null,
+        "status": "fail"
+       },
+       {
+        "end": 1791970200.009,
+        "id": "b1author0000000001",
+        "parent": null,
+        "status": "done"
+       },
+       {
+        "end": 1791972241.0,
+        "id": "c1banner0000000001",
+        "parent": null,
+        "status": "inf"
+       },
+       {
+        "end": 1791972420.0,
+        "id": "a4review0000000002",
+        "parent": null,
+        "status": "inf"
+       },
+       {
+        "end": 1791971220.009,
+        "id": "a1author0000000001",
+        "parent": null,
+        "status": "done"
+       },
+       {
+        "end": 1791968940.009,
+        "id": "a3explore000000001",
+        "parent": "a1author0000000001",
+        "status": "done"
+       },
+       {
+        "end": 1791970680.009,
+        "id": "a2review0000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p1"
+     },
+     {
+      "agents": [
+       {
+        "end": 1791972541.0,
+        "id": "w2build00000000001",
+        "parent": null,
+        "status": "inf"
+       },
+       {
+        "end": 1791972481.0,
+        "id": "w3build00000000002",
+        "parent": null,
+        "status": "inf"
+       },
+       {
+        "end": 1791969601.0,
+        "id": "w1plan000000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p2"
+     },
+     {
+      "agents": [
+       {
+        "end": null,
+        "id": "main:w1:p3",
+        "parent": null,
+        "status": "blk"
+       },
+       {
+        "end": 1791972301.0,
+        "id": "d1guide00000000001",
+        "parent": null,
+        "status": "inf"
+       }
+      ],
+      "pane": "w1:p3"
+     },
+     {
+      "agents": [
+       {
+        "end": 1791969300.009,
+        "id": "r1notes00000000001",
+        "parent": null,
+        "status": "done"
+       }
+      ],
+      "pane": "w1:p4"
+     }
+    ],
+    "window": 1000000000.0
+   }
+  }
+ }
+}

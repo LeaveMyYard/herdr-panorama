@@ -11,6 +11,7 @@ use std::{
         process::CommandExt,
     },
     process::{Child, Command},
+    time::{Duration, Instant},
 };
 const ROOT: &str = "11111111-1111-4111-8111-111111111111";
 struct Probe {
@@ -21,27 +22,56 @@ struct Probe {
 impl Probe {
     fn new() -> Self {
         let temp = tempfile::tempdir().unwrap();
-        let child = Command::new("/bin/sleep")
-            .arg0("codex")
-            .arg("30")
-            .spawn()
-            .unwrap();
         let uid = std::fs::metadata(temp.path()).unwrap().uid();
         let env = PluginEnv::from_vars(
             [("XDG_STATE_HOME", temp.path().to_str().unwrap())],
             None,
             uid,
         );
-        let parent = temp.path().join("herdr-panorama");
+        let child = Command::new("/bin/sleep")
+            .arg0("codex")
+            .arg("30")
+            .spawn()
+            .unwrap();
+        let mut probe = Self { temp, child, env };
+        let owner_start = probe.ready();
+        let parent = probe.temp.path().join("herdr-panorama");
         let dir = parent.join("codex-bindings");
         std::fs::create_dir_all(&dir).unwrap();
         for path in [&parent, &dir] {
             std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o700)).unwrap();
         }
         let file = dir.join("77313a7031");
-        std::fs::write(&file,json!({"version":1,"pane_id":"w1:p1","thread_id":ROOT,"owner_pid":child.id(),"owner_start":SystemProcesses::new().start(child.id()).unwrap(),"embedded":false,"conflicted":false}).to_string()).unwrap();
+        std::fs::write(&file,json!({"version":1,"pane_id":"w1:p1","thread_id":ROOT,"owner_pid":probe.child.id(),"owner_start":owner_start,"embedded":false,"conflicted":false}).to_string()).unwrap();
         std::fs::set_permissions(&file, std::fs::Permissions::from_mode(0o600)).unwrap();
-        Self { temp, child, env }
+        probe
+    }
+    fn ready(&mut self) -> String {
+        let deadline = Instant::now() + Duration::from_secs(5);
+        loop {
+            let pid = self.child.id();
+            let status = self.child.try_wait().unwrap();
+            assert!(
+                status.is_none(),
+                "owned fixture exited before readiness: {status:?}"
+            );
+            // spawn success can precede observable argv on procfs. Prove the
+            // intended owned process before publishing its association.
+            let table = SystemProcesses::new();
+            let start = table.start(pid);
+            let argv = table.cmdline(pid);
+            if argv == ["codex", "30"]
+                && start.as_ref().is_some_and(|value| !value.is_empty())
+                && SystemProcesses::new().start(pid) == start
+            {
+                return start.unwrap();
+            }
+            assert!(
+                Instant::now() < deadline,
+                "owned fixture argv not ready: pid={pid}, start={start:?}, argv={argv:?}"
+            );
+            std::thread::yield_now();
+        }
     }
     fn info(&self) -> Value {
         json!({"process_info":{"pane_id":"w1:p1","foreground_processes":[{"pid":self.child.id()}]}})

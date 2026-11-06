@@ -1,14 +1,14 @@
-//! tests/test_states.py's key case in the app: an orchestrator with only its main session's
-//! background tasks shows a background card, reached with → ; Enter there does nothing else.
+//! tests/test_states.py's key case in the app, on the uniform tree (plan
+//! `uniform-agent-tree.md` §4): a root with only its own background tasks lists them in its
+//! card; with no agents below it, → and Enter stay on it.
 
 use super::*;
-use panorama_core::model::{BgTask, Orchestrator};
-use panorama_core::view::state::BG_CARD;
+use panorama_core::model::{BgTask, Root};
 
 #[test]
-fn the_background_card_is_reached_with_right_and_enter_does_nothing_else() {
+fn a_roots_background_work_is_in_its_card_and_right_and_enter_stay() {
     let (mut sw, now_s) = wire("demo");
-    let mut o: Orchestrator = serde_json::from_value(serde_json::json!({
+    let mut o: Root = serde_json::from_value(serde_json::json!({
         "pane_id": "w1:p9", "tab_id": "w1:t9", "tab_label": "Nightly", "session_id": null,
         "herdr_status": "idle",
     }))
@@ -21,22 +21,18 @@ fn the_background_card_is_reached_with_right_and_enter_does_nothing_else() {
             started: Some(now_s - 600.0),
         });
     }
-    sw.orchestrators.push(o);
+    sw.roots.push(o);
     let mut r = Run::new((sw, now_s), "w1:p9", false, (160, 56));
     let now = r.settled();
     r.d.app.view.orch = Some("w1:p9".into());
     r.key(Key::Right, now);
-    let card = format!("{BG_CARD}w1:p9");
-    assert_eq!(
-        (r.d.app.view.focus, r.d.app.view.thread.as_deref()),
-        (1, Some(card.as_str()))
-    );
+    assert_eq!(r.d.app.view.focus, 0); // no agents: nothing to the right
     let out = r.key(Key::Enter, now);
     assert!(out.is_empty(), "{out:?}");
-    assert_eq!(r.d.app.view.focus, 1); // no agents behind it: Enter stays
+    assert_eq!(r.d.app.view.focus, 0);
+    let text = r.text();
     assert!(
-        r.text().contains("background  2 tasks · main session"),
-        "{}",
-        r.text()
+        text.contains("cargo watch") && text.contains("npm run dev"),
+        "{text}"
     );
 }

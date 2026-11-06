@@ -7,14 +7,11 @@ fn swarm(orch: serde_json::Value) -> Swarm {
     o.as_object_mut()
         .unwrap()
         .extend(orch.as_object().unwrap().clone());
-    serde_json::from_value(serde_json::json!({ "orchestrators": [o] })).unwrap()
+    serde_json::from_value(serde_json::json!({ "roots": [o] })).unwrap()
 }
 
 fn with_agent(status: &str) -> Swarm {
-    swarm(
-        serde_json::json!({"threads": [{"id": "t", "name": "n", "source": "turn",
-        "agents": [{"id": "a", "status": status}]}]}),
-    )
+    swarm(serde_json::json!({"agents": [{"id": "a", "status": status}]}))
 }
 
 #[test]

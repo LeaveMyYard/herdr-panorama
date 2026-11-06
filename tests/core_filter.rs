@@ -71,10 +71,10 @@ async fn a_filter_chosen_in_one_panel_shows_in_every_panel() {
 
 #[test]
 fn the_state_carries_the_filter_and_the_version_says_so() {
-    // test_panel_filter.py: protocol 1.3 (a 1.2 peer is compatible); the filter in the state,
-    // left out when none is given
-    assert_eq!(panorama::proto::PROTOCOL, "1.3");
-    assert!(panorama::proto::compatible("1.2"));
+    // test_panel_filter.py: the filter came in 1.3 (now 2.0, the uniform tree; a 1.x panel
+    // is refused); the filter in the state, left out when none is given
+    assert_eq!(panorama::proto::PROTOCOL, "2.0");
+    assert!(!panorama::proto::compatible("1.4"));
     let (sw, marks, p) = (swarm(), Marks::new(), Published::default());
     assert_eq!(
         state_message(&sw, &marks, &p, Some("running"))["state"]["filter"],
