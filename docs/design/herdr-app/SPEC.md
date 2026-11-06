@@ -87,7 +87,7 @@ right end of a row or graph node, 6px after the previous element.
 | `done` (orchestrator, unseen) | herdr status `done` | dot | 7×7 circle, bg `done`, margins 0 3 0 9 (same as the shipped mod) |
 | `q` / idle | queued, idle | ring | 7×7 circle, 1.5px border `idle` |
 | `cxl` | cancelled | `-` | 11px text `dim` (not drawn in the design; use the ✓ slot) |
-| `bg` | waiting on background tasks | lavender orbit | Steady, no sweep, no blink. Labelled **Waiting**. A root takes it when its feed `bg` list is non-empty and nothing more urgent holds (no needs, nothing running), whether herdr says `idle` or `done`. Not to be confused with `wait`, the `?N` state: the word `waiting` is an alias of `wait`, so roots carry the code `bg`. |
+| `bg` | waiting on background tasks | lavender orbit | Steady, no sweep, no blink. Labelled **Waiting**. A root takes it when its feed `bg` list is non-empty or an agent at any depth has status `bg` (the TUI's `n_bg`), and nothing more urgent holds (no needs, nothing running), whether herdr says `idle` or `done`. `bg` is what the writer believes is live: a task it cannot check (a remote root, an unreadable process tree, a Monitor task) stays listed for up to 24h (`BG_CAP`), and unlike the TUI's `waiting 3h` the app shows no age. Not to be confused with `wait`, the `?N` state: the word `waiting` is an alias of `wait`, so roots carry the code `bg`. |
 
 **Aggregation (most urgent wins):** `fail > blk > wait > rev > run > q > done`.
 
@@ -114,7 +114,7 @@ Waiting → Idle**.
 
 - Each orchestrator goes into the section of its **most urgent descendant**, like shipped
   parents. Needs you = any `fail/blk/wait` below it, or its own herdr status `blocked`. Done =
-  own status `done`. Working = `working`. Waiting = nothing above, with live background work (`bg`),
+  own status `done`. Working = `working`. Waiting = nothing above, with background work (`bg`, §3),
   which takes it out of Done and Idle. Idle = `idle`.
 - Header row: h30, pt8, px8, 11 medium. Label colour: Needs you `blocked`, Done `done`, Working
   `working`, Waiting the `bg` lavender, Idle `dim`. The count follows 6px later, in `dim`. Clicking folds the section

@@ -5,7 +5,8 @@ import { register } from 'node:module';
 
 register('./herdr-loader.mjs', import.meta.url);
 const { default: Panorama } = await import('../mods/panorama/main.js');
-const { joinRoots, listed, groups, spaceTotals } = await import('../mods/panorama/model.js');
+const { joinRoots, listed, groups, spaceTotals, WAITING } = await import('../mods/panorama/model.js');
+const { default: Peek } = await import('../mods/panorama-peek/main.js');
 const { STATES, NEEDS, stateCode, stateOf, cardColors, tile, badge } = await import('../mods/panorama/state.js');
 const { state: host } = await import('./herdr-fixture.mjs');
 
@@ -20,13 +21,13 @@ const joined = (root, status, terminals = live, stock = [stockOf(status)]) => jo
 
 const EPOCH = 2400 * 750000000; // The sweep's cycle starts here, and the feed is this fresh.
 // One real render of the sidebar; the feed and native lists are synthetic.
-function sidebar(root, { status = 'working', focused = true, height = 2000, offset = 0, now = 1200, rail = false } = {}) {
-  host.agents = [stockOf(status, focused)]; host.terminals = live; host.spaces = [{ id: 's', active: true, tabs: [] }];
+function sidebar(root, { status = 'working', focused = true, height = 2000, offset = 0, now = 1200, rail = false, terminals = live, others = [] } = {}) {
+  host.agents = [stockOf(status, focused)]; host.terminals = terminals; host.spaces = [{ id: 's', active: true, tabs: [] }];
   host.layout = rail ? { id: 'sidebar', size: { px: 100 } } : { content: { mod: 'panorama' } };
   const view = new Panorama();
   Object.assign(view, { folds: new Map(), changed: {}, scope: 'space', hovered: null, held: null, viewportPhysical: { width: 320, height }, scrollOffset: offset, contentHeight: 0,
     scrollState: { value: () => 1, set_value() {} }, scrollFocus: {}, peekCaller: { sync() {}, rowKey: null, error: null },
-    feed: { feed: { ...feed, roots: [root] }, generated_at: EPOCH / 1000, errors: [], stale: false } });
+    feed: { feed: { ...feed, roots: [root, ...others] }, generated_at: EPOCH / 1000, errors: [], stale: false } });
   const clock = Date.now; Date.now = () => EPOCH + now;
   try { return { view, tree: view.render({}) }; } finally { Date.now = clock; }
 }
@@ -93,12 +94,13 @@ test('the frame timer follows the row that draws the sweep, even when the head h
   assert.equal(sidebar(root, { height: 40, offset: 84 }).view.animate, true, 'head gone, last row visible');
   assert.equal(sidebar(root, { height: 40, offset: 0 }).view.animate, false, 'head visible, last row below the fold');
   assert.equal(sidebar(rootOf([agent('a')]), { focused: false, height: 100 }).view.animate, true, 'closed card');
+  assert.equal(sidebar(root, { height: 10, offset: 93 }).view.animate, false, 'only a middle row on screen');
 });
 
 test('level 1 rows box their state, level 2 and deeper stay bare, and the connectors meet the tile', () => {
   const { tree } = sidebar(rootOf([agent('a'), agent('a1', 'run', 'a'), agent('b', 'wait')]));
   const [first, second, third] = rowsOf(tree);
-  const mark = (row, node) => walk(row).find(el => el.calls.id?.[0]?.startsWith?.('icon-')).kids[0];
+  const mark = row => walk(row).find(el => el.calls.id?.[0]?.startsWith?.('icon-')).kids[0];
   assert.ok(isTile(mark(first), 16), 'level 1');
   assert.equal(mark(second).calls.size[0], 11, 'level 2 is the bare glyph'); assert.equal(mark(second).calls.border_1, undefined);
   assert.ok(isTile(mark(third), 16), 'a needs-you level 1 row keeps a square tile');
@@ -115,8 +117,8 @@ test('level 1 rows box their state, level 2 and deeper stay bare, and the connec
 
 test('the finished fold is boxed like the level 1 rows it stands for, and stays square', () => {
   const { tree } = sidebar(rootOf([agent('a'), agent('b', 'done'), agent('c', 'done')]));
-  const fold = rowsOf(tree).at(-1), holder = fold.kids.find(kid => kid.calls.mr?.[0] === 7);
-  assert.ok(isTile(holder.kids[0], 16)); assert.equal(holder.calls.ml[0], -1);
+  const fold = rowsOf(tree).at(-1), wrapper = fold.kids.find(kid => kid.calls.mr?.[0] === 7);
+  assert.ok(isTile(wrapper.kids[0], 16)); assert.equal(wrapper.calls.ml[0], -1);
 });
 
 test('live background work: an idle or done root is Waiting, in its own section', () => {
@@ -184,4 +186,62 @@ test('a waiting card renders the lavender Waiting badge with no sweep or needs-y
   assert.ok(text(tree).includes('Waiting'), 'the section heading');
   const rail = sidebar(rootOf([], { bg: [task] }), { status: 'idle', focused: false, rail: true }).tree;
   assert.ok(walk(rail).some(node => node.calls.size?.[0] === 12 && walk(node).some(el => String(el.args?.[0]).includes('state-orbit'))), 'the lavender mark on the rail');
+});
+
+test('a subagent of status bg at any depth makes a quiet root Waiting, as in the TUI', () => {
+  for (const status of ['idle', 'done']) {
+    const item = joined(rootOf([agent('a', 'bg')], { herdr_status: status }), status);
+    assert.equal(item.status, 'bg'); assert.equal(item.aggregate.priority, WAITING); assert.equal(groups([item])[0].label, 'Waiting');
+  }
+  const deep = rootOf([agent('a', 'done'), agent('b', 'done', 'a'), agent('c', 'bg', 'b')]);
+  assert.equal(joined(deep, 'idle').status, 'bg', 'level 3');
+  assert.equal(joined(rootOf([agent('a', 'done')]), 'idle').status, 'idle', 'finished agents wait on nothing');
+  const finishedWithTasks = { ...agent('a', 'done'), bg: [task] };
+  assert.equal(joined(rootOf([finishedWithTasks]), 'idle').status, 'idle', 'the TUI counts the agent\'s status, not its list');
+  for (const [other, priority] of [['run', 2], ['rev', 2], ['wait', 4], ['blk', 4], ['fail', 4]]) {
+    const item = joined(rootOf([agent('a', 'bg'), agent('b', other, 'a')]), 'idle');
+    assert.notEqual(item.status, 'bg', other); assert.equal(item.aggregate.priority, priority);
+  }
+});
+
+test('an aged collection names no live row, so a stock root shows no Waiting from it', () => {
+  const root = rootOf([agent('a', 'bg')], { bg: [task] });
+  const fresh = joinRoots({ ...feed, roots: [root] }, [stockOf('idle')], live, [], [])[0];
+  const old = joinRoots({ ...feed, roots: [root] }, [stockOf('idle')], live, [], [], { aged: true })[0];
+  assert.equal(fresh.status, 'bg');
+  assert.equal(old.status, 'idle'); assert.equal(old.aggregate.priority, 1);
+});
+
+const family = [...live, { address: 't2', state: 'live', parent: 't1', status: 'idle' }];
+const childRoot = () => rootOf([], { pane_id: 'core:t2', terminal: 't2', bg: [task], herdr_status: 'idle' });
+
+test('a native child with background work is Waiting in its own right, with the lavender mark', () => {
+  const [item] = joinRoots({ ...feed, roots: [rootOf([]), childRoot()] }, [stockOf('working')], family, [], []);
+  assert.equal(item.nativeChildren[0].status, 'bg');
+  assert.equal(item.status, 'working', 'its parent keeps its own state');
+  const { tree } = sidebar(rootOf([]), { terminals: family, others: [childRoot()] });
+  const row = byId(tree, 'terminal-t2');
+  assert.ok(walk(row).some(node => String(node.args?.[0]).includes('state-orbit')), 'the mark on its row');
+});
+
+test('the Waiting section heading is lavender', () => {
+  const { tree } = sidebar(rootOf([], { bg: [task] }), { status: 'idle', focused: false });
+  const heading = byId(tree, `section:${WAITING}`);
+  assert.equal(heading.kids[0].calls.text_color[0], stateOf('bg').hue);
+});
+
+// One real render of Peek's card for a root subject.
+function peek(root, age) {
+  host.agents = [stockOf('idle')]; host.terminals = live; host.spaces = [];
+  const view = new Peek();
+  Object.assign(view, { intent: {}, viewer: false, shown: 'k', handle: {}, feed: { feed: { ...feed, roots: [root] }, generated_at: EPOCH / 1000 - age, errors: [], stale: false } });
+  view.value = () => ({ key: 'k', root, agent: null }); view.scope = () => null; view.target = () => null;
+  const clock = Date.now; Date.now = () => EPOCH;
+  try { return view.render({}); } finally { Date.now = clock; }
+}
+test('Peek: a root badge reads Waiting from a fresh feed and never from an aged one', () => {
+  const root = rootOf([], { bg: [task], herdr_status: 'done' });
+  assert.ok(text(peek(root, 1)).includes('Waiting'));
+  assert.equal(text(peek(root, 60)).includes('Waiting'), false, 'stock root');
+  assert.ok(text(peek(root, 60)).includes('Done'), 'the writer\'s own word');
 });

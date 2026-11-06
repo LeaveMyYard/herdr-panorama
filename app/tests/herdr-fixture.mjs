@@ -15,7 +15,7 @@ export const setShared = (key, value) => { state.values[key] = value; state.shar
 export const watchFolder = async path => new Promise(resolve => state.watches.push({ path, resolve }));
 // Native world for PeekCaller: empty live lists, recorded overlays.
 export const agents = () => state.agents ?? [], terminals = () => state.terminals ?? [], panes = () => [], spaces = () => state.spaces ?? [];
-export const setAgentOrder = () => null, window = () => ({ active: true });
+export const setAgentOrder = () => null, window = () => ({ active: true }), hc = async () => null;
 export const settings = () => state.settings ?? {};
 export const focused = () => null, props = () => null, theme = () => ({}), run = () => null, nextCommand = () => new Promise(() => {});
 export const openOverlay = spec => { state.overlays = [...(state.overlays ?? []), spec]; return `overlay-${state.overlays.length}`; };

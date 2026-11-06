@@ -5,7 +5,7 @@ import { startSidebar, consumerFeed, closeConsumer } from './feed-client.js';
 import { initViewport, wheelViewport, viewport } from './viewport.js';
 import { rootTarget } from './routing.js';
 import { PeekCaller } from './peek-caller.js';
-import { joinRoots, groups, listed, rootSignature, iconProgram, headerTotals, storedScope, cardPlace } from './model.js';
+import { joinRoots, groups, listed, rootSignature, iconProgram, headerTotals, storedScope, cardPlace, WAITING } from './model.js';
 import { rows, isOpen, needs, directTiles, agentTitle } from './tree.js';
 import { icon, mark, rootMarks, lines } from './marks.js';
 import { tile, badge, glyph, glyphRun, mix, stateOf, cardColors, SURFACE } from './state.js';
@@ -28,7 +28,7 @@ const CORNER = 8; // The card's outer radius.
 // The docked list's trunk: under the card icon's centre (edge 3 + pl 6 + number 14 + gap 8 + half the 16px icon), minus half the line.
 const TRUNK = 3 + 6 + 14 + 8 + 8 - 0.75;
 const DOCK = { fg: '#c3c7cd', hi: '#eceef1', number: '#4d535c', need: '#ffb547', fail: '#ff6b6b', hover: '#1c1e23' };
-const SECTION = { 4: stateOf('wait').hue, 3: stateOf('done').hue, 2: stateOf('run').hue, 1.5: stateOf('bg').hue };
+const SECTION = { 4: stateOf('wait').hue, 3: stateOf('done').hue, 2: stateOf('run').hue, [WAITING]: stateOf('bg').hue };
 // V10 card state, aligned with the priority sections (groups()): failed > permission >
 // done (own status, no need kinds, i.e. groups() priority 3) > working > needs answer > idle.
 function cardState(item) {

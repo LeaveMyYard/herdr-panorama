@@ -22,4 +22,4 @@ export const svg = path => element('svg', [path]), image = path => element('imag
 export class View {}
 const widget = kind => ({ new: () => element(kind) });
 export const Slider = widget('slider'), SliderTrack = widget('track'), SliderIndicator = widget('indicator'), SliderThumb = widget('thumb');
-export const SliderState = widget('slider-state');
+export const SliderState = widget('slider-state'), Editor = widget('editor'), EditorState = widget('editor-state');

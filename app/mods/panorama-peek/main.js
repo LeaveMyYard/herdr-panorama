@@ -115,7 +115,8 @@ export default class PanoramaPeek extends View {
         .child(this.editor ? Editor.new(this.editor).flex_1().min_h(0) : div().flex_1());
     }
     const agent = value?.agent, root = value?.root, harness = value ? harnessOf(agent, root) : 'unknown';
-    const item = value ? joinRoots(consumerFeed(this).feed, agents(), terminals(), panes(), spaces()).flatMap(root => [root, ...root.nativeChildren]).find(item => rootKey(item.root) === rootKey(root)) : null;
+    const packet = consumerFeed(this);
+    const item = value ? joinRoots(packet.feed, agents(), terminals(), panes(), spaces(), { aged: packet.aged }).flatMap(root => [root, ...root.nativeChildren]).find(item => rootKey(item.root) === rootKey(root)) : null;
     const space = item?.space ? spaces().find(space => space.id === item.space) : null;
     // V11: titled by the agent's name (else its root's), with role · model beside it.
     const rootName = item?.name || root?.title || root?.tab_label || root?.pane_id || '';
