@@ -5,7 +5,7 @@ import { register } from 'node:module';
 
 register('./herdr-loader.mjs', import.meta.url);
 const { default: Panorama } = await import('../mods/panorama/main.js');
-const { storedResume, resumeSummary, RESUME_KEY } = await import('../mods/panorama/model.js');
+const { storedResume, resumeSummary, RESUME_KEY, RESUME_CLICKS_KEY } = await import('../mods/panorama/model.js');
 const { parseFeed } = await import('../shared/contract.js');
 const { state: host } = await import('./herdr-fixture.mjs');
 
@@ -52,9 +52,11 @@ test('the sort menu holds the toggle, and clicking it asks panorama-spaces to st
 test('panorama-spaces stores the toggle under the key the writer reads', () => {
   const spaces = readFileSync(new URL('../mods/panorama-spaces/main.js', import.meta.url), 'utf8');
   assert.match(spaces, /"agent-resume-on"\) localStorage\.setItem\(RESUME_KEY, JSON\.stringify\("on"\)\)/);
-  assert.match(spaces, /"agent-resume-off" && localStorage\.getItem\(RESUME_KEY\) !== null\) localStorage\.removeItem\(RESUME_KEY\)/);
+  assert.match(spaces, /"agent-resume-off"\) \{ localStorage\.removeItem\(RESUME_KEY\); localStorage\.removeItem\(RESUME_CLICKS_KEY\); \}/);
+  assert.match(spaces, /startsWith\("agent-resume-click-"\)\) localStorage\.setItem\(RESUME_CLICKS_KEY,/);
   const rust = readFileSync(new URL('../../src/app_feed/resume/toggle.rs', import.meta.url), 'utf8');
   assert.ok(rust.includes(`const TOGGLE_KEY: &str = "${RESUME_KEY}";`));
+  assert.ok(rust.includes(`const CLICKS_KEY: &str = "${RESUME_CLICKS_KEY}";`));
 });
 
 test('the summary counts each outcome and keeps every reason and command', () => {
@@ -88,6 +90,28 @@ test('the sidebar shows the result, opens to each pane with why, and can be hidd
   assert.equal(byId(open, 'resume-t1').calls.tooltip, undefined, 'a resumed row has nothing to run');
   click(byId(open, 'resume-hide'), view);
   assert.equal(byId(view.render({}), 'resume-result'), undefined);
+});
+
+test('a pane the gates could not prove gets a Resume button, shown open, and a click asks once', () => {
+  host.runs = [];
+  const shown = { ...entry('t7', 'skipped', 'stopped without a reboot, maybe on purpose'), click: true, note: 'started with options that aren\'t repeated' };
+  const { view, tree } = sidebar(report([entry('t1', 'resumed'), shown]));
+  const row = byId(tree, 'resume-t7');
+  assert.ok(row, 'open at once: there is something to do');
+  assert.match(row.calls.tooltip[0], /options that aren't repeated/);
+  const go = byId(tree, 'resume-t7-go');
+  assert.match(go.calls.tooltip[0], /Check its prompt is empty/);
+  assert.equal(byId(tree, 'resume-t1-go'), undefined, 'a resumed pane has none');
+  click(go, view);
+  assert.deepEqual(host.runs, [['panorama-spaces.agent-resume-click-t7']]);
+  assert.equal(byId(view.render({}), 'resume-t7-go'), undefined, 'one ask per outcome');
+});
+
+test('the toggle says what it does not protect against', () => {
+  const view = new Panorama(); Object.assign(view, { resume: false });
+  const tip = byId(view.sortMenu({}), 'resume-toggle').calls.tooltip[0];
+  assert.match(tip, /can't check and type in one step/);
+  assert.match(tip, /without a reboot it only offers/);
 });
 
 test('a result still being worked through cannot be hidden, and a rail draws none', () => {

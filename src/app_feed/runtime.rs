@@ -97,6 +97,8 @@ pub fn watch(home: Home, r: Receipt, _lifetime: std::fs::File) -> Result<()> {
             vec![
                 hooks_dir(&env),
                 env.xdg_state_home().join("herdr-panorama/codex-bindings"),
+                // The resume toggle and its clicks are kept here; see them promptly.
+                home.path.join("data/panorama-spaces"),
             ],
         );
         test_fault("ready");
@@ -113,6 +115,7 @@ pub fn watch(home: Home, r: Receipt, _lifetime: std::fs::File) -> Result<()> {
         let mut last_collect = Instant::now() - Duration::from_secs(5);
         let mut last: Option<World> = None;
         let mut dirty_pending = true;
+        let mut last_watch = Instant::now();
         while !stop.load(Ordering::Relaxed) {
             if Instant::now() >= next_probe {
                 let previous = app;
@@ -148,14 +151,20 @@ pub fn watch(home: Home, r: Receipt, _lifetime: std::fs::File) -> Result<()> {
                 }
             }
             if app == State::Running {
+                if resume.watching() && last_watch.elapsed() >= Duration::from_millis(200) {
+                    last_watch = Instant::now();
+                    resume.watch(&home, &|| {
+                        !stop.load(Ordering::Relaxed) && r.active(&home).is_ok()
+                    });
+                }
                 dirty_pending |= triggers.changed();
                 if (dirty_pending && last_collect.elapsed() >= Duration::from_millis(500))
                     || Instant::now() >= next_collect
                 {
                     dirty_pending = false;
-                    let collected = source();
+                    let mut collected = source();
                     let pending = collected.pending;
-                    let linked = collected.linked.clone();
+                    let linked = std::mem::take(&mut collected.linked);
                     let mut world = World::from(collected);
                     if stop.load(Ordering::Relaxed) {
                         break;

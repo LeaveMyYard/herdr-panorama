@@ -1,6 +1,7 @@
 //! The rules, with no IO: was this a loss, may this terminal be typed into, did it work.
 use super::{
     hc::{Lookup, Status, Term},
+    launch::launch,
     state::{Entry, Launch, Loss, Record, Saved, Stage},
 };
 use crate::host::source::Linked;
@@ -9,13 +10,16 @@ use std::{collections::BTreeMap, mem::take};
 /// A missing agent is called quit only after this long with the core still up. The core's
 /// own stop hangs up, then terminates, then kills, over 3 s, and answers `hc` meanwhile.
 pub const ENDING_MS: u64 = 4_000;
-/// A shell's screen must hold still this long: its startup is over.
+/// After the first drawn screen, it must stay exactly that for this long.
 pub const SETTLE_MS: u64 = 1_500;
 /// Give-ups. Each ends in not typing, so none of them can cause a wrong resume.
 pub const SHELL_WAIT_MS: u64 = 120_000;
 pub const CONFIRM_MS: u64 = 30_000;
 /// A core up longer than this before Panorama saw it may have had its shells used already.
 pub const FRESH_CORE_MS: u64 = 300_000;
+
+/// Shells whose restored prompt was tested. Any other is never typed into.
+const SHELLS: [&str; 3] = ["bash", "zsh", "fish"];
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Change {
@@ -44,25 +48,6 @@ pub fn compare(saved: &Saved, status: &Status) -> Change {
     }
 }
 
-fn launch(harness: &str, argv: &[String]) -> Launch {
-    let args = argv.get(1..).unwrap_or_default();
-    if harness == "claude" {
-        let remote = args.iter().any(|a| a == "rc" || a == "remote-control");
-        return if remote { Launch::Other } else { Launch::Plain };
-    }
-    match args
-        .iter()
-        .find(|a| !a.starts_with('-'))
-        .map(String::as_str)
-    {
-        None | Some("resume") if args.first().is_some_and(|a| a == "--no-daemon") => {
-            Launch::NoDaemon
-        }
-        None | Some("resume") => Launch::Plain,
-        Some(_) => Launch::Other,
-    }
-}
-
 /// A proved link as a record, or `None` when it has nothing a resume could use.
 pub fn record(link: &Linked) -> Option<Record> {
     let term = Term::parse(&link.terminal)?;
@@ -75,6 +60,7 @@ pub fn record(link: &Linked) -> Option<Record> {
         .iter()
         .filter_map(|a| a.as_str().map(str::to_owned))
         .collect();
+    let (launch, dropped, no_daemon) = launch(&link.harness, &argv);
     let record = Record {
         address: link.address.clone(),
         harness: link.harness.clone(),
@@ -83,7 +69,10 @@ pub fn record(link: &Linked) -> Option<Record> {
         root_pid: term.pid?,
         agent_pid: foreground.pid,
         created_ms: term.created_ms,
-        launch: launch(&link.harness, &argv),
+        launch,
+        dropped,
+        no_daemon,
+        default_config: link.default_config,
         proved: true,
         ending_ms: None,
     };
@@ -140,9 +129,14 @@ pub fn track(saved: &mut Saved, linked: &[Linked], get: &dyn Fn(&str) -> Lookup,
     saved.records = next;
 }
 
-/// Why this record may be shown but not typed. `None`: it may go on to the terminal checks.
-fn barred(record: &Record, closed: bool, uptime_ms: u64) -> Option<&'static str> {
-    if closed {
+/// Why this loss may only be resumed by a click. `None`: the terminal checks decide.
+fn barred(
+    saved: &Saved,
+    record: &Record,
+    uptime_ms: u64,
+    boot: Option<&str>,
+) -> Option<&'static str> {
+    if saved.closed {
         Some(
             "Panorama was closed when the core went down, so it can't tell if this session was still running",
         )
@@ -151,7 +145,12 @@ fn barred(record: &Record, closed: bool, uptime_ms: u64) -> Option<&'static str>
     } else if record.ending_ms.is_some() {
         Some("the agent had already gone just before the loss")
     } else if record.launch == Launch::Other {
-        Some("it was started in a mode the resume command can't repeat")
+        Some("it was started in a way the resume command can't repeat")
+    } else if !record.default_config {
+        Some("it ran under another config dir, which a new shell wouldn't use")
+    } else if boot.is_none() || saved.boot.as_deref() == boot {
+        // `hc server stop` and a crash look alike from here; a reboot doesn't.
+        Some("stopped without a reboot, maybe on purpose")
     } else if uptime_ms > FRESH_CORE_MS {
         Some("the core had been up too long before Panorama saw it, so its shell may be in use")
     } else {
@@ -161,7 +160,7 @@ fn barred(record: &Record, closed: bool, uptime_ms: u64) -> Option<&'static str>
 
 /// Moves every record to this loss. Anything still open from an earlier one is over, and
 /// what that one could not resume stays listed: its command may be the only copy of the id.
-pub fn open(saved: &mut Saved, status: &Status, now_ms: u64) {
+pub fn open(saved: &mut Saved, status: &Status, boot: Option<&str>, now_ms: u64) {
     let earlier = saved.loss.as_mut().map(|l| &mut l.entries);
     for entry in earlier
         .into_iter()
@@ -176,11 +175,9 @@ pub fn open(saved: &mut Saved, status: &Status, now_ms: u64) {
     let mut entries = saved.loss.take().map_or(BTreeMap::new(), |l| l.entries);
     entries.retain(|_, e| e.stage != Stage::Resumed);
     for (address, record) in take(&mut saved.records) {
-        let reason = barred(&record, saved.closed, status.uptime_ms);
+        let hold = barred(saved, &record, status.uptime_ms, boot).map(str::to_owned);
         let mut entry = Entry::new(record);
-        if let Some(reason) = reason {
-            entry.end(Stage::Skipped, reason);
-        }
+        entry.hold = hold;
         entries.insert(address, entry);
     }
     saved.loss = Some(Loss {
@@ -223,6 +220,10 @@ pub fn judge(record: &Record, term: &Term) -> Verdict {
     };
     if foreground.pid != pid {
         return Verdict::Skip("something is running in the terminal");
+    }
+    // `exec python3` keeps the pid: only the words show it isn't the shell any more.
+    if foreground.argv != term.argv || !SHELLS.contains(&foreground.name.as_str()) {
+        return Verdict::Skip("the terminal's program isn't a shell Panorama knows");
     }
     if foreground.cwd != record.cwd {
         return Verdict::Skip("the shell is in a different folder");

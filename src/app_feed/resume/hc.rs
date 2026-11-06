@@ -1,9 +1,10 @@
 //! The few hc calls agent resume makes. `send` is the only one that writes to a terminal.
 use crate::host::{Core, command};
-use serde_json::Value;
+use serde_json::{Value, json};
 use std::{
     ffi::OsString,
-    process::{Command, Output},
+    io::{BufRead, BufReader, Write},
+    process::{Command, Output, Stdio},
     sync::{Arc, atomic::AtomicBool},
     time::Duration,
 };
@@ -12,6 +13,8 @@ const LIMIT: usize = 2 * 1024 * 1024;
 const READ: Duration = Duration::from_secs(2);
 /// Past the core's ~3 s wait for a person to stop typing.
 const SEND: Duration = Duration::from_secs(10);
+/// A probe of an untouched terminal answers in milliseconds.
+const QUIET: Duration = Duration::from_millis(500);
 /// `hc`'s exit code for not_found (`hc --skill`).
 const NOT_FOUND: i32 = 3;
 
@@ -25,6 +28,8 @@ pub struct Status {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Foreground {
     pub pid: u32,
+    pub name: String,
+    pub argv: Vec<String>,
     pub cwd: String,
 }
 
@@ -37,6 +42,8 @@ pub struct Term {
     /// Set while the program is lost or ended; cleared once its shell runs.
     pub reason: Option<String>,
     pub created_ms: u64,
+    /// What the terminal started. `exec` keeps the pid but changes the foreground's argv.
+    pub argv: Vec<String>,
     /// The program's own report. A plain shell has none.
     pub reports: bool,
     pub foreground: Option<Foreground>,
@@ -45,6 +52,10 @@ pub struct Term {
 impl Term {
     pub fn parse(v: &Value) -> Option<Self> {
         let number = |v: &Value| v.as_u64().and_then(|n| u32::try_from(n).ok());
+        let words = |v: &Value| -> Option<Vec<String>> {
+            let list = v.as_array()?.iter().map(|a| a.as_str().map(str::to_owned));
+            list.collect()
+        };
         let foreground = v.get("foreground").filter(|f| !f.is_null());
         Some(Self {
             live: v.get("state")?.as_str()? == "live",
@@ -52,11 +63,14 @@ impl Term {
             pid: v.get("pid").and_then(number),
             reason: v.get("reason").and_then(Value::as_str).map(str::to_owned),
             created_ms: v.get("created_ms")?.as_u64()?,
+            argv: words(v.get("argv")?)?,
             reports: v.get("status").is_some_and(|s| !s.is_null()),
             foreground: match foreground {
                 None => None,
                 Some(f) => Some(Foreground {
                     pid: number(f.get("pid")?)?,
+                    name: f.get("name")?.as_str()?.to_owned(),
+                    argv: words(f.get("argv")?)?,
                     cwd: f.get("cwd")?.as_str()?.to_owned(),
                 }),
             },
@@ -83,6 +97,8 @@ pub trait Hc {
     fn status(&self) -> Option<Status>;
     fn get(&self, address: &str) -> Lookup;
     fn screen(&self, address: &str) -> Option<String>;
+    /// True if nobody has typed here for hc's ~3 s. Types nothing.
+    fn quiet(&self, address: &str) -> bool;
     fn send(&self, address: &str, text: &str) -> Sent;
 }
 
@@ -144,6 +160,40 @@ impl Hc for CoreHc {
     fn screen(&self, address: &str) -> Option<String> {
         let v = self.json(&["read", "--json", "--lines", "0", address])?;
         v["text"].as_str().map(str::to_owned)
+    }
+    /// `terminal.keys` with no keys: it waits out the same person-typing gate as `send`, then
+    /// does nothing. A prompt answer means `send` will not wait; no answer means someone is
+    /// typing. This is the only way to bound `send`, which cannot be cancelled once started.
+    fn quiet(&self, address: &str) -> bool {
+        let call = json!({"jsonrpc":"2.0","id":1,"method":"terminal.keys",
+            "params":{"terminal":address,"keys":[]}});
+        let spawned = Command::new(&self.binary)
+            .arg("connect")
+            .env_remove("HC_TERMINAL_ID")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn();
+        let Ok(mut child) = spawned else {
+            return false;
+        };
+        let (input, output) = (child.stdin.take(), child.stdout.take());
+        let (tx, rx) = std::sync::mpsc::channel();
+        std::thread::spawn(move || {
+            let (Some(mut input), Some(output)) = (input, output) else {
+                return;
+            };
+            let mut line = String::new();
+            if writeln!(input, "{call}").is_ok() {
+                let _ = BufReader::new(output).read_line(&mut line);
+            }
+            let _ = tx.send(line);
+        });
+        let line = rx.recv_timeout(QUIET).unwrap_or_default();
+        let _ = child.kill();
+        let _ = child.wait();
+        let answer: Option<Value> = serde_json::from_str(&line).ok();
+        answer.is_some_and(|a| a.get("result").is_some())
     }
     /// No `--if idle`: a plain shell has no status, and hc refuses it as "silent, not idle".
     /// `Resume` reads the terminal itself right before this.

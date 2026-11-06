@@ -7,6 +7,7 @@ use std::collections::HashMap;
 const TOGGLE_DIR: &str = "panorama-spaces";
 pub(super) const TOGGLE_STORE: &str = "data/panorama-spaces/store.json";
 const TOGGLE_KEY: &str = "agents.resume";
+const CLICKS_KEY: &str = "agents.resume.clicks";
 const TOGGLE_LIMIT: usize = 1024 * 1024;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -35,4 +36,14 @@ pub(super) fn toggle(home: &Home) -> Toggle {
         Ok(_) => Toggle::Off,
         Err(_) => Toggle::Unknown,
     }
+}
+
+/// Resume clicks by terminal, as the time of the click. The sidebar asks through panorama-spaces.
+pub(super) fn clicks(home: &Home) -> HashMap<String, u64> {
+    let read = || -> Option<HashMap<String, u64>> {
+        let file = home.read(TOGGLE_STORE, TOGGLE_LIMIT, 0o600).ok()??;
+        let store: HashMap<String, Value> = serde_json::from_slice(&file.bytes).ok()?;
+        serde_json::from_str(store.get(CLICKS_KEY)?.as_str()?).ok()
+    };
+    read().unwrap_or_default()
 }

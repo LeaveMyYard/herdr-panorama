@@ -30,6 +30,8 @@ pub struct Linked {
     pub harness: String,
     pub session: String,
     pub terminal: Value,
+    /// The process uses the config dir a new shell would, as far as can be read.
+    pub default_config: bool,
 }
 
 pub trait SnapshotSource: Send {
@@ -115,11 +117,16 @@ impl SnapshotSource for CoreSource {
                             row["agent_session"] =
                                 json!({"kind":"id","value":id,"source":"panorama:core"});
                             if let Some(terminal) = read.remove(&key) {
+                                let harness = row["agent"].as_str().unwrap_or("").to_owned();
+                                let pid = links[&key].0;
+                                let default_config = harness != "claude"
+                                    || pid.is_some_and(|pid| self.link.default_config(pid));
                                 observation.linked.push(Linked {
                                     address: row["terminal"].as_str().unwrap().to_owned(),
-                                    harness: row["agent"].as_str().unwrap_or("").to_owned(),
+                                    harness,
                                     session: id.clone(),
                                     terminal,
+                                    default_config,
                                 });
                             }
                         }

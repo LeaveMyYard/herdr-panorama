@@ -1,7 +1,7 @@
 //! A scripted hc world: every "must not type" case asserts on the sends it recorded.
 use super::{
     decide::{self, CONFIRM_MS, ENDING_MS, FRESH_CORE_MS, SETTLE_MS, SHELL_WAIT_MS},
-    hc::{Foreground, Hc, Lookup, Sent, Status, Term},
+    hc::{Foreground as Fg, Hc, Lookup, Sent, Status, Term},
     state::{Launch, Record, Saved, Stage},
     toggle::TOGGLE_STORE,
     *,
@@ -16,15 +16,38 @@ const SESSION: &str = "11111111-2222-4333-8444-555555555555";
 const OTHER: &str = "99999999-2222-4333-8444-555555555555";
 const CWD: &str = "/fixture/project-alpha";
 
-thread_local! { static NOW: Cell<u64> = const { Cell::new(1_000_000) }; }
+thread_local! {
+    static NOW: Cell<u64> = const { Cell::new(1_000_000) };
+    static BOOT: Cell<u32> = const { Cell::new(1) };
+}
 fn clock() -> u64 {
     NOW.with(Cell::get)
+}
+fn boot() -> Option<String> {
+    Some(format!("boot-{}", BOOT.with(Cell::get)))
+}
+const CLOCKS: Sources = Sources {
+    clock,
+    mono: clock,
+    boot,
+};
+fn fg(pid: u32, cwd: &str) -> Fg {
+    let shell = pid == 20 || pid == 77;
+    Fg {
+        pid,
+        name: if shell { "bash" } else { "claude" }.into(),
+        argv: if shell {
+            vec!["/bin/bash".into()]
+        } else {
+            vec!["claude".into()]
+        },
+        cwd: cwd.into(),
+    }
 }
 fn pass(ms: u64) {
     NOW.with(|n| n.set(n.get() + ms));
 }
 
-#[derive(Default)]
 struct World {
     status: Option<Status>,
     terms: BTreeMap<String, Lookup>,
@@ -32,6 +55,20 @@ struct World {
     send: Option<Sent>,
     sends: Vec<(String, String)>,
     calls: usize,
+    quiet: bool,
+}
+impl Default for World {
+    fn default() -> Self {
+        Self {
+            status: None,
+            terms: BTreeMap::new(),
+            screens: BTreeMap::new(),
+            send: None,
+            sends: Vec::new(),
+            calls: 0,
+            quiet: true,
+        }
+    }
 }
 #[derive(Clone, Default)]
 struct Fake(Rc<RefCell<World>>);
@@ -53,6 +90,9 @@ impl Hc for Fake {
         self.0.borrow_mut().calls += 1;
         self.0.borrow().screens.get(address).cloned()
     }
+    fn quiet(&self, _: &str) -> bool {
+        self.0.borrow().quiet
+    }
     fn send(&self, address: &str, text: &str) -> Sent {
         let mut world = self.0.borrow_mut();
         world.sends.push((address.into(), text.into()));
@@ -68,11 +108,9 @@ fn agent_term() -> Term {
         pid: Some(20),
         reason: None,
         created_ms: 5,
+        argv: vec!["/bin/bash".into()],
         reports: true,
-        foreground: Some(Foreground {
-            pid: 30,
-            cwd: CWD.into(),
-        }),
+        foreground: Some(fg(30, CWD)),
     }
 }
 /// The recovery shell: a new program, in front of nothing.
@@ -80,10 +118,17 @@ fn shell_term() -> Term {
     Term {
         pid: Some(77),
         reports: false,
-        foreground: Some(Foreground {
-            pid: 77,
-            cwd: CWD.into(),
-        }),
+        foreground: Some(fg(77, CWD)),
+        ..agent_term()
+    }
+}
+/// Lost, with its new shell not started yet.
+fn waiting() -> Term {
+    Term {
+        pid: None,
+        reason: Some("stopped_by_restart".into()),
+        reports: false,
+        foreground: None,
         ..agent_term()
     }
 }
@@ -92,7 +137,8 @@ fn link(address: &str, session: &str, argv: &[&str]) -> Linked {
         address: address.into(),
         harness: "claude".into(),
         session: session.into(),
-        terminal: json!({"state":"live","keep":true,"pid":20,"created_ms":5,
+        default_config: true,
+        terminal: json!({"state":"live","keep":true,"pid":20,"created_ms":5,"argv":["/bin/bash"],
             "status":{"state":"idle"},"reason":null,
             "foreground":{"pid":30,"cwd":CWD,"name":"claude","argv":argv}}),
     }
@@ -128,7 +174,7 @@ impl Rig {
         let fake = Fake::default();
         fake.0.borrow_mut().status = Some(status("holder-a"));
         let locks = root.join("locks");
-        let resume = Resume::with(fake.clone(), ID, GEN, locks.clone(), clock);
+        let resume = Resume::with(fake.clone(), ID, GEN, locks.clone(), CLOCKS);
         Self {
             _dir: dir,
             home,
@@ -153,11 +199,18 @@ impl Rig {
         let bytes = std::fs::read(self.home.path.join(GEN).join(store::FILE)).unwrap();
         serde_json::from_slice(&bytes).unwrap()
     }
-    /// A watched agent, then the loss, with this terminal back.
+    /// A reboot: new holders, a new boot id, and the terminal still waiting for its shell.
+    fn reboot(&self, holder: &str) {
+        BOOT.with(|b| b.set(b.get() + 1));
+        self.world().status = Some(status(holder));
+        self.set(waiting());
+    }
+    /// A watched agent, then a reboot seen while the shell is on its way, then this terminal.
     fn lost(&mut self, term: Term) -> Option<Value> {
         self.set(agent_term());
         self.tick(&[link("t5", SESSION, &["claude"])]);
-        self.world().status = Some(status("holder-b"));
+        self.reboot("holder-b");
+        self.tick(&[]);
         self.world().screens.insert("t5".into(), "$ ".into());
         self.set(term);
         self.tick(&[])
@@ -192,10 +245,7 @@ fn a_real_loss_types_the_resume_command_once_and_confirms_it() {
         [("t5".into(), format!("claude --resume {SESSION}"))]
     );
     rig.set(Term {
-        foreground: Some(Foreground {
-            pid: 90,
-            cwd: CWD.into(),
-        }),
+        foreground: Some(fg(90, CWD)),
         ..shell_term()
     });
     let report = rig
@@ -217,7 +267,7 @@ fn off_runs_nothing_types_nothing_and_leaves_no_record() {
     assert!(rig.home.path.join(GEN).join(store::FILE).exists());
     std::fs::remove_file(rig.home.path.join(TOGGLE_STORE)).unwrap();
     rig.world().calls = 0;
-    rig.world().status = Some(status("holder-b"));
+    rig.reboot("holder-b");
     rig.set(shell_term());
     rig.world().screens.insert("t5".into(), "$ ".into());
     assert_eq!(rig.tick(&[link("t5", SESSION, &["claude"])]), None);
@@ -261,6 +311,9 @@ fn the_toggle_is_read_again_right_before_typing() {
             let _ = std::fs::remove_file(self.1.join(TOGGLE_STORE));
             self.0.screen(a)
         }
+        fn quiet(&self, a: &str) -> bool {
+            self.0.quiet(a)
+        }
         fn send(&self, a: &str, t: &str) -> Sent {
             self.0.send(a, t)
         }
@@ -270,7 +323,7 @@ fn the_toggle_is_read_again_right_before_typing() {
         ID,
         GEN,
         rig.locks.clone(),
-        clock,
+        CLOCKS,
     );
     rig.resume.held = None;
     flip.saved = rig.resume.saved.clone();
@@ -325,15 +378,12 @@ fn an_app_restart_with_terminals_still_running_types_nothing() {
     rig.tick(&[link("t5", SESSION, &["claude"])]);
     rig.resume.close(&rig.home);
     // The app reopens: same holder. The person quit the agent meanwhile, at the same shell.
-    let mut next = Resume::with(rig.fake.clone(), ID, GEN, rig.locks.clone(), clock);
+    let mut next = Resume::with(rig.fake.clone(), ID, GEN, rig.locks.clone(), CLOCKS);
     rig.resume.held = None;
     let shell = Term {
         pid: Some(20),
         reports: false,
-        foreground: Some(Foreground {
-            pid: 20,
-            cwd: CWD.into(),
-        }),
+        foreground: Some(fg(20, CWD)),
         ..agent_term()
     };
     rig.set(shell);
@@ -373,16 +423,14 @@ fn a_quit_session_does_not_come_back_after_a_later_loss() {
     rig.tick(&[link("t5", SESSION, &["claude"])]);
     rig.set(Term {
         reports: false,
-        foreground: Some(Foreground {
-            pid: 20,
-            cwd: CWD.into(),
-        }),
+        foreground: Some(fg(20, CWD)),
         ..agent_term()
     });
     rig.tick(&[]);
     pass(ENDING_MS);
     rig.tick(&[]);
-    rig.world().status = Some(status("holder-b"));
+    rig.reboot("holder-b");
+    rig.tick(&[]);
     rig.set(shell_term());
     rig.world().screens.insert("t5".into(), "$ ".into());
     rig.tick(&[]);
@@ -398,14 +446,12 @@ fn a_session_gone_moments_before_the_loss_is_shown_not_typed() {
     rig.tick(&[link("t5", SESSION, &["claude"])]);
     rig.set(Term {
         reports: false,
-        foreground: Some(Foreground {
-            pid: 20,
-            cwd: CWD.into(),
-        }),
+        foreground: Some(fg(20, CWD)),
         ..agent_term()
     });
     rig.tick(&[]);
-    rig.world().status = Some(status("holder-b"));
+    rig.reboot("holder-b");
+    rig.tick(&[]);
     rig.set(shell_term());
     rig.world().screens.insert("t5".into(), "$ ".into());
     rig.tick(&[]);
@@ -422,10 +468,7 @@ fn a_missing_agent_is_kept_through_the_cores_own_stop_window() {
     rig.tick(&[link("t5", SESSION, &["claude"])]);
     rig.set(Term {
         reports: false,
-        foreground: Some(Foreground {
-            pid: 20,
-            cwd: CWD.into(),
-        }),
+        foreground: Some(fg(20, CWD)),
         ..agent_term()
     });
     rig.tick(&[]);
@@ -502,19 +545,21 @@ fn a_closed_writer_cannot_prove_the_session_was_live() {
     rig.tick(&[link("t5", SESSION, &["claude"])]);
     rig.resume.close(&rig.home);
     assert!(rig.saved().closed);
-    let mut next = Resume::with(rig.fake.clone(), ID, GEN, rig.locks.clone(), clock);
+    let mut next = Resume::with(rig.fake.clone(), ID, GEN, rig.locks.clone(), CLOCKS);
     rig.resume.held = None;
-    rig.world().status = Some(status("holder-b"));
+    rig.reboot("holder-b");
+    next.tick(&rig.home, &[], &|| true);
     rig.set(shell_term());
     rig.world().screens.insert("t5".into(), "$ ".into());
-    let report = next.tick(&rig.home, &[], &|| true).unwrap();
-    pass(SETTLE_MS);
     next.tick(&rig.home, &[], &|| true);
+    pass(SETTLE_MS);
+    let report = next.tick(&rig.home, &[], &|| true).unwrap();
     assert!(rig.sends().is_empty());
     assert_eq!(rig.stage(), Stage::Skipped);
-    // It can still be resumed by hand: the report says how.
+    // It can still be resumed: the report says how, and offers the click.
     let entry = &report["loss"]["entries"][0];
     assert_eq!(entry["state"], "skipped");
+    assert_eq!(entry["click"], true);
     assert_eq!(entry["command"], format!("claude --resume {SESSION}"));
 }
 
@@ -524,19 +569,15 @@ fn a_killed_writer_still_proves_a_reboot() {
     rig.set(agent_term());
     rig.tick(&[link("t5", SESSION, &["claude"])]);
     // No close: the machine went down with it. The app opens first, then the shell returns.
-    let mut next = Resume::with(rig.fake.clone(), ID, GEN, rig.locks.clone(), clock);
+    let mut next = Resume::with(rig.fake.clone(), ID, GEN, rig.locks.clone(), CLOCKS);
     rig.resume.held = None;
+    rig.reboot("unused");
     rig.world().status = Some(Status {
         holders: vec![],
         ..status("x")
     });
-    rig.set(Term {
-        pid: None,
-        reason: Some("stopped_by_restart".into()),
-        foreground: None,
-        ..agent_term()
-    });
     next.tick(&rig.home, &[], &|| true);
+    assert!(next.busy(), "looks again soon");
     rig.world().status = Some(status("holder-b"));
     next.tick(&rig.home, &[], &|| true);
     assert!(rig.sends().is_empty(), "no shell yet");
@@ -553,7 +594,7 @@ fn a_restarted_writer_must_prove_each_session_again() {
     let mut rig = Rig::new();
     rig.set(agent_term());
     rig.tick(&[link("t5", SESSION, &["claude"])]);
-    let mut next = Resume::with(rig.fake.clone(), ID, GEN, rig.locks.clone(), clock);
+    let mut next = Resume::with(rig.fake.clone(), ID, GEN, rig.locks.clone(), CLOCKS);
     rig.resume.held = None;
     next.tick(&rig.home, &[], &|| true);
     assert!(!rig.saved().records["t5"].proved);
@@ -566,19 +607,26 @@ fn a_restarted_writer_that_cannot_read_still_stops_trusting_the_record() {
     let mut rig = Rig::new();
     rig.set(agent_term());
     rig.tick(&[link("t5", SESSION, &["claude"])]);
-    let mut next = Resume::with(rig.fake.clone(), ID, GEN, rig.locks.clone(), clock);
+    let mut next = Resume::with(rig.fake.clone(), ID, GEN, rig.locks.clone(), CLOCKS);
     rig.resume.held = None;
     rig.world().terms.insert("t5".into(), Lookup::Unknown);
     next.tick(&rig.home, &[], &|| true);
     assert!(!rig.saved().records["t5"].proved);
 }
 
+fn exec(name: &str, argv: &[&str]) -> Term {
+    let mut foreground = fg(77, CWD);
+    foreground.name = name.into();
+    foreground.argv = argv.iter().map(|a| (*a).to_owned()).collect();
+    Term {
+        foreground: Some(foreground),
+        ..shell_term()
+    }
+}
+
 #[test]
 fn every_busy_or_doubtful_terminal_is_shown_and_never_typed_into() {
-    let running = Some(Foreground {
-        pid: 88,
-        cwd: CWD.into(),
-    });
+    let running = Some(fg(88, CWD));
     let cases: Vec<(&str, Term, &str)> = vec![
         (
             "foreground program",
@@ -599,10 +647,7 @@ fn every_busy_or_doubtful_terminal_is_shown_and_never_typed_into() {
         (
             "wrong folder",
             Term {
-                foreground: Some(Foreground {
-                    pid: 77,
-                    cwd: "/fixture/other".into(),
-                }),
+                foreground: Some(fg(77, "/fixture/other")),
                 ..shell_term()
             },
             "folder",
@@ -611,10 +656,7 @@ fn every_busy_or_doubtful_terminal_is_shown_and_never_typed_into() {
             "not replaced",
             Term {
                 pid: Some(20),
-                foreground: Some(Foreground {
-                    pid: 20,
-                    cwd: CWD.into(),
-                }),
+                foreground: Some(fg(20, CWD)),
                 ..shell_term()
             },
             "never replaced",
@@ -626,6 +668,26 @@ fn every_busy_or_doubtful_terminal_is_shown_and_never_typed_into() {
                 ..shell_term()
             },
             "different terminal",
+        ),
+        // `exec` keeps the pid (B2): only the words differ.
+        (
+            "exec python3",
+            exec("python3", &["python3"]),
+            "isn't a shell",
+        ),
+        ("exec ssh", exec("ssh", &["ssh", "box"]), "isn't a shell"),
+        (
+            "exec bash -c",
+            exec("bash", &["bash", "-c", "read x"]),
+            "isn't a shell",
+        ),
+        (
+            "unknown shell",
+            Term {
+                argv: vec!["nu".into()],
+                ..exec("nu", &["nu"])
+            },
+            "isn't a shell",
         ),
         (
             "finished",
@@ -663,7 +725,7 @@ fn a_missing_terminal_is_skipped() {
     let mut rig = Rig::new();
     rig.set(agent_term());
     rig.tick(&[link("t5", SESSION, &["claude"])]);
-    rig.world().status = Some(status("holder-b"));
+    rig.reboot("holder-b");
     rig.world().terms.clear();
     rig.tick(&[]);
     assert!(rig.sends().is_empty());
@@ -671,27 +733,155 @@ fn a_missing_terminal_is_skipped() {
 }
 
 #[test]
-fn a_shell_that_has_not_settled_is_not_typed_into() {
-    // A blank screen: nothing drawn yet.
+fn a_shell_that_has_not_drawn_is_not_typed_into() {
     let mut rig = Rig::new();
-    rig.lost(shell_term());
+    rig.set(agent_term());
+    rig.tick(&[link("t5", SESSION, &["claude"])]);
+    rig.reboot("holder-b");
+    rig.tick(&[]);
+    rig.set(shell_term());
     rig.world().screens.insert("t5".into(), "   \n".into());
     rig.settle();
     rig.settle();
     assert!(rig.sends().is_empty());
-    // A screen still changing: startup output, or someone typing.
-    for n in 0..4 {
-        rig.world().screens.insert("t5".into(), format!("$ {n}"));
-        rig.settle();
-    }
-    assert!(rig.sends().is_empty());
+    assert_eq!(rig.stage(), Stage::Waiting);
     // Past the give-up nothing is typed, however quiet it becomes.
     pass(SHELL_WAIT_MS);
     rig.tick(&[]);
     assert_eq!(rig.stage(), Stage::Skipped);
+    rig.world().screens.insert("t5".into(), "$ ".into());
     rig.settle();
     rig.settle();
     assert!(rig.sends().is_empty());
+}
+
+#[test]
+fn two_equal_reads_closer_than_the_settle_time_do_not_type() {
+    let mut rig = Rig::new();
+    rig.lost(shell_term());
+    pass(SETTLE_MS - 1);
+    rig.tick(&[]);
+    assert!(rig.sends().is_empty(), "one ms short");
+    pass(1);
+    rig.tick(&[]);
+    assert_eq!(rig.sends().len(), 1);
+}
+
+#[test]
+fn a_half_typed_line_is_never_submitted() {
+    let mut rig = Rig::new();
+    rig.lost(shell_term());
+    // Typed, then still: "unchanged" must not be enough.
+    let half = "$ ./deploy.sh prod ";
+    rig.world().screens.insert("t5".into(), half.into());
+    rig.settle();
+    rig.settle();
+    rig.settle();
+    assert!(rig.sends().is_empty());
+    assert_eq!(rig.stage(), Stage::Skipped);
+    assert!(rig.reason().contains("screen changed"));
+}
+
+#[test]
+fn a_terminal_used_since_the_loss_is_a_final_skip() {
+    let mut rig = Rig::new();
+    rig.lost(shell_term());
+    let used = "$ echo I_AM_WORKING_HERE\nI_AM_WORKING_HERE\n$ ";
+    rig.world().screens.insert("t5".into(), used.into());
+    rig.settle();
+    // Cleared again: it looks untouched now, but the skip stands.
+    rig.world().screens.insert("t5".into(), "$ ".into());
+    rig.settle();
+    rig.settle();
+    assert!(rig.sends().is_empty());
+    assert_eq!(rig.stage(), Stage::Skipped);
+}
+
+#[test]
+fn a_change_undone_inside_the_settle_time_still_counts() {
+    let mut rig = Rig::new();
+    rig.lost(shell_term());
+    pass(100);
+    rig.world().screens.insert("t5".into(), "$ x".into());
+    rig.tick(&[]);
+    assert_eq!(rig.stage(), Stage::Skipped);
+    rig.world().screens.insert("t5".into(), "$ ".into());
+    rig.settle();
+    rig.settle();
+    assert!(rig.sends().is_empty());
+}
+
+#[test]
+fn a_shell_first_seen_already_drawn_cannot_prove_its_line_is_empty() {
+    let mut rig = Rig::new();
+    rig.set(agent_term());
+    rig.tick(&[link("t5", SESSION, &["claude"])]);
+    // Panorama arrives after the shell is up: a half line could be in this first screen.
+    BOOT.with(|b| b.set(b.get() + 1));
+    rig.world().status = Some(status("holder-b"));
+    rig.set(shell_term());
+    rig.world()
+        .screens
+        .insert("t5".into(), "$ rm -rf build ".into());
+    rig.tick(&[]);
+    rig.settle();
+    rig.settle();
+    assert!(rig.sends().is_empty());
+    assert_eq!(rig.stage(), Stage::Skipped);
+    assert!(rig.reason().contains("can't prove the line is empty"));
+}
+
+#[test]
+fn someone_typing_stops_the_send_and_is_final() {
+    let mut rig = Rig::new();
+    rig.lost(shell_term());
+    rig.world().quiet = false;
+    rig.settle();
+    rig.world().quiet = true;
+    rig.settle();
+    assert!(rig.sends().is_empty());
+    assert_eq!(rig.stage(), Stage::Skipped);
+    assert!(rig.reason().contains("typing"));
+}
+
+#[test]
+fn the_last_reads_come_after_the_attempt_is_saved() {
+    struct Order(Fake, PathBuf);
+    impl Hc for Order {
+        fn status(&self) -> Option<Status> {
+            self.0.status()
+        }
+        fn get(&self, a: &str) -> Lookup {
+            self.0.get(a)
+        }
+        fn screen(&self, a: &str) -> Option<String> {
+            self.0.screen(a)
+        }
+        fn quiet(&self, a: &str) -> bool {
+            let saved: Saved = serde_json::from_slice(&std::fs::read(&self.1).unwrap()).unwrap();
+            assert_eq!(saved.loss.unwrap().entries["t5"].stage, Stage::Sending);
+            self.0.0.borrow_mut().calls = 0;
+            self.0.quiet(a)
+        }
+        fn send(&self, a: &str, t: &str) -> Sent {
+            let reads = self.0.0.borrow().calls;
+            assert_eq!(reads, 2, "a get and a screen after the save");
+            self.0.send(a, t)
+        }
+    }
+    let mut rig = Rig::new();
+    rig.lost(shell_term());
+    pass(SETTLE_MS);
+    let path = rig.home.path.join(GEN).join(store::FILE);
+    let order = Order(rig.fake.clone(), path);
+    let mut next = Resume::with(order, ID, GEN, rig.locks.clone(), CLOCKS);
+    rig.resume.held = None;
+    next.saved = rig.resume.saved.clone();
+    next.started = true;
+    next.store.load(&rig.home, ID).unwrap();
+    next.settled = rig.resume.settled.clone();
+    next.tick(&rig.home, &[], &|| true);
+    assert_eq!(rig.sends().len(), 1);
 }
 
 #[test]
@@ -707,14 +897,14 @@ fn a_program_appearing_at_the_last_look_stops_the_send() {
         fn screen(&self, a: &str) -> Option<String> {
             // The screen read passes; the very next read shows a program.
             let found = Lookup::Found(Term {
-                foreground: Some(Foreground {
-                    pid: 88,
-                    cwd: CWD.into(),
-                }),
+                foreground: Some(fg(88, CWD)),
                 ..shell_term()
             });
             self.0.0.borrow_mut().terms.insert("t5".into(), found);
             self.0.screen(a)
+        }
+        fn quiet(&self, a: &str) -> bool {
+            self.0.quiet(a)
         }
         fn send(&self, a: &str, t: &str) -> Sent {
             self.0.send(a, t)
@@ -723,7 +913,7 @@ fn a_program_appearing_at_the_last_look_stops_the_send() {
     let mut rig = Rig::new();
     rig.lost(shell_term());
     pass(SETTLE_MS);
-    let mut late = Resume::with(Late(rig.fake.clone()), ID, GEN, rig.locks.clone(), clock);
+    let mut late = Resume::with(Late(rig.fake.clone()), ID, GEN, rig.locks.clone(), CLOCKS);
     rig.resume.held = None;
     late.saved = rig.resume.saved.clone();
     late.started = true;
@@ -734,22 +924,232 @@ fn a_program_appearing_at_the_last_look_stops_the_send() {
 }
 
 #[test]
-fn modes_the_command_cannot_repeat_are_shown_not_typed() {
-    for argv in [
-        &["claude", "rc"][..],
-        &["claude", "--verbose", "remote-control"][..],
-    ] {
+fn only_plain_interactive_launches_are_typed() {
+    let run = |argv: &[&str]| {
         let mut rig = Rig::new();
         rig.set(agent_term());
         rig.tick(&[link("t5", SESSION, argv)]);
-        rig.world().status = Some(status("holder-b"));
+        rig.reboot("holder-b");
+        rig.tick(&[]);
         rig.world().screens.insert("t5".into(), "$ ".into());
         rig.set(shell_term());
         rig.tick(&[]);
         rig.settle();
+        rig
+    };
+    let shown: &[&[&str]] = &[
+        &["claude", "rc"],
+        &["claude", "--verbose", "remote-control"],
+        &["claude", "--remote-control"],
+        &["claude", "--remote-control", "phone"],
+        &["claude", "--remote-control=phone"],
+        &["claude", "-p", "do it"],
+        &["claude", "--print"],
+        &["claude", "--bg"],
+        &["claude", "--tmux", "-w"],
+        &["claude", "--permission-mode", "plan"],
+        &["claude", "a task"],
+        &["claude", "--no-such-flag"],
+        &["claude", "--resume", "not-a-uuid"],
+    ];
+    for argv in shown {
+        let rig = run(argv);
         assert!(rig.sends().is_empty(), "{argv:?}");
-        assert!(rig.reason().contains("mode"));
+        assert!(rig.reason().contains("can't repeat"), "{argv:?}");
     }
+    let typed: &[&[&str]] = &[
+        &["claude"],
+        &["claude", "--resume", SESSION],
+        &["claude", "-r", SESSION],
+        &["claude", "--continue"],
+        &["claude", "--model", "opus"],
+    ];
+    for argv in typed {
+        assert_eq!(run(argv).sends().len(), 1, "{argv:?}");
+    }
+}
+
+#[test]
+fn dropped_options_are_noted_on_the_row() {
+    let mut rig = Rig::new();
+    rig.set(agent_term());
+    rig.tick(&[link("t5", SESSION, &["claude", "--model", "opus"])]);
+    rig.reboot("holder-b");
+    let report = rig.tick(&[]).unwrap();
+    let note = report["loss"]["entries"][0]["note"].as_str().unwrap();
+    assert!(note.contains("aren't repeated"));
+    let mut rig = Rig::new();
+    rig.lost(shell_term());
+    let report = rig.tick(&[]).unwrap();
+    assert_eq!(report["loss"]["entries"][0]["note"], Value::Null);
+}
+
+fn losing_without_reboot(rig: &mut Rig) {
+    rig.set(agent_term());
+    rig.tick(&[link("t5", SESSION, &["claude"])]);
+    rig.world().status = Some(status("holder-b"));
+    rig.set(waiting());
+    rig.tick(&[]);
+    rig.set(shell_term());
+    rig.world().screens.insert("t5".into(), "$ ".into());
+    rig.tick(&[]);
+    rig.settle();
+}
+
+fn click(rig: &Rig, at: u64) {
+    let clicks = serde_json::to_string(&json!({"t5": at})).unwrap();
+    let store = json!({"agents.resume": "\"on\"", "agents.resume.clicks": clicks});
+    std::fs::write(rig.home.path.join(TOGGLE_STORE), store.to_string()).unwrap();
+}
+
+#[test]
+fn a_stop_without_a_reboot_is_never_typed_by_itself() {
+    let mut rig = Rig::new();
+    losing_without_reboot(&mut rig);
+    rig.settle();
+    pass(CONFIRM_MS);
+    rig.tick(&[]);
+    assert!(rig.sends().is_empty(), "nobody asked");
+    assert_eq!(rig.stage(), Stage::Skipped);
+    assert!(rig.reason().contains("without a reboot"));
+}
+
+#[test]
+fn no_boot_id_means_a_click_too() {
+    fn none() -> Option<String> {
+        None
+    }
+    let mut rig = Rig::new();
+    rig.set(agent_term());
+    rig.tick(&[link("t5", SESSION, &["claude"])]);
+    // A boot id on record and none now, as when /proc can't be read.
+    rig.resume.boot = none;
+    rig.world().status = Some(status("holder-b"));
+    rig.set(waiting());
+    rig.tick(&[]);
+    rig.world().screens.insert("t5".into(), "$ ".into());
+    rig.set(shell_term());
+    rig.tick(&[]);
+    rig.settle();
+    assert!(rig.sends().is_empty());
+    assert_eq!(rig.stage(), Stage::Skipped);
+}
+
+#[test]
+fn a_click_resumes_what_the_gates_could_not_prove_once() {
+    let mut rig = Rig::new();
+    losing_without_reboot(&mut rig);
+    pass(1);
+    click(&rig, clock());
+    rig.tick(&[]);
+    let typed = format!("claude --resume {SESSION}");
+    assert_eq!(rig.sends(), [("t5".into(), typed)]);
+    rig.tick(&[]);
+    pass(CONFIRM_MS);
+    rig.tick(&[]);
+    pass(CONFIRM_MS);
+    rig.tick(&[]);
+    assert_eq!(rig.stage(), Stage::Failed);
+    assert_eq!(rig.sends().len(), 1, "the same click acts once");
+}
+
+#[test]
+fn a_click_older_than_the_loss_does_nothing() {
+    let mut rig = Rig::new();
+    let old = clock();
+    pass(10);
+    losing_without_reboot(&mut rig);
+    click(&rig, old);
+    rig.tick(&[]);
+    assert!(rig.sends().is_empty());
+}
+
+#[test]
+fn a_click_keeps_every_terminal_gate() {
+    let refused: Vec<(&str, Term, &str)> = vec![
+        (
+            "program",
+            Term {
+                foreground: Some(fg(88, CWD)),
+                ..shell_term()
+            },
+            "running",
+        ),
+        ("exec", exec("python3", &["python3"]), "isn't a shell"),
+        (
+            "folder",
+            Term {
+                foreground: Some(fg(77, "/fixture/other")),
+                ..shell_term()
+            },
+            "folder",
+        ),
+    ];
+    for (name, term, reason) in refused {
+        let mut rig = Rig::new();
+        losing_without_reboot(&mut rig);
+        rig.set(term);
+        pass(1);
+        click(&rig, clock());
+        rig.tick(&[]);
+        assert!(rig.sends().is_empty(), "{name}");
+        assert!(rig.reason().contains(reason), "{name}: {}", rig.reason());
+    }
+    // The screen must still be the first one: this may be a half-typed line.
+    let mut rig = Rig::new();
+    losing_without_reboot(&mut rig);
+    rig.world()
+        .screens
+        .insert("t5".into(), "$ half typed ".into());
+    pass(1);
+    click(&rig, clock());
+    rig.tick(&[]);
+    assert!(rig.sends().is_empty());
+    assert!(rig.reason().contains("screen changed"));
+}
+
+#[test]
+fn a_terminal_never_seen_at_a_shell_offers_no_click() {
+    let mut rig = Rig::new();
+    rig.lost(Term {
+        foreground: Some(fg(88, CWD)),
+        ..shell_term()
+    });
+    let report = rig.tick(&[]).unwrap();
+    assert_eq!(report["loss"]["entries"][0]["click"], false);
+    pass(1);
+    click(&rig, clock());
+    rig.set(shell_term());
+    rig.tick(&[]);
+    assert!(rig.sends().is_empty());
+    assert!(rig.reason().contains("running"), "its reason stands");
+}
+
+#[test]
+fn another_config_dir_is_shown_not_typed() {
+    let mut rig = Rig::new();
+    rig.set(agent_term());
+    let mut other = link("t5", SESSION, &["claude"]);
+    other.default_config = false;
+    rig.tick(&[other]);
+    rig.reboot("holder-b");
+    rig.tick(&[]);
+    rig.world().screens.insert("t5".into(), "$ ".into());
+    rig.set(shell_term());
+    rig.tick(&[]);
+    rig.settle();
+    assert!(rig.sends().is_empty());
+    assert!(rig.reason().contains("config dir"));
+}
+
+#[test]
+fn leaving_after_the_toggle_went_off_leaves_no_record() {
+    let mut rig = Rig::new();
+    rig.set(agent_term());
+    rig.tick(&[link("t5", SESSION, &["claude"])]);
+    std::fs::remove_file(rig.home.path.join(TOGGLE_STORE)).unwrap();
+    rig.resume.close(&rig.home);
+    assert!(!rig.home.path.join(GEN).join(store::FILE).exists());
 }
 
 #[test]
@@ -757,10 +1157,12 @@ fn a_long_up_core_may_have_used_shells() {
     let mut rig = Rig::new();
     rig.set(agent_term());
     rig.tick(&[link("t5", SESSION, &["claude"])]);
+    rig.reboot("holder-b");
     rig.world().status = Some(Status {
         uptime_ms: FRESH_CORE_MS + 1,
         ..status("holder-b")
     });
+    rig.tick(&[]);
     rig.world().screens.insert("t5".into(), "$ ".into());
     rig.set(shell_term());
     rig.tick(&[]);
@@ -777,7 +1179,8 @@ fn an_unproved_session_is_shown_not_typed() {
     // Same process, but the link no longer holds: an in-process switch may be under way.
     rig.tick(&[]);
     assert!(!rig.saved().records["t5"].proved);
-    rig.world().status = Some(status("holder-b"));
+    rig.reboot("holder-b");
+    rig.tick(&[]);
     rig.world().screens.insert("t5".into(), "$ ".into());
     rig.set(shell_term());
     rig.tick(&[]);
@@ -824,23 +1227,26 @@ fn each_harness_gets_its_own_command() {
         (r.command().unwrap(), r.launch)
     };
     let id = SESSION;
+    let plain = |command: String| (command, Launch::Plain);
+    let codex = format!("codex resume {id}");
+    let daemonless = format!("codex --no-daemon resume {id}");
     assert_eq!(
         of("claude", &["claude"]),
-        (format!("claude --resume {id}"), Launch::Plain)
+        plain(format!("claude --resume {id}"))
     );
-    assert_eq!(
-        of("codex", &["codex"]),
-        (format!("codex resume {id}"), Launch::Plain)
-    );
-    assert_eq!(
-        of("codex", &["codex", "resume", id]),
-        (format!("codex resume {id}"), Launch::Plain)
-    );
+    assert_eq!(of("codex", &["codex"]), plain(codex.clone()));
+    assert_eq!(of("codex", &["codex", "resume", id]), plain(codex));
     assert_eq!(
         of("codex", &["codex", "--no-daemon"]),
-        (format!("codex --no-daemon resume {id}"), Launch::NoDaemon)
+        plain(daemonless.clone())
     );
+    let late = of("codex", &["codex", "--model", "x", "--no-daemon"]);
+    assert_eq!(late, plain(daemonless.clone()), "found anywhere (L5)");
+    let resumed = of("codex", &["codex", "--no-daemon", "resume", id]);
+    assert_eq!(resumed, plain(daemonless));
     assert_eq!(of("codex", &["codex", "exec", "x"]).1, Launch::Other);
+    assert_eq!(of("codex", &["codex", "--search"]).1, Launch::Other);
+    assert_eq!(of("codex", &["codex", "a task"]).1, Launch::Other);
 }
 
 #[test]
@@ -875,10 +1281,7 @@ fn a_failed_send_that_did_arrive_counts_as_arrived() {
     rig.settle();
     // It got there after all, and the program started.
     rig.set(Term {
-        foreground: Some(Foreground {
-            pid: 90,
-            cwd: CWD.into(),
-        }),
+        foreground: Some(fg(90, CWD)),
         ..shell_term()
     });
     rig.tick(&[link("t5", SESSION, &["claude"])]);
@@ -912,7 +1315,7 @@ fn a_restart_mid_send_never_sends_again() {
         .stage = Stage::Sending;
     let path = rig.home.path.join(GEN).join(store::FILE);
     std::fs::write(&path, serde_json::to_vec(&saved).unwrap()).unwrap();
-    let mut next = Resume::with(rig.fake.clone(), ID, GEN, rig.locks.clone(), clock);
+    let mut next = Resume::with(rig.fake.clone(), ID, GEN, rig.locks.clone(), CLOCKS);
     rig.resume.held = None;
     next.tick(&rig.home, &[], &|| true);
     pass(SETTLE_MS);
@@ -936,6 +1339,9 @@ fn the_attempt_is_on_disk_before_the_text_is_typed() {
         fn screen(&self, a: &str) -> Option<String> {
             self.0.screen(a)
         }
+        fn quiet(&self, a: &str) -> bool {
+            self.0.quiet(a)
+        }
         fn send(&self, a: &str, t: &str) -> Sent {
             let saved: Saved = serde_json::from_slice(&std::fs::read(&self.1).unwrap()).unwrap();
             assert_eq!(saved.loss.unwrap().entries["t5"].stage, Stage::Sending);
@@ -951,7 +1357,7 @@ fn the_attempt_is_on_disk_before_the_text_is_typed() {
         ID,
         GEN,
         rig.locks.clone(),
-        clock,
+        CLOCKS,
     );
     rig.resume.held = None;
     next.saved = rig.resume.saved.clone();
@@ -980,10 +1386,7 @@ fn a_resumed_process_dying_soon_after_keeps_its_id_visible() {
     rig.lost(shell_term());
     rig.settle();
     rig.set(Term {
-        foreground: Some(Foreground {
-            pid: 90,
-            cwd: CWD.into(),
-        }),
+        foreground: Some(fg(90, CWD)),
         ..shell_term()
     });
     rig.tick(&[]);
@@ -1005,10 +1408,7 @@ fn a_started_program_without_a_link_is_reported_as_unproved() {
     rig.lost(shell_term());
     rig.settle();
     rig.set(Term {
-        foreground: Some(Foreground {
-            pid: 90,
-            cwd: CWD.into(),
-        }),
+        foreground: Some(fg(90, CWD)),
         ..shell_term()
     });
     rig.tick(&[]);
@@ -1033,18 +1433,14 @@ fn a_second_loss_starts_fresh_and_closes_what_was_open() {
     let mut rig = Rig::new();
     rig.lost(shell_term());
     assert_eq!(rig.stage(), Stage::Waiting);
-    rig.world().status = Some(status("holder-c"));
+    rig.reboot("holder-c");
     rig.tick(&[]);
     assert_eq!(rig.stage(), Stage::Skipped);
     assert!(rig.reason().contains("another loss"));
     rig.settle();
     assert!(rig.sends().is_empty());
     // A session proved after that is a new attempt on the next loss.
-    rig.set(agent_term());
-    rig.tick(&[link("t5", SESSION, &["claude"])]);
-    rig.world().status = Some(status("holder-d"));
-    rig.set(shell_term());
-    rig.tick(&[]);
+    rig.lost(shell_term());
     rig.settle();
     assert_eq!(rig.sends().len(), 1);
 }
@@ -1064,16 +1460,13 @@ fn a_later_loss_keeps_what_could_not_be_resumed_and_drops_what_was() {
     rig.tick(&[]);
     assert!(rig.saved().records.is_empty());
     pass(1000);
-    rig.world().status = Some(status("holder-c"));
+    rig.reboot("holder-c");
     rig.tick(&[]);
     assert_eq!(rig.saved().loss.as_ref().unwrap().detected_ms, old);
     // A skipped id survives the next loss; a resumed one does not.
     let mut rig = Rig::new();
     rig.lost(Term {
-        foreground: Some(Foreground {
-            pid: 88,
-            cwd: CWD.into(),
-        }),
+        foreground: Some(fg(88, CWD)),
         ..shell_term()
     });
     assert_eq!(rig.stage(), Stage::Skipped);
@@ -1114,7 +1507,7 @@ fn two_writers_on_one_core_cannot_both_act() {
     // A second app home on the same core, with its own record of the same terminal.
     let other = Rig::new();
     let fake = rig.fake.clone();
-    let mut second = Resume::with(fake, ID, GEN, rig.locks.clone(), clock);
+    let mut second = Resume::with(fake, ID, GEN, rig.locks.clone(), CLOCKS);
     let report = second.tick(&other.home, &[], &|| true).unwrap();
     assert!(
         report["error"]
@@ -1155,7 +1548,7 @@ fn a_record_from_another_installation_is_refused() {
         .unwrap()
         .replace(ID, &"f".repeat(32));
     std::fs::write(&path, text).unwrap();
-    let mut next = Resume::with(rig.fake.clone(), ID, GEN, rig.locks.clone(), clock);
+    let mut next = Resume::with(rig.fake.clone(), ID, GEN, rig.locks.clone(), CLOCKS);
     rig.resume.held = None;
     let report = next.tick(&rig.home, &[], &|| true).unwrap();
     assert!(
@@ -1193,7 +1586,7 @@ fn the_record_survives_as_one_private_file_and_clears_a_crashed_staging_file() {
         std::fs::Permissions::from_mode(0o600),
     )
     .unwrap();
-    let mut next = Resume::with(rig.fake.clone(), ID, GEN, rig.locks.clone(), clock);
+    let mut next = Resume::with(rig.fake.clone(), ID, GEN, rig.locks.clone(), CLOCKS);
     rig.resume.held = None;
     assert_eq!(
         next.tick(&rig.home, &[], &|| true).unwrap()["error"],

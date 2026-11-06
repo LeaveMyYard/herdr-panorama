@@ -135,6 +135,7 @@ fn claudes_per_process_record_links_an_already_running_session_without_hooks() {
     );
     assert_eq!(linked[0].session, S1);
     assert_eq!(linked[0].terminal["foreground"]["pid"], pid);
+    assert!(!linked[0].default_config, "its own CLAUDE_CONFIG_DIR");
     let swarm = collector.collect(observation.snapshot.as_ref(), None, sc.now(), WINDOW, STALE);
     assert_eq!(swarm.roots[0].session_id.as_deref(), Some(S1));
     assert!(!swarm.roots[0].agents.is_empty());

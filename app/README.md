@@ -103,14 +103,19 @@ Delete it then.
 
 After a full core stop, crash or reboot, kept terminals come back as plain shells. **Resume agents**,
 in the Agents header's sort menu, is off by default. When it's on, the feed writer records each
-terminal's proved session, and after a real loss it types `claude --resume <id>` or
-`codex resume <id>`, once, into terminals that are provably idle shells in the same folder.
+terminal's proved session. After a reboot, it types `claude --resume <id>` or `codex resume <id>`,
+once, into a shell it saw come back and that has stayed exactly as first drawn.
 
-The **Resume** line at the top of the Agents list says which panes were resumed, which were skipped
-and why, and gives the command for any you want to run yourself. It never types into a terminal
-that is doing anything. A session whose loss Panorama did not see, because the app was closed, is
-listed but not typed. Only local terminals are covered: remote ones are never recorded or typed
-into. Rules: [agent resume](../docs/protocol/agent-resume.md).
+Anything else gets a **Resume** button on the **Resume** line at the top of the Agents list: a stop
+without a reboot (which may have been on purpose), a shell that was already up when Panorama looked,
+a loss while the app was closed, or a launch it can't repeat, such as `claude --remote-control`. That
+line also says which panes were resumed, which were skipped and why. Check a pane's prompt is empty
+before clicking: the click presses Enter.
+
+hc can't check and type in one step, so a program started at that exact moment can still receive
+the text, and a person typing then makes the send wait. Only bash, zsh and fish are typed into, and
+only local terminals: remote ones are never recorded. Options such as `--model` aren't repeated.
+Rules: [agent resume](../docs/protocol/agent-resume.md).
 
 ## Uninstall and troubleshoot
 
@@ -124,7 +129,8 @@ Choose another layout yourself before removing one you are using; uninstall neve
 switches it. Personal edits survive. The exact two null shared slots, two retained
 preference stores and host layout-state snapshot are described below; the installer
 does not rewrite personal shared state or acquire deletion ownership over retained
-preference/layout files.
+preference/layout files. If Resume agents was ever on, an empty
+`$XDG_STATE_HOME/herdr-panorama/resume/<core id>.lock` also stays.
 
 - **No agent tree on a root:** verify the private release artifact and current session
   proof; older unbound roots are expected to stay basic.

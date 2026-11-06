@@ -106,17 +106,26 @@ export default class Panorama extends View {
     const summary = resumeSummary(this.feed?.feed?.resume);
     if (!summary || this.resumeHidden === summary.id) return;
     append(h_flex().id('resume-result').h(24).pl(6).pr(4).gap(6).flex_none().items_center().rounded(6).text_size(11.5).cursor_pointer().hover(el => el.bg(DOCK.hover))
-      .on_click((_event, cx) => { this.resumeOpen = !this.resumeOpen; cx.notify(); })
+      .on_click((_event, cx) => { this.resumeOpen = !(this.resumeOpen ?? summary.rows.some(row => row.click)); cx.notify(); })
       .child(div().flex_none().text_color(t.dim).child('Resume'))
       .child(div().flex_1().min_w(0).truncate().text_color(t.foreground).child(summary.text))
       .when(!summary.open, el => el.child(div().id('resume-hide').px(4).rounded(4).text_color(t.dim).hover(el => el.text_color(t.foreground))
         .on_click((event, cx) => { cx.stop_propagation(); this.resumeHidden = summary.id; cx.notify(); }).child('×'))), 24);
-    if (this.resumeOpen) for (const row of summary.rows) {
-      const detail = [row.reason, row.word !== 'resumed' ? row.command : ''].filter(Boolean).join('\n');
-      append(h_flex().id(row.key).h(ROW).pl(14).pr(8).gap(6).flex_none().items_center().text_size(11.5).when(Boolean(detail), el => el.tooltip(detail))
+    if (this.resumeOpen ?? summary.rows.some(row => row.click)) for (const row of summary.rows) {
+      const asked = this.resumeAsked?.has(`${row.key}:${row.reason}`);
+      const detail = [row.reason, row.note, row.word !== 'resumed' ? row.command : ''].filter(Boolean).join('\n');
+      const tall = Boolean(row.reason);
+      append(h_flex().id(row.key).h(tall ? ROW * 2 : ROW).pl(14).pr(4).gap(6).flex_none().items_center().text_size(11.5).when(Boolean(detail), el => el.tooltip(detail))
         .child(div().flex_none().text_color(t.muted).child(`${row.terminal} ${row.harness}`))
-        .child(div().flex_1().min_w(0).truncate().text_color(t.dim).child(row.reason ? `${row.word}: ${row.reason}` : row.word)), ROW);
+        .child(div().flex_1().min_w(0).when(tall, el => el.h(30)).overflow_hidden().line_height(1.3).text_color(t.dim).child(row.reason ? `${row.word}: ${row.reason}` : row.word))
+        .when(row.click && !asked, el => el.child(div().id(`${row.key}-go`).px(5).flex_none().rounded(4).text_color(t.foreground).bg(t.hover).cursor_pointer()
+          .tooltip('Types the command and presses Enter, if the terminal is still as Panorama first saw it. Check its prompt is empty first.')
+          .on_click((_event, cx) => { cx.stop_propagation(); this.resumeClick(row, cx); }).child('Resume'))), tall ? ROW * 2 : ROW);
     }
+  }
+  resumeClick(row, cx) {
+    (this.resumeAsked ??= new Set()).add(`${row.key}:${row.reason}`); cx.notify();
+    run(`panorama-spaces.agent-resume-click-${row.terminal}`);
   }
   newAgent() { openOverlay({ mod: 'new-menu', kind: 'popup', width: 250, height: 512 }); }
   sortMenu(t) {
@@ -129,7 +138,7 @@ export default class Panorama extends View {
         .when((shared('agents.sort') ?? 'priority') === option.id, el => el.child(svg('mods/workspace-chrome/check.svg').size(14)))))
       .child(div().px(8).pt(9).pb(6).text_size(11).text_color(t.dim).child('After a core restart'))
       .child(h_flex().id('resume-toggle').h(31).px(8).gap(9).rounded(7).items_center().text_color(t.foreground).hover(el => el.bg(t.hover))
-        .tooltip('Types claude --resume or codex resume into idle shells that lost a live session. Only until herdr-app does this itself.')
+        .tooltip('After a reboot, types claude --resume or codex resume into restored shells that are still untouched. After a stop without a reboot it only offers a Resume button. hc can\'t check and type in one step, so text can still land in a program started at that moment. Only until herdr-app does this itself.')
         .on_click((_event, cx) => this.setResume(!this.resume, cx))
         .child(div().flex_1().child('Resume agents'))
         .when(this.resume, el => el.child(svg('mods/workspace-chrome/check.svg').size(14))));

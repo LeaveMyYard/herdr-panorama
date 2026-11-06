@@ -89,7 +89,7 @@ fn source_full(env: PluginEnv, core: Core, wait: bool) -> impl FnMut() -> Collec
             swarm,
             host: observation.host,
             terminals: observation.terminals,
-            linked: observation.linked.clone(),
+            linked: observation.linked,
         }
     }
 }

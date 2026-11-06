@@ -210,6 +210,8 @@ export function storedScope(text) {
 // Optional agent resume: a stopgap until herdr-app does this itself (herdr-core#13). The
 // choice lives beside the scope, '"on"' or absent; the writer reads it from the store.
 export const RESUME_KEY = 'agents.resume';
+// Clicks on a row's Resume, by terminal, as the click's time. The writer acts on them.
+export const RESUME_CLICKS_KEY = 'agents.resume.clicks';
 export function storedResume(text) {
   try { const store = JSON.parse(text); return typeof store?.[RESUME_KEY] === 'string' && JSON.parse(store[RESUME_KEY]) === 'on'; }
   catch { return false; }
@@ -224,7 +226,7 @@ export function resumeSummary(resume) {
   const rows = entries.map(entry => {
     const word = RESUME_WORD[entry?.state] ?? 'unknown';
     count[word] = (count[word] ?? 0) + 1;
-    return { key: `resume-${entry?.terminal}`, terminal: String(entry?.terminal ?? '?'), harness: String(entry?.harness ?? ''), word, reason: entry?.reason ?? '', command: entry?.command ?? '' };
+    return { key: `resume-${entry?.terminal}`, terminal: String(entry?.terminal ?? '?'), harness: String(entry?.harness ?? ''), word, reason: entry?.reason ?? '', command: entry?.command ?? '', note: entry?.note ?? '', click: entry?.click === true };
   });
   const order = ['resumed', 'sending', 'sent', 'waiting', 'skipped', 'failed', 'unknown'];
   return { id: resume.loss.detected_at, rows, text: order.filter(word => count[word]).map(word => `${count[word]} ${word}`).join(' · '), open: rows.some(row => ['waiting', 'sending', 'sent'].includes(row.word)) };

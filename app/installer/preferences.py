@@ -33,6 +33,8 @@ def valid(key, value):
         return value == 'all'
     if key == 'agents.resume':
         return value == 'on'
+    if key == 'agents.resume.clicks':
+        return record(value) and all(integer(item) for item in value.values())
     if key == 'panels':
         return record(value) and all(item is None or isinstance(item, str) for item in value.values())
     if key == 'machines.folded':
@@ -66,7 +68,7 @@ def inspect(home, directory):
     store = loads(current[0].decode('utf8'))
     if not record(store) or any(not isinstance(value, str) for value in store.values()):
         raise ValueError(f'Retained preference store must be a JSON string-map: {path}')
-    known = ('panels',) if directory.endswith('panorama-tabs') else ('machines.folded', 'machines.reconnecting', 'agents.scope', 'agents.resume')
+    known = ('panels',) if directory.endswith('panorama-tabs') else ('machines.folded', 'machines.reconnecting', 'agents.scope', 'agents.resume', 'agents.resume.clicks')
     for key in known:
         if key in store and not valid(key, loads(store[key])):
             raise ValueError(f'Unsupported retained preference shape: {path}/{key}')

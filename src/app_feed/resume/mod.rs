@@ -10,6 +10,7 @@
 mod attempt;
 pub mod decide;
 pub mod hc;
+mod launch;
 pub mod state;
 pub mod store;
 mod toggle;
@@ -27,8 +28,10 @@ use state::{Entry, Saved, Stage};
 use std::{
     collections::HashMap,
     fs::File,
+    os::unix::fs::{DirBuilderExt, OpenOptionsExt},
     path::PathBuf,
-    time::{SystemTime, UNIX_EPOCH},
+    sync::OnceLock,
+    time::{Instant, SystemTime, UNIX_EPOCH},
 };
 use store::Store;
 use toggle::{Toggle, toggle};
@@ -37,6 +40,25 @@ fn wall_clock() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |d| d.as_millis() as u64)
+}
+
+fn monotonic() -> u64 {
+    static START: OnceLock<Instant> = OnceLock::new();
+    START.get_or_init(Instant::now).elapsed().as_millis() as u64
+}
+
+/// The kernel's id for this boot. Elsewhere there is none, so a loss always needs a click.
+fn boot_id() -> Option<String> {
+    let id = std::fs::read_to_string("/proc/sys/kernel/random/boot_id").ok()?;
+    Some(id.trim().to_owned()).filter(|id| !id.is_empty())
+}
+
+/// The fixed clocks and ids `Resume` reads; tests supply their own.
+#[derive(Clone, Copy)]
+pub struct Sources {
+    pub clock: fn() -> u64,
+    pub mono: fn() -> u64,
+    pub boot: fn() -> Option<String>,
 }
 
 pub struct Resume<H> {
@@ -49,17 +71,27 @@ pub struct Resume<H> {
     saved: Option<Saved>,
     /// This writer has not looked yet: what the file says may be old.
     started: bool,
-    settled: HashMap<String, (String, u64)>,
+    /// When each shell's first screen was seen, on the monotonic clock.
+    settled: HashMap<String, u64>,
+    /// A restarted core has no holder yet: look again soon.
+    no_holder: bool,
     clock: fn() -> u64,
+    mono: fn() -> u64,
+    boot: fn() -> Option<String>,
 }
 
 impl<H: Hc> Resume<H> {
     pub fn new(hc: H, r: &Receipt, env: &PluginEnv) -> Self {
         let locks = env.xdg_state_home().join("herdr-panorama/resume");
-        Self::with(hc, &r.id, &r.generation(), locks, wall_clock)
+        let sources = Sources {
+            clock: wall_clock,
+            mono: monotonic,
+            boot: boot_id,
+        };
+        Self::with(hc, &r.id, &r.generation(), locks, sources)
     }
 
-    pub fn with(hc: H, id: &str, generation: &str, locks: PathBuf, clock: fn() -> u64) -> Self {
+    pub fn with(hc: H, id: &str, generation: &str, locks: PathBuf, sources: Sources) -> Self {
         Self {
             hc,
             id: id.into(),
@@ -69,7 +101,10 @@ impl<H: Hc> Resume<H> {
             saved: None,
             started: false,
             settled: HashMap::new(),
-            clock,
+            no_holder: false,
+            clock: sources.clock,
+            mono: sources.mono,
+            boot: sources.boot,
         }
     }
 
@@ -102,13 +137,28 @@ impl<H: Hc> Resume<H> {
 
     /// There is a loss still being worked through: look again soon.
     pub fn busy(&self) -> bool {
-        self.loss_entries().any(|(_, e)| e.open())
+        self.no_holder || self.loss_entries().any(|(_, e)| e.open())
+    }
+
+    /// Shells are being watched for their first screen: the sooner the first read, the less
+    /// time anyone had to type before it. Makes no collect.
+    pub fn watching(&self) -> bool {
+        self.loss_entries().any(|(_, e)| e.stage == Stage::Waiting)
+    }
+
+    /// Between collects, while `watching`.
+    pub fn watch(&mut self, home: &Home, allowed: &dyn Fn() -> bool) {
+        if toggle(home) == Toggle::On {
+            let _ = self.advance(home, None, allowed);
+        }
     }
 
     /// The writer is leaving on purpose, and the app is closed. Whatever happens next
     /// happens unwatched, so these records can no longer prove a session was live at a loss.
     pub fn close(&mut self, home: &Home) {
-        if let Some(saved) = self.saved.as_mut() {
+        if toggle(home) == Toggle::Off {
+            let _ = self.store.clear(home);
+        } else if let Some(saved) = self.saved.as_mut() {
             saved.closed = true;
             let _ = self.store.save(home, saved);
         }
@@ -138,12 +188,15 @@ impl<H: Hc> Resume<H> {
         let status = self.hc.status().ok_or("herdr-core status is unavailable")?;
         self.claim(&status.core)?;
         let now = (self.clock)();
+        let boot = (self.boot)();
         let saved = self.saved.as_mut().unwrap();
         let before = saved.clone();
-        match decide::compare(saved, &status) {
+        let change = decide::compare(saved, &status);
+        self.no_holder = change == Change::NoHolderYet;
+        match change {
             // After a reboot the app can get here first; the record must wait untouched.
             Change::NoHolderYet => return Ok(()),
-            Change::Lost => decide::open(saved, &status, now),
+            Change::Lost => decide::open(saved, &status, boot.as_deref(), now),
             Change::Foreign => {
                 saved.records.clear();
                 saved.loss = None;
@@ -161,10 +214,11 @@ impl<H: Hc> Resume<H> {
         saved.closed = false;
         saved.core = Some(status.core);
         saved.holders = status.holders;
+        saved.boot = boot;
         if *saved != before {
             self.store.save(home, saved)?;
         }
-        self.advance(home, linked, allowed)
+        self.advance(home, Some(linked), allowed)
     }
 
     /// One holder of this per-core lock acts; any other writer stays out for its whole life.
@@ -175,11 +229,17 @@ impl<H: Hc> Resume<H> {
         if core.is_empty() || !core.bytes().all(|b| b.is_ascii_alphanumeric()) {
             return Err("herdr-core reported an unusable id".into());
         }
-        std::fs::create_dir_all(&self.locks).map_err(|e| e.to_string())?;
+        std::fs::DirBuilder::new()
+            .recursive(true)
+            .mode(0o700)
+            .create(&self.locks)
+            .map_err(|e| e.to_string())?;
         let file = File::options()
             .create(true)
             .truncate(false)
             .write(true)
+            .mode(0o600)
+            .custom_flags(rustix::fs::OFlags::NOFOLLOW.bits() as i32)
             .open(self.locks.join(format!("{core}.lock")))
             .map_err(|e| e.to_string())?;
         file.try_lock()

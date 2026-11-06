@@ -212,9 +212,9 @@ test('a retained spaces store with the sidebar scope is reused; an unsupported s
   }
 });
 test('the resume toggle in a retained spaces store is reused; an unsupported value refuses before mutation', t => {
-  for (const [value, accepted] of [['"on"', true], ['"yes"', false]]) {
+  for (const [key, value, accepted] of [['agents.resume', '"on"', true], ['agents.resume', '"yes"', false], ['agents.resume.clicks', '{"t5":1793971728356}', true], ['agents.resume.clicks', '{"t5":"x"}', false]]) {
     const s = sandbox(t); mkdirSync(join(s.home,'data/panorama-spaces'),{recursive:true});
-    writeManaged(join(s.home,'data/panorama-spaces/store.json'), { 'agents.resume': value });
+    writeManaged(join(s.home,'data/panorama-spaces/store.json'), { [key]: value });
     const before = tree(s.home), result = s.run('install');
     if (accepted) { ok(result); ok(s.run('uninstall')); }
     else { fail(result); assert.match(result.stderr,/Unsupported retained preference shape: data\/panorama-spaces\/store.json\/agents.resume/); }
