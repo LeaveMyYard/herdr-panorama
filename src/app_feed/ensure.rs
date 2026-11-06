@@ -149,6 +149,7 @@ pub fn ensure(home: Home, expected: Option<&str>) -> Result<()> {
     let lifetime = r.lock_file(&home)?;
     match lifetime.try_lock() {
         Ok(()) => {
+            r.clear_ownership_staging(&home)?;
             r.check_names(&home)?;
             Journal::validate(&home, &r)?;
         }

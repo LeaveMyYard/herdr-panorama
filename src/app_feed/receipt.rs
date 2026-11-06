@@ -10,6 +10,7 @@ pub const RECEIPT: &str = "data/panorama/install.json";
 pub const BINARY: &str = "data/panorama/bin/panorama";
 pub const FEED: &str = "data/panorama/feed.json";
 pub const SMALL: usize = 4096;
+const OWNERSHIP_TEMP: &str = ".ownership.tmp";
 pub const FEED_LIMIT: usize = 32 * 1024 * 1024;
 
 #[derive(Clone)]
@@ -119,6 +120,16 @@ impl Receipt {
         }
         Ok(file)
     }
+    /// With the lifetime lock held no writer runs, so this staging file is what a power cut
+    /// left. The rename never happened: `ownership.json` is still the record, and a feed is
+    /// only replaced after that rename. Without this the writer could never start again.
+    pub fn clear_ownership_staging(&self, home: &Home) -> Result<()> {
+        let path = self.path(OWNERSHIP_TEMP);
+        if let Some(staged) = home.read(&path, SMALL, 0o600)? {
+            home.remove(&path, &staged)?;
+        }
+        Ok(())
+    }
     pub fn check_names(&self, home: &Home) -> Result<()> {
         self.names(home, false)
     }
@@ -153,7 +164,7 @@ impl Receipt {
                 super::resume::store::TEMP,
             ]
             .contains(&name.as_str())
-                || busy && name == ".ownership.tmp")
+                || busy && name == OWNERSHIP_TEMP)
             {
                 return Err(format!("ambiguous runtime entry {name}; preserved"));
             }
@@ -255,7 +266,7 @@ impl Ownership {
     pub fn write(&self, home: &Home, r: &Receipt, expected: Option<&Known>) -> Result<()> {
         home.replace(
             &r.path("ownership.json"),
-            &r.path(".ownership.tmp"),
+            &r.path(OWNERSHIP_TEMP),
             &serde_json::to_vec(self).map_err(|e| e.to_string())?,
             expected,
         )

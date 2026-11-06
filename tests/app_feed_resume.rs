@@ -11,10 +11,34 @@ const CORE: &str = "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f";
 const PATIENCE: Duration = Duration::from_secs(40);
 const QUIESCE: Duration = Duration::from_secs(15);
 
+fn now_ms() -> u64 {
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH);
+    now.unwrap().as_millis() as u64
+}
+
 fn write(path: &Path, bytes: &[u8], mode: u32) {
     std::fs::create_dir_all(path.parent().unwrap()).unwrap();
     std::fs::write(path, bytes).unwrap();
     std::fs::set_permissions(path, std::fs::Permissions::from_mode(mode)).unwrap();
+}
+
+/// A real process for the shell: its children are read from `/proc`.
+fn shell_pid() -> u32 {
+    static PID: std::sync::OnceLock<u32> = std::sync::OnceLock::new();
+    *PID.get_or_init(|| {
+        #[allow(clippy::zombie_processes)]
+        let child = std::process::Command::new("sleep")
+            .arg("300")
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn()
+            .unwrap();
+        let pid = child.id();
+        // It outlives the test on purpose: it ends by itself.
+        std::mem::forget(child);
+        pid
+    })
 }
 
 fn world() -> Value {
@@ -22,7 +46,10 @@ fn world() -> Value {
         env!("CARGO_MANIFEST_DIR"),
         "/tests/fixtures/hc-resume-recovered.json"
     );
-    serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap()
+    let mut world: Value = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+    world["get"]["pid"] = json!(shell_pid());
+    world["get"]["foreground"]["pid"] = json!(shell_pid());
+    world
 }
 
 /// A fake `hc` that answers from `world.json` and logs each call with its caller variable.
@@ -52,7 +79,7 @@ else: raise SystemExit(64)
     write(&install.bin.join("hc.py"), hc.as_bytes(), 0o700);
     // The typing probe has a short deadline; on a busy machine Python can't start inside it.
     let shim = format!(
-        "#!/bin/sh\nif [ \"$1\" = connect ]; then read -r _; echo '{{\"id\":1,\"result\":{{}}}}'; exit 0; fi\nexec {:?} \"$@\"\n",
+        "#!/bin/sh\nif [ \"$1\" = connect ]; then read -r _; echo '{{\"id\":1,\"result\":{{}}}}'; exit 0; fi\nif [ \"$1\" = attach ]; then printf '\\033[?2004h\\033[1;3H'; exec sleep 30; fi\nexec {:?} \"$@\"\n",
         install.bin.join("hc.py")
     );
     write(&install.bin.join("hc"), shim.as_bytes(), 0o700);
@@ -82,10 +109,10 @@ fn seed(install: &Installed, holder: &str, closed: bool) {
     let record = json!({
         "address":"t5","harness":"claude","session":SESSION,"cwd":"/fixture/project-alpha",
         "root_pid":20,"agent_pid":30,"created_ms":world()["get"]["created_ms"],
-        "launch":"plain","dropped":false,"no_daemon":false,"default_config":true,
+        "launch":"plain","dropped":false,"no_daemon":false,"config":"default",
         "proved":true,"ending_ms":null});
     let saved = json!({"v":1,"install_id":ID,"core":CORE,"holders":[holder],"closed":closed,
-        "boot":"an-earlier-boot",
+        "boot":"an-earlier-boot","seen_ms":now_ms(),
         "records":{"t5":record},"loss":null});
     write(
         &resume_path(install),
@@ -277,4 +304,19 @@ fn a_writer_that_stops_on_purpose_marks_the_record_closed() {
     let saved: Value =
         serde_json::from_slice(&std::fs::read(resume_path(&install)).unwrap()).unwrap();
     assert_eq!(saved["closed"], true);
+}
+
+#[test]
+fn a_power_cut_in_the_ownership_write_does_not_stop_the_writer_for_good() {
+    let install = Installed::new();
+    serve(&install, &world());
+    let staging = install
+        .app
+        .join(format!("data/panorama/runtime/{ID}/.ownership.tmp"));
+    // What a cut between the staging write and the rename leaves: partial bytes.
+    write(&staging, b"{\"v\":1,\"install", 0o600);
+    assert!(install.ensure().status.success());
+    install.wait_feed_within(PATIENCE, |v| v["v"] == 2);
+    assert!(!staging.exists());
+    let _ = install.quiesce_within(QUIESCE).unwrap();
 }

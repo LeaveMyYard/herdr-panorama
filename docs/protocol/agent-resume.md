@@ -42,10 +42,18 @@ A session is covered only if Panorama was shown at some point in that app run. *
 | Panorama shown once, then back to `main`, agent started | **Yes.** The writer keeps running |
 | Closed and reopened within 30 s, still in `main` | **Yes.** The same writer carries on |
 | Closed longer than 30 s, reopened in `main` | **No**, for new agents. Earlier ones stay listed with `closed` and get a button once Panorama is shown |
+| A Claude config dir whose `projects` isn't the shared one | **No.** Its session is never proved, so it has no record and no row |
+
+Several Claude config dirs work when each one's `projects` links to `~/.claude/projects`: each
+session is typed with its own dir (rule 4). Only `~/.claude` and `~/.claude-*` are looked at. Any
+other dir is proved as a session but not as a config: button only. Codex is button only.
 
 It is **off by default**. With it off, the feed writer makes no extra `hc` call and types nothing.
 Each collect it lists `data/`, reads the panorama-spaces store and checks for a record to remove,
-and its file watch includes that store's folder.
+and its file watch includes that store's folder. The session linking it reads from is there anyway.
+
+To keep the buttons and never type by itself, set `AUTOMATIC` to `false` in
+`src/app_feed/resume/decide.rs`.
 
 ## Toggle
 
@@ -131,30 +139,48 @@ Decided when the loss is seen (failing one means a button, not typing):
    An npm-style `node /path/claude` has its script as the first argument, so it's button-only.
    Also shown, not typed: `--remote-control`, `rc` (herdr#5130), `-p`, `--print`, `--bg`, `--tmux`,
    `--permission-mode`, a prompt argument and anything unknown.
-4. Claude ran under the default config dir, which is what a new shell gets. Codex's isn't checked.
+4. Claude's config dir is proved. A shell doesn't know which dir a session used: the variable
+   can be on the one process, as with an alias. So Panorama finds which of `~/.claude` and
+   `~/.claude-*` holds the live process's own `sessions/<pid>.json`, with this pid and start
+   token, and reads no environment. Exactly one must. The typed line then names it:
+   `env CLAUDE_CONFIG_DIR='<dir>' claude --resume <id>`, plain for `~/.claude`. Unproved means a
+   button with a note, because it would resume under the shell's config. After a resume the same
+   proof runs again, and a session under another dir says so instead of a plain `resumed`.
+   Codex's home is only in its environment, and its resume hasn't been run for real, so Codex
+   is button only.
 5. The core has been up at most 5 minutes.
+6. The record was written in the last 30 minutes. Nothing shows when a writer died, so an older
+   one can't prove the session was live. A reboot after a longer power-off gets a button too.
 
-Read from the terminal. A program in front of the shell **before** any prompt was seen may be an
-rc file's child, so Panorama keeps watching and ends with a button. After a prompt it's a final
-skip with a button. A terminal that finished, or isn't a known shell, ends with no button, since
-nothing could make it work.
+Read from the terminal. A program in front of the shell **before** any prompt was seen may be a
+startup file's child, so Panorama keeps watching. After a prompt it's a final skip with a button.
+A terminal that finished, or isn't a known shell, ends with no button.
 
-6. Same address and `created_ms`; live, kept, with no `reason`.
-7. No status report; the foreground process is the terminal's own, with the same argv and a name
+7. Same address and `created_ms`; live, kept, with no `reason`.
+8. No live process already has this session, by the `sessions/*.json` records and their start
+   tokens: a second copy is refused. A row whose session is proved in another terminal ends.
+9. No status report, and the shell has no child processes. In bash a startup file's child stays in
+   the shell's process group, so `foreground` shows only the shell; `/proc` shows the child.
+10. The foreground process is the terminal's own, with the same argv and a name
    of `bash`, `zsh` or `fish`. `exec` keeps the pid, so the argv is what catches `exec ssh box`.
    These three shells were tested. No other shell is ever typed into.
-8. Its folder equals the recorded one (herdr#3116). Panorama does not `cd`.
+11. Its folder equals the recorded one (herdr#3116). Panorama does not `cd`.
+12. The shell's line editor is up: `hc attach --observe`, which types and resizes nothing, shows
+    bracketed paste on. bash and zsh set it at their prompt and clear it for a `read` or any
+    program, so a startup prompt is not typed into. fish's `read` runs the same editor, so fish
+    is button only. A `read -e` in bash or `vared` in zsh, or a program in a startup file that
+    uses the line editor itself, isn't caught.
 
 ### Proof the line is empty
 
 A shell can't be asked what is on its command line, and "unchanged" proves nothing: a person who
 types and pauses looks settled. So Panorama proves the line is empty by witnessing the first screen:
 
-9. It saw the terminal with no shell yet, or a blank screen, and then read the first drawn screen.
+13. It saw the terminal with no shell yet, or a blank screen, and then read the first drawn screen.
    Reads run about every 200 ms while it waits; they run in series and share a thread with
    collects, so that stretches with many terminals. If the shell was already up at first sight,
    it can't prove this, and offers a button.
-10. The screen stays **exactly** that first screen for 1.5 s, and is still that at the last look.
+14. The screen stays **exactly** that first screen for 1.5 s, and is still that at the last look.
     Any change rules out typing by itself for good: someone typed, or used the shell. A prompt
     that redraws itself lands here too. That costs a button, not a wrong line. Panorama keeps
     watching until the screen stops moving, so the button knows the final prompt.
@@ -203,26 +229,24 @@ Nothing is retried automatically. A later loss is a new attempt only for a sessi
 Skipped and failed rows get a button unless nothing could make it work. It takes two steps, because
 only a person can judge a line Panorama can't prove empty.
 
-1. **Resume** types nothing. The writer runs the terminal checks (rules 6 to 8) and the typing
+1. **Resume** types nothing. The writer runs the terminal checks (rules 7 to 12) and the typing
    check, then shows the last three non-blank lines on the row, each cut from the start so the
    end stays, with **Type here**. Its tooltip has more of the screen. If someone is typing, or a
    check fails, the row says why and there is no **Type here**.
-   - There is also no **Type here** unless the cursor is known to be on the last line. That line
-     must start with the prompt last seen when the shell settled, and must not end in a
-     backslash. So a completion listing that appears below that prompt, a `>` continuation or
-     fish's blank continuation line refuses. Clear the line and press **Resume** again. A prompt
-     that really changed, such as one showing an exit status, refuses too.
-   - **The exception:** if a listing or pager was already on screen when the shell settled, it
-     counts as the prompt, so **Type here** is offered. The same goes for a row that never saw a
-     prompt, which takes the line at the first click as its prompt. See Known limits.
+   - There is also no **Type here** unless the cursor is on the last line, read from the same
+     `--observe` paint. That line must start with the prompt last seen when the shell settled,
+     and must not end in a backslash. So a completion listing, a `>` continuation or fish's blank
+     continuation line refuses. Clear the line and press **Resume** again. A prompt that really
+     changed, such as one showing an exit status, refuses too.
+   - A row that never saw a prompt takes the line at the first click as its prompt.
      **If the row shows no prompt, don't press Type here.**
 2. **Type here** sends, if the checks still pass and the screen still matches what was shown.
    Digits are ignored in that comparison, so a ticking clock can be confirmed; a digit typed onto
    the line changes its length, so it refuses. Anything else that moves between the clicks refuses,
    and the person looks again.
 
-So the person sees the line, half-typed or not, before Enter is pressed. A click lifts rules 1 to 5,
-9 and 10 and nothing else.
+So the person sees the line, half-typed or not, before Enter is pressed. A click lifts rules 1 to 6,
+13 and 14 and nothing else.
 
 A press is `panorama-spaces.agent-resume-press-<terminal>-<loss id>[-<token>]`, stored in
 `agents.resume.clicks`. The writer ignores it unless the loss id matches this row, it is under 60 s
@@ -237,13 +261,13 @@ terminal itself, and the text is fixed.
 
 - **Core lost while the app was closed:** a button. This includes quitting the app and rebooting.
 - **App opens first after a reboot:** nothing runs until the Panorama layout is shown. Then it
-  waits while there is no holder or shell. If the shell beat the writer, rule 9 can't be met: a
+  waits while there is no holder or shell. If the shell beat the writer, rule 13 can't be met: a
   button. See "What is covered" above.
 - **Writer restarts mid-way:** `sending` is spent; the first screen and whether it was witnessed
-  are saved; the 1.5 s starts over. Without a reboot it's a button. Otherwise a quit session can
-  come back only if the writer alone was killed, the session was quit and the machine rebooted
-  before the sidebar restarted the writer, about 5 s. The harm is a closed conversation reopened
-  in an idle shell.
+  are saved; the 1.5 s starts over. A leftover `.ownership.tmp` from a power cut is removed.
+- **Writer killed alone:** only a running sidebar restarts it, and `main` has none. A session quit
+  after that still looks live, and a reboot within 30 minutes of the last write can reopen it.
+  Rule 6 is the bound. The harm is a closed conversation reopened in an idle shell.
 - **Two writers:** one app home has `writer.lock`. Two app homes on one core are kept apart by
   an exclusive lock on `$XDG_STATE_HOME/herdr-panorama/resume/<core id>.lock`, held for the
   writer's life. The loser records nothing, types nothing and reports the error. This empty file
@@ -266,18 +290,21 @@ the field's `error`. A resumed row can read `sent` for up to 30 s while the new 
 ## Known limits
 
 - The race above, and `hc keys` from a program before the first read.
-- For a shell first seen after it started, nothing proves which line is the prompt. If a person's
-  unfinished completion was on screen when the shell settled, **Type here** is offered and can
-  submit a half line the row doesn't show. Measured: a one-row listing in zsh or fish shows the
-  half line; a five-row fish listing pushes it off the row, leaving it in the tooltip only; bash's
-  `--More--` pager hides it from both, and the half line ran with the resume text appended. It
-  takes two deliberate clicks on a view with no prompt, on button rows only, and the worst result
-  is that person's own half line submitted. Automatic typing isn't affected.
+- **A startup file that asks for input through the line editor gets the text, with nobody there.**
+  Rule 12 covers `read` and child prompts in bash and zsh, but not `read -e` or `vared`.
+- A reboot types every eligible pane, one every 2 s. Each start runs Claude's hooks and MCP servers.
+- A view shows the last three lines. If a program printed on the prompt line itself, it can pass.
 - The confirm step's comparison ignores digits, so a digit swapped for a digit between the clicks
   passes: shown `sleep 1`, it could submit `sleep 9`. The person had already confirmed a half line.
-- A screen and a view are kept in `resume.json` and the feed for up to 60 s, both mode 0600.
+- A view's screen text stays in `resume.json` and the feed, both mode 0600, until the next writer
+  pass after 60 s. A writer that stops leaves it there until the next one starts.
+- `agents.resume` survives uninstall, so a reinstall comes back on. Uninstalling or turning the
+  toggle off drops the rows of an unresolved loss.
+- Other per-session settings, such as `ANTHROPIC_BASE_URL` or an inline key, aren't repeated. A
+  shell alias of `claude` applies to a plain line but not to one that starts with `env`.
 - A dialog drawn by the shell itself, stable from its first screen, looks like a prompt. zsh's
   first-run menu is one, for a user with no `.zshrc`.
 - The command runs with whatever `claude` or `codex` the shell finds, and enters its history.
-- Tested with real bash, zsh and fish and a stand-in agent, not a real Claude or Codex resume.
+- Real Claude Code resumed through the real writer and core, with three config dirs and a stand-in
+  API, on a simulated reboot. No real power cycle, and no real Codex resume.
 - A session quit in the last moments before a reboot, less than one collect earlier, may look live.

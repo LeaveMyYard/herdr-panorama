@@ -112,11 +112,15 @@ line and offers **Type here**, which types `claude --resume <id>` or `codex resu
 Enter, if the screen hasn't changed.
 
 **Turned on, this can type with nobody at the machine.** After a reboot, Panorama types by itself
-into a shell it saw come back untouched. The app restores the last layout, unless a mod it needs
+into a bash or zsh shell it saw come back untouched, naming the session's own Claude config dir. The app restores the last layout, unless a mod it needs
 is missing. With the `agent-usage` mod installed, the Panorama layout comes back with the app and
 this usually happens. Without it the app opens in its main layout, nothing runs until you switch,
 and you usually get the buttons. A stop without a reboot, which may have been on purpose, always
 waits for you.
+
+A startup file that asks for input through the line editor (`read -e`, `vared`) gets that text;
+a plain `read` or a program's prompt doesn't. fish and Codex are button only. A record over 30
+minutes old also waits for you, so a long power-off gets buttons.
 
 A session is covered only if Panorama was shown at some point in that app run. The toggle says on
 either way, so if you work in another layout, show Panorama once after opening the app.

@@ -13,6 +13,16 @@ pub enum Launch {
     Other,
 }
 
+/// Which Claude config dir a session uses, proved by where its process's record is.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Config {
+    /// `~/.claude`: what `claude` uses with nothing set.
+    Default,
+    Named(String),
+    Unproved,
+}
+
 /// One terminal's agent as last seen, written before any loss.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Record {
@@ -30,8 +40,8 @@ pub struct Record {
     pub dropped: bool,
     /// Codex with `--no-daemon`: hc needs it, or Codex's commands run outside the terminal.
     pub no_daemon: bool,
-    /// Its config dir is the default one a recovered shell would use.
-    pub default_config: bool,
+    /// Where this session's account and settings live.
+    pub config: Config,
     /// The link held at the last look. False means the id may be out of date.
     pub proved: bool,
     /// When the agent was first missing, while the core carried on.
@@ -39,14 +49,30 @@ pub struct Record {
 }
 
 impl Record {
-    /// What to type, only for an id that is exactly a UUID: this text reaches a shell.
+    fn note(&self) -> Option<&'static str> {
+        if self.harness == "claude" && self.config == Config::Unproved {
+            Some("its config dir isn't proved, so this resumes under the shell's config")
+        } else if self.dropped {
+            Some("started with options that aren't repeated")
+        } else {
+            None
+        }
+    }
+
+    /// What to type, only for an id that is exactly a UUID: this text reaches a shell. `env`
+    /// works the same in bash, zsh and fish. A dir that can't be quoted plainly gives none.
     pub fn command(&self) -> Option<String> {
         let id = herdr_agent_kit::agent_session::SessionId::parse(&self.session)?;
         let id = id.as_str();
-        match (self.harness.as_str(), self.no_daemon) {
-            ("claude", _) => Some(format!("claude --resume {id}")),
-            ("codex", true) => Some(format!("codex --no-daemon resume {id}")),
-            ("codex", false) => Some(format!("codex resume {id}")),
+        match (self.harness.as_str(), self.no_daemon, &self.config) {
+            ("claude", _, Config::Named(dir)) => {
+                let plain =
+                    dir.starts_with('/') && !dir.chars().any(|c| c == '\'' || c.is_control());
+                plain.then(|| format!("env CLAUDE_CONFIG_DIR='{dir}' claude --resume {id}"))
+            }
+            ("claude", _, _) => Some(format!("claude --resume {id}")),
+            ("codex", true, _) => Some(format!("codex --no-daemon resume {id}")),
+            ("codex", false, _) => Some(format!("codex resume {id}")),
             _ => None,
         }
     }
@@ -156,6 +182,8 @@ pub struct Saved {
     pub holders: Vec<String>,
     /// The kernel's id for this boot at the last look.
     pub boot: Option<String>,
+    /// When a writer last looked, within a minute. A record can be this old.
+    pub seen_ms: u64,
     /// The writer left on purpose: nobody watched from then on.
     pub closed: bool,
     pub records: BTreeMap<String, Record>,
@@ -170,6 +198,7 @@ impl Saved {
             core: None,
             holders: Vec::new(),
             boot: None,
+            seen_ms: 0,
             closed: false,
             records: BTreeMap::new(),
             loss: None,
@@ -191,7 +220,7 @@ impl Saved {
                         "state": e.stage,
                         "reason": e.reason,
                         "command": e.record.command(),
-                        "note": e.record.dropped.then_some("started with options that aren't repeated"),
+                        "note": e.record.note(),
                         "click": e.clickable(),
                         "look": e.look.as_ref().map(|l| json!({"lines":l.lines,"text":l.text,"token":l.token})),
                     })

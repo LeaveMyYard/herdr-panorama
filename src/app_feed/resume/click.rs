@@ -8,6 +8,7 @@ const CLICK_SKEW_MS: u64 = 2_000;
 const LINE_LIMIT: usize = 300;
 const ROW_LINES: usize = 3;
 const TIP_LINES: usize = 12;
+pub(super) const HELD: &str = "a live process already has this session";
 const NO_CURSOR: &str =
     "the last line isn't the prompt, so Panorama can't show what Enter would submit";
 
@@ -27,6 +28,15 @@ pub(super) fn shape(text: &str) -> String {
 pub(super) fn prompt_of(text: &str) -> Option<String> {
     let line = text.lines().rev().find(|l| !l.trim().is_empty())?;
     Some(blank(line.trim_end()))
+}
+
+/// The screen row of the last non-blank line, from 1.
+pub(super) fn last_row(text: &str) -> usize {
+    let lines: Vec<&str> = text.lines().collect();
+    lines
+        .iter()
+        .rposition(|l| !l.trim().is_empty())
+        .map_or(0, |at| at + 1)
 }
 
 /// The end of a line, which is where anything typed is.
@@ -103,9 +113,15 @@ impl<H: Hc> Resume<H> {
         let now = (self.clock)();
         let screen = self.hc.screen(address);
         let quiet = self.hc.quiet(address);
+        let paint = self.hc.paint(address);
+        let free = !self.hc.held(&record.session);
         let entry = self.entry(address);
         let prompt = entry.prompt.clone();
         entry.look = None;
+        if !free {
+            entry.reason = Some(HELD.into());
+            return;
+        }
         match (judged, screen) {
             (Verdict::Dead(reason), _) => {
                 entry.dead = true;
@@ -115,14 +131,16 @@ impl<H: Hc> Resume<H> {
                 entry.reason = Some(reason.into())
             }
             (Verdict::Ready, Some(text)) if quiet => {
-                // A listing below the prompt or a continuation line hides what Enter submits.
-                // fish continues on a blank line, so its sign is the backslash above it.
-                // A row that never saw a prompt takes this line as one: the same limit as a
-                // listing on screen when the shell settled, which the doc states.
+                // The line editor must be up, with the cursor on the last line, and that line
+                // must start with the prompt. A listing or continuation fails one of these.
                 let last = prompt_of(&text).unwrap_or_default();
                 let prompt = prompt.or_else(|| Some(last.clone()));
                 entry.prompt.clone_from(&prompt);
-                if !prompt.is_some_and(|p| last.starts_with(&p)) || last.ends_with('\\') {
+                let on_prompt = paint.is_some_and(|p| p.editing && p.row == last_row(&text));
+                if !on_prompt
+                    || !prompt.is_some_and(|p| last.starts_with(&p))
+                    || last.ends_with('\\')
+                {
                     entry.reason = Some(NO_CURSOR.into());
                     return;
                 }
@@ -138,7 +156,7 @@ impl<H: Hc> Resume<H> {
             (Verdict::Ready, Some(_)) => {
                 entry.reason = Some("someone is typing in the terminal".into())
             }
-            _ => entry.reason = Some("the terminal could not be read".into()),
+            _ => entry.reason = Some("the shell isn't free yet".into()),
         }
     }
 }

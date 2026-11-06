@@ -10,9 +10,11 @@
 //! Everything else gets a Resume button with a confirm step.
 mod attempt;
 mod click;
+pub mod core_hc;
 pub mod decide;
 pub mod hc;
 mod launch;
+pub mod outcome;
 pub mod state;
 pub mod store;
 mod toggle;
@@ -63,6 +65,8 @@ pub struct Sources {
     pub boot: fn() -> Option<String>,
 }
 
+const SEEN_EVERY_MS: u64 = 60_000;
+
 pub struct Resume<H> {
     hc: H,
     id: String,
@@ -77,6 +81,8 @@ pub struct Resume<H> {
     settled: HashMap<String, u64>,
     /// A restarted core has no holder yet: look again soon.
     no_holder: bool,
+    /// When this writer last typed by itself, on the monotonic clock.
+    last_fire: Option<u64>,
     clock: fn() -> u64,
     mono: fn() -> u64,
     boot: fn() -> Option<String>,
@@ -104,6 +110,7 @@ impl<H: Hc> Resume<H> {
             started: false,
             settled: HashMap::new(),
             no_holder: false,
+            last_fire: None,
             clock: sources.clock,
             mono: sources.mono,
             boot: sources.boot,
@@ -184,6 +191,12 @@ impl<H: Hc> Resume<H> {
                     entry.stage = Stage::Sent;
                     entry.sent_ms = Some(sent);
                 }
+                // A view from a writer that stopped is nobody's to confirm.
+                entry.look = None;
+            }
+            // Saved at once: the file must not keep a stale view's screen text.
+            if saved.loss.is_some() {
+                self.store.save(home, &saved)?;
             }
             self.saved = Some(saved);
         }
@@ -209,11 +222,20 @@ impl<H: Hc> Resume<H> {
                     saved.records.values_mut().for_each(|r| r.proved = false);
                 }
                 let hc = &self.hc;
-                decide::track(saved, linked, &|address| hc.get(address), now);
+                decide::track(
+                    saved,
+                    linked,
+                    &|address| hc.get(address),
+                    &|pid| hc.config(pid),
+                    now,
+                );
             }
         }
         self.started = true;
         saved.closed = false;
+        if now.saturating_sub(saved.seen_ms) >= SEEN_EVERY_MS {
+            saved.seen_ms = now;
+        }
         saved.core = Some(status.core);
         saved.holders = status.holders;
         // A failed read must not wipe the id: the next loss would have nothing to compare.

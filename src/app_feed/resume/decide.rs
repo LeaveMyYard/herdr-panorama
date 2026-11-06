@@ -2,7 +2,7 @@
 use super::{
     hc::{Lookup, Status, Term},
     launch::launch,
-    state::{Entry, Launch, Loss, Record, Saved, Stage},
+    state::{Config, Entry, Launch, Loss, Record, Saved, Stage},
 };
 use crate::host::source::Linked;
 use std::{collections::BTreeMap, mem::take};
@@ -12,11 +12,16 @@ use std::{collections::BTreeMap, mem::take};
 pub const ENDING_MS: u64 = 4_000;
 /// After the first drawn screen, it must stay exactly that for this long.
 pub const SETTLE_MS: u64 = 1_500;
-/// Give-ups. Each ends in not typing, so none of them can cause a wrong resume.
+/// A give-up: it ends in not typing, so it can't cause a wrong resume.
 pub const SHELL_WAIT_MS: u64 = 120_000;
-pub const CONFIRM_MS: u64 = 30_000;
 /// A core up longer than this before Panorama saw it may have had its shells used already.
 pub const FRESH_CORE_MS: u64 = 300_000;
+
+/// Whether a loss may be typed with nobody there. Set to `false` for buttons only.
+pub const AUTOMATIC: bool = true;
+/// A record older than this may be from a writer that died long ago. A reboot after a longer
+/// power-off gets a button: the time the machine was off can't be told from that.
+pub const SEEN_LIMIT_MS: u64 = 30 * 60 * 1000;
 
 /// Shells whose restored prompt was tested. Any other is never typed into.
 const SHELLS: [&str; 3] = ["bash", "zsh", "fish"];
@@ -49,9 +54,10 @@ pub fn compare(saved: &Saved, status: &Status) -> Change {
 }
 
 /// A proved link as a record, or `None` when it has nothing a resume could use.
-pub fn record(link: &Linked) -> Option<Record> {
+pub fn record(link: &Linked, config: &dyn Fn(u32) -> Config) -> Option<Record> {
     let term = Term::parse(&link.terminal)?;
     let foreground = term.foreground?;
+    let foreground_pid = foreground.pid;
     if link.address.contains('/') || !matches!(link.harness.as_str(), "claude" | "codex") {
         return None;
     }
@@ -72,7 +78,7 @@ pub fn record(link: &Linked) -> Option<Record> {
         launch,
         dropped,
         no_daemon,
-        default_config: link.default_config,
+        config: config(foreground_pid),
         proved: true,
         ending_ms: None,
     };
@@ -107,10 +113,16 @@ fn still(mut old: Record, term: &Term, now_ms: u64) -> Option<Record> {
 }
 
 /// The records after a collect. Only a positive read ever ends one: a failed read says nothing.
-pub fn track(saved: &mut Saved, linked: &[Linked], get: &dyn Fn(&str) -> Lookup, now_ms: u64) {
+pub fn track(
+    saved: &mut Saved,
+    linked: &[Linked],
+    get: &dyn Fn(&str) -> Lookup,
+    config: &dyn Fn(u32) -> Config,
+    now_ms: u64,
+) {
     let fresh: BTreeMap<String, Record> = linked
         .iter()
-        .filter_map(record)
+        .filter_map(|l| record(l, config))
         .map(|r| (r.address.clone(), r))
         .collect();
     let mut next = BTreeMap::new();
@@ -140,8 +152,11 @@ fn barred(
     record: &Record,
     uptime_ms: u64,
     boot: Option<&str>,
+    now_ms: u64,
 ) -> Option<&'static str> {
-    if saved.closed {
+    if !AUTOMATIC {
+        Some("automatic typing is turned off")
+    } else if saved.closed {
         Some("Panorama was closed, so it can't tell if this session was live")
     } else if !record.proved {
         Some("the session wasn't proved at the last look")
@@ -149,8 +164,13 @@ fn barred(
         Some("the agent had already gone just before the loss")
     } else if record.launch == Launch::Other {
         Some("the resume command can't repeat how it was started")
-    } else if !record.default_config {
-        Some("it ran under another config dir")
+    } else if record.harness == "codex" {
+        // Its home is only in its environment, and its resume hasn't been run for real.
+        Some("Codex's home can't be proved")
+    } else if record.config == Config::Unproved {
+        Some("its config dir isn't proved")
+    } else if now_ms.saturating_sub(saved.seen_ms) > SEEN_LIMIT_MS {
+        Some("the record is too old to show the session was still live")
     } else if !rebooted(saved, boot) {
         // `hc server stop` and a crash look alike from here; a reboot doesn't.
         Some("stopped without a reboot, maybe on purpose")
@@ -178,7 +198,7 @@ pub fn open(saved: &mut Saved, status: &Status, boot: Option<&str>, now_ms: u64)
     let mut entries = saved.loss.take().map_or(BTreeMap::new(), |l| l.entries);
     entries.retain(|_, e| e.stage != Stage::Resumed);
     for (address, record) in take(&mut saved.records) {
-        let hold = barred(saved, &record, status.uptime_ms, boot).map(str::to_owned);
+        let hold = barred(saved, &record, status.uptime_ms, boot, now_ms).map(str::to_owned);
         let mut entry = Entry::new(record);
         entry.hold = hold;
         entry.rebooted = rebooted(saved, boot);
@@ -238,46 +258,4 @@ pub fn judge(record: &Record, term: &Term, rebooted: bool) -> Verdict {
         return Verdict::Skip("the shell is in a different folder");
     }
     Verdict::Ready
-}
-
-/// Read-only, after the one send. `link` is the session proved there now, if any.
-pub fn confirm(entry: &mut Entry, lookup: &Lookup, link: Option<&str>, arrived: bool, now_ms: u64) {
-    let overdue = now_ms >= entry.sent_ms.unwrap_or(0).saturating_add(CONFIRM_MS);
-    if let Some(id) = link {
-        entry.stage = Stage::Resumed;
-        entry.reason = (id != entry.record.session).then(|| format!("now running session {id}"));
-        return;
-    }
-    let shell = match lookup {
-        Lookup::Found(t) if t.live => match (&t.foreground, t.pid) {
-            (Some(f), Some(pid)) if f.pid != pid => Some(false),
-            (Some(_), Some(_)) => Some(true),
-            _ => None,
-        },
-        _ => None,
-    };
-    let note = entry.reason.take();
-    let tell = |text: &str| {
-        note.as_ref()
-            .map_or(text.to_owned(), |n| format!("{n}; {text}"))
-    };
-    match shell {
-        Some(false) if overdue => {
-            entry.end(Stage::Resumed, "started, but its session isn't proved")
-        }
-        Some(false) => {
-            entry.started = true;
-            entry.reason = note;
-        }
-        Some(true) if entry.started => entry.end(
-            Stage::Failed,
-            tell("it exited soon after starting; not retried"),
-        ),
-        _ if overdue && arrived => entry.end(
-            Stage::Failed,
-            tell("the command reached the terminal but nothing started; not retried"),
-        ),
-        _ if overdue => entry.end(Stage::Failed, tell("no sign it arrived; not retried")),
-        _ => entry.reason = note,
-    }
 }

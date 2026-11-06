@@ -5,7 +5,7 @@ use super::{
     journal::Journal,
     liveness::{self, Idle, State},
     receipt::Receipt,
-    resume::{Resume, hc::CoreHc},
+    resume::{Resume, core_hc::CoreHc},
     serialize,
     triggers::Triggers,
 };
@@ -90,7 +90,7 @@ pub fn watch(home: Home, r: Receipt, _lifetime: std::fs::File) -> Result<()> {
     let result = (|| {
         let env = PluginEnv::from_env();
         let core = Core::default().with_stop(stop.clone());
-        let mut resume = Resume::new(CoreHc::new(core.clone()), &r, &env);
+        let mut resume = Resume::new(CoreHc::new(core.clone(), &env), &r, &env);
         let mut source = crate::host::collect::app_source(env.clone(), core.clone());
         let mut triggers = Triggers::new(
             core,

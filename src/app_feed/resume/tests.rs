@@ -1,8 +1,9 @@
 //! A scripted hc world: every "must not type" case asserts on the sends it recorded.
 use super::{
-    decide::{self, CONFIRM_MS, ENDING_MS, FRESH_CORE_MS, SETTLE_MS, SHELL_WAIT_MS},
-    hc::{Foreground as Fg, Hc, Lookup, Sent, Status, Term},
-    state::{Launch, Record, Saved, Stage},
+    decide::{self, ENDING_MS, FRESH_CORE_MS, SETTLE_MS, SHELL_WAIT_MS},
+    hc::{Foreground as Fg, Hc, Lookup, Paint, Sent, Status, Term},
+    outcome::CONFIRM_MS,
+    state::{Config, Launch, Record, Saved, Stage},
     toggle::TOGGLE_STORE,
     *,
 };
@@ -56,6 +57,11 @@ struct World {
     sends: Vec<(String, String)>,
     calls: usize,
     quiet: bool,
+    editing: bool,
+    cursor: Option<usize>,
+    children: bool,
+    config: Config,
+    held: bool,
 }
 impl Default for World {
     fn default() -> Self {
@@ -67,6 +73,11 @@ impl Default for World {
             sends: Vec::new(),
             calls: 0,
             quiet: true,
+            editing: true,
+            cursor: None,
+            children: false,
+            config: Config::Default,
+            held: false,
         }
     }
 }
@@ -92,6 +103,24 @@ impl Hc for Fake {
     }
     fn quiet(&self, _: &str) -> bool {
         self.0.borrow().quiet
+    }
+    fn paint(&self, address: &str) -> Option<Paint> {
+        let world = self.0.borrow();
+        let text = world.screens.get(address)?;
+        let row = world.cursor.unwrap_or(click::last_row(text));
+        Some(Paint {
+            editing: world.editing,
+            row,
+        })
+    }
+    fn children(&self, _: u32) -> bool {
+        self.0.borrow().children
+    }
+    fn config(&self, _: u32) -> Config {
+        self.0.borrow().config.clone()
+    }
+    fn held(&self, _: &str) -> bool {
+        self.0.borrow().held
     }
     fn send(&self, address: &str, text: &str) -> Sent {
         let mut world = self.0.borrow_mut();
@@ -137,7 +166,6 @@ fn link(address: &str, session: &str, argv: &[&str]) -> Linked {
         address: address.into(),
         harness: "claude".into(),
         session: session.into(),
-        default_config: true,
         terminal: json!({"state":"live","keep":true,"pid":20,"created_ms":5,"argv":["/bin/bash"],
             "status":{"state":"idle"},"reason":null,
             "foreground":{"pid":30,"cwd":CWD,"name":"claude","argv":argv}}),
@@ -313,6 +341,18 @@ fn the_toggle_is_read_again_right_before_typing() {
         }
         fn quiet(&self, a: &str) -> bool {
             self.0.quiet(a)
+        }
+        fn paint(&self, a: &str) -> Option<Paint> {
+            self.0.paint(a)
+        }
+        fn children(&self, p: u32) -> bool {
+            self.0.children(p)
+        }
+        fn config(&self, p: u32) -> Config {
+            self.0.config(p)
+        }
+        fn held(&self, s: &str) -> bool {
+            self.0.held(s)
         }
         fn send(&self, a: &str, t: &str) -> Sent {
             self.0.send(a, t)
@@ -855,9 +895,21 @@ fn the_last_reads_come_after_the_attempt_is_saved() {
             self.0.0.borrow_mut().calls = 0;
             self.0.quiet(a)
         }
+        fn paint(&self, a: &str) -> Option<Paint> {
+            self.0.paint(a)
+        }
+        fn children(&self, p: u32) -> bool {
+            self.0.children(p)
+        }
+        fn config(&self, p: u32) -> Config {
+            self.0.config(p)
+        }
+        fn held(&self, s: &str) -> bool {
+            self.0.held(s)
+        }
         fn send(&self, a: &str, t: &str) -> Sent {
             let reads = self.0.0.borrow().calls;
-            assert_eq!(reads, 2, "a get and a screen after the save");
+            assert!(reads >= 2, "a get and a screen after the save");
             self.0.send(a, t)
         }
     }
@@ -897,6 +949,18 @@ fn a_program_appearing_at_the_last_look_stops_the_send() {
         }
         fn quiet(&self, a: &str) -> bool {
             self.0.quiet(a)
+        }
+        fn paint(&self, a: &str) -> Option<Paint> {
+            self.0.paint(a)
+        }
+        fn children(&self, p: u32) -> bool {
+            self.0.children(p)
+        }
+        fn config(&self, p: u32) -> Config {
+            self.0.config(p)
+        }
+        fn held(&self, s: &str) -> bool {
+            self.0.held(s)
         }
         fn send(&self, a: &str, t: &str) -> Sent {
             self.0.send(a, t)
@@ -1238,6 +1302,17 @@ fn a_click_left_in_the_store_is_acted_on_once() {
 }
 
 #[test]
+fn a_view_does_not_outlive_its_writer() {
+    let mut rig = Rig::new();
+    losing_without_reboot(&mut rig);
+    assert!(looked(&mut rig).is_object());
+    let mut next = Resume::with(rig.fake.clone(), ID, GEN, rig.locks.clone(), CLOCKS);
+    rig.resume.held = None;
+    next.tick(&rig.home, &[], &|| true);
+    assert_eq!(rig.saved().loss.unwrap().entries["t5"].look, None);
+}
+
+#[test]
 fn a_view_expires_and_a_token_must_match() {
     let mut rig = Rig::new();
     losing_without_reboot(&mut rig);
@@ -1455,12 +1530,65 @@ fn a_blank_read_is_a_witness_too() {
 }
 
 #[test]
-fn another_config_dir_is_shown_not_typed() {
+fn a_named_config_is_typed_with_its_dir_and_by_itself() {
+    let mut rig = Rig::new();
+    rig.world().config = Config::Named("/fixture/.claude-1".into());
+    rig.lost(shell_term());
+    rig.settle();
+    let typed = format!("env CLAUDE_CONFIG_DIR='/fixture/.claude-1' claude --resume {SESSION}");
+    assert_eq!(rig.sends(), [("t5".into(), typed)]);
+}
+
+#[test]
+fn a_config_dir_that_cannot_be_quoted_plainly_gives_no_command() {
+    for dir in ["relative/dir", "/a'b", "/a\nb"] {
+        let mut rig = Rig::new();
+        rig.world().config = Config::Named(dir.into());
+        rig.set(agent_term());
+        rig.tick(&[link("t5", SESSION, &["claude"])]);
+        assert!(rig.saved().records.is_empty(), "{dir:?}");
+    }
+}
+
+#[test]
+fn an_unproved_config_is_never_typed_by_itself_and_says_so() {
+    let mut rig = Rig::new();
+    rig.world().config = Config::Unproved;
+    rig.set(agent_term());
+    rig.tick(&[link("t5", SESSION, &["claude"])]);
+    rig.reboot("holder-b");
+    rig.tick(&[]);
+    rig.world().screens.insert("t5".into(), "$ ".into());
+    rig.set(shell_term());
+    rig.tick(&[]);
+    let report = rig.settle().unwrap();
+    assert!(rig.sends().is_empty());
+    assert!(rig.reason().contains("config dir isn't proved"));
+    let note = report["loss"]["entries"][0]["note"].as_str().unwrap();
+    assert!(note.contains("shell's config"));
+}
+
+#[test]
+fn a_resume_under_another_config_never_shows_plainly() {
+    let mut rig = Rig::new();
+    rig.world().config = Config::Named("/fixture/.claude-1".into());
+    rig.lost(shell_term());
+    rig.settle();
+    rig.world().config = Config::Default;
+    rig.tick(&[link("t5", SESSION, &["claude"])]);
+    assert_eq!(rig.stage(), Stage::Resumed);
+    assert!(rig.reason().contains("another config dir"));
+}
+
+#[test]
+fn codex_is_never_typed_by_itself() {
     let mut rig = Rig::new();
     rig.set(agent_term());
-    let mut other = link("t5", SESSION, &["claude"]);
-    other.default_config = false;
-    rig.tick(&[other]);
+    let codex = Linked {
+        harness: "codex".into(),
+        ..link("t5", SESSION, &["codex"])
+    };
+    rig.tick(&[codex]);
     rig.reboot("holder-b");
     rig.tick(&[]);
     rig.world().screens.insert("t5".into(), "$ ".into());
@@ -1468,7 +1596,222 @@ fn another_config_dir_is_shown_not_typed() {
     rig.tick(&[]);
     rig.settle();
     assert!(rig.sends().is_empty());
-    assert!(rig.reason().contains("config dir"));
+    assert!(rig.reason().contains("Codex"));
+}
+
+#[test]
+fn a_shell_that_is_not_at_its_line_editor_is_not_typed_into() {
+    // A `read` in a startup file: a still screen and a bare shell, but no line editor.
+    let mut rig = Rig::new();
+    rig.world().editing = false;
+    rig.lost(shell_term());
+    rig.settle();
+    rig.settle();
+    assert!(rig.sends().is_empty());
+    assert_eq!(rig.stage(), Stage::Waiting);
+    pass(SHELL_WAIT_MS);
+    rig.tick(&[]);
+    assert_eq!(rig.stage(), Stage::Skipped);
+    assert!(rig.sends().is_empty());
+    // The button doesn't offer it either.
+    assert_eq!(looked(&mut rig), Value::Null);
+}
+
+#[test]
+fn fish_is_only_resumed_by_a_person() {
+    let mut rig = Rig::new();
+    let mut fish = fg(77, CWD);
+    fish.name = "fish".into();
+    rig.lost(Term {
+        foreground: Some(fish),
+        ..shell_term()
+    });
+    rig.settle();
+    assert!(rig.sends().is_empty());
+    assert!(rig.reason().contains("fish"));
+    let view = looked(&mut rig);
+    confirm(&mut rig, &view);
+    assert_eq!(rig.sends().len(), 1);
+}
+
+#[test]
+fn the_line_editor_is_checked_again_at_the_last_look() {
+    struct Gone(Fake);
+    impl Hc for Gone {
+        fn status(&self) -> Option<Status> {
+            self.0.status()
+        }
+        fn get(&self, a: &str) -> Lookup {
+            self.0.get(a)
+        }
+        fn screen(&self, a: &str) -> Option<String> {
+            self.0.screen(a)
+        }
+        fn quiet(&self, a: &str) -> bool {
+            self.0.0.borrow_mut().editing = false;
+            self.0.quiet(a)
+        }
+        fn paint(&self, a: &str) -> Option<Paint> {
+            self.0.paint(a)
+        }
+        fn children(&self, p: u32) -> bool {
+            self.0.children(p)
+        }
+        fn config(&self, p: u32) -> Config {
+            self.0.config(p)
+        }
+        fn held(&self, s: &str) -> bool {
+            self.0.held(s)
+        }
+        fn send(&self, a: &str, t: &str) -> Sent {
+            self.0.send(a, t)
+        }
+    }
+    let mut rig = Rig::new();
+    rig.lost(shell_term());
+    pass(SETTLE_MS);
+    let gone = Gone(rig.fake.clone());
+    let mut next = Resume::with(gone, ID, GEN, rig.locks.clone(), CLOCKS);
+    rig.resume.held = None;
+    next.saved = rig.resume.saved.clone();
+    next.started = true;
+    next.store.load(&rig.home, ID).unwrap();
+    next.settled = rig.resume.settled.clone();
+    next.tick(&rig.home, &[], &|| true);
+    assert!(rig.sends().is_empty());
+    assert!(rig.reason().contains("isn't at its prompt"));
+}
+
+#[test]
+fn a_child_of_the_shell_is_waited_for() {
+    // bash keeps a startup child in its own process group: `foreground` says the shell.
+    let mut rig = Rig::new();
+    rig.world().children = true;
+    rig.lost(shell_term());
+    rig.settle();
+    rig.settle();
+    assert!(rig.sends().is_empty());
+    assert_eq!(rig.stage(), Stage::Waiting);
+    rig.world().children = false;
+    rig.tick(&[]);
+    rig.settle();
+    assert_eq!(rig.sends().len(), 1);
+}
+
+#[test]
+fn a_session_a_live_process_holds_is_never_typed() {
+    let mut rig = Rig::new();
+    rig.lost(shell_term());
+    rig.world().held = true;
+    rig.settle();
+    assert!(rig.sends().is_empty());
+    assert!(rig.reason().contains("already has this session"));
+    assert_eq!(looked(&mut rig), Value::Null);
+    assert!(rig.reason().contains("already has this session"));
+}
+
+#[test]
+fn a_session_proved_elsewhere_ends_its_row() {
+    let mut rig = Rig::new();
+    losing_without_reboot(&mut rig);
+    let report = rig.tick(&[link("t9", SESSION, &["claude"])]).unwrap();
+    let entry = &report["loss"]["entries"][0];
+    assert_eq!(entry["click"], false);
+    assert!(entry["reason"].as_str().unwrap().contains("running in t9"));
+}
+
+#[test]
+fn an_old_record_is_not_typed_by_itself() {
+    let mut rig = Rig::new();
+    rig.set(agent_term());
+    rig.tick(&[link("t5", SESSION, &["claude"])]);
+    assert_eq!(rig.saved().seen_ms, clock());
+    pass(decide::SEEN_LIMIT_MS + 1);
+    rig.reboot("holder-b");
+    rig.tick(&[]);
+    rig.world().screens.insert("t5".into(), "$ ".into());
+    rig.set(shell_term());
+    rig.tick(&[]);
+    rig.settle();
+    assert!(rig.sends().is_empty());
+    assert!(rig.reason().contains("too old"));
+}
+
+#[test]
+fn the_last_look_is_kept_fresh_without_a_write_every_tick() {
+    let mut rig = Rig::new();
+    rig.set(agent_term());
+    rig.tick(&[link("t5", SESSION, &["claude"])]);
+    let first = rig.saved().seen_ms;
+    pass(30_000);
+    rig.tick(&[link("t5", SESSION, &["claude"])]);
+    assert_eq!(rig.saved().seen_ms, first);
+    pass(30_000);
+    rig.tick(&[link("t5", SESSION, &["claude"])]);
+    assert_eq!(rig.saved().seen_ms, first + 60_000);
+}
+
+#[test]
+fn panes_are_typed_one_at_a_time() {
+    let mut rig = Rig::new();
+    rig.set(agent_term());
+    let mut other = agent_term();
+    other.created_ms = 6;
+    rig.world().terms.insert("t6".into(), Lookup::Found(other));
+    let mut second = link("t6", OTHER, &["claude"]);
+    second.terminal["created_ms"] = json!(6);
+    rig.tick(&[link("t5", SESSION, &["claude"]), second]);
+    rig.reboot("holder-b");
+    rig.world().terms.insert(
+        "t6".into(),
+        Lookup::Found(Term {
+            created_ms: 6,
+            ..waiting()
+        }),
+    );
+    rig.tick(&[]);
+    rig.set(shell_term());
+    rig.world().terms.insert(
+        "t6".into(),
+        Lookup::Found(Term {
+            created_ms: 6,
+            ..shell_term()
+        }),
+    );
+    rig.world().screens.insert("t5".into(), "$ ".into());
+    rig.world().screens.insert("t6".into(), "$ ".into());
+    rig.tick(&[]);
+    rig.settle();
+    assert_eq!(rig.sends().len(), 1);
+    pass(1999);
+    rig.tick(&[]);
+    assert_eq!(rig.sends().len(), 1);
+    pass(1);
+    rig.tick(&[]);
+    assert_eq!(rig.sends().len(), 2);
+}
+
+#[test]
+fn the_cursor_must_be_on_the_last_line_for_a_view() {
+    let mut rig = Rig::new();
+    losing_at(&mut rig, "$ touch f\nfileA  fileB");
+    // A listing on screen when the shell settled counts as the prompt, but the cursor is above.
+    rig.world().cursor = Some(1);
+    assert_eq!(looked(&mut rig), Value::Null);
+    assert!(rig.reason().contains("isn't the prompt"));
+    rig.world().cursor = Some(2);
+    assert!(looked(&mut rig).is_object());
+}
+
+#[test]
+fn a_paint_gives_the_line_editor_and_the_last_cursor_move() {
+    let at_prompt = b"\x1b[2J\x1b[?2004h\x1b[1;1Hrig$ \x1b[4;7H\x1b[0m\x1b[?1004h";
+    let parsed = Paint::parse(at_prompt).unwrap();
+    assert_eq!((parsed.editing, parsed.row), (true, 4));
+    let in_read = b"\x1bH\x1b[Hrig$ \x1b[1;7H\x1b[0m";
+    let parsed = Paint::parse(in_read).unwrap();
+    assert_eq!((parsed.editing, parsed.row), (false, 1));
+    assert_eq!(Paint::parse(b"nothing"), None);
 }
 
 #[test]
@@ -1529,7 +1872,7 @@ fn only_local_uuid_sessions_of_known_harnesses_are_recorded() {
         },
     ];
     for l in &bad {
-        assert_eq!(decide::record(l), None, "{l:?}");
+        assert_eq!(decide::record(l, &|_| Config::Default), None, "{l:?}");
     }
     let mut rig = Rig::new();
     rig.tick(&bad);
@@ -1540,7 +1883,7 @@ fn only_local_uuid_sessions_of_known_harnesses_are_recorded() {
 fn a_tampered_record_cannot_put_text_in_a_shell() {
     let record = Record {
         session: "x; rm -rf ~".into(),
-        ..decide::record(&link("t5", SESSION, &["claude"])).unwrap()
+        ..decide::record(&link("t5", SESSION, &["claude"]), &|_| Config::Default).unwrap()
     };
     assert_eq!(record.command(), None);
 }
@@ -1552,7 +1895,7 @@ fn each_harness_gets_its_own_command() {
             harness: harness.into(),
             ..link("t5", SESSION, argv)
         };
-        let r = decide::record(&l).unwrap();
+        let r = decide::record(&l, &|_| Config::Default).unwrap();
         (r.command().unwrap(), r.launch)
     };
     let id = SESSION;
@@ -1670,6 +2013,18 @@ fn the_attempt_is_on_disk_before_the_text_is_typed() {
         }
         fn quiet(&self, a: &str) -> bool {
             self.0.quiet(a)
+        }
+        fn paint(&self, a: &str) -> Option<Paint> {
+            self.0.paint(a)
+        }
+        fn children(&self, p: u32) -> bool {
+            self.0.children(p)
+        }
+        fn config(&self, p: u32) -> Config {
+            self.0.config(p)
+        }
+        fn held(&self, s: &str) -> bool {
+            self.0.held(s)
         }
         fn send(&self, a: &str, t: &str) -> Sent {
             let saved: Saved = serde_json::from_slice(&std::fs::read(&self.1).unwrap()).unwrap();

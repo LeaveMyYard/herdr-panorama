@@ -1,22 +1,6 @@
 //! The few hc calls agent resume makes. `send` is the only one that writes to a terminal.
-use crate::host::{Core, command};
-use serde_json::{Value, json};
-use std::{
-    ffi::OsString,
-    io::{BufRead, BufReader, Write},
-    process::{Command, Output, Stdio},
-    sync::{Arc, atomic::AtomicBool},
-    time::Duration,
-};
-
-const LIMIT: usize = 2 * 1024 * 1024;
-const READ: Duration = Duration::from_secs(2);
-/// Past the core's ~3 s wait for a person to stop typing.
-const SEND: Duration = Duration::from_secs(10);
-/// A probe of an untouched terminal answers in milliseconds.
-const QUIET: Duration = Duration::from_millis(500);
-/// `hc`'s exit code for not_found (`hc --skill`).
-const NOT_FOUND: i32 = 3;
+use super::state::Config;
+use serde_json::Value;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Status {
@@ -78,6 +62,32 @@ impl Term {
     }
 }
 
+/// From a viewer's first paint.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Paint {
+    /// Bracketed paste is on. bash, zsh and fish set it at their line editor and clear it
+    /// for anything else, including a `read` in a startup file: it marks a real prompt.
+    pub editing: bool,
+    /// The cursor's screen row, from 1.
+    pub row: usize,
+}
+
+impl Paint {
+    /// The last cursor move in a paint is where the cursor ends up.
+    pub fn parse(bytes: &[u8]) -> Option<Self> {
+        let text = String::from_utf8_lossy(bytes);
+        let editing = text.contains("\x1b[?2004h");
+        let row = text.rmatch_indices('H').find_map(|(end, _)| {
+            let head = &text[..end];
+            let start = head.rfind("\x1b[")? + 2;
+            let (row, col) = head[start..].split_once(';')?;
+            col.parse::<usize>().ok()?;
+            row.parse().ok()
+        })?;
+        Some(Self { editing, row })
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Lookup {
     Found(Term),
@@ -99,114 +109,14 @@ pub trait Hc {
     fn screen(&self, address: &str) -> Option<String>;
     /// True if nobody has typed here for hc's ~3 s. Types nothing.
     fn quiet(&self, address: &str) -> bool;
+    /// What a viewer would be told. Changes nothing: `hc attach --observe`.
+    fn paint(&self, address: &str) -> Option<Paint>;
+    /// True if the shell has children, or that can't be read. In bash a startup child stays in
+    /// the shell's process group, so `foreground` doesn't show it.
+    fn children(&self, pid: u32) -> bool;
+    /// Which config dir this process's record is in.
+    fn config(&self, pid: u32) -> Config;
+    /// True if a live process already holds this session.
+    fn held(&self, session: &str) -> bool;
     fn send(&self, address: &str, text: &str) -> Sent;
-}
-
-pub struct CoreHc {
-    binary: OsString,
-    stop: Option<Arc<AtomicBool>>,
-}
-
-impl CoreHc {
-    pub fn new(core: Core) -> Self {
-        Self {
-            binary: core.binary().to_owned(),
-            stop: core.stop(),
-        }
-    }
-    fn run(&self, args: &[&str], timeout: Duration, stoppable: bool) -> Option<Output> {
-        let mut hc = Command::new(&self.binary);
-        // A caller's address would make hc wrap the text in a tag.
-        hc.args(args).env_remove("HC_TERMINAL_ID");
-        let stop = self.stop.as_deref().filter(|_| stoppable);
-        command::read(hc, timeout, LIMIT, stop).ok()
-    }
-    fn json(&self, args: &[&str]) -> Option<Value> {
-        let out = self.run(args, READ, true)?;
-        out.status
-            .success()
-            .then(|| serde_json::from_slice(&out.stdout).ok())
-            .flatten()
-    }
-}
-
-impl Hc for CoreHc {
-    fn status(&self) -> Option<Status> {
-        let v = self.json(&["server", "status", "--json"])?;
-        Some(Status {
-            core: v["core"]["id"].as_str()?.to_owned(),
-            uptime_ms: v["uptime_ms"].as_u64()?,
-            holders: v["holders"]
-                .as_array()?
-                .iter()
-                .map(|h| h["instance"].as_str().map(str::to_owned))
-                .collect::<Option<_>>()?,
-        })
-    }
-    fn get(&self, address: &str) -> Lookup {
-        let Some(out) = self.run(&["get", "--json", address], READ, true) else {
-            return Lookup::Unknown;
-        };
-        if out.status.code() == Some(NOT_FOUND) {
-            return Lookup::Gone;
-        }
-        out.status
-            .success()
-            .then(|| serde_json::from_slice(&out.stdout).ok())
-            .flatten()
-            .and_then(|v: Value| Term::parse(&v))
-            .map_or(Lookup::Unknown, Lookup::Found)
-    }
-    fn screen(&self, address: &str) -> Option<String> {
-        let v = self.json(&["read", "--json", "--lines", "0", address])?;
-        v["text"].as_str().map(str::to_owned)
-    }
-    /// `terminal.keys` with no keys: it waits out the same person-typing gate as `send`, then
-    /// does nothing. A prompt answer means `send` will not wait; no answer means someone is
-    /// typing. This is the only way to bound `send`, which cannot be cancelled once started.
-    fn quiet(&self, address: &str) -> bool {
-        let call = json!({"jsonrpc":"2.0","id":1,"method":"terminal.keys",
-            "params":{"terminal":address,"keys":[]}});
-        let spawned = Command::new(&self.binary)
-            .arg("connect")
-            .env_remove("HC_TERMINAL_ID")
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::null())
-            .spawn();
-        let Ok(mut child) = spawned else {
-            return false;
-        };
-        let (input, output) = (child.stdin.take(), child.stdout.take());
-        let (tx, rx) = std::sync::mpsc::channel();
-        std::thread::spawn(move || {
-            let (Some(mut input), Some(output)) = (input, output) else {
-                return;
-            };
-            let mut line = String::new();
-            if writeln!(input, "{call}").is_ok() {
-                let _ = BufReader::new(output).read_line(&mut line);
-            }
-            let _ = tx.send(line);
-        });
-        let line = rx.recv_timeout(QUIET).unwrap_or_default();
-        let _ = child.kill();
-        let _ = child.wait();
-        let answer: Option<Value> = serde_json::from_str(&line).ok();
-        answer.is_some_and(|a| a.get("result").is_some())
-    }
-    /// No `--if idle`: a plain shell has no status, and hc refuses it as "silent, not idle".
-    /// `Resume` reads the terminal itself right before this.
-    fn send(&self, address: &str, text: &str) -> Sent {
-        // Not stoppable: killing the child once started leaves the outcome unknown.
-        let Some(out) = self.run(&["send", "--json", address, text], SEND, false) else {
-            return Sent::Failed(None);
-        };
-        if out.status.success() {
-            return Sent::Accepted;
-        }
-        let error: Option<Value> = serde_json::from_slice(&out.stderr).ok();
-        let kind = error.and_then(|e| e["error"]["kind"].as_str().map(str::to_owned));
-        Sent::Failed(kind)
-    }
 }

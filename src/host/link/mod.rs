@@ -1,6 +1,6 @@
 //! Which conversation a core terminal's foreground agent process runs (session-linking.md).
 //! Every collect recomputes it; nothing here is persisted.
-mod claude;
+pub mod claude;
 mod decide;
 mod proc;
 
@@ -105,18 +105,6 @@ impl Linker {
 }
 
 impl Linker {
-    /// `pid` runs under `$HOME/.claude`, which is what a shell with no override starts.
-    pub fn default_config(&self, pid: u32) -> bool {
-        let env = self.proc.environment(pid);
-        let claude = env.as_ref().and_then(Environment::claude_dir);
-        let home = env.as_ref().and_then(|e| e.home.clone());
-        let resolved = |path: PathBuf| std::fs::canonicalize(path).ok();
-        match (claude.and_then(resolved), home) {
-            (Some(dir), Some(home)) => resolved(PathBuf::from(home).join(".claude")) == Some(dir),
-            _ => false,
-        }
-    }
-
     /// `config`'s transcripts are the collector's, links resolved. Otherwise an id of this
     /// process could find a same-named transcript it does not write.
     fn shares_transcripts(&self, config: &Path) -> bool {

@@ -472,19 +472,3 @@ fn one_session_or_one_process_in_two_terminals_refuses_both() {
     assert_eq!(links["core:t1"].1, Link::Unavailable);
     assert_eq!(links["vps/t3"].1, Link::Linked(B.into()));
 }
-
-#[test]
-fn default_config_means_the_dir_a_new_shell_would_use() {
-    let f = Fixture::new();
-    let base = f.dir.path().to_str().unwrap();
-    std::fs::create_dir_all(f.dir.path().join(".claude")).unwrap();
-    f.environ(format!("HOME={base}\0").as_bytes());
-    assert!(f.linker().default_config(20));
-    f.environ(format!("HOME={base}\0CLAUDE_CONFIG_DIR={base}/.claude\0").as_bytes());
-    assert!(f.linker().default_config(20), "named, but the same dir");
-    f.environ(format!("HOME={base}\0CLAUDE_CONFIG_DIR={base}/claude\0").as_bytes());
-    assert!(!f.linker().default_config(20));
-    // Unreadable: it can't be called the default.
-    std::fs::remove_file(f.dir.path().join("proc/20/environ")).unwrap();
-    assert!(!f.linker().default_config(20));
-}

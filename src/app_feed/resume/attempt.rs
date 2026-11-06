@@ -1,10 +1,11 @@
 //! Working through a loss: read first, type once, then only read.
 use super::{
     Resume,
-    click::{prompt_of, shape},
+    click::{HELD, prompt_of, shape},
     decide,
     decide::{SETTLE_MS, SHELL_WAIT_MS, Verdict},
-    hc::{Hc, Lookup, Sent},
+    hc::{Hc, Lookup, Sent, Term},
+    outcome,
     state::{Record, Stage},
     toggle::{Toggle, clicks, toggle},
 };
@@ -13,6 +14,8 @@ use crate::{
     host::source::Linked,
 };
 
+const STAGGER_MS: u64 = 2_000;
+const FISH: &str = "fish can't show it has reached its prompt";
 const EARLY: &str = "a program ran before its shell was ready";
 const CHANGED: &str = "the screen changed, so someone may be using it";
 const UNSEEN: &str = "Panorama didn't see this shell start, so its line is unproved";
@@ -29,6 +32,16 @@ impl<H: Hc> Resume<H> {
         let asked = linked.map(|_| clicks(home)).unwrap_or_default();
         for address in addresses {
             let before = self.entry(&address).clone();
+            // Running elsewhere now: nothing is left to resume here.
+            let elsewhere = linked.into_iter().flatten().find(|l| {
+                l.session == before.record.session && l.address != address && !before.open()
+            });
+            if let Some(link) = elsewhere {
+                let entry = self.entry(&address);
+                entry.dead = true;
+                entry.look = None;
+                entry.reason = Some(format!("this session is running in {}", link.address));
+            }
             match (before.stage, linked) {
                 (Stage::Waiting, _) => self.attempt(home, &address, allowed)?,
                 (Stage::Sending | Stage::Sent, Some(linked)) => self.confirm(&address, linked),
@@ -53,9 +66,17 @@ impl<H: Hc> Resume<H> {
             .screen(address)
             .is_some_and(|text| text.contains(&command));
         let link = linked.iter().find(|l| l.address == address);
-        let session = link.map(|l| l.session.as_str());
+        let expected = self.entry(address).record.config.clone();
+        let session = link.map(|l| {
+            let pid = Term::parse(&l.terminal)
+                .and_then(|t| t.foreground)
+                .map(|f| f.pid);
+            let same = l.harness != "claude"
+                || pid.map(|pid| self.hc.config(pid)) == Some(expected.clone());
+            (l.session.as_str(), same)
+        });
         let now = (self.clock)();
-        decide::confirm(self.entry(address), &lookup, session, arrived, now);
+        outcome::confirm(self.entry(address), &lookup, session, arrived, now);
     }
 
     pub(super) fn judged(&self, record: &Record, rebooted: bool, address: &str) -> (Verdict, bool) {
@@ -64,7 +85,13 @@ impl<H: Hc> Resume<H> {
             Lookup::Unknown => (Verdict::Wait, false),
             Lookup::Found(term) => {
                 let lost = term.pid.is_none() || term.reason.is_some();
-                (decide::judge(record, &term, rebooted), lost)
+                let verdict = decide::judge(record, &term, rebooted);
+                let waiting = term.pid.is_some_and(|pid| self.hc.children(pid));
+                match verdict {
+                    // A startup file's child: its screen isn't the prompt yet.
+                    Verdict::Ready if waiting => (Verdict::Wait, lost),
+                    verdict => (verdict, lost),
+                }
             }
         }
     }
@@ -79,7 +106,7 @@ impl<H: Hc> Resume<H> {
             .detected_ms;
         let hold = self.entry(address).hold.clone();
         if (self.clock)().saturating_sub(detected) >= SHELL_WAIT_MS {
-            let reason = hold.unwrap_or_else(|| "no idle shell came back in time".into());
+            let reason = hold.unwrap_or_else(|| "no shell reached its prompt in time".into());
             self.entry(address).end(Stage::Skipped, reason);
             return Ok(());
         }
@@ -142,11 +169,27 @@ impl<H: Hc> Resume<H> {
         if now.saturating_sub(since) < SETTLE_MS {
             return Ok(());
         }
+        // A `read` in a startup file looks like a prompt. Only the line editor sets this.
+        if hold.is_none() && !self.hc.paint(address).is_some_and(|p| p.editing) {
+            return Ok(());
+        }
+        // fish's `read` runs the same line editor, so there it proves nothing.
+        let fish = matches!(self.hc.get(address), Lookup::Found(t)
+            if t.foreground.as_ref().is_some_and(|f| f.name == "fish"));
+        let hold = hold.or(fish.then(|| FISH.to_owned()));
         let entry = self.entry(address);
         match (hold, entry.witnessed) {
             (Some(reason), _) => entry.end(Stage::Skipped, reason),
             (None, false) => entry.end(Stage::Skipped, UNSEEN),
-            (None, true) => return self.fire(home, address, &first, false, allowed),
+            (None, true) => {
+                // Many panes at once on a just-booted machine: one at a time.
+                let last = self.last_fire.unwrap_or(0);
+                if self.last_fire.is_some() && now.saturating_sub(last) < STAGGER_MS {
+                    return Ok(());
+                }
+                self.last_fire = Some(now);
+                return self.fire(home, address, &first, false, allowed);
+            }
         }
         Ok(())
     }
@@ -209,12 +252,18 @@ impl<H: Hc> Resume<H> {
         if !self.hc.quiet(address) {
             return Err("someone is typing in the terminal");
         }
+        if self.hc.held(&entry.record.session) {
+            return Err(HELD);
+        }
+        if !self.hc.paint(address).is_some_and(|p| p.editing) {
+            return Err("the shell isn't at its prompt");
+        }
         match self.judged(&entry.record, entry.rebooted, address).0 {
             Verdict::Ready => {}
             Verdict::Busy(reason) | Verdict::Skip(reason) | Verdict::Dead(reason) => {
                 return Err(reason);
             }
-            Verdict::Wait => return Err("the terminal could not be read"),
+            Verdict::Wait => return Err("the shell isn't free yet"),
         }
         let seen = self.hc.screen(address).map(|text| {
             if clicked {
