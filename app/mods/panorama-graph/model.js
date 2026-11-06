@@ -82,7 +82,22 @@ export function joinRoots(feed, stock, terminals, panes, spaces, { changes = {},
       space: null, tab: null, nativeChildren: [], isNative: false, status: root.herdr_status, program: null, pinned: false, focused: false, seq: 0,
       changed: 0, aggregate: aggregate(root) });
   }
+  for (const item of roots) { settle(item); item.nativeChildren.forEach(settle); }
   return roots.sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.aggregate.priority - a.aggregate.priority || b.aggregate.urgency - a.aggregate.urgency || b.changed - a.changed || b.seq - a.seq);
+}
+// The Waiting section's place: below Working, above Idle.
+export const WAITING = 1.5;
+// The TUI's rule (orch_state.rs `n_bg`, feed `counts.waiting`): a root waits on its own `bg`
+// tasks or on an agent at any depth with status `bg` (`agents` is the flat tree). With nothing
+// to answer and nothing running it is Waiting, not Idle or Done. Its status is the code `bg`:
+// the word `waiting` is an alias of `wait`, Needs answer. Runs after the native projection, so
+// a child's need or work on the aggregate still wins. `bg` is what the writer believes is live:
+// a task it cannot check (a remote root, an unreadable process tree, a Monitor task) stays
+// listed until it ends or for up to 24h (BG_CAP), and the app shows no age for it.
+function settle(item) {
+  const waiting = item.root.bg?.length || item.root.agents?.some(agent => agent.status === 'bg');
+  if (!waiting || item.aggregate.kinds.length || item.aggregate.working) return;
+  item.status = 'bg'; item.aggregate = { ...item.aggregate, priority: WAITING };
 }
 // A root known only from the feed: no stock agent, no app space.
 export const feedOnly = item => !item.stock && !item.isNative && item.space === null;
@@ -101,7 +116,7 @@ export function groups(roots) {
     const key = root.pinned ? 'pinned' : String(root.aggregate.priority);
     let group = result.find(group => group.key === key);
     if (!group) {
-      group = { key, label: root.pinned ? 'Pinned' : ({ 4: 'Needs you', 3: 'Done', 2: 'Working', 1: 'Idle' }[key]), tone: root.pinned ? 'dim' : ({ 4: 'blocked', 3: 'done', 2: 'working', 1: 'dim' }[key]), roots: [] };
+      group = { key, label: root.pinned ? 'Pinned' : ({ 4: 'Needs you', 3: 'Done', 2: 'Working', [WAITING]: 'Waiting', 1: 'Idle' }[key]), tone: root.pinned ? 'dim' : ({ 4: 'blocked', 3: 'done', 2: 'working', [WAITING]: 'dim', 1: 'dim' }[key]), roots: [] };
       result.push(group);
     }
     group.roots.push(root);

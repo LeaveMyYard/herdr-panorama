@@ -87,7 +87,7 @@ right end of a row or graph node, 6px after the previous element.
 | `done` (orchestrator, unseen) | herdr status `done` | dot | 7×7 circle, bg `done`, margins 0 3 0 9 (same as the shipped mod) |
 | `q` / idle | queued, idle | ring | 7×7 circle, 1.5px border `idle` |
 | `cxl` | cancelled | `-` | 11px text `dim` (not drawn in the design; use the ✓ slot) |
-| `bg` | waiting on background tasks | ring + small spinner? | Not drawn. Use the ring until it has a design. |
+| `bg` | waiting on background tasks | lavender orbit | Steady, no sweep, no blink. Labelled **Waiting**. A root takes it when its feed `bg` list is non-empty or an agent at any depth has status `bg` (the TUI's `n_bg`), and nothing more urgent holds (no needs, nothing running), whether herdr says `idle` or `done`. `bg` is what the writer believes is live: a task it cannot check (a remote root, an unreadable process tree, a Monitor task) stays listed for up to 24h (`BG_CAP`), and unlike the TUI's `waiting 3h` the app shows no age. Not to be confused with `wait`, the `?N` state: the word `waiting` is an alias of `wait`, so roots carry the code `bg`. |
 
 **Aggregation (most urgent wins):** `fail > blk > wait > rev > run > q > done`.
 
@@ -110,13 +110,14 @@ The list below has px8 and `overflow_y_scrollbar().mode("always")`.
 ### 4.2 Sections
 
 These are the shipped priority sections, in the shipped order: **Needs you → Done → Working →
-Idle**.
+Waiting → Idle**.
 
 - Each orchestrator goes into the section of its **most urgent descendant**, like shipped
   parents. Needs you = any `fail/blk/wait` below it, or its own herdr status `blocked`. Done =
-  own status `done`. Working = `working`. Idle = `idle`.
+  own status `done`. Working = `working`. Waiting = nothing above, with background work (`bg`, §3),
+  which takes it out of Done and Idle. Idle = `idle`.
 - Header row: h30, pt8, px8, 11 medium. Label colour: Needs you `blocked`, Done `done`, Working
-  `working`, Idle `dim`. The count follows 6px later, in `dim`. Clicking folds the section
+  `working`, Waiting the `bg` lavender, Idle `dim`. The count follows 6px later, in `dim`. Clicking folds the section
   (shipped behaviour).
 - Pinned agents keep the shipped "Pinned" group on top.
 - Inside a section, sort like shipped: urgency, then last change, then `seq`.
@@ -154,7 +155,10 @@ They follow the shipped `subRow` style, made continuous.
   - blank
 - The elbow is a box from top −2, 15px tall and 6px wide, with left and bottom borders and a
   bottom-left radius of 6. Its bottom lands at the row's vertical centre (13).
-- After the last segment (`├`/`└`) leave a 4px gap before the content.
+- After the last segment (`├`/`└`) leave a 4px gap before the content. A sidebar first-level row
+  draws the boxed 16px tile instead: no gap, margin −1, so the connector runs into the tile, the
+  tile is centred on its children's vertical and the title stays where the 11px glyph left it.
+  Level 2 and deeper stay bare.
 - Geometry check: the first level's vertical sits at x=15 in the row, under the orchestrator
   icon's centre (8+8). Each deeper level's vertical sits under the parent agent icon's centre.
 - In gpui, draw each segment as a fixed 13px box with one or two absolute children.
@@ -200,7 +204,7 @@ keep the shipped 30 s timer. Spinners use gpui's own `.spin(900)` and need no ti
 | Effect | Where | Spec |
 |---|---|---|
 | Needs-you edge (**is the left border**) | Orchestrator rows with any needs chip (or own `blocked`); agent rows that are `fail/blk/wait`; graph cards that need you | The edge is the row's or card's own left border lit in `blocked`, not a separate stroke beside it. **Graph card:** a 2px overlay centred on the card's 1px left border line (left −1.5 relative to the padding box), from top 8 to bottom 8 so it stops short of the rounded corners. **Sidebar orchestrator row:** the row's left side, 2px wide, from top 6 down to the bottom where it meets the hairline bottom border (below), so the two read as one corner of a box. **Sidebar agent row** (no box): 2px at the row's left, top 6 to bottom 6. Opacity = `0.3 + 0.7·(0.5 − 0.5·cos(2π·t/1600ms))`, a 1.6 s ease in and out that never fully disappears. |
-| Moving bar (**runs on the bottom border**) | Orchestrator rows and graph orchestrator cards with any `run` or `rev` descendant; graph agent cards that are `run`/`rev` | A lit segment travels along the bottom border line itself; there is no separate track. **Graph card:** a 2px strip centred on the card's 1px bottom border (bottom −1.5), from left 10 to right 10 (clear of the corners), clipped. **Sidebar orchestrator row:** every orchestrator row has a 1px hairline bottom border in `border` (left 0 to right 8, the TUI cockpit's box line). Working rows carry a 1.5px strip on that hairline (bottom −0.25), clipped to it. Segment: 28% of the strip, `working` at 0.85 opacity. Position: `p = (t mod 2400ms)/2400`, eased in-out quad (`p<.5 ? 2p² : 1−(−2p+2)²/2`), left = `−28% + eased·128%`, so it sweeps fully across and off. |
+| Moving bar (**runs on the bottom border**) | Orchestrator rows and graph orchestrator cards with any `run` or `rev` descendant; graph agent cards that are `run`/`rev` | A lit segment travels along the bottom border line itself; there is no separate track. **Graph card:** a 2px strip centred on the card's 1px bottom border (bottom −1.5), from left 10 to right 10 (clear of the corners), clipped. **Sidebar card:** the light is on the card's own 1px bottom border, on the last row of an open card, below every tree row. It spans the full border-box width, corner to corner, and bends round the rounded corners. Segment: 28% of the strip (sidebar: of the card), `working` at 0.85 opacity. Position: `p = (t mod 2400ms)/2400`, eased in-out quad (`p<.5 ? 2p² : 1−(−2p+2)²/2`), left = `−28% + eased·128%`, so it sweeps fully across and off. |
 | Spinner | Every `run` mark, tab pill, pane header | `.spin(900)` |
 
 **Drawing it in gpui:** draw both as absolutely positioned children laid on the border line, not
@@ -211,8 +215,10 @@ inside the content.
 - **Edge:** `div().absolute().left(px(-1.5)).top(8).bottom(8).w(2).rounded(1).bg(t.blocked).opacity(a)`.
 - **Bar:** `div().absolute().left(10).right(10).bottom(px(-1.5)).h(2).overflow_hidden()`, holding
   the segment `div().absolute().left(relative(x)).w(relative(0.28)).h_full().bg(t.working).opacity(0.85)`.
-- **Sidebar orchestrator row:** the same pattern, with an always-present 1px hairline child at
-  the row's bottom (`bg(t.border)`) and the strip laid over it.
+- **Sidebar card:** gpui paints an element's border over its children, so the bar is the card's
+  sibling in a `relative()` holder, not its child. An 8px strip at the holder's bottom holds the
+  moving 28% clip window; in it, a copy of the card's bottom outline (1px left, right and bottom
+  borders, radius 8, 16px tall so gpui keeps the radius) stays pinned to the card.
 - **Timer:** re-render on the 50 ms timer and set `left` / `opacity` from the clock. No element
   changes size, so layout stays stable.
 

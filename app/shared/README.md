@@ -61,7 +61,8 @@ Display recursion stops at stock-row boundaries. Stock roots focus; native
 pane-less children use terminal.peek. Detailed agent IDs never become addresses.
 
 Aggregate fields are kinds (ordered fail/blk/wait), needsCount, questions,
-working, sweep, priority and urgency. A top-level aggregate projects urgency from ALL verified live native
+working, sweep, priority and urgency. A root with non-empty `bg` or an agent of status `bg` at any depth, and no needs or
+work, gets status `bg` (Waiting, priority `WAITING`, after the projection below). A top-level aggregate projects urgency from ALL verified live native
 descendants, including separately listed roots; display ownership still stops at
 listed-root boundaries. `spaceTotals(roots, spaceId)` recomputes OWN aggregates
 from each canonical top/native entity with exact proven space membership, dedupes

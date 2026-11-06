@@ -115,20 +115,21 @@ export default class PanoramaPeek extends View {
         .child(this.editor ? Editor.new(this.editor).flex_1().min_h(0) : div().flex_1());
     }
     const agent = value?.agent, root = value?.root, harness = value ? harnessOf(agent, root) : 'unknown';
-    const item = value ? joinRoots(consumerFeed(this).feed, agents(), terminals(), panes(), spaces()).flatMap(root => [root, ...root.nativeChildren]).find(item => rootKey(item.root) === rootKey(root)) : null;
+    const packet = consumerFeed(this);
+    const item = value ? joinRoots(packet.feed, agents(), terminals(), panes(), spaces(), { aged: packet.aged }).flatMap(root => [root, ...root.nativeChildren]).find(item => rootKey(item.root) === rootKey(root)) : null;
     const space = item?.space ? spaces().find(space => space.id === item.space) : null;
     // V11: titled by the agent's name (else its root's), with role · model beside it.
     const rootName = item?.name || root?.title || root?.tab_label || root?.pane_id || '';
     const context = [space?.name, rootName].filter(Boolean).join(' · ');
     const heading = agent ? agentTitle(agent) : rootName, secondary = agent ? [agent.title ? agent.role : null, agent.model].filter(Boolean).join(' · ') : '';
-    const error = agent?.error || this.actionError, status = agent?.status ?? root?.herdr_status;
+    const error = agent?.error || this.actionError, status = agent?.status ?? (item?.status === 'bg' ? 'bg' : root?.herdr_status);
     // V11 C: the subject's state badge, and its state edge down the card's left side.
     return frame.relative().when(Boolean(value), el => el.child(div().absolute().left(0).top(10).bottom(10).w(3).rounded(2).bg(stateOf(status).hue)))
       .child(h_flex().items_center().gap(7).child(icon(iconProgram(harness), 16, t.foreground))
       .child(div().flex_shrink(1).min_w(0).truncate().font_semibold().child(heading))
       .child(div().min_w(0).flex_1().truncate().text_color(t.dim).child(secondary))
       .when(Boolean(value), el => el.child(badge(status, undefined, { questions: agent?.question_ids.length ?? root.inbox.length, height: 20 }))))
-      .child(v_flex().text_size(11.5).line_height(1.45).text_color(t.dim).child(metadata(value, harness, Date.now()))
+      .child(v_flex().text_size(11.5).line_height(1.45).text_color(t.dim).child(metadata(value, harness, Date.now(), status))
         .when(Boolean(agent), el => el.child(`Subagent of ${context}. It has no pane of its own.`)))
       .when(Boolean(error), el => el.child(v_flex().rounded(7).px(9).py(7).bg(t.blocked + '1c').border(1).border_color(t.blocked + '40')
         .font_family(settings().font_family ?? 'monospace').text_size(11.5).line_height(1.5).text_color(lighten(t.blocked))
