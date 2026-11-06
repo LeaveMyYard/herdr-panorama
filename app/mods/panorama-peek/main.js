@@ -129,7 +129,7 @@ export default class PanoramaPeek extends View {
       .child(div().flex_shrink(1).min_w(0).truncate().font_semibold().child(heading))
       .child(div().min_w(0).flex_1().truncate().text_color(t.dim).child(secondary))
       .when(Boolean(value), el => el.child(badge(status, undefined, { questions: agent?.question_ids.length ?? root.inbox.length, height: 20 }))))
-      .child(v_flex().text_size(11.5).line_height(1.45).text_color(t.dim).child(metadata(value, harness, Date.now()))
+      .child(v_flex().text_size(11.5).line_height(1.45).text_color(t.dim).child(metadata(value, harness, Date.now(), status))
         .when(Boolean(agent), el => el.child(`Subagent of ${context}. It has no pane of its own.`)))
       .when(Boolean(error), el => el.child(v_flex().rounded(7).px(9).py(7).bg(t.blocked + '1c').border(1).border_color(t.blocked + '40')
         .font_family(settings().font_family ?? 'monospace').text_size(11.5).line_height(1.5).text_color(lighten(t.blocked))

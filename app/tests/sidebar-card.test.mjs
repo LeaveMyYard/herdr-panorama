@@ -242,6 +242,8 @@ function peek(root, age) {
 test('Peek: a root badge reads Waiting from a fresh feed and never from an aged one', () => {
   const root = rootOf([], { bg: [task], herdr_status: 'done' });
   assert.ok(text(peek(root, 1)).includes('Waiting'));
+  const line = text(peek(root, 1)).find(word => word.includes(' · '));
+  assert.match(line, /^Waiting · /, 'the status line follows the badge');
   assert.equal(text(peek(root, 60)).includes('Waiting'), false, 'stock root');
   assert.ok(text(peek(root, 60)).includes('Done'), 'the writer\'s own word');
 });
