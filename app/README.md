@@ -44,7 +44,8 @@ herdr-app do layout.switch '{"name":"panorama"}'
 ```
 
 For a custom app home, use the same `HERDR_APP_HOME` for app commands and pass its
-path to the installer. Installation does not select a layout, configure session
+path to the installer. The sidebar can only start inside the app's granted read roots, so a home
+outside them shows stock agents only. Installation does not select a layout, configure session
 hooks, change the TUI installation or add global key bindings. Name/key collisions
 are refused. An install without the private binary keeps basic stock rows but
 cannot start transcript enrichment; oversized debug builds may also be unavailable.
@@ -110,15 +111,19 @@ Skipped panes have a **Resume** button. It types nothing at first: it shows the 
 line and offers **Type here**, which types `claude --resume <id>` or `codex resume <id>` and presses
 Enter, if the screen hasn't changed.
 
-Expect to use that button. Panorama types by itself only after a reboot, and only into a shell it
-saw come back, which needs the Panorama layout open within about 2.5 s of the app starting. The app
-opens in its main layout, so in practice you switch first and get the buttons. A stop without a
-reboot, which may have been on purpose, always waits for you.
+**Turned on, this can type with nobody at the machine.** After a reboot, Panorama types by itself
+into a shell it saw come back untouched. The app restores the last layout, unless a mod it needs
+is missing. With the `agent-usage` mod installed, the Panorama layout comes back with the app and
+this usually happens. Without it the app opens in its main layout, nothing runs until you switch,
+and you usually get the buttons. A stop without a reboot, which may have been on purpose, always
+waits for you.
+
+A session is covered only if Panorama was shown at some point in that app run. The toggle says on
+either way, so if you work in another layout, show Panorama once after opening the app.
 
 hc can't check and type in one step, so a program started at that exact moment can still receive
 the text, and a person typing then makes the send wait. Only bash, zsh and fish are typed into, and
 only local terminals: remote ones are never recorded. Options such as `--model` aren't repeated.
-Sessions are only recorded while the Panorama layout has been shown.
 Rules: [agent resume](../docs/protocol/agent-resume.md).
 
 ## Uninstall and troubleshoot

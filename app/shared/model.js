@@ -217,6 +217,8 @@ export function storedResume(text) {
   catch { return false; }
 }
 const RESUME_WORD = { waiting: 'waiting', sending: 'sending', sent: 'sent', resumed: 'resumed', skipped: 'skipped', failed: 'failed' };
+// The end of a line for a narrow row: anything typed is at the end, so that part stays.
+export const lineEnd = (line, room = 40) => line.length > room ? `…${line.slice(1 - room)}` : line;
 // What the last core loss did, for the sidebar: one summary line, one row per terminal.
 // Every row keeps its session's command, typed or not, so nothing is lost with the screen.
 export function resumeSummary(resume) {
@@ -226,7 +228,7 @@ export function resumeSummary(resume) {
   const rows = entries.map(entry => {
     const word = RESUME_WORD[entry?.state] ?? 'unknown';
     count[word] = (count[word] ?? 0) + 1;
-    return { key: `resume-${entry?.terminal}`, terminal: String(entry?.terminal ?? '?'), harness: String(entry?.harness ?? ''), word, reason: entry?.reason ?? '', command: entry?.command ?? '', note: entry?.note ?? '', click: entry?.click === true, look: entry?.look?.token ? { line: String(entry.look.line ?? ''), token: String(entry.look.token) } : null };
+    return { key: `resume-${entry?.terminal}`, terminal: String(entry?.terminal ?? '?'), harness: String(entry?.harness ?? ''), word, reason: entry?.reason ?? '', command: entry?.command ?? '', note: entry?.note ?? '', click: entry?.click === true, look: entry?.look?.token ? { lines: (Array.isArray(entry.look.lines) ? entry.look.lines : []).map(String), text: String(entry.look.text ?? ''), token: String(entry.look.token) } : null };
   });
   const order = ['resumed', 'sending', 'sent', 'waiting', 'skipped', 'failed', 'unknown'];
   return { id: resume.loss.id, rows, text: order.filter(word => count[word]).map(word => `${count[word]} ${word}`).join(' · '), open: rows.some(row => ['waiting', 'sending', 'sent'].includes(row.word)) };

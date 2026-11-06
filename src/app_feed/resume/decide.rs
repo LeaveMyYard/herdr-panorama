@@ -142,22 +142,20 @@ fn barred(
     boot: Option<&str>,
 ) -> Option<&'static str> {
     if saved.closed {
-        Some(
-            "Panorama was closed when the core went down, so it can't tell if this session was still running",
-        )
+        Some("Panorama was closed, so it can't tell if this session was live")
     } else if !record.proved {
         Some("the session wasn't proved at the last look")
     } else if record.ending_ms.is_some() {
         Some("the agent had already gone just before the loss")
     } else if record.launch == Launch::Other {
-        Some("it was started in a way the resume command can't repeat")
+        Some("the resume command can't repeat how it was started")
     } else if !record.default_config {
-        Some("it ran under another config dir, which a new shell wouldn't use")
+        Some("it ran under another config dir")
     } else if !rebooted(saved, boot) {
         // `hc server stop` and a crash look alike from here; a reboot doesn't.
         Some("stopped without a reboot, maybe on purpose")
     } else if uptime_ms > FRESH_CORE_MS {
-        Some("the core had been up too long before Panorama saw it, so its shell may be in use")
+        Some("the core was up too long before Panorama saw it")
     } else {
         None
     }

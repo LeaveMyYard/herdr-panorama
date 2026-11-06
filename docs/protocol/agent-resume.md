@@ -8,22 +8,40 @@ on gets refused: `resume.json` and `.resume.tmp` in `receipt.rs` and `runtime.py
 `agents.resume` and `agents.resume.clicks` in `preferences.py`.
 
 After a full core stop, crash or reboot, kept terminals come back as plain shells, at the same
-address and folder. This feature lists what was lost and offers a **Resume** button on each one.
-In one narrow case it types the agent's resume command by itself.
+address and folder. This feature lists what was lost, offers a **Resume** button on each pane, and
+after a reboot can type the agent's resume command by itself, **with nobody at the machine**.
 
-**Expect the button, not automatic typing.** Automatic typing needs the writer to see the shell
-come back, and the writer starts with the Panorama layout. herdr-app 0.1.13 opens in `main` every
-time, even after Panorama was selected and closed cleanly, so a person has to switch first.
-Measured with the real app on a simulated reboot, the shell came back about 2.6 s after the app
-started, and the sidebar ran `--ensure` within 0.1 s of the switch:
+How often it types by itself depends on the layout the app opens in. herdr-app restores the last
+layout, and falls back to `main` when a mod that layout needs is missing. The Panorama layout
+references `agent-usage`, which Panorama doesn't install.
 
-| Layout switched after app start | Result |
+| Install | Opens in | After a reboot |
+|---|---|---|
+| With `agent-usage` | `panorama`, after quit, SIGTERM or SIGKILL | **Usually types by itself**: 4 of 4 with nobody acting, writer up about 0.5 s after app start |
+| Without it | `main`, even after a clean close | Nothing runs until someone switches, so usually a button |
+
+Automatic typing needs the writer to see the shell come back. Measured with the real app on a
+simulated reboot, the shell came back about 2.6 s after app start, and the sidebar ran `--ensure`
+within 0.1 s of the layout showing:
+
+| Layout shown after app start | Result |
 |---|---|
 | 0.4 s, 1.5 s | typed by itself, in all three panes |
 | 3 s | a button on all three panes |
 
-So a person who switches by hand, or anything slower than that, gets buttons. A later arrival
-has no other proof of an empty line, so the button is the honest result.
+A later arrival has no other proof of an empty line, so the button is the honest result.
+
+## What is covered
+
+A session is covered only if Panorama was shown at some point in that app run. **The toggle says
+"on" either way**, and in `main` nothing shows that a session isn't covered.
+
+| Situation | Recorded? |
+|---|---|
+| App opened in `main`, Panorama never shown, agent started | **No.** No writer, no record, and no row after a loss |
+| Panorama shown once, then back to `main`, agent started | **Yes.** The writer keeps running |
+| Closed and reopened within 30 s, still in `main` | **Yes.** The same writer carries on |
+| Closed longer than 30 s, reopened in `main` | **No**, for new agents. Earlier ones stay listed with `closed` and get a button once Panorama is shown |
 
 It is **off by default**. With it off, the feed writer makes no extra `hc` call and types nothing.
 Each collect it lists `data/`, reads the panorama-spaces store and checks for a record to remove,
@@ -137,8 +155,9 @@ types and pauses looks settled. So Panorama proves the line is empty by witnessi
    collects, so that stretches with many terminals. If the shell was already up at first sight,
    it can't prove this, and offers a button.
 10. The screen stays **exactly** that first screen for 1.5 s, and is still that at the last look.
-    Any change is a final skip: someone typed, or used the shell. A prompt that redraws itself
-    lands here too. That costs a button, not a wrong line.
+    Any change rules out typing by itself for good: someone typed, or used the shell. A prompt
+    that redraws itself lands here too. That costs a button, not a wrong line. Panorama keeps
+    watching until the screen stops moving, so the button knows the final prompt.
 
 Keys from a viewer that land before the first read are still caught: the settle time is shorter
 than the typing gate below, so the last look refuses them. `hc keys` from a program doesn't trip
@@ -185,8 +204,14 @@ Skipped and failed rows get a button unless nothing could make it work. It takes
 only a person can judge a line Panorama can't prove empty.
 
 1. **Resume** types nothing. The writer runs the terminal checks (rules 6 to 8) and the typing
-   check, then shows the terminal's last line on the row with **Type here**. If someone is typing,
-   or a check fails, the row says why and there is no **Type here**.
+   check, then shows the last three non-blank lines on the row, each cut from the start so the
+   end stays, with **Type here**. Its tooltip has more of the screen. If someone is typing, or a
+   check fails, the row says why and there is no **Type here**.
+   - There is also no **Type here** unless the cursor is known to be on the last line. That line
+     must start with the prompt last seen when the shell settled, and must not end in a
+     backslash. So a completion listing below the prompt, a `>` continuation or fish's blank
+     continuation line refuses. Clear the line and press **Resume** again. A prompt that really
+     changed, such as one showing an exit status, refuses too.
 2. **Type here** sends, if the checks still pass and the screen still matches what was shown.
    Digits are ignored in that comparison, so a ticking clock can be confirmed; a digit typed onto
    the line changes its length, so it refuses. Anything else that moves between the clicks refuses,
@@ -198,7 +223,7 @@ So the person sees the line, half-typed or not, before Enter is pressed. A click
 A press is `panorama-spaces.agent-resume-press-<terminal>-<loss id>[-<token>]`, stored in
 `agents.resume.clicks`. The writer ignores it unless the loss id matches this row, it is under 60 s
 old, not stamped ahead of the clock, newer than the loss and not already acted on. The token comes
-from the feed, and a view lasts 60 s. So a stored or stale click can't fire later with nobody there.
+from the feed, and a view lasts 60 s. It binds a press to a view and isn't a secret. So a stored or stale click can't fire later with nobody there.
 
 This proves something asked, not a person: `herdr-app do` can press these too, and any program of
 this user can read the feed and press both. That gives it nothing new: it could type into the
@@ -209,7 +234,7 @@ terminal itself, and the text is fixed.
 - **Core lost while the app was closed:** a button. This includes quitting the app and rebooting.
 - **App opens first after a reboot:** nothing runs until the Panorama layout is shown. Then it
   waits while there is no holder or shell. If the shell beat the writer, rule 9 can't be met: a
-  button. Sessions are only recorded while the Panorama layout has been shown since the app opened.
+  button. See "What is covered" above.
 - **Writer restarts mid-way:** `sending` is spent; the first screen and whether it was witnessed
   are saved; the 1.5 s starts over. Without a reboot it's a button. Otherwise a quit session can
   come back only if the writer alone was killed, the session was quit and the machine rebooted
@@ -237,6 +262,9 @@ the field's `error`. A resumed row can read `sent` for up to 30 s while the new 
 ## Known limits
 
 - The race above, and `hc keys` from a program before the first read.
+- The confirm step's comparison ignores digits, so a digit swapped for a digit between the clicks
+  passes: shown `sleep 1`, it could submit `sleep 9`. The person had already confirmed a half line.
+- A screen and a view are kept in `resume.json` and the feed for up to 60 s, both mode 0600.
 - A dialog drawn by the shell itself, stable from its first screen, looks like a prompt. zsh's
   first-run menu is one, for a user with no `.zshrc`.
 - The command runs with whatever `claude` or `codex` the shell finds, and enters its history.

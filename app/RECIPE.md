@@ -53,7 +53,7 @@ message, plus Open root pane and Transcript.
   answer, type or change permissions. `g` goes to the root.
 - Optional, off by default, and only until herdr-app does it itself (herdr-core#13): the sort
   menu's Resume agents lists what a core loss took, with a two-step Resume button per pane, and
-  types by itself only into a shell it saw come back after a reboot. See
+  after a reboot types by itself into a shell it saw come back, with nobody there. See
   `docs/protocol/agent-resume.md`.
 
 ## Built from

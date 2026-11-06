@@ -105,14 +105,25 @@ test('the first press only looks; the row then shows the line, and only that off
   assert.equal(byId(tree, 'resume-t7-send'), undefined, 'no send before a look');
   click(go, view);
   assert.deepEqual(host.runs, [['panorama-spaces.agent-resume-press-t7-5']]);
-  const looked = report([entry('t1', 'resumed'), { ...shown, look: { line: 'rig$ touch x', token: 'abc123' } }]);
+  const looked = report([entry('t1', 'resumed'), { ...shown, look: { lines: ['rig$ touch x'], text: 'all of it', token: 'abc123' } }]);
   const next = sidebar(looked);
   assert.equal(byId(next.tree, 'resume-t7-go'), undefined);
-  assert.match(text(byId(next.tree, 'resume-t7-look')).join(' '), /rig\$ touch x/);
+  assert.match(text(byId(next.tree, 'resume-t7-look-0')).join(' '), /rig\$ touch x/);
   const send = byId(next.tree, 'resume-t7-send');
   assert.match(send.calls.tooltip[0], /claude --resume id/);
+  assert.match(send.calls.tooltip[0], /all of it/);
   click(send, next.view);
   assert.deepEqual(host.runs.at(-1), ['panorama-spaces.agent-resume-press-t7-5-abc123']);
+});
+
+test('a long line keeps its end on the row, where anything typed is', () => {
+  const long = `operator@workstation ~/Code/some-project-name/worktrees/feature-branch $ touch PWNED_LONG`;
+  const shown = { ...entry('t7', 'skipped', 'why'), click: true, look: { lines: ['first line', long], text: long, token: 'abc' } };
+  const { tree } = sidebar(report([shown]));
+  const drawn = text(byId(tree, 'resume-t7-look-1')).join('');
+  assert.match(drawn, /^….*touch PWNED_LONG$/);
+  assert.ok(drawn.length <= 40);
+  assert.equal(text(byId(tree, 'resume-t7-look-0')).join(''), 'first line');
 });
 
 test('a row saying someone is typing offers no send', () => {
@@ -130,7 +141,7 @@ test('the toggle says what it does not protect against', () => {
   const view = new Panorama(); Object.assign(view, { resume: false });
   const tip = byId(view.sortMenu({}), 'resume-toggle').calls.tooltip[0];
   assert.match(tip, /can't check and type in one step/);
-  assert.match(tip, /so expect the button/);
+  assert.match(tip, /only covers sessions started after Panorama was shown/);
 });
 
 test('a result still being worked through cannot be hidden, and a rail draws none', () => {

@@ -5,24 +5,43 @@ use crate::app_feed::fs::{Home, Result, digest};
 /// How long a click, and the view it asked for, stays good.
 const CLICK_MS: u64 = 60_000;
 const CLICK_SKEW_MS: u64 = 2_000;
+const LINE_LIMIT: usize = 300;
+const ROW_LINES: usize = 3;
+const TIP_LINES: usize = 12;
+const NO_CURSOR: &str =
+    "the last line isn't the prompt, so Panorama can't show what Enter would submit";
+
+fn blank(text: &str) -> String {
+    text.chars()
+        .map(|c| if c.is_ascii_digit() { '#' } else { c })
+        .collect()
+}
 
 /// The screen with digits blanked, as a digest: a clock in the prompt keeps ticking between
 /// the two clicks. Digits typed onto the line change its length, so they still count.
 pub(super) fn shape(text: &str) -> String {
-    let blanked: String = text
-        .chars()
-        .map(|c| if c.is_ascii_digit() { '#' } else { c })
-        .collect();
-    digest(blanked.as_bytes())
+    digest(blank(text).as_bytes())
 }
 
-fn last_line(text: &str) -> String {
-    let line = text
-        .lines()
-        .rev()
-        .find(|l| !l.trim().is_empty())
-        .unwrap_or("");
-    line.trim_end().chars().take(120).collect()
+/// The last non-blank line, digits blanked, for comparing with a later screen.
+pub(super) fn prompt_of(text: &str) -> Option<String> {
+    let line = text.lines().rev().find(|l| !l.trim().is_empty())?;
+    Some(blank(line.trim_end()))
+}
+
+/// The end of a line, which is where anything typed is.
+fn line_end(line: &str) -> String {
+    let chars: Vec<char> = line.trim_end().chars().collect();
+    chars[chars.len().saturating_sub(LINE_LIMIT)..]
+        .iter()
+        .collect()
+}
+
+fn tail(text: &str, count: usize) -> Vec<String> {
+    let lines = text.lines().rev().filter(|l| !l.trim().is_empty());
+    let mut kept: Vec<String> = lines.take(count).map(line_end).collect();
+    kept.reverse();
+    kept
 }
 
 impl<H: Hc> Resume<H> {
@@ -85,6 +104,7 @@ impl<H: Hc> Resume<H> {
         let screen = self.hc.screen(address);
         let quiet = self.hc.quiet(address);
         let entry = self.entry(address);
+        let prompt = entry.prompt.clone();
         entry.look = None;
         match (judged, screen) {
             (Verdict::Dead(reason), _) => {
@@ -95,10 +115,18 @@ impl<H: Hc> Resume<H> {
                 entry.reason = Some(reason.into())
             }
             (Verdict::Ready, Some(text)) if quiet => {
+                // A listing below the prompt or a continuation line hides what Enter submits.
+                // fish continues on a blank line, so its sign is the backslash above it.
+                let last = prompt_of(&text).unwrap_or_default();
+                if !prompt.is_some_and(|p| last.starts_with(&p)) || last.ends_with('\\') {
+                    entry.reason = Some(NO_CURSOR.into());
+                    return;
+                }
                 let shape = shape(&text);
                 entry.look = Some(Look {
                     token: shape[..12].to_owned(),
-                    line: last_line(&text),
+                    lines: tail(&text, ROW_LINES),
+                    text: tail(&text, TIP_LINES).join("\n"),
                     shape,
                     at_ms: now,
                 });

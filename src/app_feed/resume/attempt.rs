@@ -1,7 +1,7 @@
 //! Working through a loss: read first, type once, then only read.
 use super::{
     Resume,
-    click::shape,
+    click::{prompt_of, shape},
     decide,
     decide::{SETTLE_MS, SHELL_WAIT_MS, Verdict},
     hc::{Hc, Lookup, Sent},
@@ -13,8 +13,8 @@ use crate::{
     host::source::Linked,
 };
 
-const EARLY: &str = "a program ran before its shell was ready, so the first screen is unknown";
-const CHANGED: &str = "the screen changed after Panorama first saw it, so someone may be using it";
+const EARLY: &str = "a program ran before its shell was ready";
+const CHANGED: &str = "the screen changed, so someone may be using it";
 const UNSEEN: &str = "Panorama didn't see this shell start, so its line is unproved";
 
 impl<H: Hc> Resume<H> {
@@ -122,14 +122,20 @@ impl<H: Hc> Resume<H> {
             return Ok(());
         }
         let now = (self.mono)();
-        let seen = digest(screen.as_bytes());
-        let first = self
-            .entry(address)
-            .first
-            .get_or_insert(seen.clone())
-            .clone();
+        let entry = self.entry(address);
+        entry.prompt = prompt_of(&screen);
+        // Once it has moved only a person can resume it, so a ticking clock may settle.
+        let seen = if entry.moved {
+            shape(&screen)
+        } else {
+            digest(screen.as_bytes())
+        };
+        let first = entry.first.get_or_insert(seen.clone()).clone();
         if first != seen {
-            self.entry(address).end(Stage::Skipped, CHANGED);
+            entry.hold.get_or_insert_with(|| CHANGED.into());
+            entry.moved = true;
+            entry.first = Some(shape(&screen));
+            self.settled.insert(address.to_owned(), now);
             return Ok(());
         }
         let since = *self.settled.entry(address.to_owned()).or_insert(now);

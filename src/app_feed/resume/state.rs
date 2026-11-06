@@ -81,6 +81,11 @@ pub struct Entry {
     pub witnessed: bool,
     /// A digest of the first screen seen. The line is empty only if the screen still equals it.
     pub first: Option<String>,
+    /// The prompt line as last seen, digits blanked. The cursor is only known to be on a line
+    /// that starts with this.
+    pub prompt: Option<String>,
+    /// The screen moved after first sight: never typed by itself, only watched until it stops.
+    pub moved: bool,
     /// The last click acted on.
     pub click: Option<u64>,
     /// Nothing a person does can make this terminal typable: no button.
@@ -96,7 +101,9 @@ pub struct Entry {
 pub struct Look {
     pub token: String,
     pub shape: String,
-    pub line: String,
+    /// The last few non-blank lines, and more of the screen for the tooltip.
+    pub lines: Vec<String>,
+    pub text: String,
     pub at_ms: u64,
 }
 
@@ -111,6 +118,8 @@ impl Entry {
             hold: None,
             witnessed: false,
             first: None,
+            prompt: None,
+            moved: false,
             click: None,
             dead: false,
             rebooted: false,
@@ -184,7 +193,7 @@ impl Saved {
                         "command": e.record.command(),
                         "note": e.record.dropped.then_some("started with options that aren't repeated"),
                         "click": e.clickable(),
-                        "look": e.look.as_ref().map(|l| json!({"line":l.line,"token":l.token})),
+                        "look": e.look.as_ref().map(|l| json!({"lines":l.lines,"text":l.text,"token":l.token})),
                     })
                 })
                 .collect();

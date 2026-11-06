@@ -217,7 +217,7 @@ fn a_stop_without_a_reboot_waits_for_two_clicks_and_types_once() {
     });
     assert!(sends(&install).is_empty(), "the first click only looks");
     let view = install.feed()["resume"]["loss"]["entries"][0]["look"].clone();
-    assert_eq!(view["line"], "$");
+    assert_eq!(view["lines"], json!(["$"]));
     press(view["token"].clone());
     install.wait_feed_within(PATIENCE, |v| state(v) == "sent");
     std::thread::sleep(Duration::from_millis(1500));

@@ -5,7 +5,7 @@ import { startSidebar, consumerFeed, closeConsumer } from './feed-client.js';
 import { initViewport, wheelViewport, viewport } from './viewport.js';
 import { rootTarget } from './routing.js';
 import { PeekCaller } from './peek-caller.js';
-import { joinRoots, groups, listed, rootSignature, iconProgram, headerTotals, storedScope, storedResume, resumeSummary, cardPlace, WAITING } from './model.js';
+import { joinRoots, groups, listed, rootSignature, iconProgram, headerTotals, storedScope, storedResume, resumeSummary, lineEnd, cardPlace, WAITING } from './model.js';
 import { rows, isOpen, needs, directTiles, agentTitle } from './tree.js';
 import { icon, mark, rootMarks, lines } from './marks.js';
 import { tile, badge, glyph, glyphRun, mix, stateOf, cardColors, SURFACE } from './state.js';
@@ -120,11 +120,13 @@ export default class Panorama extends View {
         .when(row.click && !row.look, el => el.child(div().id(`${row.key}-go`).px(5).flex_none().rounded(4).text_color(t.foreground).bg(t.hover).cursor_pointer()
           .tooltip('Shows what is on this terminal first. Nothing is typed yet.')
           .on_click((_event, cx) => { cx.stop_propagation(); this.resumePress(row, summary.id); }).child('Resume'))), tall ? ROW * 2 : ROW);
-      if (row.click && row.look) append(h_flex().id(`${row.key}-look`).h(ROW + 4).pl(14).pr(4).gap(6).flex_none().items_center().text_size(11.5)
-        .child(div().flex_1().min_w(0).truncate().font_family('monospace').text_color(t.foreground).child(row.look.line || '(blank line)'))
-        .child(div().id(`${row.key}-send`).px(5).flex_none().rounded(4).text_color(t.foreground).bg(t.hover).cursor_pointer()
-          .tooltip(`Types ${row.command} after this line and presses Enter, if the screen hasn't changed.`)
-          .on_click((_event, cx) => { cx.stop_propagation(); this.resumePress(row, summary.id, row.look.token); }).child('Type here')), ROW + 4);
+      if (row.click && row.look) {
+        row.look.lines.forEach((line, n) => append(div().id(`${row.key}-look-${n}`).h(16).pl(14).pr(4).flex_none().overflow_hidden().text_size(11.5).font_family('monospace').text_color(t.foreground).tooltip(row.look.text).child(lineEnd(line)), 16));
+        append(h_flex().id(`${row.key}-look`).h(ROW + 4).pl(14).pr(4).flex_none().items_center().justify_end().text_size(11.5)
+          .child(div().id(`${row.key}-send`).px(5).flex_none().rounded(4).text_color(t.foreground).bg(t.hover).cursor_pointer()
+            .tooltip(`Types ${row.command} after the last line above and presses Enter, if the screen hasn't changed.\n\n${row.look.text}`)
+            .on_click((_event, cx) => { cx.stop_propagation(); this.resumePress(row, summary.id, row.look.token); }).child('Type here')), ROW + 4);
+      }
     }
   }
   resumePress(row, loss, token = null) {
@@ -141,7 +143,7 @@ export default class Panorama extends View {
         .when((shared('agents.sort') ?? 'priority') === option.id, el => el.child(svg('mods/workspace-chrome/check.svg').size(14)))))
       .child(div().px(8).pt(9).pb(6).text_size(11).text_color(t.dim).child('After a core restart'))
       .child(h_flex().id('resume-toggle').h(31).px(8).gap(9).rounded(7).items_center().text_color(t.foreground).hover(el => el.bg(t.hover))
-        .tooltip('Offers a Resume button on each terminal that lost a live session, and types claude --resume or codex resume after you confirm. It types by itself only into a shell it saw come back after a reboot, which needs this layout open at that moment, so expect the button. hc can\'t check and type in one step, so text can still land in a program started at that moment. Only until herdr-app does this itself.')
+        .tooltip('After a reboot, if the Panorama layout comes back with the app, this types claude --resume or codex resume by itself into shells it saw come back untouched, with nobody at the machine. Everything else gets a Resume button you confirm. It only covers sessions started after Panorama was shown in this app run. hc can\'t check and type in one step, so text can still land in a program started at that moment. Only until herdr-app does this itself.')
         .on_click((_event, cx) => this.setResume(!this.resume, cx))
         .child(div().flex_1().child('Resume agents'))
         .when(this.resume, el => el.child(svg('mods/workspace-chrome/check.svg').size(14))));

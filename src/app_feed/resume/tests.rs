@@ -795,11 +795,12 @@ fn a_change_undone_inside_the_settle_time_still_counts() {
     pass(100);
     rig.world().screens.insert("t5".into(), "$ x".into());
     rig.tick(&[]);
-    assert_eq!(rig.stage(), Stage::Skipped);
     rig.world().screens.insert("t5".into(), "$ ".into());
     rig.settle();
     rig.settle();
+    rig.settle();
     assert!(rig.sends().is_empty());
+    assert_eq!(rig.stage(), Stage::Skipped);
 }
 
 #[test]
@@ -976,13 +977,17 @@ fn dropped_options_are_noted_on_the_row() {
 }
 
 fn losing_without_reboot(rig: &mut Rig) {
+    losing_at(rig, "$ ");
+}
+
+fn losing_at(rig: &mut Rig, screen: &str) {
     rig.set(agent_term());
     rig.tick(&[link("t5", SESSION, &["claude"])]);
     rig.world().status = Some(status("holder-b"));
     rig.set(waiting());
     rig.tick(&[]);
     rig.set(shell_term());
-    rig.world().screens.insert("t5".into(), "$ ".into());
+    rig.world().screens.insert("t5".into(), screen.into());
     rig.tick(&[]);
     rig.settle();
 }
@@ -1057,7 +1062,7 @@ fn the_first_click_only_looks_and_the_second_types_once() {
     losing_without_reboot(&mut rig);
     let view = looked(&mut rig);
     assert!(rig.sends().is_empty(), "a first click types nothing");
-    assert_eq!(view["line"], "$");
+    assert_eq!(view["lines"], json!(["$"]));
     confirm(&mut rig, &view);
     let typed = format!("claude --resume {SESSION}");
     assert_eq!(rig.sends(), [("t5".into(), typed)]);
@@ -1078,7 +1083,11 @@ fn a_half_line_is_shown_before_it_can_be_confirmed() {
         .screens
         .insert("t5".into(), "x\n$ rm -rf build".into());
     let view = looked(&mut rig);
-    assert_eq!(view["line"], "$ rm -rf build", "the person sees their line");
+    assert_eq!(
+        view["lines"],
+        json!(["x", "$ rm -rf build"]),
+        "the person sees their line"
+    );
     // Typing on after the look: the screen no longer matches what was shown.
     rig.world()
         .screens
@@ -1088,29 +1097,92 @@ fn a_half_line_is_shown_before_it_can_be_confirmed() {
     assert!(rig.reason().contains("screen changed"));
     // A view of the line as it is now can be confirmed.
     let view = looked(&mut rig);
-    assert_eq!(view["line"], "$ rm -rf build/");
+    assert_eq!(view["lines"], json!(["x", "$ rm -rf build/"]));
     confirm(&mut rig, &view);
     assert_eq!(rig.sends().len(), 1);
 }
 
 #[test]
 fn a_ticking_clock_can_be_confirmed_but_a_typed_digit_cannot() {
+    let clock_at = |tick: &str| format!("12:00:0{tick} $");
     let mut rig = Rig::new();
-    losing_without_reboot(&mut rig);
-    rig.world().screens.insert("t5".into(), "12:00:01 $".into());
+    losing_at(&mut rig, &clock_at("1"));
     let view = looked(&mut rig);
-    rig.world().screens.insert("t5".into(), "12:00:02 $".into());
+    rig.world().screens.insert("t5".into(), clock_at("2"));
     confirm(&mut rig, &view);
     assert_eq!(rig.sends().len(), 1);
     let mut rig = Rig::new();
-    losing_without_reboot(&mut rig);
-    rig.world().screens.insert("t5".into(), "12:00:01 $".into());
+    losing_at(&mut rig, &clock_at("1"));
     let view = looked(&mut rig);
     rig.world()
         .screens
-        .insert("t5".into(), "12:00:01 $ 7".into());
+        .insert("t5".into(), format!("{} 7", clock_at("1")));
     confirm(&mut rig, &view);
     assert!(rig.sends().is_empty());
+    // A digit typed over a space before a right prompt, which keeps the length.
+    let mut rig = Rig::new();
+    losing_at(&mut rig, "$     12:00:01");
+    let view = looked(&mut rig);
+    rig.world()
+        .screens
+        .insert("t5".into(), "$ 7   12:00:01".into());
+    confirm(&mut rig, &view);
+    assert!(rig.sends().is_empty());
+}
+
+#[test]
+fn a_view_is_only_offered_when_the_last_line_is_the_prompt() {
+    let cases = [
+        ("a listing below the prompt", "$ touch file\nfileA  fileB"),
+        ("a continuation", "$ touch x \\\n>"),
+        ("a zsh continuation", "$ echo \"\ndquote>"),
+        ("a fish continuation", "$ touch x \\\n\n"),
+    ];
+    for (name, screen) in cases {
+        let mut rig = Rig::new();
+        losing_without_reboot(&mut rig);
+        rig.world().screens.insert("t5".into(), screen.into());
+        assert_eq!(looked(&mut rig), Value::Null, "{name}");
+        assert!(rig.reason().contains("isn't the prompt"), "{name}");
+        // Clearing it makes the button work again.
+        rig.world().screens.insert("t5".into(), "$ ".into());
+        assert!(looked(&mut rig).is_object(), "{name}");
+    }
+}
+
+#[test]
+fn a_view_keeps_the_end_of_long_lines_and_the_last_few() {
+    let mut rig = Rig::new();
+    let long = format!("{}$", "p".repeat(400));
+    losing_at(&mut rig, &format!("a\nb\nc\nd\n{long}"));
+    rig.world()
+        .screens
+        .insert("t5".into(), format!("a\nb\nc\nd\n{long} touch x"));
+    let view = looked(&mut rig);
+    let lines = view["lines"].as_array().unwrap();
+    assert_eq!(lines.len(), 3);
+    assert_eq!(lines[0], "c");
+    assert!(lines[2].as_str().unwrap().ends_with("$ touch x"));
+    assert!(view["text"].as_str().unwrap().starts_with("a\n"));
+}
+
+#[test]
+fn a_moved_screen_is_watched_until_it_stops_so_the_prompt_is_the_last_one() {
+    let mut rig = Rig::new();
+    rig.lost(shell_term());
+    rig.world()
+        .screens
+        .insert("t5".into(), "banner\nrig$ ".into());
+    rig.tick(&[]);
+    assert_eq!(rig.stage(), Stage::Waiting, "still drawing, maybe");
+    rig.settle();
+    assert!(rig.sends().is_empty());
+    assert_eq!(rig.stage(), Stage::Skipped);
+    assert!(rig.reason().contains("screen changed"));
+    let view = looked(&mut rig);
+    assert!(view.is_object());
+    confirm(&mut rig, &view);
+    assert_eq!(rig.sends().len(), 1, "a staged rc can still be resumed");
 }
 
 #[test]
@@ -1155,14 +1227,14 @@ fn a_click_left_in_the_store_is_acted_on_once() {
     let mut rig = Rig::new();
     losing_without_reboot(&mut rig);
     let view = looked(&mut rig);
-    assert_eq!(view["line"], "$");
+    assert_eq!(view["lines"], json!(["$"]));
     rig.world().screens.insert("t5".into(), "$ later".into());
     rig.tick(&[]);
     let look = rig.saved().loss.unwrap().entries["t5"]
         .look
         .clone()
         .unwrap();
-    assert_eq!(look.line, "$", "the same click did not look again");
+    assert_eq!(look.lines, ["$"], "the same click did not look again");
 }
 
 #[test]
