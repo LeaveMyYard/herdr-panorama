@@ -130,6 +130,8 @@ receipt cannot adopt an old generation directory or preexisting feed.
 | `G/ownership.json` | Writer | Ownership below; generation and binary fingerprint must match receipt. |
 | `G/start.json` | Ensure | Optional transient-start ledger below; created/replaced only while ensure holds the reserved writer lock before spawn, removed by ensure after a proven start or a permanent failure and by uninstall cleanup. |
 | `G/.start.tmp` | Ensure | Exclusive-create staging for the ledger; leftover is ambiguous and preserved/refused. No tool removes it; an operator may ([recovery](../../app/README.md#uninstall-and-troubleshoot)). |
+| `G/resume.json` | Writer | Optional [agent resume](agent-resume.md) record, present only while that toggle is on. Regular, mode 0600, at most 1 MiB. Uninstall removes it when it is a JSON object with `v: 1` and this `install_id`, and otherwise preserves it and refuses. |
+| `G/.resume.tmp` | Writer | Its staging file. The writer removes a leftover at start; uninstall removes it after quiescence. Unlike the other staging files it proves nothing, so a leftover is not ambiguous. |
 | `G/.ownership.tmp` | Writer | Exclusive-create staging; any leftover is ambiguous and preserved/refused. |
 | `G/.control.tmp` | Installer / failed-start ensure | Exclusive-create staging for control replacement; leftover is ambiguous and preserved/refused. |
 | `data/panorama/feed.json` | Writer | Atomic full feed ([v2](app-feed-v2.md)); bytes must match a recorded ownership digest before replacement/removal. |

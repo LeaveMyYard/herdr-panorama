@@ -17,6 +17,6 @@ export const watchFolder = async path => new Promise(resolve => state.watches.pu
 export const agents = () => state.agents ?? [], terminals = () => state.terminals ?? [], panes = () => [], spaces = () => state.spaces ?? [];
 export const setAgentOrder = () => null, window = () => ({ active: true }), hc = async () => null;
 export const settings = () => state.settings ?? {};
-export const focused = () => null, props = () => null, theme = () => ({}), run = () => null, nextCommand = () => new Promise(() => {});
+export const focused = () => null, props = () => null, theme = () => ({}), run = (...args) => { (state.runs ??= []).push(args); return null; }, nextCommand = () => new Promise(() => {});
 export const openOverlay = spec => { state.overlays = [...(state.overlays ?? []), spec]; return `overlay-${state.overlays.length}`; };
 export const closeOverlay = () => null;

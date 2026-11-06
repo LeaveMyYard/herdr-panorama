@@ -1,0 +1,147 @@
+//! What agent resume keeps across a core restart (docs/protocol/agent-resume.md).
+use serde::{Deserialize, Serialize};
+use serde_json::{Value, json};
+use std::collections::BTreeMap;
+
+/// How the recorded process was started, as far as a resume command can repeat it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Launch {
+    Plain,
+    /// Codex with `--no-daemon`: hc needs it, or Codex's commands run outside the terminal.
+    NoDaemon,
+    /// A mode the resume command cannot repeat, such as `claude rc` (herdr#5130).
+    Other,
+}
+
+/// One terminal's agent as last seen, written before any loss.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Record {
+    pub address: String,
+    pub harness: String,
+    pub session: String,
+    pub cwd: String,
+    /// The terminal's own program and its foreground agent: both end with a real loss.
+    pub root_pid: u32,
+    pub agent_pid: u32,
+    /// With the address, which terminal this is.
+    pub created_ms: u64,
+    pub launch: Launch,
+    /// The link held at the last look. False means the id may be out of date.
+    pub proved: bool,
+    /// When the agent was first missing, while the core carried on.
+    pub ending_ms: Option<u64>,
+}
+
+impl Record {
+    /// What to type, only for an id that is exactly a UUID: this text reaches a shell.
+    pub fn command(&self) -> Option<String> {
+        let id = herdr_agent_kit::agent_session::SessionId::parse(&self.session)?;
+        let id = id.as_str();
+        match (self.harness.as_str(), self.launch) {
+            ("claude", Launch::Plain | Launch::Other) => Some(format!("claude --resume {id}")),
+            ("codex", Launch::NoDaemon) => Some(format!("codex --no-daemon resume {id}")),
+            ("codex", Launch::Plain | Launch::Other) => Some(format!("codex resume {id}")),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Stage {
+    /// No shell to judge yet.
+    Waiting,
+    /// Written before the send: found again after a restart, it is never sent twice.
+    Sending,
+    /// The one attempt is spent; only reading from here on.
+    Sent,
+    Resumed,
+    Skipped,
+    Failed,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Entry {
+    pub record: Record,
+    pub stage: Stage,
+    pub reason: Option<String>,
+    pub sent_ms: Option<u64>,
+    /// Something ran in front of the shell after the send.
+    pub started: bool,
+}
+
+impl Entry {
+    pub fn new(record: Record) -> Self {
+        Self {
+            record,
+            stage: Stage::Waiting,
+            reason: None,
+            sent_ms: None,
+            started: false,
+        }
+    }
+    pub fn end(&mut self, stage: Stage, reason: impl Into<String>) {
+        self.stage = stage;
+        self.reason = Some(reason.into());
+    }
+    pub fn open(&self) -> bool {
+        matches!(self.stage, Stage::Waiting | Stage::Sending | Stage::Sent)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Loss {
+    pub detected_ms: u64,
+    pub entries: BTreeMap<String, Entry>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Saved {
+    pub v: u8,
+    pub install_id: String,
+    /// The core's permanent id, and its holders at the last look.
+    pub core: Option<String>,
+    pub holders: Vec<String>,
+    /// The writer left on purpose: nobody watched from then on.
+    pub closed: bool,
+    pub records: BTreeMap<String, Record>,
+    pub loss: Option<Loss>,
+}
+
+impl Saved {
+    pub fn new(install_id: &str) -> Self {
+        Self {
+            v: 1,
+            install_id: install_id.into(),
+            core: None,
+            holders: Vec::new(),
+            closed: false,
+            records: BTreeMap::new(),
+            loss: None,
+        }
+    }
+
+    /// The feed's `resume` field (docs/protocol/app-feed-v2.md).
+    pub fn report(&self, error: Option<&str>) -> Value {
+        let loss = self.loss.as_ref().map(|loss| {
+            let entries: Vec<Value> = loss
+                .entries
+                .values()
+                .map(|e| {
+                    json!({
+                        "terminal": e.record.address,
+                        "harness": e.record.harness,
+                        "session_id": e.record.session,
+                        "cwd": e.record.cwd,
+                        "state": e.stage,
+                        "reason": e.reason,
+                        "command": e.record.command(),
+                    })
+                })
+                .collect();
+            json!({"detected_at": loss.detected_ms as f64 / 1000.0, "entries": entries})
+        });
+        json!({"tracked": self.records.len(), "loss": loss, "error": error})
+    }
+}

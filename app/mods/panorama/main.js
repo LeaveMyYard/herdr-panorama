@@ -5,7 +5,7 @@ import { startSidebar, consumerFeed, closeConsumer } from './feed-client.js';
 import { initViewport, wheelViewport, viewport } from './viewport.js';
 import { rootTarget } from './routing.js';
 import { PeekCaller } from './peek-caller.js';
-import { joinRoots, groups, listed, rootSignature, iconProgram, headerTotals, storedScope, cardPlace, WAITING } from './model.js';
+import { joinRoots, groups, listed, rootSignature, iconProgram, headerTotals, storedScope, storedResume, resumeSummary, cardPlace, WAITING } from './model.js';
 import { rows, isOpen, needs, directTiles, agentTitle } from './tree.js';
 import { icon, mark, rootMarks, lines } from './marks.js';
 import { tile, badge, glyph, glyphRun, mix, stateOf, cardColors, SURFACE } from './state.js';
@@ -68,11 +68,11 @@ const waitingMark = () => div().ml(8).mr(1).flex_none().child(glyph('bg', 12));
 export default class Panorama extends View {
   init(_props, cx) {
     this.folds = new Map(); this.hovered = null; this.held = null;
-    this.changed = {}; this.scope = 'space';
+    this.changed = {}; this.scope = 'space'; this.resume = false;
+    // The scope and the resume toggle persist in the retained panorama-spaces store (no shared
+    // key); that mod writes them on our command. A choice made before the read lands wins.
+    cx.spawn(async cx => { try { const text = await readTextFile(`${appHome()}/data/panorama-spaces/store.json`); if (text) { if (!this.scopeSet) this.scope = storedScope(text); if (!this.resumeSet) this.resume = storedResume(text); cx.notify(); } } catch {} });
     if (props()?.sortMenu) return;
-    // The scope persists in the retained panorama-spaces store (no shared key); that mod
-    // writes it on our command. A choice made before the read lands wins.
-    cx.spawn(async cx => { try { const text = await readTextFile(`${appHome()}/data/panorama-spaces/store.json`); if (!this.scopeSet && text) { this.scope = storedScope(text); cx.notify(); } } catch {} });
     initViewport(this, cx);
     const client = startSidebar(this, cx);
     this.peekCaller = new PeekCaller('panorama', client, () => consumerFeed(this));
@@ -96,6 +96,28 @@ export default class Panorama extends View {
     this.scope = scope; this.scopeSet = true; cx.notify();
     run(`panorama-spaces.agents-scope-${scope}`);
   }
+  // Optional agent resume: a stopgap until herdr-app does this itself (herdr-core#13).
+  setResume(on, cx) {
+    this.resume = on; this.resumeSet = true; cx.notify();
+    run(`panorama-spaces.agent-resume-${on ? 'on' : 'off'}`);
+  }
+  // The last core loss: one line, opening to a row per terminal with its reason and command.
+  resumeRows(t, append) {
+    const summary = resumeSummary(this.feed?.feed?.resume);
+    if (!summary || this.resumeHidden === summary.id) return;
+    append(h_flex().id('resume-result').h(24).pl(6).pr(4).gap(6).flex_none().items_center().rounded(6).text_size(11.5).cursor_pointer().hover(el => el.bg(DOCK.hover))
+      .on_click((_event, cx) => { this.resumeOpen = !this.resumeOpen; cx.notify(); })
+      .child(div().flex_none().text_color(t.dim).child('Resume'))
+      .child(div().flex_1().min_w(0).truncate().text_color(t.foreground).child(summary.text))
+      .when(!summary.open, el => el.child(div().id('resume-hide').px(4).rounded(4).text_color(t.dim).hover(el => el.text_color(t.foreground))
+        .on_click((event, cx) => { cx.stop_propagation(); this.resumeHidden = summary.id; cx.notify(); }).child('×'))), 24);
+    if (this.resumeOpen) for (const row of summary.rows) {
+      const detail = [row.reason, row.word !== 'resumed' ? row.command : ''].filter(Boolean).join('\n');
+      append(h_flex().id(row.key).h(ROW).pl(14).pr(8).gap(6).flex_none().items_center().text_size(11.5).when(Boolean(detail), el => el.tooltip(detail))
+        .child(div().flex_none().text_color(t.muted).child(`${row.terminal} ${row.harness}`))
+        .child(div().flex_1().min_w(0).truncate().text_color(t.dim).child(row.reason ? `${row.word}: ${row.reason}` : row.word)), ROW);
+    }
+  }
   newAgent() { openOverlay({ mod: 'new-menu', kind: 'popup', width: 250, height: 512 }); }
   sortMenu(t) {
     const options = [{ id: 'priority', label: 'Priority', icon: 'clock' }, { id: 'grouped', label: 'Grouped by space', icon: 'layers' }];
@@ -104,7 +126,13 @@ export default class Panorama extends View {
       .children(options.map(option => h_flex().id(`sort-${option.id}`).h(31).px(8).gap(9).rounded(7).items_center().text_color(t.foreground).hover(el => el.bg(t.hover))
         .on_click(() => { setShared('agents.sort', option.id); closeOverlay(props().overlay); })
         .child(svg(`mods/workspace-chrome/${option.icon}.svg`).size(14)).child(div().flex_1().child(option.label))
-        .when((shared('agents.sort') ?? 'priority') === option.id, el => el.child(svg('mods/workspace-chrome/check.svg').size(14)))));
+        .when((shared('agents.sort') ?? 'priority') === option.id, el => el.child(svg('mods/workspace-chrome/check.svg').size(14)))))
+      .child(div().px(8).pt(9).pb(6).text_size(11).text_color(t.dim).child('After a core restart'))
+      .child(h_flex().id('resume-toggle').h(31).px(8).gap(9).rounded(7).items_center().text_color(t.foreground).hover(el => el.bg(t.hover))
+        .tooltip('Types claude --resume or codex resume into idle shells that lost a live session. Only until herdr-app does this itself.')
+        .on_click((_event, cx) => this.setResume(!this.resume, cx))
+        .child(div().flex_1().child('Resume agents'))
+        .when(this.resume, el => el.child(svg('mods/workspace-chrome/check.svg').size(14))));
   }
   foldControl(key, signature, open, count, color, cx) {
     return h_flex().id(`fold-${key}`).h(18).ml(6).px(3).gap(3).items_center().flex_none().text_size(11).text_color(color).rounded(4).hover(el => el.bg(theme().hover))
@@ -215,6 +243,7 @@ export default class Panorama extends View {
     }
     const rendered = [];
     const append = (element, height, animated = false) => rendered.push({ element, height, animated });
+    if (!compact) this.resumeRows(t, append);
     for (const section of sections) {
       const key = `section:${section.key}`, sig = JSON.stringify(section.roots.map(rootSignature));
       const open = isOpen(this.folds, key, sig, true);
@@ -266,7 +295,7 @@ export default class Panorama extends View {
             .when(totals.fail > 0, el => el.child(div().text_color(DOCK.fail).child(`×${totals.fail}`))))
           .when(errors.length || this.feed?.stale, el => el.child(div().text_size(11).text_color(t.dim).tooltip(errors.join('\n')).child(this.feed?.stale ? '◌' : '!')))
           .child(div().id('ag-sort').text_color(t.dim).hover(el => el.text_color(t.foreground))
-            .on_click(() => openOverlay({ mod: 'panorama', kind: 'popup', width: 200, height: 140, props: { sortMenu: true } }))
+            .on_click(() => openOverlay({ mod: 'panorama', kind: 'popup', width: 200, height: 196, props: { sortMenu: true } }))
             .child(svg(`mods/workspace-chrome/${grouped ? 'layers' : 'clock'}.svg`).size(14))))))
       .child(viewport(this, rendered, compact))
       .when(compact, el => el.child(h_flex().h(28).items_center().justify_center().child(div().id('expand-sidebar').text_size(13).text_color(t.dim).on_click(() => { const width = shared('sidebar.width') ?? 320; setShared('sidebar.collapsed', false); run('layout.resize', { id: 'sidebar', px: width }); }).child('»'))));

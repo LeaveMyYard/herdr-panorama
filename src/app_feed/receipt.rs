@@ -149,6 +149,8 @@ impl Receipt {
                 "writer.lock",
                 "ownership.json",
                 super::start::LEDGER,
+                super::resume::store::FILE,
+                super::resume::store::TEMP,
             ]
             .contains(&name.as_str())
                 || busy && name == ".ownership.tmp")

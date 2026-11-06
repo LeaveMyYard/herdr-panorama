@@ -95,6 +95,23 @@ See [feed identity rules](../docs/protocol/app-feed-v2.md) and
 [Codex setup](../docs/codex.md). Synthetic previews do not prove natural rich session
 ingestion.
 
+## Resume agents after a core restart (optional)
+
+Stopgap: this exists only until herdr-app or herdr-core resumes agents itself, which upstream has
+tied to OSC 7501 reporting a resume reference ([herdr-core#13](https://github.com/herdrdev/herdr-core/issues/13)).
+Delete it then.
+
+After a full core stop, crash or reboot, kept terminals come back as plain shells. **Resume agents**,
+in the Agents header's sort menu, is off by default. When it's on, the feed writer records each
+terminal's proved session, and after a real loss it types `claude --resume <id>` or
+`codex resume <id>`, once, into terminals that are provably idle shells in the same folder.
+
+The **Resume** line at the top of the Agents list says which panes were resumed, which were skipped
+and why, and gives the command for any you want to run yourself. It never types into a terminal
+that is doing anything. A session whose loss Panorama did not see, because the app was closed, is
+listed but not typed. Only local terminals are covered: remote ones are never recorded or typed
+into. Rules: [agent resume](../docs/protocol/agent-resume.md).
+
 ## Uninstall and troubleshoot
 
 Use the reviewed checkout/package that installed the inventory:
@@ -161,7 +178,8 @@ The sidebar and owned consumers read app-home data/panorama/feed.json through
 the same generation-pinned client and invoke only the reviewed app-private
 panorama executable. Graph question/Inbox actions navigate through its installed
 TUI bridge when available; permission actions focus a verified owning terminal.
-They never answer, type or change permissions/configuration.
+They never answer, type or change permissions/configuration. The one exception
+anywhere in Panorama is the optional [agent resume](../docs/protocol/agent-resume.md).
 
 An optional explicit reviewed executable is copied privately:
 

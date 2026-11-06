@@ -122,6 +122,9 @@ pub fn model(world: &World) -> Result<Value, String> {
                 Value::String(harness(supplied.map_or("unknown", String::as_str)).into());
         }
     }
+    if let Some(resume) = &world.resume {
+        feed["resume"] = resume.clone();
+    }
     Ok(feed)
 }
 

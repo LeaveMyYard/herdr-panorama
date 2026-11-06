@@ -1,0 +1,38 @@
+//! The sidebar's toggle, read straight from the store it is kept in.
+use crate::app_feed::fs::Home;
+use serde_json::Value;
+use std::collections::HashMap;
+
+/// Kept with the sidebar's other choices in the retained panorama-spaces store.
+const TOGGLE_DIR: &str = "panorama-spaces";
+pub(super) const TOGGLE_STORE: &str = "data/panorama-spaces/store.json";
+const TOGGLE_KEY: &str = "agents.resume";
+const TOGGLE_LIMIT: usize = 1024 * 1024;
+
+#[derive(Debug, PartialEq, Eq)]
+pub(super) enum Toggle {
+    On,
+    Off,
+    /// Unreadable right now: neither act on it nor clear anything.
+    Unknown,
+}
+
+pub(super) fn toggle(home: &Home) -> Toggle {
+    // The mod makes its directory on first use; until then nothing can have been turned on.
+    match home.names("data") {
+        Ok(names) if names.iter().any(|n| n == TOGGLE_DIR) => {}
+        Ok(_) => return Toggle::Off,
+        Err(_) => return Toggle::Unknown,
+    }
+    let Ok(file) = home.read(TOGGLE_STORE, TOGGLE_LIMIT, 0o600) else {
+        return Toggle::Unknown;
+    };
+    let Some(file) = file else {
+        return Toggle::Off;
+    };
+    match serde_json::from_slice::<HashMap<String, Value>>(&file.bytes) {
+        Ok(store) if store.get(TOGGLE_KEY).and_then(Value::as_str) == Some("\"on\"") => Toggle::On,
+        Ok(_) => Toggle::Off,
+        Err(_) => Toggle::Unknown,
+    }
+}

@@ -19,6 +19,17 @@ pub struct Observation {
     pub snapshot: Option<Value>,
     pub terminals: HashMap<String, String>,
     pub errors: Vec<String>,
+    /// Terminals whose foreground agent is proved to run a session, this collect.
+    pub linked: Vec<Linked>,
+}
+
+/// A link that passed session-linking.md §4, with the `hc get` object it was proved against.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Linked {
+    pub address: String,
+    pub harness: String,
+    pub session: String,
+    pub terminal: Value,
 }
 
 pub trait SnapshotSource: Send {
@@ -33,6 +44,7 @@ impl SnapshotSource for Tui {
             snapshot: crate::snapshot::herdr_snapshot(&self.0),
             terminals: HashMap::new(),
             errors: Vec::new(),
+            linked: Vec::new(),
         }
     }
 }
@@ -51,6 +63,7 @@ impl SnapshotSource for CoreSource {
             snapshot: None,
             terminals: HashMap::new(),
             errors: Vec::new(),
+            linked: Vec::new(),
         };
         match self.core.list().and_then(normalize) {
             Err(error) => observation.errors.push(format!("herdr-core: {error}")),
@@ -64,6 +77,7 @@ impl SnapshotSource for CoreSource {
                 let table = SystemProcesses::new();
                 let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
                 let mut links = HashMap::new();
+                let mut read = HashMap::new();
                 for row in &rows {
                     let address = row["terminal"].as_str().unwrap();
                     let key = pane_key(address);
@@ -71,9 +85,13 @@ impl SnapshotSource for CoreSource {
                         .terminals
                         .insert(key.clone(), address.to_owned());
                     let remaining = deadline.saturating_duration_since(std::time::Instant::now());
-                    let process = (!remaining.is_zero())
-                        .then(|| self.core.with_timeout(remaining).process(address))
+                    // Remote PIDs cannot prove ownership on this machine.
+                    let terminal = (!remaining.is_zero() && !address.contains('/'))
+                        .then(|| self.core.with_timeout(remaining).terminal(address).ok())
                         .flatten();
+                    let process = terminal
+                        .as_ref()
+                        .and_then(|t| super::core::process(t, address));
                     let link = process.as_ref().map_or((None, Link::Unavailable), |info| {
                         self.link.terminal(
                             &self.env,
@@ -84,6 +102,9 @@ impl SnapshotSource for CoreSource {
                             &table,
                         )
                     });
+                    if let Some(terminal) = terminal {
+                        read.insert(key.clone(), terminal);
+                    }
                     links.insert(key, link);
                 }
                 unique(&mut links);
@@ -92,7 +113,15 @@ impl SnapshotSource for CoreSource {
                     match &links[&key].1 {
                         Link::Linked(id) => {
                             row["agent_session"] =
-                                json!({"kind":"id","value":id,"source":"panorama:core"})
+                                json!({"kind":"id","value":id,"source":"panorama:core"});
+                            if let Some(terminal) = read.remove(&key) {
+                                observation.linked.push(Linked {
+                                    address: row["terminal"].as_str().unwrap().to_owned(),
+                                    harness: row["agent"].as_str().unwrap_or("").to_owned(),
+                                    session: id.clone(),
+                                    terminal,
+                                });
+                            }
                         }
                         Link::Conflict => observation
                             .errors

@@ -1,0 +1,72 @@
+{
+  "get": {
+    "address": "t5",
+    "argv": [
+      "/bin/zsh"
+    ],
+    "cols": 200,
+    "created_ms": 1793970685664,
+    "cwd": "/fixture/project-alpha",
+    "die_with_parent": false,
+    "exit_code": null,
+    "finished_ms": null,
+    "foreground": {
+      "argv": [
+        "/bin/zsh"
+      ],
+      "cwd": "/fixture/project-alpha",
+      "name": "zsh",
+      "pid": 777
+    },
+    "identity": "ghostty",
+    "keep": true,
+    "labels": {},
+    "name": null,
+    "notify": true,
+    "parent": null,
+    "pid": 777,
+    "reason": null,
+    "reported": false,
+    "rm": false,
+    "rows": 120,
+    "screen": "exact",
+    "signal": null,
+    "state": "live",
+    "status": null,
+    "status_ms": null,
+    "template": null,
+    "title": "",
+    "turn": 0
+  },
+  "status": {
+    "core": {
+      "id": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
+      "name": "fixture-host"
+    },
+    "finished": 0,
+    "holder": {
+      "current": true,
+      "instance": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "pid": 4322,
+      "terminals": 1
+    },
+    "holders": [
+      {
+        "current": true,
+        "instance": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "pid": 4322,
+        "terminals": 1
+      }
+    ],
+    "installed_by": null,
+    "live": 1,
+    "pid": 4321,
+    "uptime_ms": 2000,
+    "version": "0.1.18"
+  },
+  "read": {
+    "complete": true,
+    "how": "screen",
+    "text": "$ "
+  }
+}

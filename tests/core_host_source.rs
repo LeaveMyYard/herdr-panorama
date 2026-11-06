@@ -126,6 +126,15 @@ fn claudes_per_process_record_links_an_already_running_session_without_hooks() {
     let mut collector = sc.collector().with_core_source();
     let observation = source.read();
     assert!(observation.errors.is_empty(), "{:?}", observation.errors);
+    // Agent resume reads exactly the proved link, with the hc object it was proved against.
+    let linked = &observation.linked;
+    assert_eq!(linked.len(), 1);
+    assert_eq!(
+        (linked[0].address.as_str(), linked[0].harness.as_str()),
+        ("t2", "claude")
+    );
+    assert_eq!(linked[0].session, S1);
+    assert_eq!(linked[0].terminal["foreground"]["pid"], pid);
     let swarm = collector.collect(observation.snapshot.as_ref(), None, sc.now(), WINDOW, STALE);
     assert_eq!(swarm.roots[0].session_id.as_deref(), Some(S1));
     assert!(!swarm.roots[0].agents.is_empty());
@@ -140,6 +149,7 @@ fn claudes_per_process_record_links_an_already_running_session_without_hooks() {
         observation.errors,
         ["core:t2: session ownership unavailable"]
     );
+    assert!(observation.linked.is_empty());
     let swarm = collector.collect(observation.snapshot.as_ref(), None, sc.now(), WINDOW, STALE);
     assert!(swarm.roots[0].session_id.is_none());
     assert!(swarm.roots[0].agents.is_empty());

@@ -15,6 +15,7 @@ ROOT = 'data/panorama'
 RUNTIME = ROOT + '/runtime'
 FEED = ROOT + '/feed.json'
 FEED_LIMIT = 32 * 1024 * 1024
+RESUME_LIMIT = 1024 * 1024
 
 
 def generation(receipt):
@@ -59,6 +60,18 @@ def start_ledger(home, receipt):
             or not exact('v', 1, 1) or value['install_id'] != receipt['install_id']
             or not exact('failures', 1, 7) or not exact('retry_at_ms', 0, 2 ** 64 - 1)):
         raise ValueError(f'Ambiguous start ledger: {path}')
+    return current
+
+
+def resume_record(home, receipt):
+    """The optional agent-resume record; removable only as this generation's own."""
+    path = generation(receipt) + '/resume.json'
+    current = managed(home, path, RESUME_LIMIT)
+    if current is None:
+        return None
+    value = loads(current[0])
+    if not isinstance(value, dict) or value.get('v') != 1 or value.get('install_id') != receipt['install_id']:
+        raise ValueError(f'Ambiguous agent resume record: {path}')
     return current
 
 
@@ -149,7 +162,7 @@ def preflight_cleanup(home, receipt):
     directory = generation(receipt)
     if set(home.list(RUNTIME)) != {receipt['install_id']}:
         raise ValueError(f'Unknown runtime generation; preserved: {RUNTIME}')
-    expected = {'control.json', 'writer.lock', 'ownership.json', 'start.json'}
+    expected = {'control.json', 'writer.lock', 'ownership.json', 'start.json', 'resume.json', '.resume.tmp'}
     unknown = set(home.list(directory)) - expected
     if unknown:
         raise ValueError(f'Unknown or staged runtime artifact; preserved: {directory}/{sorted(unknown)[0]}')
@@ -170,6 +183,9 @@ def preflight_cleanup(home, receipt):
     if record:
         removals.append((directory + '/ownership.json', record[0]))
     removals.append((directory + '/start.json', start_ledger(home, receipt)))
+    removals.append((directory + '/resume.json', resume_record(home, receipt)))
+    # The writer's staging file: quiescence is proved, so it can only be a crash's leftover.
+    removals.append((directory + '/.resume.tmp', managed(home, directory + '/.resume.tmp', RESUME_LIMIT)))
     removals.extend(((directory + '/control.json', control(home, receipt)[0]),
                      (directory + '/writer.lock', managed(home, directory + '/writer.lock', 0))))
     return removals

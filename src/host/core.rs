@@ -44,6 +44,9 @@ impl Core {
     pub fn binary(&self) -> &std::ffi::OsStr {
         &self.binary
     }
+    pub fn stop(&self) -> Option<Arc<AtomicBool>> {
+        self.stop.clone()
+    }
     pub fn read(&self, args: &[&str]) -> Result<Value, &'static str> {
         let mut command = Command::new(&self.binary);
         command.args(args).env_remove("HC_TERMINAL_ID");

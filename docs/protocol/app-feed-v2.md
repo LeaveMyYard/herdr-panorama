@@ -62,6 +62,17 @@ together: the receipt pins the mods and the private binary as one generation.
 | counts | Counts | Existing snapshot totals, not app section/space totals. |
 | roots | [Root] | Visible roots; may have no transcript or agents. |
 
+## Optional `resume`
+
+The one top-level field outside the required tables: additive, and present only while
+[agent resume](agent-resume.md) is on. A stopgap, removed with it. It is an object:
+
+- `tracked`: integer, terminals with a record.
+- `error`: ?string, why the feature could not act just now.
+- `loss`: ?object, the last loss: `detected_at` (number) and `entries`. Each entry has
+  `terminal`, `harness`, `session_id` and `cwd` (strings), `state` (`waiting`, `sending`,
+  `sent`, `resumed`, `skipped`, `failed`), `reason` (?string) and `command` (?string).
+
 ## Root
 
 | Field | Type | Meaning |
