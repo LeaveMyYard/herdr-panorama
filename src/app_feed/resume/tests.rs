@@ -1340,6 +1340,23 @@ fn a_foreground_child_at_startup_is_waited_for_and_ends_with_a_working_button() 
 }
 
 #[test]
+fn a_row_that_never_saw_a_prompt_can_still_be_confirmed() {
+    let mut rig = Rig::new();
+    rig.lost(Term {
+        foreground: Some(fg(88, CWD)),
+        ..shell_term()
+    });
+    pass(SHELL_WAIT_MS);
+    rig.tick(&[]);
+    assert_eq!(rig.stage(), Stage::Skipped);
+    rig.set(shell_term());
+    let view = looked(&mut rig);
+    assert!(view.is_object());
+    confirm(&mut rig, &view);
+    assert_eq!(rig.sends().len(), 1);
+}
+
+#[test]
 fn a_program_after_the_first_prompt_is_a_final_skip_with_a_button() {
     let mut rig = Rig::new();
     rig.lost(shell_term());

@@ -124,7 +124,7 @@ export default class Panorama extends View {
         row.look.lines.forEach((line, n) => append(div().id(`${row.key}-look-${n}`).h(16).pl(14).pr(4).flex_none().overflow_hidden().text_size(11.5).font_family('monospace').text_color(t.foreground).tooltip(row.look.text).child(lineEnd(line)), 16));
         append(h_flex().id(`${row.key}-look`).h(ROW + 4).pl(14).pr(4).flex_none().items_center().justify_end().text_size(11.5)
           .child(div().id(`${row.key}-send`).px(5).flex_none().rounded(4).text_color(t.foreground).bg(t.hover).cursor_pointer()
-            .tooltip(`Types ${row.command} after the last line above and presses Enter, if the screen hasn't changed.\n\n${row.look.text}`)
+            .tooltip(`Types ${row.command} after the last line above and presses Enter, if the screen hasn't changed. If these lines show no prompt, don't press this.\n\n${row.look.text}`)
             .on_click((_event, cx) => { cx.stop_propagation(); this.resumePress(row, summary.id, row.look.token); }).child('Type here')), ROW + 4);
       }
     }

@@ -112,6 +112,7 @@ test('the first press only looks; the row then shows the line, and only that off
   const send = byId(next.tree, 'resume-t7-send');
   assert.match(send.calls.tooltip[0], /claude --resume id/);
   assert.match(send.calls.tooltip[0], /all of it/);
+  assert.match(send.calls.tooltip[0], /show no prompt, don't press/);
   click(send, next.view);
   assert.deepEqual(host.runs.at(-1), ['panorama-spaces.agent-resume-press-t7-5-abc123']);
 });

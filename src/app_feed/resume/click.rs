@@ -117,7 +117,11 @@ impl<H: Hc> Resume<H> {
             (Verdict::Ready, Some(text)) if quiet => {
                 // A listing below the prompt or a continuation line hides what Enter submits.
                 // fish continues on a blank line, so its sign is the backslash above it.
+                // A row that never saw a prompt takes this line as one: the same limit as a
+                // listing on screen when the shell settled, which the doc states.
                 let last = prompt_of(&text).unwrap_or_default();
+                let prompt = prompt.or_else(|| Some(last.clone()));
+                entry.prompt.clone_from(&prompt);
                 if !prompt.is_some_and(|p| last.starts_with(&p)) || last.ends_with('\\') {
                     entry.reason = Some(NO_CURSOR.into());
                     return;

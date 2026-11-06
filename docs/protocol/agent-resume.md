@@ -209,9 +209,13 @@ only a person can judge a line Panorama can't prove empty.
    check fails, the row says why and there is no **Type here**.
    - There is also no **Type here** unless the cursor is known to be on the last line. That line
      must start with the prompt last seen when the shell settled, and must not end in a
-     backslash. So a completion listing below the prompt, a `>` continuation or fish's blank
-     continuation line refuses. Clear the line and press **Resume** again. A prompt that really
-     changed, such as one showing an exit status, refuses too.
+     backslash. So a completion listing that appears below that prompt, a `>` continuation or
+     fish's blank continuation line refuses. Clear the line and press **Resume** again. A prompt
+     that really changed, such as one showing an exit status, refuses too.
+   - **The exception:** if a listing or pager was already on screen when the shell settled, it
+     counts as the prompt, so **Type here** is offered. The same goes for a row that never saw a
+     prompt, which takes the line at the first click as its prompt. See Known limits.
+     **If the row shows no prompt, don't press Type here.**
 2. **Type here** sends, if the checks still pass and the screen still matches what was shown.
    Digits are ignored in that comparison, so a ticking clock can be confirmed; a digit typed onto
    the line changes its length, so it refuses. Anything else that moves between the clicks refuses,
@@ -262,6 +266,13 @@ the field's `error`. A resumed row can read `sent` for up to 30 s while the new 
 ## Known limits
 
 - The race above, and `hc keys` from a program before the first read.
+- For a shell first seen after it started, nothing proves which line is the prompt. If a person's
+  unfinished completion was on screen when the shell settled, **Type here** is offered and can
+  submit a half line the row doesn't show. Measured: a one-row listing in zsh or fish shows the
+  half line; a five-row fish listing pushes it off the row, leaving it in the tooltip only; bash's
+  `--More--` pager hides it from both, and the half line ran with the resume text appended. It
+  takes two deliberate clicks on a view with no prompt, on button rows only, and the worst result
+  is that person's own half line submitted. Automatic typing isn't affected.
 - The confirm step's comparison ignores digits, so a digit swapped for a digit between the clicks
   passes: shown `sleep 1`, it could submit `sleep 9`. The person had already confirmed a half line.
 - A screen and a view are kept in `resume.json` and the feed for up to 60 s, both mode 0600.
