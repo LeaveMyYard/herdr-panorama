@@ -21,6 +21,7 @@ pub struct Collected {
     pub swarm: Swarm,
     pub host: super::Host,
     pub terminals: HashMap<String, String>,
+    pub linked: Vec<super::source::Linked>,
 }
 
 pub fn app_source(env: PluginEnv, core: Core) -> impl FnMut() -> Collected + Send {
@@ -88,6 +89,7 @@ fn source_full(env: PluginEnv, core: Core, wait: bool) -> impl FnMut() -> Collec
             swarm,
             host: observation.host,
             terminals: observation.terminals,
+            linked: observation.linked,
         }
     }
 }

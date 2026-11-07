@@ -218,7 +218,8 @@ both kinds of change show up on the next collect:
   `hc keep` replacement;
 - an in-process switch: a rewritten P, or a new H record.
 
-A stale link cannot outlive its process. Coverage:
+A stale link cannot outlive its process. The optional [agent resume](agent-resume.md) keeps a copy
+of the last proved id, but that record is its own and is never read back as evidence. Coverage:
 - **Already-running Claude sessions** are covered by P on Linux, with no hook. The
   foreground PID must be the Claude executable itself, not a wrapper.
 - **Codex sessions** are covered only by B (the Codex hook or `codex-bind`).

@@ -184,7 +184,10 @@ else: raise SystemExit(7)
         Ownership::read(&h, &r).unwrap().unwrap().0
     }
     pub fn wait_feed(&self, check: impl Fn(&Value) -> bool) {
-        let end = Instant::now() + Duration::from_secs(8);
+        self.wait_feed_within(Duration::from_secs(8), check)
+    }
+    pub fn wait_feed_within(&self, wait: Duration, check: impl Fn(&Value) -> bool) {
+        let end = Instant::now() + wait;
         loop {
             if let Ok(bytes) = std::fs::read(self.app.join(FEED))
                 && let Ok(v) = serde_json::from_slice(&bytes)
@@ -198,12 +201,18 @@ else: raise SystemExit(7)
     }
     /// Emulates the agreed installer transaction, not a claim about B's installer implementation.
     pub fn quiesce(&self) -> std::result::Result<(Home, Receipt, std::fs::File), String> {
+        self.quiesce_within(Duration::from_secs(2))
+    }
+    pub fn quiesce_within(
+        &self,
+        wait: Duration,
+    ) -> std::result::Result<(Home, Receipt, std::fs::File), String> {
         let home = Home::open(&self.app)?;
         fs::lock(&home.fd, Duration::from_secs(2))?;
         let r = Receipt::read(&home)?;
         r.disable(&home)?;
         let lock = r.lock_file(&home)?;
-        fs::lock(&lock, Duration::from_secs(2))?;
+        fs::lock(&lock, wait)?;
         r.check_names(&home)?;
         Ok((home, r, lock))
     }

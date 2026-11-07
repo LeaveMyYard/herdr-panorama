@@ -34,7 +34,11 @@ fn world(feed: &Value) -> World {
                 .collect(),
         })
         .collect();
-    World { swarm, roots }
+    World {
+        swarm,
+        roots,
+        resume: None,
+    }
 }
 
 #[test]
@@ -76,6 +80,7 @@ fn harness_provenance_is_scoped_and_unknown_never_defaults_to_claude() {
         swarm: world.swarm,
         host: Host::Core,
         terminals: HashMap::from([("core:t2".into(), "t2".into())]),
+        linked: Vec::new(),
     };
     let known = World::from(collected);
     assert_eq!(known.roots[0].agent_harnesses["agent-0"], "codex");

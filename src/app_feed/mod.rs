@@ -7,6 +7,7 @@ pub mod journal;
 pub mod json;
 pub mod liveness;
 pub mod receipt;
+pub mod resume;
 pub mod runtime;
 pub mod serialize;
 pub mod start;
@@ -28,6 +29,8 @@ pub struct Root {
 pub struct World {
     pub swarm: Swarm,
     pub roots: Vec<Root>,
+    /// The optional agent-resume report; `None` while that feature is off.
+    pub resume: Option<serde_json::Value>,
 }
 
 impl From<Collected> for World {
@@ -57,6 +60,7 @@ impl From<Collected> for World {
         Self {
             swarm: collected.swarm,
             roots,
+            resume: None,
         }
     }
 }

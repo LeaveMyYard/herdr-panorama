@@ -44,7 +44,8 @@ herdr-app do layout.switch '{"name":"panorama"}'
 ```
 
 For a custom app home, use the same `HERDR_APP_HOME` for app commands and pass its
-path to the installer. Installation does not select a layout, configure session
+path to the installer. The sidebar can only start inside the app's granted read roots, so a home
+outside them shows stock agents only. Installation does not select a layout, configure session
 hooks, change the TUI installation or add global key bindings. Name/key collisions
 are refused. An install without the private binary keeps basic stock rows but
 cannot start transcript enrichment; oversized debug builds may also be unavailable.
@@ -95,6 +96,42 @@ See [feed identity rules](../docs/protocol/app-feed-v2.md) and
 [Codex setup](../docs/codex.md). Synthetic previews do not prove natural rich session
 ingestion.
 
+## Resume agents after a core restart (optional)
+
+Stopgap: this exists only until herdr-app or herdr-core resumes agents itself, which upstream has
+tied to OSC 7501 reporting a resume reference ([herdr-core#13](https://github.com/herdrdev/herdr-core/issues/13)).
+Delete it then.
+
+After a full core stop, crash or reboot, kept terminals come back as plain shells. **Resume agents**,
+in the Agents header's sort menu, is off by default. When it's on, the feed writer records each
+terminal's proved session, and a **Resume** line at the top of the Agents list shows what a loss did:
+which panes were resumed, which were skipped and why.
+
+Skipped panes have a **Resume** button. It types nothing at first: it shows the terminal's last
+line and offers **Type here**, which types `claude --resume <id>` or `codex resume <id>` and presses
+Enter, if the screen hasn't changed.
+
+**Turned on, this can type with nobody at the machine.** After a reboot, Panorama types by itself
+into a bash or zsh shell it saw come back untouched, naming the session's own Claude config dir,
+if the reboot came within 30 minutes of the last record. An overnight shutdown gets buttons. The app restores the last layout, unless a mod it needs
+is missing. With the `agent-usage` mod installed, the Panorama layout comes back with the app and
+this usually happens. Without it the app opens in its main layout, nothing runs until you switch,
+and you usually get the buttons. A stop without a reboot, which may have been on purpose, always
+waits for you.
+
+A startup file that asks for input through the line editor (`read -e`, `vared`) gets that text;
+a plain `read` or a program's prompt doesn't. fish and Codex are button only. A shell with a
+background job from its startup file, or bash with `enable-bracketed-paste off`, can't be typed
+into at all, even with the button.
+
+A session is covered only if Panorama was shown at some point in that app run. The toggle says on
+either way, so if you work in another layout, show Panorama once after opening the app.
+
+hc can't check and type in one step, so a program started at that exact moment can still receive
+the text, and a person typing then makes the send wait. Only bash, zsh and fish are typed into, and
+only local terminals: remote ones are never recorded. Options such as `--model` aren't repeated.
+Rules: [agent resume](../docs/protocol/agent-resume.md).
+
 ## Uninstall and troubleshoot
 
 Use the reviewed checkout/package that installed the inventory:
@@ -107,7 +144,8 @@ Choose another layout yourself before removing one you are using; uninstall neve
 switches it. Personal edits survive. The exact two null shared slots, two retained
 preference stores and host layout-state snapshot are described below; the installer
 does not rewrite personal shared state or acquire deletion ownership over retained
-preference/layout files.
+preference/layout files. If Resume agents was ever on, an empty
+`$XDG_STATE_HOME/herdr-panorama/resume/<core id>.lock` also stays.
 
 - **No agent tree on a root:** verify the private release artifact and current session
   proof; older unbound roots are expected to stay basic.
@@ -116,12 +154,12 @@ preference/layout files.
   over 15 seconds old no feed title, tree or `?N` joins a live row; the last valid
   feed is kept and returns with the next collection. A root known only to the feed
   stays listed as Stale, without navigation.
-- **Leftover `.start.tmp`:** after a crash, ensure and uninstall both refuse
-  `data/panorama/runtime/<install_id>/.start.tmp`, a staging copy of the retry ledger
-  that holds no ownership. Close herdr-app, check that no `panorama app-feed` writer
-  is running, remove that one file by hand and retry what refused. A refused uninstall
-  has already disabled the generation, so continue with uninstall, not by reopening the
-  app. This is the only runtime file to remove yourself.
+- **Leftover staging file:** a power cut can leave `.ownership.tmp`, `.start.tmp` or
+  `.control.tmp` in `data/panorama/runtime/<install_id>/`. The next writer start removes it.
+  Uninstall still refuses on one, so open the app once, or close it, check that no
+  `panorama app-feed` writer is running, remove that one file by hand and retry. A refused
+  uninstall has already disabled the generation, so continue with uninstall, not by reopening
+  the app.
 - **Frontend stop timeout:** manually reopen the current mod/layout so it can clear
   its disabled generation, then retry. The installer does not launch/select it.
 - **Collision, unsafe retained store or runtime/receipt refusal:** preserve the
@@ -161,7 +199,8 @@ The sidebar and owned consumers read app-home data/panorama/feed.json through
 the same generation-pinned client and invoke only the reviewed app-private
 panorama executable. Graph question/Inbox actions navigate through its installed
 TUI bridge when available; permission actions focus a verified owning terminal.
-They never answer, type or change permissions/configuration.
+They never answer, type or change permissions/configuration. The one exception
+anywhere in Panorama is the optional [agent resume](../docs/protocol/agent-resume.md).
 
 An optional explicit reviewed executable is copied privately:
 

@@ -129,9 +129,11 @@ receipt cannot adopt an old generation directory or preexisting feed.
 | `G/writer.lock` | Installer | Empty regular 0600 file; never truncated/replaced while in use. |
 | `G/ownership.json` | Writer | Ownership below; generation and binary fingerprint must match receipt. |
 | `G/start.json` | Ensure | Optional transient-start ledger below; created/replaced only while ensure holds the reserved writer lock before spawn, removed by ensure after a proven start or a permanent failure and by uninstall cleanup. |
-| `G/.start.tmp` | Ensure | Exclusive-create staging for the ledger; leftover is ambiguous and preserved/refused. No tool removes it; an operator may ([recovery](../../app/README.md#uninstall-and-troubleshoot)). |
-| `G/.ownership.tmp` | Writer | Exclusive-create staging; any leftover is ambiguous and preserved/refused. |
-| `G/.control.tmp` | Installer / failed-start ensure | Exclusive-create staging for control replacement; leftover is ambiguous and preserved/refused. |
+| `G/.start.tmp` | Ensure | Exclusive-create staging for the ledger. Ensure removes a leftover once it holds the locks; uninstall preserves/refuses on one ([recovery](../../app/README.md#uninstall-and-troubleshoot)). |
+| `G/resume.json` | Writer | Optional [agent resume](agent-resume.md) record, present only while that toggle is on. Regular, mode 0600, at most 1 MiB. Uninstall removes it when it is a JSON object with `v: 1` and this `install_id`, and otherwise preserves it and refuses. |
+| `G/.resume.tmp` | Writer | Its staging file. The writer removes a leftover at start; uninstall removes it after quiescence. Unlike the other staging files it proves nothing, so a leftover is not ambiguous. |
+| `G/.ownership.tmp` | Writer | Exclusive-create staging. A power cut can leave it. `ownership.json` is still the record, so ensure removes it once it holds the lifetime lock. Uninstall still refuses on it, until an ensure has run. |
+| `G/.control.tmp` | Installer / failed-start ensure | Exclusive-create staging for control replacement. Ensure removes a leftover once it holds the locks: `control.json` is still the record. Uninstall preserves/refuses on one. |
 | `data/panorama/feed.json` | Writer | Atomic full feed ([v2](app-feed-v2.md)); bytes must match a recorded ownership digest before replacement/removal. |
 | `data/panorama/.feed-<install_id>.tmp` | Writer | Exclusive-create sibling staging; removable only if complete bytes match pending digest for this generation. |
 
@@ -183,9 +185,9 @@ Transient-start ledger (optional; absent means no recorded failures):
 (see Starting), a JSON integer in [1, 7]; `retry_at_ms` is the Unix-epoch millisecond time before which ensure
 defers a new spawn. Control keeps exactly its three keys: frontends read control
 strictly, so the ledger is a separate file rather than control fields. A
-malformed (including a non-integer number such as `2.0`), foreign or out-of-range ledger, or a leftover `.start.tmp`, is
-ambiguous: ensure refuses before spawn and uninstall preserves/refuses, as for
-other runtime staging. This file was added after the first v1 text; it is an
+malformed (including a non-integer number such as `2.0`), foreign or out-of-range ledger is
+ambiguous: ensure refuses before spawn and uninstall preserves/refuses. A leftover `.start.tmp`
+proves nothing, so ensure removes it, and uninstall preserves/refuses on it. This file was added after the first v1 text; it is an
 additive runtime path, and control, ownership, receipt and feed schemas are
 unchanged.
 

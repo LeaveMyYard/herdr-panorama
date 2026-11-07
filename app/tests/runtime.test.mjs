@@ -211,6 +211,31 @@ test('a retained spaces store with the sidebar scope is reused; an unsupported s
     assert.deepEqual(tree(s.home),before);
   }
 });
+test('the resume toggle in a retained spaces store is reused; an unsupported value refuses before mutation', t => {
+  for (const [key, value, accepted] of [['agents.resume', '"on"', true], ['agents.resume', '"yes"', false], ['agents.resume.clicks', '{"t5":{"loss":1,"token":null,"at":2}}', true], ['agents.resume.clicks', '{"t5":1793971728356}', false]]) {
+    const s = sandbox(t); mkdirSync(join(s.home,'data/panorama-spaces'),{recursive:true});
+    writeManaged(join(s.home,'data/panorama-spaces/store.json'), { [key]: value });
+    const before = tree(s.home), result = s.run('install');
+    if (accepted) { ok(result); ok(s.run('uninstall')); }
+    else { fail(result); assert.match(result.stderr,/Unsupported retained preference shape: data\/panorama-spaces\/store.json\/agents.resume/); }
+    assert.deepEqual(tree(s.home),before);
+  }
+});
+test('uninstall removes the generation\'s agent resume record and a crashed staging file', t => {
+  const s = setup(t); used(s);
+  writeManaged(join(s.generation, 'resume.json'), { v: 1, install_id: s.receipt.install_id, records: {} });
+  writeManaged(join(s.generation, '.resume.tmp'), 'partial');
+  ok(s.run('uninstall')); assert.deepEqual(Object.keys(tree(s.home)), ['keys.json']);
+});
+test('a foreign agent resume record is preserved and refuses uninstall', t => {
+  for (const record of [{ v: 1, install_id: 'f'.repeat(32) }, { v: 2 }, []]) {
+    const s = setup(t); used(s);
+    const path = join(s.generation, 'resume.json');
+    writeManaged(path, JSON.stringify(record));
+    const result = s.run('uninstall'); fail(result);
+    assert.match(result.stderr, /Ambiguous agent resume record/); assert.equal(existsSync(path), true);
+  }
+});
 test('owned empty mod-data dirs are removed; added mod-data files survive without recursive cleanup', t => {
   const s = setup(t,false);
   for (const name of ['panorama-spaces','panorama-graph','panorama-peek']) assert.ok(s.receipt.dirs.includes(`data/${name}`));

@@ -51,6 +51,10 @@ message, plus Open root pane and Transcript.
 - `t`/Transcript opens a native read-only JSONL viewer with 100-line pages.
   `a`/`i` navigate to existing Inbox or a verified permission pane; they never
   answer, type or change permissions. `g` goes to the root.
+- Optional, off by default, and only until herdr-app does it itself (herdr-core#13): the sort
+  menu's Resume agents lists what a core loss took, with a two-step Resume button per pane, and
+  after a reboot types by itself into a bash or zsh shell it saw come back, with nobody there. See
+  `docs/protocol/agent-resume.md`.
 
 ## Built from
 

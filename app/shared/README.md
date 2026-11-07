@@ -18,7 +18,8 @@ Current exports for later app slices:
   Render identities are tagged opaque namespaces, not terminal addresses.
 - `model.js`: `joinRoots`, `groups`, `rootSignature`, `harnessOf(agent, root)`, `iconProgram`,
   `rootTitle`,
-  `terminalChildren`, `nativeMembership`, `spaceTotals`.
+  `terminalChildren`, `nativeMembership`, `spaceTotals`, and for the optional agent resume
+  `RESUME_KEY`, `storedResume`, `resumeSummary`.
 - `tree.js`: `needs`, `finished`, `urgency`, `forest`, `aggregate`, `agentTitle`,
   `subtree`, `live`, `directTiles(root, natives)` (line-2 tiles per direct subagent),
   `annotate`, `isOpen`, `rows` (the V11 docked list: layer-1/layer-2 agent rows and the

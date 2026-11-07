@@ -1,6 +1,6 @@
 //! Which conversation a core terminal's foreground agent process runs (session-linking.md).
 //! Every collect recomputes it; nothing here is persisted.
-mod claude;
+pub mod claude;
 mod decide;
 mod proc;
 

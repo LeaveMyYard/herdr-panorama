@@ -5,6 +5,7 @@ use super::{
     journal::Journal,
     liveness::{self, Idle, State},
     receipt::Receipt,
+    resume::{Resume, core_hc::CoreHc},
     serialize,
     triggers::Triggers,
 };
@@ -89,12 +90,15 @@ pub fn watch(home: Home, r: Receipt, _lifetime: std::fs::File) -> Result<()> {
     let result = (|| {
         let env = PluginEnv::from_env();
         let core = Core::default().with_stop(stop.clone());
+        let mut resume = Resume::new(CoreHc::new(core.clone(), &env), &r, &env);
         let mut source = crate::host::collect::app_source(env.clone(), core.clone());
         let mut triggers = Triggers::new(
             core,
             vec![
                 hooks_dir(&env),
                 env.xdg_state_home().join("herdr-panorama/codex-bindings"),
+                // The resume toggle and its clicks are kept here; see them promptly.
+                home.path.join("data/panorama-spaces"),
             ],
         );
         test_fault("ready");
@@ -111,6 +115,7 @@ pub fn watch(home: Home, r: Receipt, _lifetime: std::fs::File) -> Result<()> {
         let mut last_collect = Instant::now() - Duration::from_secs(5);
         let mut last: Option<World> = None;
         let mut dirty_pending = true;
+        let mut last_watch = Instant::now();
         while !stop.load(Ordering::Relaxed) {
             if Instant::now() >= next_probe {
                 let previous = app;
@@ -134,6 +139,7 @@ pub fn watch(home: Home, r: Receipt, _lifetime: std::fs::File) -> Result<()> {
                             ..Default::default()
                         },
                         roots: Vec::new(),
+                        resume: None,
                     });
                     degraded
                         .swarm
@@ -145,17 +151,27 @@ pub fn watch(home: Home, r: Receipt, _lifetime: std::fs::File) -> Result<()> {
                 }
             }
             if app == State::Running {
+                if resume.watching() && last_watch.elapsed() >= Duration::from_millis(200) {
+                    last_watch = Instant::now();
+                    resume.watch(&home, &|| {
+                        !stop.load(Ordering::Relaxed) && r.active(&home).is_ok()
+                    });
+                }
                 dirty_pending |= triggers.changed();
                 if (dirty_pending && last_collect.elapsed() >= Duration::from_millis(500))
                     || Instant::now() >= next_collect
                 {
                     dirty_pending = false;
-                    let collected = source();
+                    let mut collected = source();
                     let pending = collected.pending;
+                    let linked = std::mem::take(&mut collected.linked);
                     let mut world = World::from(collected);
                     if stop.load(Ordering::Relaxed) {
                         break;
                     }
+                    world.resume = resume.tick(&home, &linked, &|| {
+                        !stop.load(Ordering::Relaxed) && r.active(&home).is_ok()
+                    });
                     if triggers.event_error {
                         world
                             .swarm
@@ -172,6 +188,8 @@ pub fn watch(home: Home, r: Receipt, _lifetime: std::fs::File) -> Result<()> {
                     next_collect = Instant::now()
                         + if pending {
                             Duration::from_millis(100)
+                        } else if resume.busy() {
+                            Duration::from_secs(1)
                         } else {
                             Duration::from_secs(5)
                         };
@@ -179,6 +197,7 @@ pub fn watch(home: Home, r: Receipt, _lifetime: std::fs::File) -> Result<()> {
             }
             std::thread::sleep(Duration::from_millis(50));
         }
+        resume.close(&home);
         // Source/observer and event helpers drop and reap before lifetime ownership is released.
         drop(triggers);
         drop(source);
