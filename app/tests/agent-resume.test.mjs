@@ -142,6 +142,8 @@ test('the toggle says what it does not protect against', () => {
   const view = new Panorama(); Object.assign(view, { resume: false });
   const tip = byId(view.sortMenu({}), 'resume-toggle').calls.tooltip[0];
   assert.match(tip, /can't check and type in one step/);
+  assert.match(tip, /within 30 minutes/);
+  assert.match(tip, /startup file that asks for input/);
   assert.match(tip, /only covers sessions started after Panorama was shown/);
 });
 

@@ -17,7 +17,7 @@ references `agent-usage`, which Panorama doesn't install.
 
 | Install | Opens in | After a reboot |
 |---|---|---|
-| With `agent-usage` | `panorama`, after quit, SIGTERM or SIGKILL | **Usually types by itself**: 4 of 4 with nobody acting, writer up about 0.5 s after app start |
+| With `agent-usage` | `panorama`, after quit, SIGTERM or SIGKILL | **Types by itself after a reboot within 30 minutes of the last record** (rule 6): 4 of 4 with nobody acting, writer up about 0.5 s after app start. An overnight shutdown gets buttons |
 | Without it | `main`, even after a clean close | Nothing runs until someone switches, so usually a button |
 
 Automatic typing needs the writer to see the shell come back. Measured with the real app on a
@@ -143,9 +143,11 @@ Decided when the loss is seen (failing one means a button, not typing):
    can be on the one process, as with an alias. So Panorama finds which of `~/.claude` and
    `~/.claude-*` holds the live process's own `sessions/<pid>.json`, with this pid and start
    token, and reads no environment. Exactly one must. The typed line then names it:
-   `env CLAUDE_CONFIG_DIR='<dir>' claude --resume <id>`, plain for `~/.claude`. Unproved means a
+   `env CLAUDE_CONFIG_DIR='<dir>' claude --resume <id>`, or `env -u CLAUDE_CONFIG_DIR claude
+   --resume <id>` for `~/.claude`, because a startup file may export another dir. Unproved means a
    button with a note, because it would resume under the shell's config. After a resume the same
-   proof runs again, and a session under another dir says so instead of a plain `resumed`.
+   proof runs again, and a session under another dir says so instead of a plain `resumed`. A dir
+   that can't be single-quoted plainly gives no command, so no record and no row.
    Codex's home is only in its environment, and its resume hasn't been run for real, so Codex
    is button only.
 5. The core has been up at most 5 minutes.
@@ -300,8 +302,13 @@ the field's `error`. A resumed row can read `sent` for up to 30 s while the new 
   pass after 60 s. A writer that stops leaves it there until the next one starts.
 - `agents.resume` survives uninstall, so a reinstall comes back on. Uninstalling or turning the
   toggle off drops the rows of an unresolved loss.
-- Other per-session settings, such as `ANTHROPIC_BASE_URL` or an inline key, aren't repeated. A
-  shell alias of `claude` applies to a plain line but not to one that starts with `env`.
+- Other per-session settings, such as `ANTHROPIC_BASE_URL` or an inline key, aren't repeated. The
+  line starts with `env`, so a shell alias or function named `claude` doesn't apply.
+- A job started with `&` in a startup file stays a child of the shell, so that shell is never typed
+  into, by itself or by the button, while the job runs. bash with `enable-bracketed-paste off`
+  never shows the line editor, so it is never typed into either. Both fail closed, with a row
+  reason. The command is in the tooltip.
+- Uninstall refuses on a leftover staging file until a writer start has removed it.
 - A dialog drawn by the shell itself, stable from its first screen, looks like a prompt. zsh's
   first-run menu is one, for a user with no `.zshrc`.
 - The command runs with whatever `claude` or `codex` the shell finds, and enters its history.

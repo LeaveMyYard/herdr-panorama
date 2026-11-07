@@ -8,6 +8,7 @@ const CLICK_SKEW_MS: u64 = 2_000;
 const LINE_LIMIT: usize = 300;
 const ROW_LINES: usize = 3;
 const TIP_LINES: usize = 12;
+const NO_EDITOR: &str = "the shell's line editor isn't up: a read, or bracketed paste is off";
 pub(super) const HELD: &str = "a live process already has this session";
 const NO_CURSOR: &str =
     "the last line isn't the prompt, so Panorama can't show what Enter would submit";
@@ -136,7 +137,11 @@ impl<H: Hc> Resume<H> {
                 let last = prompt_of(&text).unwrap_or_default();
                 let prompt = prompt.or_else(|| Some(last.clone()));
                 entry.prompt.clone_from(&prompt);
-                let on_prompt = paint.is_some_and(|p| p.editing && p.row == last_row(&text));
+                if !paint.is_some_and(|p| p.editing) {
+                    entry.reason = Some(NO_EDITOR.into());
+                    return;
+                }
+                let on_prompt = paint.is_some_and(|p| p.row == last_row(&text));
                 if !on_prompt
                     || !prompt.is_some_and(|p| last.starts_with(&p))
                     || last.ends_with('\\')
@@ -156,7 +161,10 @@ impl<H: Hc> Resume<H> {
             (Verdict::Ready, Some(_)) => {
                 entry.reason = Some("someone is typing in the terminal".into())
             }
-            _ => entry.reason = Some("the shell isn't free yet".into()),
+            _ => {
+                entry.reason =
+                    Some("the shell isn't free: a job it started is still running".into())
+            }
         }
     }
 }

@@ -270,7 +270,10 @@ fn a_real_loss_types_the_resume_command_once_and_confirms_it() {
     rig.settle();
     assert_eq!(
         rig.sends(),
-        [("t5".into(), format!("claude --resume {SESSION}"))]
+        [(
+            "t5".into(),
+            format!("env -u CLAUDE_CONFIG_DIR claude --resume {SESSION}")
+        )]
     );
     rig.set(Term {
         foreground: Some(fg(90, CWD)),
@@ -600,7 +603,10 @@ fn a_closed_writer_cannot_prove_the_session_was_live() {
     let entry = &report["loss"]["entries"][0];
     assert_eq!(entry["state"], "skipped");
     assert_eq!(entry["click"], true);
-    assert_eq!(entry["command"], format!("claude --resume {SESSION}"));
+    assert_eq!(
+        entry["command"],
+        format!("env -u CLAUDE_CONFIG_DIR claude --resume {SESSION}")
+    );
 }
 
 #[test]
@@ -1128,7 +1134,7 @@ fn the_first_click_only_looks_and_the_second_types_once() {
     assert!(rig.sends().is_empty(), "a first click types nothing");
     assert_eq!(view["lines"], json!(["$"]));
     confirm(&mut rig, &view);
-    let typed = format!("claude --resume {SESSION}");
+    let typed = format!("env -u CLAUDE_CONFIG_DIR claude --resume {SESSION}");
     assert_eq!(rig.sends(), [("t5".into(), typed)]);
     rig.tick(&[]);
     pass(CONFIRM_MS);
@@ -1551,6 +1557,37 @@ fn a_config_dir_that_cannot_be_quoted_plainly_gives_no_command() {
 }
 
 #[test]
+fn an_unproved_config_is_the_only_plain_line() {
+    let of = |config: Config| {
+        let record = Record {
+            config,
+            ..decide::record(&link("t5", SESSION, &["claude"]), &|_| Config::Default).unwrap()
+        };
+        record.command().unwrap()
+    };
+    assert!(of(Config::Default).starts_with("env -u CLAUDE_CONFIG_DIR claude --resume "));
+    assert!(of(Config::Unproved).starts_with("claude --resume "));
+}
+
+#[test]
+fn a_clock_behind_the_record_cannot_pass_the_age_rule() {
+    let mut rig = Rig::new();
+    rig.set(agent_term());
+    rig.tick(&[link("t5", SESSION, &["claude"])]);
+    let mut saved = rig.resume.saved.clone().unwrap();
+    saved.seen_ms = clock() + decide::SEEN_LIMIT_MS + 1;
+    rig.resume.saved = Some(saved);
+    rig.reboot("holder-b");
+    rig.tick(&[]);
+    rig.world().screens.insert("t5".into(), "$ ".into());
+    rig.set(shell_term());
+    rig.tick(&[]);
+    rig.settle();
+    assert!(rig.sends().is_empty());
+    assert!(rig.reason().contains("too old"));
+}
+
+#[test]
 fn an_unproved_config_is_never_typed_by_itself_and_says_so() {
     let mut rig = Rig::new();
     rig.world().config = Config::Unproved;
@@ -1615,6 +1652,16 @@ fn a_shell_that_is_not_at_its_line_editor_is_not_typed_into() {
     assert!(rig.sends().is_empty());
     // The button doesn't offer it either.
     assert_eq!(looked(&mut rig), Value::Null);
+    assert!(rig.reason().contains("line editor"));
+}
+
+#[test]
+fn a_job_the_shell_started_says_so_on_the_row() {
+    let mut rig = Rig::new();
+    losing_without_reboot(&mut rig);
+    rig.world().children = true;
+    assert_eq!(looked(&mut rig), Value::Null);
+    assert!(rig.reason().contains("job"));
 }
 
 #[test]
@@ -1904,7 +1951,7 @@ fn each_harness_gets_its_own_command() {
     let daemonless = format!("codex --no-daemon resume {id}");
     assert_eq!(
         of("claude", &["claude"]),
-        plain(format!("claude --resume {id}"))
+        plain(format!("env -u CLAUDE_CONFIG_DIR claude --resume {id}"))
     );
     assert_eq!(of("codex", &["codex"]), plain(codex.clone()));
     assert_eq!(of("codex", &["codex", "resume", id]), plain(codex));
@@ -1963,7 +2010,7 @@ fn a_failed_send_that_did_arrive_counts_as_arrived() {
     rig.world().send = Some(Sent::Failed(None));
     rig.lost(shell_term());
     rig.settle();
-    let typed = format!("$ claude --resume {SESSION}\nnot found");
+    let typed = format!("$ env -u CLAUDE_CONFIG_DIR claude --resume {SESSION}\nnot found");
     rig.world().screens.insert("t5".into(), typed);
     pass(CONFIRM_MS);
     rig.tick(&[]);
@@ -2080,7 +2127,10 @@ fn a_resumed_process_dying_soon_after_keeps_its_id_visible() {
     assert_eq!(rig.stage(), Stage::Failed);
     let entry = &report["loss"]["entries"][0];
     assert_eq!(entry["session_id"], SESSION);
-    assert_eq!(entry["command"], format!("claude --resume {SESSION}"));
+    assert_eq!(
+        entry["command"],
+        format!("env -u CLAUDE_CONFIG_DIR claude --resume {SESSION}")
+    );
     pass(CONFIRM_MS);
     rig.tick(&[]);
     assert_eq!(rig.sends().len(), 1, "herdr#5532: never retried");

@@ -486,7 +486,6 @@ fn an_ambiguous_start_ledger_refuses_start_without_changing_control() {
     for (name, bytes) in [
         ("start.json", br#"{"v":1,"install_id":"0123456789abcdef0123456789abcdef","failures":0,"retry_at_ms":0}"#.as_slice()),
         ("start.json", br#"{"v":1,"install_id":"0123456789abcdef0123456789abcdef","failures":1,"retry_at_ms":0,"x":1}"#.as_slice()),
-        (".start.tmp", b"{partial".as_slice()),
     ] {
         let install = Installed::new();
         let path = install.app.join(format!(

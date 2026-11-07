@@ -70,6 +70,10 @@ impl Record {
                     dir.starts_with('/') && !dir.chars().any(|c| c == '\'' || c.is_control());
                 plain.then(|| format!("env CLAUDE_CONFIG_DIR='{dir}' claude --resume {id}"))
             }
+            // A startup file may export another dir, so `~/.claude` is named by unsetting.
+            ("claude", _, Config::Default) => {
+                Some(format!("env -u CLAUDE_CONFIG_DIR claude --resume {id}"))
+            }
             ("claude", _, _) => Some(format!("claude --resume {id}")),
             ("codex", true, _) => Some(format!("codex --no-daemon resume {id}")),
             ("codex", false, _) => Some(format!("codex resume {id}")),

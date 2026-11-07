@@ -11,6 +11,7 @@ pub const BINARY: &str = "data/panorama/bin/panorama";
 pub const FEED: &str = "data/panorama/feed.json";
 pub const SMALL: usize = 4096;
 const OWNERSHIP_TEMP: &str = ".ownership.tmp";
+const CONTROL_TEMP: &str = ".control.tmp";
 pub const FEED_LIMIT: usize = 32 * 1024 * 1024;
 
 #[derive(Clone)]
@@ -120,13 +121,15 @@ impl Receipt {
         }
         Ok(file)
     }
-    /// With the lifetime lock held no writer runs, so this staging file is what a power cut
-    /// left. The rename never happened: `ownership.json` is still the record, and a feed is
-    /// only replaced after that rename. Without this the writer could never start again.
-    pub fn clear_ownership_staging(&self, home: &Home) -> Result<()> {
-        let path = self.path(OWNERSHIP_TEMP);
-        if let Some(staged) = home.read(&path, SMALL, 0o600)? {
-            home.remove(&path, &staged)?;
+    /// With the lifetime and lifecycle locks held nothing else is writing, so a staging file
+    /// is what a power cut left. Its rename never happened, so the file it was for is still
+    /// the record. Without this the writer could never start again.
+    pub fn clear_staging(&self, home: &Home) -> Result<()> {
+        for name in [OWNERSHIP_TEMP, super::start::LEDGER_TEMP, CONTROL_TEMP] {
+            let path = self.path(name);
+            if let Some(staged) = home.read(&path, SMALL, 0o600)? {
+                home.remove(&path, &staged)?;
+            }
         }
         Ok(())
     }
@@ -201,7 +204,7 @@ impl Receipt {
         control.disabled = true;
         home.replace(
             &self.path("control.json"),
-            &self.path(".control.tmp"),
+            &self.path(CONTROL_TEMP),
             &serde_json::to_vec(&control).map_err(|e| e.to_string())?,
             Some(&known),
         )

@@ -191,7 +191,7 @@ fn a_recorded_loss_is_typed_once_through_the_real_writer() {
     install.wait_feed_within(PATIENCE, |v| state(v) == "sent");
     let sent = sends(&install);
     assert_eq!(sent.len(), 1);
-    let typed = format!("claude --resume {SESSION}");
+    let typed = format!("env -u CLAUDE_CONFIG_DIR claude --resume {SESSION}");
     assert_eq!(sent[0]["args"], json!(["send", "--json", "t5", typed]));
     assert_eq!(
         sent[0]["caller"],
@@ -282,7 +282,10 @@ fn a_loss_after_a_clean_close_is_shown_with_its_command_and_not_typed() {
     std::thread::sleep(Duration::from_millis(2500));
     assert!(sends(&install).is_empty());
     let entry = install.feed()["resume"]["loss"]["entries"][0].clone();
-    assert_eq!(entry["command"], format!("claude --resume {SESSION}"));
+    assert_eq!(
+        entry["command"],
+        format!("env -u CLAUDE_CONFIG_DIR claude --resume {SESSION}")
+    );
     assert!(entry["reason"].as_str().unwrap().contains("closed"));
     let _ = install.quiesce_within(QUIESCE).unwrap();
 }
@@ -307,16 +310,18 @@ fn a_writer_that_stops_on_purpose_marks_the_record_closed() {
 }
 
 #[test]
-fn a_power_cut_in_the_ownership_write_does_not_stop_the_writer_for_good() {
-    let install = Installed::new();
-    serve(&install, &world());
-    let staging = install
-        .app
-        .join(format!("data/panorama/runtime/{ID}/.ownership.tmp"));
-    // What a cut between the staging write and the rename leaves: partial bytes.
-    write(&staging, b"{\"v\":1,\"install", 0o600);
-    assert!(install.ensure().status.success());
-    install.wait_feed_within(PATIENCE, |v| v["v"] == 2);
-    assert!(!staging.exists());
-    let _ = install.quiesce_within(QUIESCE).unwrap();
+fn a_power_cut_in_any_staging_write_does_not_stop_the_writer_for_good() {
+    for name in [".ownership.tmp", ".start.tmp", ".control.tmp"] {
+        let install = Installed::new();
+        serve(&install, &world());
+        let staging = install
+            .app
+            .join(format!("data/panorama/runtime/{ID}/{name}"));
+        // What a cut between the staging write and the rename leaves: partial bytes.
+        write(&staging, b"{\"v\":1,\"install", 0o600);
+        assert!(install.ensure().status.success(), "{name}");
+        install.wait_feed_within(PATIENCE, |v| v["v"] == 2);
+        assert!(!staging.exists(), "{name}");
+        let _ = install.quiesce_within(QUIESCE).unwrap();
+    }
 }

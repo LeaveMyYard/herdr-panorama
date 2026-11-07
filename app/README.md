@@ -112,15 +112,17 @@ line and offers **Type here**, which types `claude --resume <id>` or `codex resu
 Enter, if the screen hasn't changed.
 
 **Turned on, this can type with nobody at the machine.** After a reboot, Panorama types by itself
-into a bash or zsh shell it saw come back untouched, naming the session's own Claude config dir. The app restores the last layout, unless a mod it needs
+into a bash or zsh shell it saw come back untouched, naming the session's own Claude config dir,
+if the reboot came within 30 minutes of the last record. An overnight shutdown gets buttons. The app restores the last layout, unless a mod it needs
 is missing. With the `agent-usage` mod installed, the Panorama layout comes back with the app and
 this usually happens. Without it the app opens in its main layout, nothing runs until you switch,
 and you usually get the buttons. A stop without a reboot, which may have been on purpose, always
 waits for you.
 
 A startup file that asks for input through the line editor (`read -e`, `vared`) gets that text;
-a plain `read` or a program's prompt doesn't. fish and Codex are button only. A record over 30
-minutes old also waits for you, so a long power-off gets buttons.
+a plain `read` or a program's prompt doesn't. fish and Codex are button only. A shell with a
+background job from its startup file, or bash with `enable-bracketed-paste off`, can't be typed
+into at all, even with the button.
 
 A session is covered only if Panorama was shown at some point in that app run. The toggle says on
 either way, so if you work in another layout, show Panorama once after opening the app.
@@ -152,12 +154,12 @@ preference/layout files. If Resume agents was ever on, an empty
   over 15 seconds old no feed title, tree or `?N` joins a live row; the last valid
   feed is kept and returns with the next collection. A root known only to the feed
   stays listed as Stale, without navigation.
-- **Leftover `.start.tmp`:** after a crash, ensure and uninstall both refuse
-  `data/panorama/runtime/<install_id>/.start.tmp`, a staging copy of the retry ledger
-  that holds no ownership. Close herdr-app, check that no `panorama app-feed` writer
-  is running, remove that one file by hand and retry what refused. A refused uninstall
-  has already disabled the generation, so continue with uninstall, not by reopening the
-  app. This is the only runtime file to remove yourself.
+- **Leftover staging file:** a power cut can leave `.ownership.tmp`, `.start.tmp` or
+  `.control.tmp` in `data/panorama/runtime/<install_id>/`. The next writer start removes it.
+  Uninstall still refuses on one, so open the app once, or close it, check that no
+  `panorama app-feed` writer is running, remove that one file by hand and retry. A refused
+  uninstall has already disabled the generation, so continue with uninstall, not by reopening
+  the app.
 - **Frontend stop timeout:** manually reopen the current mod/layout so it can clear
   its disabled generation, then retry. The installer does not launch/select it.
 - **Collision, unsafe retained store or runtime/receipt refusal:** preserve the

@@ -169,7 +169,7 @@ fn barred(
         Some("Codex's home can't be proved")
     } else if record.config == Config::Unproved {
         Some("its config dir isn't proved")
-    } else if now_ms.saturating_sub(saved.seen_ms) > SEEN_LIMIT_MS {
+    } else if now_ms.abs_diff(saved.seen_ms) > SEEN_LIMIT_MS {
         Some("the record is too old to show the session was still live")
     } else if !rebooted(saved, boot) {
         // `hc server stop` and a crash look alike from here; a reboot doesn't.
