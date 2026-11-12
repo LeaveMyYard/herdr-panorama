@@ -7,12 +7,18 @@ import { startConsumer, consumerFeed, closeConsumer } from './feed-client.js';
 
 import { glyph, countChip } from './swarm.js';
 
-// Usage, as in the agent-usage-tabs clone: a button for the `usage` child of the
-// panel-body stack and the `open-usage` command its toasts run. Panorama does not
-// own or install mods/agent-usage, so the button exists only while that mod does.
+// Optional panel buttons, each for a child of the panel-body stack that belongs to a
+// mod panorama does not own or install. A button exists only while that mod is
+// installed (probed) and the active layout's panel-body has the child: the plain
+// panorama layout has no `remote` child; herdr-app-remote's panorama-remote does.
+// Usage is as in the agent-usage-tabs clone, with the `open-usage` command its toasts run.
 const USAGE = "usage";
-const USAGE_PROBE_MS = 30000;
-const openUsage = () => { run("layout.select", { stack: "panel-body", child: USAGE }); run("layout.show", { id: "panel" }); };
+const OPTIONAL = [
+  { id: USAGE, label: "Usage", mod: "agent-usage", icon: "mods/agent-usage/usage.svg" },
+  { id: "remote", label: "Remote", mod: "herdr-app-remote", icon: "mods/herdr-app-remote/remote.svg" },
+];
+const PROBE_MS = 30000;
+const openPanel = id => { run("layout.select", { stack: "panel-body", child: id }); run("layout.show", { id: "panel" }); };
 
 function find(node, id) {
   if (node?.id === id) return node;
@@ -23,19 +29,26 @@ function find(node, id) {
   return null;
 }
 
+// Which optional buttons to offer: installed mod, and the child present in this layout.
+function optionalPanels(installed, body) {
+  return OPTIONAL.filter(o => installed?.[o.id] && body?.children?.some(c => c.id === o.id));
+}
+
 export default class Tabs extends View {
   init(_props, cx) {
     startConsumer(this, cx);
-    this.usage = undefined; // unknown until the first probe answers
+    this.installed = undefined; // unknown until the first probe answers: { [id]: mod installed }
     cx.spawn(async cx => {
       for (;;) {
-        let present = false;
-        try { present = (await readTextFile(`${appHome()}/mods/agent-usage/mod.json`)) !== null; } catch { present = false; }
-        if (present !== this.usage) { this.usage = present; cx.notify(); }
-        await cx.sleep(USAGE_PROBE_MS);
+        const now = {};
+        for (const o of OPTIONAL) {
+          try { now[o.id] = (await readTextFile(`${appHome()}/mods/${o.mod}/mod.json`)) !== null; } catch { now[o.id] = false; }
+        }
+        if (!this.installed || OPTIONAL.some(o => now[o.id] !== this.installed[o.id])) { this.installed = now; cx.notify(); }
+        await cx.sleep(PROBE_MS);
       }
     });
-    cx.spawn(async () => { for (;;) { if (await nextCommand() === "open-usage" && this.usage) openUsage(); } });
+    cx.spawn(async () => { for (;;) { if (await nextCommand() === "open-usage" && optionalPanels(this.installed, find(layout(), "panel-body")).some(o => o.id === USAGE)) openPanel(USAGE); } });
     this.pressed = null;
     this.panels = JSON.parse(localStorage.getItem("panels") ?? "{}");
   }
@@ -52,7 +65,7 @@ export default class Tabs extends View {
         const stored = this.panels[space.id] ?? null, want = enabled.includes(stored) ? stored : null;
         if (want !== now) {
           this.pending = { want, until: Date.now() + 1000 };
-          if (want) { run("layout.select", { stack: "panel-body", child: want }); run("layout.show", { id: "panel" }); }
+          if (want) openPanel(want);
           else run("layout.hide", { id: "panel" });
           return;
         }
@@ -110,11 +123,12 @@ export default class Tabs extends View {
       ? Math.max(10, (root.traffic_lights[0] + 64) / settings().zoom - (sidebar?.hidden ? 0 : sidebar?.size?.px ?? 0))
       : 10;
     const panel = find(root, "panel"), body = find(root, "panel-body");
-    const enabled = [...(shared("workspace.panels") ?? ["files", "changes"]), ...(this.usage ? [USAGE] : [])];
-    // Restore a remembered panel only once Usage availability is known; without
-    // agent-usage a shown usage child would be an empty block, so close it.
-    if (this.usage === false && panel && !panel.hidden && body?.active === USAGE) run("layout.hide", { id: "panel" });
-    else if (this.usage !== undefined) this.syncPanel(space, panel, body, enabled);
+    const optional = optionalPanels(this.installed, body);
+    const enabled = [...(shared("workspace.panels") ?? ["files", "changes"]), ...optional.map(o => o.id)];
+    // Restore a remembered panel only once availability is known; without its mod a
+    // shown optional child would be an empty block, so close it.
+    if (panel && !panel.hidden && OPTIONAL.some(o => o.id === body?.active && this.installed?.[o.id] === false)) run("layout.hide", { id: "panel" });
+    else if (this.installed !== undefined) this.syncPanel(space, panel, body, enabled);
     const panelButton = (id, label, icon) => {
       const on = panel && !panel.hidden && body?.active === id;
       return h_flex().id(`panel-${id}`).h(26).px(8).gap(5).flex_none().items_center().rounded(6)
@@ -122,7 +136,7 @@ export default class Tabs extends View {
         .hover(s => s.bg(t.hover)).on_mouse_down("left", stop)
         .on_click(() => {
           if (on) run("layout.hide", { id: "panel" });
-          else { run("layout.select", { stack: "panel-body", child: id }); run("layout.show", { id: "panel" }); }
+          else openPanel(id);
         }).child(svg(icon).size(14)).child(label);
     };
     return h_flex().size_full().min_w(0).tooltip(this.packet.errors.join(' · ')).px(10).pl(lightsPadding).gap(3).items_center().bg(t.chrome).border_b(1).border_color(t.border)
@@ -132,7 +146,7 @@ export default class Tabs extends View {
       .child(button("tab-new", "+", () => openOverlay({ mod: "new-menu", kind: "popup", width: 250, height: 512 })))
       .when(enabled.includes("files"), el => el.child(panelButton("files", "Files", "mods/files/file.svg")))
       .when(enabled.includes("changes"), el => el.child(panelButton("changes", "Changes", "mods/changes/changes.svg")))
-      .when(enabled.includes(USAGE), el => el.child(panelButton(USAGE, "Usage", "mods/agent-usage/usage.svg")))
+      .children(optional.map(o => panelButton(o.id, o.label, o.icon)))
       .when(w?.buttons, el => el.child(button("minimize", w.platform === "windows" ? svg("mods/tabs/win-min.svg").size(16) : "−", () => run("window.minimize")))
         .child(button("maximize", w.platform === "windows" ? svg(`mods/tabs/${w.maximized ? "win-restore" : "win-max"}.svg`).size(16) : "□", () => run("window.maximize")))
         .child(button("close-window", w.platform === "windows" ? svg("mods/tabs/win-close.svg").size(16) : svg("mods/pane/close.svg").size(13), () => run("window.close"))));
