@@ -8,6 +8,8 @@ position or selects its existing graph. The owned tabs and pane-header clones
 add the Swarm glyph/count and graph header while retaining stock terminal behavior.
 The tabs clone keeps the agent-usage-tabs Usage toggle for the layout's `usage`
 panel, shown only while the separately installed `agent-usage` mod exists.
+A Remote button follows it for the `remote` child, shown only while the separately
+installed `herdr-app-remote` mod exists and the active layout has that child.
 The graph uses fixed depth columns, independent vertical scrolling, folding,
 keyboard navigation and selected-card details. Depth 0 holds the space's roots;
 deeper columns hold the selected root's whole agent tree, its transcript agents
