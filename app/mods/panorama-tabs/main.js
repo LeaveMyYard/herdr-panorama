@@ -18,7 +18,7 @@ const OPTIONAL = [
   { id: "remote", label: "Remote", mod: "herdr-app-remote", icon: "mods/herdr-app-remote/remote.svg" },
 ];
 const PROBE_MS = 30000;
-const openUsage = () => { run("layout.select", { stack: "panel-body", child: USAGE }); run("layout.show", { id: "panel" }); };
+const openPanel = id => { run("layout.select", { stack: "panel-body", child: id }); run("layout.show", { id: "panel" }); };
 
 function find(node, id) {
   if (node?.id === id) return node;
@@ -48,7 +48,7 @@ export default class Tabs extends View {
         await cx.sleep(PROBE_MS);
       }
     });
-    cx.spawn(async () => { for (;;) { if (await nextCommand() === "open-usage" && this.installed?.[USAGE]) openUsage(); } });
+    cx.spawn(async () => { for (;;) { if (await nextCommand() === "open-usage" && optionalPanels(this.installed, find(layout(), "panel-body")).some(o => o.id === USAGE)) openPanel(USAGE); } });
     this.pressed = null;
     this.panels = JSON.parse(localStorage.getItem("panels") ?? "{}");
   }
@@ -65,7 +65,7 @@ export default class Tabs extends View {
         const stored = this.panels[space.id] ?? null, want = enabled.includes(stored) ? stored : null;
         if (want !== now) {
           this.pending = { want, until: Date.now() + 1000 };
-          if (want) { run("layout.select", { stack: "panel-body", child: want }); run("layout.show", { id: "panel" }); }
+          if (want) openPanel(want);
           else run("layout.hide", { id: "panel" });
           return;
         }
@@ -136,7 +136,7 @@ export default class Tabs extends View {
         .hover(s => s.bg(t.hover)).on_mouse_down("left", stop)
         .on_click(() => {
           if (on) run("layout.hide", { id: "panel" });
-          else { run("layout.select", { stack: "panel-body", child: id }); run("layout.show", { id: "panel" }); }
+          else openPanel(id);
         }).child(svg(icon).size(14)).child(label);
     };
     return h_flex().size_full().min_w(0).tooltip(this.packet.errors.join(' · ')).px(10).pl(lightsPadding).gap(3).items_center().bg(t.chrome).border_b(1).border_color(t.border)

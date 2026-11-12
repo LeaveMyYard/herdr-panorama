@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { register } from 'node:module';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 register('./herdr-loader.mjs', import.meta.url);
 globalThis.localStorage = { getItem: () => null, setItem() {} };
@@ -52,4 +55,34 @@ test('the per-space restore keeps a remembered remote panel only where it is off
   const dropped = bar({ ids: all, installed: { usage: true, remote: true }, active: 'files', hidden: true });
   dropped.view.panels = { s: 'remote' }; dropped.view.space = 'other'; host.runs = []; dropped.view.render();
   assert.deepEqual(host.runs, [], 'no remote child in this layout: stays closed');
+});
+
+test('Usage hides through the same generic path once its mod is known absent', () => {
+  bar({ ids: [...all, 'remote'], installed: { usage: false, remote: true }, active: 'usage' });
+  assert.deepEqual(host.runs, [['layout.hide', { id: 'panel' }]]);
+});
+
+const settle = () => new Promise(resolve => setImmediate(resolve));
+async function started(files, layoutIds) {
+  const home = mkdtempSync(join(tmpdir(), 'panel-buttons-'));
+  for (const name of files) { mkdirSync(join(home, 'mods', name), { recursive: true }); writeFileSync(join(home, 'mods', name, 'mod.json'), '{}'); }
+  host.home = home; host.runs = []; host.layout = layoutOf(layoutIds, 'files');
+  const view = new Tabs(), notes = [];
+  const cx = { spawn: fn => { Promise.resolve(fn(cx)).catch(() => {}); }, sleep: () => new Promise(() => {}), notify: () => notes.push(1), timer: { every: () => ({ cancel() {} }) } };
+  view.init({}, cx);
+  await settle(); await settle(); await settle();
+  host.sendCommand('open-usage'); await settle();
+  rmSync(home, { recursive: true, force: true });
+  return { view, notes };
+}
+
+test('the probe reads each optional mod\'s mod.json and the open-usage command follows the same gate as the button', async () => {
+  const only = await started(['herdr-app-remote'], [...all, 'remote']);
+  assert.deepEqual(only.view.installed, { usage: false, remote: true });
+  assert.deepEqual(host.runs, [], 'open-usage ignored: agent-usage is not installed');
+  const both = await started(['agent-usage'], [...all, 'remote']);
+  assert.deepEqual(both.view.installed, { usage: true, remote: false });
+  assert.deepEqual(host.runs, [['layout.select', { stack: 'panel-body', child: 'usage' }], ['layout.show', { id: 'panel' }]]);
+  await started(['agent-usage'], ['files', 'changes']);
+  assert.deepEqual(host.runs, [], 'open-usage ignored: this layout has no usage child');
 });
